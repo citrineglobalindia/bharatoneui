@@ -21,42 +21,46 @@ export const Route = createFileRoute("/login")({
 function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   return (
-    <div className="min-h-screen bg-tricolor flex items-center justify-center p-4 sm:p-6 lg:p-10">
+    <div className="min-h-screen bg-tricolor flex items-center justify-center p-3 sm:p-6 lg:p-10">
       <div className="w-full max-w-6xl overflow-hidden rounded-2xl border border-border bg-card shadow-elev grid md:grid-cols-2">
         {/* Left */}
-        <div className="relative p-8 sm:p-10 md:p-14 bg-tricolor">
-          <BharatOneLogo size="lg" />
-          <div className="mt-8 inline-flex items-center gap-2 rounded-full border border-accent bg-white/70 backdrop-blur px-3 py-1.5 text-xs font-semibold text-primary shadow-soft">
+        <div className="relative p-5 sm:p-10 md:p-14 bg-tricolor">
+          <div className="flex items-center justify-between gap-3 md:block">
+            <BharatOneLogo size="md" />
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-accent bg-white/70 backdrop-blur px-2.5 py-1 text-[10px] font-semibold text-primary shadow-soft md:hidden">
+              <ShieldCheck className="h-3 w-3" /> Secure Portal
+            </div>
+          </div>
+          <div className="mt-6 hidden md:inline-flex items-center gap-2 rounded-full border border-accent bg-white/70 backdrop-blur px-3 py-1.5 text-xs font-semibold text-primary shadow-soft">
             <ShieldCheck className="h-3.5 w-3.5" /> Secure Retailer Portal
           </div>
-          <h1 className="font-display mt-6 text-4xl sm:text-5xl font-extrabold tracking-tight text-foreground leading-[1.05]">
-            Empowering India&rsquo;s
-            <br />
+          <h1 className="font-display mt-4 md:mt-6 text-[26px] sm:text-5xl font-extrabold tracking-tight text-foreground leading-[1.1]">
+            Empowering India&rsquo;s{" "}
             <span className="bg-saffron-gradient bg-clip-text text-transparent">Digital Retailers</span>
           </h1>
-          <p className="mt-4 max-w-md text-sm sm:text-base text-muted-foreground">
-            AEPS, DMT, Recharge, BBPS and Business Services — all unified in one professional dashboard built for Karnataka.
+          <p className="mt-2.5 md:mt-4 max-w-md text-[13px] sm:text-base leading-relaxed text-muted-foreground">
+            AEPS, DMT, Recharge, BBPS &amp; Business Services — unified in one professional dashboard built for Karnataka.
           </p>
-          <div className="mt-8 grid grid-cols-3 gap-2.5 sm:gap-3 max-w-md">
+          <div className="mt-4 md:mt-8 grid grid-cols-3 gap-2 sm:gap-3 max-w-md">
             {[
               { v: "10K+", l: "Retailers" },
               { v: "50+", l: "Services" },
               { v: "99.9%", l: "Uptime" },
             ].map((s) => (
-              <div key={s.l} className="rounded-xl border border-border bg-card/80 backdrop-blur px-3 py-3 text-center shadow-soft">
-                <div className="font-display text-lg sm:text-xl font-extrabold text-foreground">{s.v}</div>
-                <div className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{s.l}</div>
+              <div key={s.l} className="rounded-xl border border-border bg-card/80 backdrop-blur px-2 py-2.5 sm:px-3 sm:py-3 text-center shadow-soft">
+                <div className="font-display text-base sm:text-xl font-extrabold text-foreground">{s.v}</div>
+                <div className="mt-0.5 text-[9px] sm:text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{s.l}</div>
               </div>
             ))}
           </div>
-          <div className="mt-10 md:absolute md:bottom-6 md:left-10 md:mt-0 text-xs text-muted-foreground">
+          <div className="mt-5 md:absolute md:bottom-6 md:left-10 md:mt-0 text-[11px] sm:text-xs text-muted-foreground">
             © 2026 BharatOne Digital Services · Hasan, Karnataka
           </div>
         </div>
 
         {/* Right */}
-        <div className="p-8 sm:p-10 md:p-14">
-          <h2 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">Welcome back</h2>
+        <div className="p-5 sm:p-10 md:p-14 border-t border-border md:border-t-0">
+          <h2 className="font-display text-2xl sm:text-4xl font-extrabold tracking-tight text-foreground">Welcome back</h2>
           <p className="mt-1 text-sm text-muted-foreground">Sign in to your BharatOne account</p>
 
           <form className="mt-8 space-y-5" onSubmit={(e) => e.preventDefault()}>
