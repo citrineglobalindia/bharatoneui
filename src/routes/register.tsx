@@ -139,24 +139,24 @@ function RegisterPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-4 sm:px-6 py-6 sm:py-10">
-        <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-foreground">
+      <main className="mx-auto max-w-5xl px-4 sm:px-6 py-5 sm:py-10 pb-28 sm:pb-12">
+        <h1 className="font-display text-[22px] sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-foreground leading-tight">
           JSKO / Retailer{" "}
           <span className="bg-saffron-gradient bg-clip-text text-transparent">Registration</span>
         </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
+        <p className="mt-1.5 text-[13px] sm:text-sm text-muted-foreground">
           Choose your onboarding type and complete the required verification steps.
         </p>
 
-        <div className="mt-6 sm:mt-8 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h2 className="font-display text-lg sm:text-xl font-bold text-foreground">{heading}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">{subheading}</p>
+        <div className="mt-5 sm:mt-8 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <h2 className="font-display text-base sm:text-xl font-bold text-foreground leading-tight">{heading}</h2>
+            <p className="mt-1 text-[13px] sm:text-sm leading-relaxed text-muted-foreground">{subheading}</p>
           </div>
           <Button
             variant="outline"
             size="sm"
-            className="self-start rounded-lg"
+            className="self-start rounded-lg h-8 text-xs"
             onClick={() =>
               navigate({
                 search: { type: type === "old" ? "new" : "old" },
@@ -171,22 +171,33 @@ function RegisterPage() {
           <Stepper steps={steps} current={current} />
         </div>
 
-        <div className="mt-5 sm:mt-6 rounded-2xl border border-border bg-card p-4 sm:p-6 md:p-8 shadow-elev">
+        <div className="mt-4 sm:mt-6 rounded-2xl border border-border bg-card p-4 sm:p-6 md:p-8 shadow-elev">
           {done && submission ? (
             <SuccessStep info={submission} />
           ) : (
             <>
               {StepBody}
-              <div className="mt-8 flex items-center justify-between gap-3 border-t border-border pt-5">
-                <Button variant="outline" onClick={prev} disabled={current === 0} className="rounded-xl">
+              <div className="mt-7 grid grid-cols-2 gap-3 border-t border-border pt-5 sm:flex sm:items-center sm:justify-between">
+                <Button
+                  variant="outline"
+                  onClick={prev}
+                  disabled={current === 0}
+                  className="h-12 rounded-xl text-[15px] sm:h-10 sm:text-sm sm:w-auto"
+                >
                   <ChevronLeft className="h-4 w-4" /> Back
                 </Button>
                 {current === steps.length - 1 ? (
-                  <Button onClick={submit} className="rounded-xl bg-saffron-gradient shadow-elev hover:opacity-95">
-                    Submit Application <CheckCircle2 className="h-4 w-4" />
+                  <Button
+                    onClick={submit}
+                    className="h-12 rounded-xl bg-saffron-gradient text-[15px] font-semibold shadow-elev hover:opacity-95 sm:h-10 sm:text-sm sm:w-auto"
+                  >
+                    Submit <CheckCircle2 className="h-4 w-4" />
                   </Button>
                 ) : (
-                  <Button onClick={next} className="rounded-xl bg-saffron-gradient shadow-elev hover:opacity-95">
+                  <Button
+                    onClick={next}
+                    className="h-12 rounded-xl bg-saffron-gradient text-[15px] font-semibold shadow-elev hover:opacity-95 sm:h-10 sm:text-sm sm:w-auto"
+                  >
                     Next <ChevronRight className="h-4 w-4" />
                   </Button>
                 )}
