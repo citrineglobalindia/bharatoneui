@@ -27,12 +27,6 @@ function LoginPage() {
         <div className="relative p-5 sm:p-10 md:p-14 bg-tricolor">
           <div className="flex items-center justify-between gap-3 md:block">
             <BharatOneLogo size="md" />
-            <div className="inline-flex items-center gap-1.5 rounded-full border border-accent bg-white/70 backdrop-blur px-2.5 py-1 text-[10px] font-semibold text-primary shadow-soft md:hidden">
-              <ShieldCheck className="h-3 w-3" /> Secure Portal
-            </div>
-          </div>
-          <div className="mt-6 hidden md:inline-flex items-center gap-2 rounded-full border border-accent bg-white/70 backdrop-blur px-3 py-1.5 text-xs font-semibold text-primary shadow-soft">
-            <ShieldCheck className="h-3.5 w-3.5" /> Secure Retailer Portal
           </div>
           <h1 className="font-display mt-4 md:mt-6 text-[26px] sm:text-5xl font-extrabold tracking-tight text-foreground leading-[1.1]">
             Empowering India&rsquo;s{" "}
