@@ -23,6 +23,7 @@ import {
   Navigation,
   CheckCircle2,
   FileText,
+  CreditCard,
 } from "lucide-react";
 import { BharatOneLogo } from "@/components/bharatone-logo";
 import { Button } from "@/components/ui/button";
@@ -34,7 +35,8 @@ import { BusinessStep } from "@/components/register/steps/business";
 import { KycDocsStep } from "@/components/register/steps/kyc-docs";
 import { VideoKycStep } from "@/components/register/steps/video-kyc";
 import { SelfieStep } from "@/components/register/steps/selfie";
-import { SuccessStep } from "@/components/register/steps/success";
+import { SuccessStep, buildSubmission, type SubmissionInfo } from "@/components/register/steps/success";
+import { PaymentStep, type PaymentData } from "@/components/register/steps/payment";
 
 const searchSchema = z.object({
   type: z.enum(["old", "new"]).optional().default("new"),
@@ -61,6 +63,7 @@ const newSteps: Step[] = [
   { key: "business", label: "Business", icon: Building2 },
   { key: "kyc", label: "KYC Docs", icon: Upload },
   { key: "video", label: "Video KYC", icon: Video },
+  { key: "payment", label: "Payment", icon: CreditCard },
   { key: "selfie", label: "Selfie & Submit", icon: Camera },
 ];
 
@@ -70,6 +73,7 @@ const oldSteps: Step[] = [
   { key: "business", label: "Business", icon: Building2 },
   { key: "kyc", label: "KYC Docs", icon: Upload },
   { key: "video", label: "Video KYC", icon: Video },
+  { key: "payment", label: "Payment", icon: CreditCard },
   { key: "selfie", label: "Selfie & Submit", icon: Camera },
 ];
 
@@ -79,6 +83,8 @@ function RegisterPage() {
   const steps = type === "old" ? oldSteps : newSteps;
   const [current, setCurrent] = useState(0);
   const [done, setDone] = useState(false);
+  const [payment, setPayment] = useState<PaymentData>({ utr: "" });
+  const [submission, setSubmission] = useState<SubmissionInfo | null>(null);
 
   const heading = type === "old" ? "Old JSKO Onboarding" : "New Retailer Registration";
   const subheading =
@@ -88,7 +94,10 @@ function RegisterPage() {
 
   const next = () => setCurrent((c) => Math.min(c + 1, steps.length - 1));
   const prev = () => setCurrent((c) => Math.max(c - 1, 0));
-  const submit = () => setDone(true);
+  const submit = () => {
+    setSubmission(buildSubmission(payment.utr, heading));
+    setDone(true);
+  };
 
   const StepBody = useMemo(() => {
     const key = steps[current].key;
@@ -105,13 +114,15 @@ function RegisterPage() {
         return <KycDocsStep />;
       case "video":
         return <VideoKycStep />;
+      case "payment":
+        return <PaymentStep value={payment} onChange={setPayment} planLabel={heading} />;
       case "selfie":
         return <SelfieStep />;
       default:
         return null;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [current, type]);
+  }, [current, type, payment]);
 
   return (
     <div className="min-h-screen bg-tricolor">
@@ -161,8 +172,8 @@ function RegisterPage() {
         </div>
 
         <div className="mt-5 sm:mt-6 rounded-2xl border border-border bg-card p-4 sm:p-6 md:p-8 shadow-elev">
-          {done ? (
-            <SuccessStep />
+          {done && submission ? (
+            <SuccessStep info={submission} />
           ) : (
             <>
               {StepBody}
