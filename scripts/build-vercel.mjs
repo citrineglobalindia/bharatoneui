@@ -1,5 +1,6 @@
-// Restructures `dist/` (TanStack Start output) into Vercel's Build Output API
-// format at `.vercel/output/`. Runs after `vite build`.
+// Restructures dist/ into Vercel Build Output API format and esbuild-bundles
+// dist/server/server.js into a single self-contained file (no node_modules needed).
+import { build as esbuild } from "esbuild";
 import { cp, mkdir, readdir, rm, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -20,10 +21,22 @@ await mkdir(out, { recursive: true });
 await cp(join(dist, "client"), join(out, "static"), { recursive: true });
 
 await mkdir(fnDir, { recursive: true });
-await cp(join(dist, "server"), join(fnDir, "dist", "server"), { recursive: true });
+await esbuild({
+  entryPoints: [join(dist, "server", "server.js")],
+  bundle: true,
+  platform: "node",
+  format: "esm",
+  target: "node20",
+  outfile: join(fnDir, "server.js"),
+  banner: {
+    js: 'import { createRequire as __cr } from "node:module"; const require = __cr(import.meta.url);',
+  },
+  logLevel: "info",
+});
+console.log("[build-vercel] esbuild bundled server.js");
 
 const adapter = `// Vercel Node serverless function adapter
-import server from "./dist/server/server.js";
+import server from "./server.js";
 
 export default async function handler(req, res) {
   try {
