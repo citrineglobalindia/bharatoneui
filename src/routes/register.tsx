@@ -114,13 +114,13 @@ function RegisterPage() {
   }, [current, type]);
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card">
-        <div className="relative mx-auto flex h-16 max-w-5xl items-center justify-center px-6">
+    <div className="min-h-screen bg-tricolor">
+      <header className="sticky top-0 z-30 border-b border-border bg-card/80 backdrop-blur-md">
+        <div className="relative mx-auto flex h-16 max-w-5xl items-center justify-center px-4 sm:px-6">
           <Link
             to="/"
             aria-label="Go back"
-            className="absolute left-6 inline-flex h-9 w-9 items-center justify-center rounded-md text-foreground transition-colors hover:bg-muted"
+            className="absolute left-3 sm:left-6 inline-flex h-9 w-9 items-center justify-center rounded-lg text-foreground transition-colors hover:bg-muted"
           >
             <ArrowLeft className="h-5 w-5" />
           </Link>
@@ -128,22 +128,24 @@ function RegisterPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-6 py-10">
-        <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
-          JSKO / Retailer Registration
+      <main className="mx-auto max-w-5xl px-4 sm:px-6 py-6 sm:py-10">
+        <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-foreground">
+          JSKO / Retailer{" "}
+          <span className="bg-saffron-gradient bg-clip-text text-transparent">Registration</span>
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
           Choose your onboarding type and complete the required verification steps.
         </p>
 
-        <div className="mt-8 flex items-start justify-between gap-4">
+        <div className="mt-6 sm:mt-8 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h2 className="text-xl font-bold text-foreground">{heading}</h2>
+            <h2 className="font-display text-lg sm:text-xl font-bold text-foreground">{heading}</h2>
             <p className="mt-1 text-sm text-muted-foreground">{subheading}</p>
           </div>
           <Button
             variant="outline"
             size="sm"
+            className="self-start rounded-lg"
             onClick={() =>
               navigate({
                 search: { type: type === "old" ? "new" : "old" },
@@ -154,26 +156,26 @@ function RegisterPage() {
           </Button>
         </div>
 
-        <div className="mt-6">
+        <div className="mt-5 sm:mt-6">
           <Stepper steps={steps} current={current} />
         </div>
 
-        <div className="mt-6 rounded-2xl border border-border bg-card p-6 md:p-8 shadow-sm">
+        <div className="mt-5 sm:mt-6 rounded-2xl border border-border bg-card p-4 sm:p-6 md:p-8 shadow-elev">
           {done ? (
             <SuccessStep />
           ) : (
             <>
               {StepBody}
-              <div className="mt-8 flex items-center justify-between border-t border-border pt-5">
-                <Button variant="outline" onClick={prev} disabled={current === 0}>
+              <div className="mt-8 flex items-center justify-between gap-3 border-t border-border pt-5">
+                <Button variant="outline" onClick={prev} disabled={current === 0} className="rounded-xl">
                   <ChevronLeft className="h-4 w-4" /> Back
                 </Button>
                 {current === steps.length - 1 ? (
-                  <Button onClick={submit} className="bg-primary/70 hover:bg-primary">
+                  <Button onClick={submit} className="rounded-xl bg-saffron-gradient shadow-elev hover:opacity-95">
                     Submit Application <CheckCircle2 className="h-4 w-4" />
                   </Button>
                 ) : (
-                  <Button onClick={next} className="bg-primary/70 hover:bg-primary">
+                  <Button onClick={next} className="rounded-xl bg-saffron-gradient shadow-elev hover:opacity-95">
                     Next <ChevronRight className="h-4 w-4" />
                   </Button>
                 )}
@@ -181,6 +183,9 @@ function RegisterPage() {
             </>
           )}
         </div>
+        <p className="mt-4 text-center text-xs text-muted-foreground">
+          🛡 Secured by BharatOne · All KYC data is encrypted in transit
+        </p>
       </main>
     </div>
   );
