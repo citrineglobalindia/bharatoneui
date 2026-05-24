@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { lazy, Suspense, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { z } from "zod";
 import {
   ArrowLeft,
@@ -30,9 +30,7 @@ import { Stepper, type Step } from "@/components/register/stepper";
 import { OldPortalStep } from "@/components/register/steps/old-portal";
 import { AccountStep } from "@/components/register/steps/account";
 import { PersonalStep } from "@/components/register/steps/personal";
-const BusinessStep = lazy(() =>
-  import("@/components/register/steps/business").then((m) => ({ default: m.BusinessStep })),
-);
+import { BusinessStep } from "@/components/register/steps/business";
 import { KycDocsStep } from "@/components/register/steps/kyc-docs";
 import { VideoKycStep } from "@/components/register/steps/video-kyc";
 import { SelfieStep } from "@/components/register/steps/selfie";
@@ -102,11 +100,7 @@ function RegisterPage() {
       case "personal":
         return <PersonalStep />;
       case "business":
-        return (
-          <Suspense fallback={<div className="py-10 text-center text-sm text-muted-foreground">Loading map…</div>}>
-            <BusinessStep />
-          </Suspense>
-        );
+        return <BusinessStep />;
       case "kyc":
         return <KycDocsStep />;
       case "video":
