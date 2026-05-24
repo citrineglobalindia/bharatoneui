@@ -30,7 +30,7 @@ export function Field({
 }
 
 export const inputCls =
-  "h-11 w-full rounded-lg border border-input bg-background px-3 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:border-primary transition";
+  "h-11 w-full rounded-xl border border-input bg-background px-3.5 text-sm placeholder:text-muted-foreground shadow-soft transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring/15 focus-visible:border-primary";
 
 export function SectionCard({
   title,
@@ -42,8 +42,8 @@ export function SectionCard({
   children: ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-background/40 p-5">
-      <h3 className="flex items-center gap-2 text-base font-bold text-foreground">
+    <div className="rounded-2xl border border-border bg-background/60 p-4 sm:p-5 shadow-soft">
+      <h3 className="font-display flex items-center gap-2 text-base font-bold text-foreground">
         <span className="text-primary">{icon}</span>
         {title}
       </h3>
@@ -76,11 +76,13 @@ export function Notice({
 export function StepHeader({ icon, title, description }: { icon: ReactNode; title: string; description: string }) {
   return (
     <div>
-      <h2 className="flex items-center gap-2 text-xl font-bold text-foreground">
-        <span className="text-primary">{icon}</span>
+      <h2 className="font-display flex items-center gap-2.5 text-xl sm:text-2xl font-bold text-foreground">
+        <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-saffron-gradient text-white shadow-elev">
+          {icon}
+        </span>
         {title}
       </h2>
-      <p className="mt-2 text-sm text-muted-foreground">{description}</p>
+      <p className="mt-2 text-sm sm:text-[15px] text-muted-foreground">{description}</p>
     </div>
   );
 }
