@@ -22,14 +22,14 @@ function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   return (
     <div className="relative min-h-screen bg-tricolor flex items-center justify-center p-3 sm:p-6 lg:p-10 overflow-hidden">
-      {/* Ambient glow */}
+      {/* Ambient glow (static — animating blurred layers tanks performance) */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-32 -left-24 h-80 w-80 rounded-full bg-saffron-gradient opacity-25 blur-3xl animate-pulse"
+        className="pointer-events-none absolute -top-32 -left-24 h-80 w-80 rounded-full bg-saffron-gradient opacity-20 blur-3xl"
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute -bottom-32 -right-24 h-96 w-96 rounded-full bg-emerald-300/30 blur-3xl animate-pulse [animation-delay:1.2s]"
+        className="pointer-events-none absolute -bottom-32 -right-24 h-96 w-96 rounded-full bg-emerald-300/25 blur-3xl"
       />
 
       <div className="relative w-full max-w-6xl overflow-hidden rounded-2xl border border-border bg-card shadow-elev grid md:grid-cols-2 animate-in fade-in zoom-in-95 duration-500">
