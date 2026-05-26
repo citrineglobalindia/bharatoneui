@@ -37,6 +37,7 @@ import { VideoKycStep } from "@/components/register/steps/video-kyc";
 import { SelfieStep } from "@/components/register/steps/selfie";
 import { SuccessStep, buildSubmission, type SubmissionInfo } from "@/components/register/steps/success";
 import { PaymentStep, type PaymentData } from "@/components/register/steps/payment";
+import { DistributorEntityStep } from "@/components/register/steps/distributor-entity";
 
 const searchSchema = z.object({
   type: z.enum(["old", "new", "distributor"]).optional().default("new"),
@@ -114,7 +115,7 @@ function RegisterPage() {
       case "account":
         return <AccountStep />;
       case "personal":
-        return <PersonalStep />;
+        return type === "distributor" ? <DistributorEntityStep /> : <PersonalStep />;
       case "business":
         return <BusinessStep />;
       case "kyc":
