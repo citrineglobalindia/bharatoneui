@@ -22,14 +22,14 @@ function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   return (
     <div className="relative min-h-screen bg-tricolor flex items-center justify-center p-3 sm:p-6 lg:p-10 overflow-hidden">
-      {/* Ambient glow */}
+      {/* Ambient glow (static — animating blurred layers tanks performance) */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-32 -left-24 h-80 w-80 rounded-full bg-saffron-gradient opacity-25 blur-3xl animate-pulse"
+        className="pointer-events-none absolute -top-32 -left-24 h-80 w-80 rounded-full bg-saffron-gradient opacity-20 blur-3xl"
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute -bottom-32 -right-24 h-96 w-96 rounded-full bg-emerald-300/30 blur-3xl animate-pulse [animation-delay:1.2s]"
+        className="pointer-events-none absolute -bottom-32 -right-24 h-96 w-96 rounded-full bg-emerald-300/25 blur-3xl"
       />
 
       <div className="relative w-full max-w-6xl overflow-hidden rounded-2xl border border-border bg-card shadow-elev grid md:grid-cols-2 animate-in fade-in zoom-in-95 duration-500">
@@ -131,7 +131,7 @@ function LoginPage() {
             className="group flex items-center justify-between gap-3 rounded-xl border-2 border-dashed border-saffron/40 bg-saffron/5 px-4 py-3.5 transition-all hover:border-saffron hover:bg-saffron/10 hover:shadow-soft"
           >
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-saffron-gradient text-white shadow-elev transition-transform group-hover:scale-110 group-hover:rotate-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-saffron-gradient text-white shadow-elev transition-transform duration-200 group-hover:scale-105">
                 <UserPlus className="h-5 w-5" />
               </div>
               <div className="text-left">

@@ -31,14 +31,14 @@ function Index() {
   const navigate = useNavigate();
   return (
     <div className="relative min-h-screen overflow-hidden bg-tricolor">
-      {/* Ambient decoration */}
+      {/* Ambient decoration (static, low blur for perf) */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-32 -right-24 h-80 w-80 rounded-full bg-saffron-gradient opacity-20 blur-3xl"
+        className="pointer-events-none absolute -top-32 -right-24 h-72 w-72 rounded-full bg-saffron-gradient opacity-15 blur-2xl"
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute top-40 -left-24 h-72 w-72 rounded-full bg-emerald-300/30 blur-3xl"
+        className="pointer-events-none absolute top-40 -left-24 h-64 w-64 rounded-full bg-emerald-300/20 blur-2xl"
       />
 
       <header className="sticky top-0 z-30 border-b border-border bg-card/80 backdrop-blur-md">
@@ -169,11 +169,11 @@ function OnboardingCard({
     >
       <div
         aria-hidden
-        className={`absolute -right-16 -top-16 h-40 w-40 rounded-full bg-gradient-to-br ${accent} opacity-10 blur-2xl transition-all duration-500 group-hover:opacity-30 group-hover:scale-125`}
+        className={`absolute -right-16 -top-16 h-40 w-40 rounded-full bg-gradient-to-br ${accent} opacity-10 blur-2xl transition-opacity duration-300 group-hover:opacity-25`}
       />
       <div className="relative flex items-start justify-between">
         <div
-          className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${accent} text-white shadow-elev transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3`}
+          className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${accent} text-white shadow-elev transition-transform duration-200 group-hover:scale-105`}
         >
           {icon}
         </div>
@@ -206,7 +206,7 @@ function TrustItem({
   note: string;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-border bg-card/70 backdrop-blur px-4 py-3 shadow-soft">
+    <div className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-soft">
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-saffron-gradient text-white">
         {icon}
       </div>
