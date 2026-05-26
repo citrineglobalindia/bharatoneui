@@ -55,7 +55,7 @@ function Index() {
       </header>
 
       <main className="relative mx-auto max-w-6xl px-4 sm:px-6 py-8 sm:py-14">
-        <div className="text-center sm:text-left">
+        <div className="text-center sm:text-left animate-in fade-in slide-in-from-bottom-3 duration-500">
           <div className="inline-flex items-center gap-2 rounded-full border border-accent bg-white/80 backdrop-blur px-3 py-1.5 text-xs font-semibold text-saffron shadow-soft">
             <Sparkles className="h-3.5 w-3.5" /> Onboarding Portal
           </div>
@@ -74,6 +74,7 @@ function Index() {
 
         <div className="mt-7 sm:mt-10 grid gap-4 sm:gap-5 sm:grid-cols-2 lg:grid-cols-3">
           <OnboardingCard
+            delay={120}
             icon={<UserCheck className="h-6 w-6" />}
             title="Old JSKO Onboarding"
             description="Migrate your existing JSKO account from the legacy portal."
@@ -83,6 +84,7 @@ function Index() {
             onClick={() => navigate({ to: "/register", search: { type: "old" } })}
           />
           <OnboardingCard
+            delay={240}
             icon={<Store className="h-6 w-6" />}
             title="New Retailer Registration"
             description="For new retailers registering directly on the BharatOne portal."
@@ -93,6 +95,7 @@ function Index() {
             onClick={() => navigate({ to: "/register", search: { type: "new" } })}
           />
           <OnboardingCard
+            delay={360}
             icon={<Truck className="h-6 w-6" />}
             title="Distributor Onboarding"
             description="Register as an authorised BharatOne distributor with GST & territory."
@@ -134,6 +137,7 @@ function OnboardingCard({
   badgeTone = "emerald",
   accent = "from-orange-500 to-rose-500",
   featured = false,
+  delay = 0,
   onClick,
 }: {
   icon: React.ReactNode;
@@ -143,6 +147,7 @@ function OnboardingCard({
   badgeTone?: "emerald" | "saffron" | "blue";
   accent?: string;
   featured?: boolean;
+  delay?: number;
   onClick?: () => void;
 }) {
   const badgeCls =
@@ -155,7 +160,8 @@ function OnboardingCard({
     <button
       type="button"
       onClick={onClick}
-      className={`group relative flex h-full flex-col overflow-hidden rounded-2xl border bg-card p-6 sm:p-7 text-left shadow-soft transition-all duration-300 hover:-translate-y-1.5 hover:shadow-elev ${
+      style={{ animationDelay: `${delay}ms` }}
+      className={`group relative flex h-full flex-col overflow-hidden rounded-2xl border bg-card p-6 sm:p-7 text-left shadow-soft transition-all duration-300 hover:-translate-y-1.5 hover:shadow-elev animate-in fade-in slide-in-from-bottom-4 fill-mode-both duration-500 ${
         featured
           ? "border-saffron/40 ring-1 ring-saffron/20"
           : "border-border hover:border-saffron/40"
