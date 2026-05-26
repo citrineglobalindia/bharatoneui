@@ -216,8 +216,12 @@ export function SuccessStep({ info }: { info: SubmissionInfo }) {
       <div className="relative mt-6 flex justify-center">
         <div
           ref={receiptRef}
-          className="relative w-full max-w-[460px] overflow-hidden rounded-2xl border border-border bg-white shadow-elev"
-          style={{ colorScheme: "light" }}
+          className="relative w-full max-w-[460px] overflow-hidden rounded-2xl bg-white shadow-elev"
+          style={{
+            colorScheme: "light",
+            color: "#111827",
+            border: "1px solid #E5E7EB",
+          }}
         >
           {/* Tricolor strip */}
           <div className="flex h-1.5 w-full">
