@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowLeft,
@@ -14,9 +14,6 @@ import {
 import { BharatOneLogo } from "@/components/bharatone-logo";
 
 export const Route = createFileRoute("/get-started")({
-  beforeLoad: () => {
-    throw redirect({ to: "/login" });
-  },
   head: () => ({
     meta: [
       { title: "JSKO / Retailer Registration — BharatOne" },

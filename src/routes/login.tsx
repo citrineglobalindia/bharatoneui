@@ -127,7 +127,7 @@ function LoginPage() {
 
           {/* Register CTA */}
           <Link
-            to="/"
+            to="/get-started"
             className="group flex items-center justify-between gap-3 rounded-xl border-2 border-dashed border-saffron/40 bg-saffron/5 px-4 py-3.5 transition-all hover:border-saffron hover:bg-saffron/10 hover:shadow-soft"
           >
             <div className="flex items-center gap-3">
