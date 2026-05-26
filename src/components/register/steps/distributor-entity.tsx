@@ -170,10 +170,6 @@ export function DistributorEntityStep() {
         </>
       )}
 
-      <div className="rounded-lg border border-border bg-muted/50 px-4 py-3 text-sm text-muted-foreground space-y-1">
-        <div className="flex items-center gap-2"><Mail className="h-4 w-4 text-primary" /> Email: <span className="text-foreground font-medium">sada@gmail.com</span></div>
-        <div className="flex items-center gap-2"><Phone className="h-4 w-4 text-primary" /> Mobile: <span className="text-foreground font-medium">+91 8652468799</span></div>
-      </div>
     </div>
   );
 }
