@@ -39,7 +39,7 @@ import { SuccessStep, buildSubmission, type SubmissionInfo } from "@/components/
 import { PaymentStep, type PaymentData } from "@/components/register/steps/payment";
 
 const searchSchema = z.object({
-  type: z.enum(["old", "new"]).optional().default("new"),
+  type: z.enum(["old", "new", "distributor"]).optional().default("new"),
 });
 
 export const Route = createFileRoute("/register")({
@@ -86,11 +86,18 @@ function RegisterPage() {
   const [payment, setPayment] = useState<PaymentData>({ utr: "" });
   const [submission, setSubmission] = useState<SubmissionInfo | null>(null);
 
-  const heading = type === "old" ? "Old JSKO Onboarding" : "New Retailer Registration";
+  const heading =
+    type === "old"
+      ? "Old JSKO Onboarding"
+      : type === "distributor"
+        ? "Distributor Onboarding"
+        : "New Retailer Registration";
   const subheading =
     type === "old"
       ? "Complete the steps below to migrate your existing JSKO account to the BharatOne portal."
-      : "Complete the standard retailer registration with account, KYC, shop details, and location.";
+      : type === "distributor"
+        ? "Register as an authorised BharatOne distributor — verify your firm, GST and territory details."
+        : "Complete the standard retailer registration with account, KYC, shop details, and location.";
 
   const next = () => setCurrent((c) => Math.min(c + 1, steps.length - 1));
   const prev = () => setCurrent((c) => Math.max(c - 1, 0));
@@ -157,11 +164,7 @@ function RegisterPage() {
             variant="outline"
             size="sm"
             className="self-start rounded-lg h-8 text-xs"
-            onClick={() =>
-              navigate({
-                search: { type: type === "old" ? "new" : "old" },
-              })
-            }
+            onClick={() => navigate({ to: "/" })}
           >
             Change Option
           </Button>
