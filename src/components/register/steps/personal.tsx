@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { User, Eye, EyeOff, Mail, Phone } from "lucide-react";
+import { User, Eye, EyeOff } from "lucide-react";
 import { Field, inputCls, StepHeader } from "../field";
 
 export function PersonalStep() {
