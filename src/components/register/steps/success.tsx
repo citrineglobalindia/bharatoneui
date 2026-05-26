@@ -93,6 +93,36 @@ export function SuccessStep({ info }: { info: SubmissionInfo }) {
       scale: 2,
       useCORS: true,
       logging: false,
+      onclone: (doc, clonedNode) => {
+        // Tailwind v4 emits oklch() which html2canvas can't parse.
+        // Walk the cloned subtree and replace any oklch color with a sRGB hex.
+        const root = clonedNode as HTMLElement;
+        const all = [root, ...Array.from(root.querySelectorAll<HTMLElement>("*"))];
+        const props = [
+          "color",
+          "backgroundColor",
+          "borderTopColor",
+          "borderRightColor",
+          "borderBottomColor",
+          "borderLeftColor",
+          "outlineColor",
+          "fill",
+          "stroke",
+        ] as const;
+        for (const el of all) {
+          const cs = doc.defaultView!.getComputedStyle(el);
+          for (const p of props) {
+            const v = cs[p as any] as string;
+            if (v && v.includes("oklch")) {
+              // Fallback: transparent for backgrounds, currentColor-ish dark for text.
+              if (p === "backgroundColor") el.style.backgroundColor = "transparent";
+              else if (p.startsWith("border") || p === "outlineColor")
+                el.style.setProperty(p.replace(/[A-Z]/g, (m) => "-" + m.toLowerCase()), "#E5E7EB");
+              else el.style.setProperty(p, "#111827");
+            }
+          }
+        }
+      },
     });
   };
 
@@ -216,8 +246,12 @@ export function SuccessStep({ info }: { info: SubmissionInfo }) {
       <div className="relative mt-6 flex justify-center">
         <div
           ref={receiptRef}
-          className="relative w-full max-w-[460px] overflow-hidden rounded-2xl border border-border bg-white shadow-elev"
-          style={{ colorScheme: "light" }}
+          className="relative w-full max-w-[460px] overflow-hidden rounded-2xl bg-white shadow-elev"
+          style={{
+            colorScheme: "light",
+            color: "#111827",
+            border: "1px solid #E5E7EB",
+          }}
         >
           {/* Tricolor strip */}
           <div className="flex h-1.5 w-full">
