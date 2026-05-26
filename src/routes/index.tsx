@@ -31,14 +31,14 @@ function Index() {
   const navigate = useNavigate();
   return (
     <div className="relative min-h-screen overflow-hidden bg-tricolor">
-      {/* Ambient decoration */}
+      {/* Ambient decoration (static, low blur for perf) */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-32 -right-24 h-80 w-80 rounded-full bg-saffron-gradient opacity-20 blur-3xl"
+        className="pointer-events-none absolute -top-32 -right-24 h-72 w-72 rounded-full bg-saffron-gradient opacity-15 blur-2xl"
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute top-40 -left-24 h-72 w-72 rounded-full bg-emerald-300/30 blur-3xl"
+        className="pointer-events-none absolute top-40 -left-24 h-64 w-64 rounded-full bg-emerald-300/20 blur-2xl"
       />
 
       <header className="sticky top-0 z-30 border-b border-border bg-card/80 backdrop-blur-md">
