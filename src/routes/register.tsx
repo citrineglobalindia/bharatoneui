@@ -148,7 +148,7 @@ function RegisterPage() {
 
       <main className="mx-auto max-w-5xl px-4 sm:px-6 py-5 sm:py-10 pb-28 sm:pb-12">
         <h1 className="font-display text-[22px] sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-foreground leading-tight">
-          JSKO / Retailer{" "}
+          {type === "distributor" ? "Distributor" : type === "old" ? "JSKO" : "New Retailer"}{" "}
           <span className="bg-saffron-gradient bg-clip-text text-transparent">Registration</span>
         </h1>
         <p className="mt-1.5 text-[13px] sm:text-sm text-muted-foreground">
