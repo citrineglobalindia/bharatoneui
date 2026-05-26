@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { User, Lock, Eye, EyeOff, ShieldCheck } from "lucide-react";
+import { User, Lock, Eye, EyeOff, ShieldCheck, UserPlus, ArrowRight, Sparkles } from "lucide-react";
 import { BharatOneLogo } from "@/components/bharatone-logo";
 import { Button } from "@/components/ui/button";
 
@@ -21,10 +21,20 @@ export const Route = createFileRoute("/login")({
 function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   return (
-    <div className="min-h-screen bg-tricolor flex items-center justify-center p-3 sm:p-6 lg:p-10">
-      <div className="w-full max-w-6xl overflow-hidden rounded-2xl border border-border bg-card shadow-elev grid md:grid-cols-2">
+    <div className="relative min-h-screen bg-tricolor flex items-center justify-center p-3 sm:p-6 lg:p-10 overflow-hidden">
+      {/* Ambient glow */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-32 -left-24 h-80 w-80 rounded-full bg-saffron-gradient opacity-25 blur-3xl animate-pulse"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -bottom-32 -right-24 h-96 w-96 rounded-full bg-emerald-300/30 blur-3xl animate-pulse [animation-delay:1.2s]"
+      />
+
+      <div className="relative w-full max-w-6xl overflow-hidden rounded-2xl border border-border bg-card shadow-elev grid md:grid-cols-2 animate-in fade-in zoom-in-95 duration-500">
         {/* Left */}
-        <div className="relative p-5 sm:p-10 md:p-14 bg-tricolor">
+        <div className="relative p-5 sm:p-10 md:p-14 bg-tricolor animate-in fade-in slide-in-from-left-4 duration-700">
           <div className="flex items-center justify-between gap-3 md:block">
             <BharatOneLogo size="md" />
           </div>
@@ -40,8 +50,12 @@ function LoginPage() {
               { v: "10K+", l: "Retailers" },
               { v: "50+", l: "Services" },
               { v: "99.9%", l: "Uptime" },
-            ].map((s) => (
-              <div key={s.l} className="rounded-xl border border-border bg-card/80 backdrop-blur px-2 py-2.5 sm:px-3 sm:py-3 text-center shadow-soft">
+            ].map((s, i) => (
+              <div
+                key={s.l}
+                style={{ animationDelay: `${300 + i * 120}ms` }}
+                className="rounded-xl border border-border bg-card/80 backdrop-blur px-2 py-2.5 sm:px-3 sm:py-3 text-center shadow-soft animate-in fade-in slide-in-from-bottom-2 fill-mode-both duration-500 transition-transform hover:-translate-y-0.5 hover:shadow-elev"
+              >
                 <div className="font-display text-base sm:text-xl font-extrabold text-foreground">{s.v}</div>
                 <div className="mt-0.5 text-[9px] sm:text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{s.l}</div>
               </div>
@@ -53,14 +67,17 @@ function LoginPage() {
         </div>
 
         {/* Right */}
-        <div className="p-5 sm:p-10 md:p-14 border-t border-border md:border-t-0">
-          <h2 className="font-display text-2xl sm:text-4xl font-extrabold tracking-tight text-foreground">Welcome back</h2>
+        <div className="p-5 sm:p-10 md:p-14 border-t border-border md:border-t-0 animate-in fade-in slide-in-from-right-4 duration-700">
+          <div className="inline-flex items-center gap-1.5 rounded-full border border-accent bg-white/80 backdrop-blur px-2.5 py-1 text-[11px] font-semibold text-saffron shadow-soft">
+            <Sparkles className="h-3 w-3" /> Secure Login
+          </div>
+          <h2 className="font-display mt-3 text-2xl sm:text-4xl font-extrabold tracking-tight text-foreground">Welcome back</h2>
           <p className="mt-1 text-sm text-muted-foreground">Sign in to your BharatOne account</p>
 
-          <form className="mt-8 space-y-5" onSubmit={(e) => e.preventDefault()}>
+          <form className="mt-7 space-y-5" onSubmit={(e) => e.preventDefault()}>
             <div>
               <label className="text-xs font-semibold tracking-[0.14em] text-foreground">USERNAME</label>
-              <div className="mt-2 relative">
+              <div className="mt-2 relative group">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <input
                   className="h-12 w-full rounded-xl border border-input bg-background pl-10 pr-3 text-sm shadow-soft transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring/15 focus-visible:border-primary"
@@ -70,7 +87,7 @@ function LoginPage() {
             </div>
             <div>
               <label className="text-xs font-semibold tracking-[0.14em] text-foreground">PASSWORD</label>
-              <div className="mt-2 relative">
+              <div className="mt-2 relative group">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <input
                   type={showPassword ? "text" : "password"}
@@ -95,24 +112,40 @@ function LoginPage() {
             </div>
             <Button
               type="submit"
-              className="h-12 w-full rounded-xl bg-saffron-gradient text-base font-semibold shadow-elev hover:opacity-95 transition"
+              className="h-12 w-full rounded-xl bg-saffron-gradient text-base font-semibold shadow-elev hover:opacity-95 hover:scale-[1.01] active:scale-[0.99] transition-transform"
             >
               <ShieldCheck className="h-4 w-4" /> Sign In Securely
             </Button>
           </form>
 
-          <div className="mt-8 border-t border-border pt-5 text-center text-sm">
-            <p className="text-muted-foreground">
-              Old portal user?{" "}
-              <Link to="/register" search={{ type: "old" }} className="font-semibold text-saffron hover:underline">
-                Register &amp; migrate →
-              </Link>
-            </p>
-            <p className="mt-2 text-muted-foreground">
-              Awaiting approval?{" "}
-              <a href="#" className="font-semibold text-saffron hover:underline">Track application</a>
-            </p>
+          {/* Divider */}
+          <div className="relative my-6 flex items-center">
+            <div className="flex-grow border-t border-border" />
+            <span className="mx-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">New to BharatOne?</span>
+            <div className="flex-grow border-t border-border" />
           </div>
+
+          {/* Register CTA */}
+          <Link
+            to="/"
+            className="group flex items-center justify-between gap-3 rounded-xl border-2 border-dashed border-saffron/40 bg-saffron/5 px-4 py-3.5 transition-all hover:border-saffron hover:bg-saffron/10 hover:shadow-soft"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-saffron-gradient text-white shadow-elev transition-transform group-hover:scale-110 group-hover:rotate-3">
+                <UserPlus className="h-5 w-5" />
+              </div>
+              <div className="text-left">
+                <p className="text-sm font-bold text-foreground">Create new account</p>
+                <p className="text-[11px] text-muted-foreground">Retailer · Distributor · JSKO migration</p>
+              </div>
+            </div>
+            <ArrowRight className="h-4 w-4 text-saffron transition-transform group-hover:translate-x-1" />
+          </Link>
+
+          <p className="mt-4 text-center text-xs text-muted-foreground">
+            Awaiting approval?{" "}
+            <a href="#" className="font-semibold text-saffron hover:underline">Track application →</a>
+          </p>
         </div>
       </div>
     </div>
