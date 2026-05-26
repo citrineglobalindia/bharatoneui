@@ -131,7 +131,7 @@ function LoginPage() {
             className="group flex items-center justify-between gap-3 rounded-xl border-2 border-dashed border-saffron/40 bg-saffron/5 px-4 py-3.5 transition-all hover:border-saffron hover:bg-saffron/10 hover:shadow-soft"
           >
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-saffron-gradient text-white shadow-elev transition-transform group-hover:scale-110 group-hover:rotate-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-saffron-gradient text-white shadow-elev transition-transform duration-200 group-hover:scale-105">
                 <UserPlus className="h-5 w-5" />
               </div>
               <div className="text-left">
