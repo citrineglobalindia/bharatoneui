@@ -169,11 +169,11 @@ function OnboardingCard({
     >
       <div
         aria-hidden
-        className={`absolute -right-16 -top-16 h-40 w-40 rounded-full bg-gradient-to-br ${accent} opacity-10 blur-2xl transition-all duration-500 group-hover:opacity-30 group-hover:scale-125`}
+        className={`absolute -right-16 -top-16 h-40 w-40 rounded-full bg-gradient-to-br ${accent} opacity-10 blur-2xl transition-opacity duration-300 group-hover:opacity-25`}
       />
       <div className="relative flex items-start justify-between">
         <div
-          className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${accent} text-white shadow-elev transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3`}
+          className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${accent} text-white shadow-elev transition-transform duration-200 group-hover:scale-105`}
         >
           {icon}
         </div>
@@ -206,7 +206,7 @@ function TrustItem({
   note: string;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-border bg-card/70 backdrop-blur px-4 py-3 shadow-soft">
+    <div className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-soft">
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-saffron-gradient text-white">
         {icon}
       </div>
