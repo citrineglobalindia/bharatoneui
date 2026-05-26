@@ -42,12 +42,12 @@ function genId(prefix: string) {
   return `${prefix}-${t}-${r}`;
 }
 
-export function buildSubmission(utr: string, plan: string): SubmissionInfo {
+export function buildSubmission(utr: string, plan: string, amount = 4999): SubmissionInfo {
   return {
     applicationId: genId("BO"),
     transactionId: genId("TXN"),
     utr: utr || "—",
-    amount: "₹4,999",
+    amount: `₹${amount.toLocaleString("en-IN")}`,
     submittedAt: new Date().toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }),
     plan,
   };

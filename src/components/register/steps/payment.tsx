@@ -31,8 +31,11 @@ export type PaymentData = {
 };
 
 const UPI_ID = "MSBHARATONESERVICESANDAFFILIATESPRIVATELIMITED.eazypay@icici";
-const AMOUNT = "4999";
 const PAYEE = "Bharatone Services And Affiliates Private Limited";
+
+function formatINR(n: number) {
+  return n.toLocaleString("en-IN");
+}
 const BANK = {
   account: "847705000009",
   ifsc: "ICIC0008477",
@@ -45,20 +48,24 @@ export function PaymentStep({
   value,
   onChange,
   planLabel = "New Retailer Registration",
+  amount = 4999,
 }: {
   value: PaymentData;
   onChange: (v: PaymentData) => void;
   planLabel?: string;
+  amount?: number;
 }) {
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [fileSize, setFileSize] = useState<number | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  const amountStr = String(amount);
+  const amountDisplay = `₹${formatINR(amount)}`;
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=8&data=${encodeURIComponent(
-    `upi://pay?pa=${UPI_ID}&pn=${encodeURIComponent(PAYEE)}&am=${AMOUNT}&cu=INR&tn=KYC%20Verification`
+    `upi://pay?pa=${UPI_ID}&pn=${encodeURIComponent(PAYEE)}&am=${amountStr}&cu=INR&tn=KYC%20Verification`
   )}`;
-  const upiDeepLink = `upi://pay?pa=${UPI_ID}&pn=${encodeURIComponent(PAYEE)}&am=${AMOUNT}&cu=INR&tn=KYC%20Verification`;
+  const upiDeepLink = `upi://pay?pa=${UPI_ID}&pn=${encodeURIComponent(PAYEE)}&am=${amountStr}&cu=INR&tn=KYC%20Verification`;
 
   const copy = async (text: string, key: string) => {
     try {
@@ -105,7 +112,7 @@ export function PaymentStep({
           <div className="rounded-xl border border-border bg-card p-4">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Payable Amount</p>
             <p className="mt-1 font-display text-3xl font-extrabold bg-saffron-gradient bg-clip-text text-transparent">
-              ₹4,999
+              {amountDisplay}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">{planLabel}</p>
             <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-accent/60 px-2.5 py-1 text-[11px] font-semibold text-foreground">
@@ -169,7 +176,7 @@ export function PaymentStep({
           <BankRow icon={<ShieldCheck className="h-4 w-4" />} label="IFSC Code" value={BANK.ifsc} k="ifsc" copiedKey={copiedKey} onCopy={copy} />
           <BankRow icon={<Building2 className="h-4 w-4" />} label="Bank" value={`${BANK.bank} — ${BANK.branch}`} k="bank" copiedKey={copiedKey} onCopy={copy} mono={false} />
           <BankRow icon={<CreditCard className="h-4 w-4" />} label="Account Type" value={BANK.type} k="type" copiedKey={copiedKey} onCopy={copy} mono={false} />
-          <BankRow icon={<Hash className="h-4 w-4" />} label="Amount" value={`₹ ${AMOUNT}`} k="amt" copiedKey={copiedKey} onCopy={copy} mono={false} />
+          <BankRow icon={<Hash className="h-4 w-4" />} label="Amount" value={amountDisplay} k="amt" copiedKey={copiedKey} onCopy={copy} mono={false} />
         </div>
       </SectionCard>
 

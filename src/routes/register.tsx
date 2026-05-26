@@ -93,6 +93,7 @@ function RegisterPage() {
       : type === "distributor"
         ? "Distributor Onboarding"
         : "New Retailer Registration";
+  const amount = type === "distributor" ? 2500000 : 4999;
   const subheading =
     type === "old"
       ? "Complete the steps below to migrate your existing JSKO account to the BharatOne portal."
@@ -103,7 +104,7 @@ function RegisterPage() {
   const next = () => setCurrent((c) => Math.min(c + 1, steps.length - 1));
   const prev = () => setCurrent((c) => Math.max(c - 1, 0));
   const submit = () => {
-    setSubmission(buildSubmission(payment.utr, heading));
+    setSubmission(buildSubmission(payment.utr, heading, amount));
     setDone(true);
   };
 
@@ -123,7 +124,7 @@ function RegisterPage() {
       case "video":
         return <VideoKycStep />;
       case "payment":
-        return <PaymentStep value={payment} onChange={setPayment} planLabel={heading} />;
+        return <PaymentStep value={payment} onChange={setPayment} planLabel={heading} amount={amount} />;
       case "selfie":
         return <SelfieStep />;
       default:
