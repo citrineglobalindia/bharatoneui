@@ -22,21 +22,21 @@ export function DistributorSinglePage({ onSubmit }: { onSubmit: () => void }) {
   const [confirm, setConfirm] = useState("");
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[1fr_340px]">
+    <div className="grid gap-4 lg:grid-cols-[1fr_300px]">
       {/* LEFT — Form card */}
-      <div className="rounded-2xl border border-border bg-card p-4 sm:p-6 shadow-elev">
-        <h2 className="font-display text-lg sm:text-xl font-bold text-foreground">Add Captain</h2>
+      <div className="rounded-2xl border border-border bg-card p-3 sm:p-4 shadow-elev">
+        <h2 className="font-display text-base sm:text-lg font-bold text-foreground">Add Captain</h2>
 
-        <div className="mt-5 grid gap-4 sm:grid-cols-2">
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <Field label="Captain Name" required className="sm:col-span-2" icon={<User className="h-4 w-4" />}>
-            <input className={inputCls} placeholder="Enter Name" />
+            <input className={compactInput} placeholder="Enter Name" />
           </Field>
 
           <Field label="Date of Birth" required>
-            <input type="date" className={inputCls} placeholder="Pick a date" />
+            <input type="date" className={compactInput} placeholder="Pick a date" />
           </Field>
           <Field label="Gender" required>
-            <select className={inputCls} defaultValue="">
+            <select className={compactInput} defaultValue="">
               <option value="" disabled>Select Gender</option>
               <option>Male</option>
               <option>Female</option>
@@ -45,43 +45,43 @@ export function DistributorSinglePage({ onSubmit }: { onSubmit: () => void }) {
           </Field>
 
           <Field label="Mobile No." required icon={<Phone className="h-4 w-4" />}>
-            <input className={inputCls} placeholder="Enter Mobile Number" maxLength={10} inputMode="numeric" />
+            <input className={compactInput} placeholder="Enter Mobile Number" maxLength={10} inputMode="numeric" />
           </Field>
           <Field label="Alternate Mobile No." required icon={<Phone className="h-4 w-4" />}>
-            <input className={inputCls} placeholder="Enter Alternate Mobile Number" maxLength={10} inputMode="numeric" />
+            <input className={compactInput} placeholder="Enter Alternate Mobile Number" maxLength={10} inputMode="numeric" />
           </Field>
 
           <Field label="Email" required icon={<Mail className="h-4 w-4" />}>
-            <input type="email" className={inputCls} placeholder="Enter Email" />
+            <input type="email" className={compactInput} placeholder="Enter Email" />
           </Field>
           <Field label="PAN No." required icon={<IdCard className="h-4 w-4" />}>
-            <input className={`${inputCls} uppercase`} placeholder="Enter Pan Number" maxLength={10} />
+            <input className={`${compactInput} uppercase`} placeholder="Enter Pan Number" maxLength={10} />
           </Field>
 
           <Field label="IFSC Code" required icon={<Landmark className="h-4 w-4" />}>
-            <input className={`${inputCls} uppercase`} placeholder="Enter IFSC Code" maxLength={11} />
+            <input className={`${compactInput} uppercase`} placeholder="Enter IFSC Code" maxLength={11} />
           </Field>
           <Field label="Bank Name" required icon={<Building2 className="h-4 w-4" />}>
-            <input className={inputCls} placeholder="Enter Bank Name" />
+            <input className={compactInput} placeholder="Enter Bank Name" />
           </Field>
 
           <Field label="Bank AC Number" required icon={<Hash className="h-4 w-4" />}>
-            <input className={inputCls} placeholder="Enter Account Number" inputMode="numeric" />
+            <input className={compactInput} placeholder="Enter Account Number" inputMode="numeric" />
           </Field>
           <Field label="Confirm AC Number" required icon={<Hash className="h-4 w-4" />}>
-            <input className={inputCls} placeholder="Enter Account Number" inputMode="numeric" />
+            <input className={compactInput} placeholder="Enter Account Number" inputMode="numeric" />
           </Field>
         </div>
 
-        <div className="mt-5">
+        <div className="mt-4">
           <h3 className="text-sm font-semibold text-foreground">Address:-</h3>
-          <div className="mt-3 grid gap-4">
+          <div className="mt-2 grid gap-3">
             <Field label="Address Line" required icon={<MapPin className="h-4 w-4" />}>
-              <input className={inputCls} placeholder="Enter Address Line" />
+              <input className={compactInput} placeholder="Enter Address Line" />
             </Field>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2">
               <Field label="State Name" required>
-                <select className={inputCls} defaultValue="">
+                <select className={compactInput} defaultValue="">
                   <option value="" disabled>Select State</option>
                   <option>Karnataka</option>
                   <option>Maharashtra</option>
@@ -90,7 +90,7 @@ export function DistributorSinglePage({ onSubmit }: { onSubmit: () => void }) {
                 </select>
               </Field>
               <Field label="District Name" required>
-                <select className={inputCls} defaultValue="">
+                <select className={compactInput} defaultValue="">
                   <option value="" disabled>Select District</option>
                   <option>Bengaluru Urban</option>
                   <option>Mysuru</option>
@@ -101,9 +101,9 @@ export function DistributorSinglePage({ onSubmit }: { onSubmit: () => void }) {
           </div>
         </div>
 
-        <div className="mt-5 grid gap-4">
+        <div className="mt-4 grid gap-3">
           <Field label="Group Name">
-            <input className={inputCls} placeholder="Enter Group Name" />
+            <input className={compactInput} placeholder="Enter Group Name" />
           </Field>
 
           <Field
@@ -113,15 +113,15 @@ export function DistributorSinglePage({ onSubmit }: { onSubmit: () => void }) {
             hint={<span className="inline-flex items-center gap-1"><Info className="h-3 w-3" /> Upload the filled & signed captain onboarding form.</span>}
           >
             <div className="flex items-center gap-2">
-              <label className="inline-flex h-11 cursor-pointer items-center rounded-xl border border-input bg-background px-3 text-sm font-medium shadow-soft hover:bg-muted">
+              <label className="inline-flex h-10 cursor-pointer items-center rounded-lg border border-input bg-background px-3 text-sm font-medium shadow-soft hover:bg-muted">
                 Choose file
                 <input type="file" accept="application/pdf" className="sr-only" />
               </label>
-              <span className="text-sm text-muted-foreground">No file chosen</span>
+              <span className="text-xs text-muted-foreground">No file chosen</span>
             </div>
           </Field>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Password" required>
               <PasswordField value={pwd} onChange={setPwd} />
             </Field>
@@ -131,10 +131,10 @@ export function DistributorSinglePage({ onSubmit }: { onSubmit: () => void }) {
           </div>
         </div>
 
-        <div className="mt-6 flex justify-end border-t border-border pt-5">
+        <div className="mt-5 flex justify-end border-t border-border pt-4">
           <Button
             onClick={onSubmit}
-            className="h-11 rounded-xl bg-saffron-gradient px-6 text-sm font-semibold shadow-elev hover:opacity-95"
+            className="h-10 rounded-lg bg-saffron-gradient px-5 text-sm font-semibold shadow-elev hover:opacity-95"
           >
             Submit
           </Button>
@@ -142,40 +142,38 @@ export function DistributorSinglePage({ onSubmit }: { onSubmit: () => void }) {
       </div>
 
       {/* RIGHT — Instructions */}
-      <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
-        <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-elev">
+      <aside className="space-y-3 lg:sticky lg:top-20 lg:self-start">
+        <div className="rounded-2xl border border-border bg-card p-3 sm:p-4 shadow-elev">
           <div className="flex items-center justify-between gap-2">
-            <h3 className="font-display text-base font-bold text-foreground">Instructions</h3>
+            <h3 className="font-display text-sm font-bold text-foreground">Instructions</h3>
             <Button
               asChild
               type="button"
               size="sm"
-              className="h-8 gap-1 rounded-lg bg-saffron-gradient text-xs font-semibold"
+              className="h-7 gap-1 rounded-md bg-saffron-gradient text-xs font-semibold px-2.5"
             >
               <a href="/distributor-onboarding-form.pdf" download>
-                Form <Download className="h-3.5 w-3.5" />
+                Form <Download className="h-3 w-3" />
               </a>
             </Button>
           </div>
-          <p className="mt-3 text-[12.5px] leading-relaxed text-muted-foreground">
+          <p className="mt-2 text-[11.5px] leading-relaxed text-muted-foreground">
             Please download the captain onboarding form using the button above and fill it out accurately.
-            Ensure that all details provided match with your government ID. Once completed, submit the form along
-            with the required documents as per the instructions provided in the form.
+            Ensure all details match your government ID.
           </p>
 
-          <ul className="mt-4 space-y-3">
+          <ul className="mt-3 space-y-2.5">
             <InstructionItem title="Captain Name">
-              Please ensure that the spelling of your name and other details match with your govt. ID, as these
-              cannot be changed later. Incorrect details might lead to cancellation penalties.
+              Ensure spelling matches your govt. ID — cannot be changed later.
             </InstructionItem>
             <InstructionItem title="Mobile No.">
-              Please enter a valid mobile number of agent.
+              Enter a valid agent mobile number.
             </InstructionItem>
             <InstructionItem title="Email">
-              Please enter a valid email of agent for future notifications.
+              Valid email for future notifications.
             </InstructionItem>
             <InstructionItem title="Address">
-              Please enter the District and State of Agent.
+              Enter the District and State of Agent.
             </InstructionItem>
           </ul>
         </div>
@@ -186,12 +184,15 @@ export function DistributorSinglePage({ onSubmit }: { onSubmit: () => void }) {
 
 function InstructionItem({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <li className="flex items-start gap-2.5">
-      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+    <li className="flex items-start gap-2">
+      <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />
       <div className="min-w-0">
-        <div className="text-[13px] font-semibold text-foreground">{title}</div>
-        <p className="mt-0.5 text-[12px] leading-relaxed text-muted-foreground">{children}</p>
+        <div className="text-[12px] font-semibold text-foreground">{title}</div>
+        <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">{children}</p>
       </div>
     </li>
   );
 }
+
+const compactInput =
+  "h-10 w-full rounded-lg border border-input bg-background px-3 text-sm placeholder:text-muted-foreground shadow-soft transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring/15 focus-visible:border-primary";
