@@ -54,7 +54,9 @@ export function validateBankDetails(v: BankDetailsValue): BankErrors {
   else if (!NAME_RE.test(name))
     errors.holderName = "Name should contain only alphabets";
 
-  if (!v.bankName.trim()) errors.bankName = "Bank name is required";
+  const bank = v.bankName.trim().replace(/\s+/g, " ");
+  if (!bank) errors.bankName = "Bank name is required";
+  else if (/\d/.test(bank)) errors.bankName = "Bank name should not contain numbers";
 
   const acc = v.accountNumber.trim();
   if (!acc) errors.accountNumber = "Please enter a valid account number";
@@ -153,8 +155,11 @@ export function BankDetailsSection({
             placeholder="e.g. State Bank of India"
             value={value.bankName}
             maxLength={80}
-            onChange={(e) => set("bankName", e.target.value)}
-            onBlur={() => setTouched((t) => ({ ...t, bankName: true }))}
+            onChange={(e) => set("bankName", e.target.value.replace(/\d/g, ""))}
+            onBlur={() => {
+              setTouched((t) => ({ ...t, bankName: true }));
+              set("bankName", value.bankName.trim().replace(/\s+/g, " "));
+            }}
           />
         </Field>
 
