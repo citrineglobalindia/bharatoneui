@@ -32,9 +32,6 @@ export function DistributorSinglePage({ onSubmit }: { onSubmit: () => void }) {
       "Raichur", "Ramanagara", "Shivamogga (Shimoga)", "Tumakuru (Tumkur)",
       "Udupi", "Uttara Kannada (Karwar)", "Vijayapura (Bijapur)", "Yadgir", "Vijayanagara"
     ],
-    Maharashtra: ["Mumbai", "Pune", "Nagpur", "Thane", "Nashik"],
-    "Tamil Nadu": ["Chennai", "Coimbatore", "Madurai", "Salem", "Tiruchirappalli"],
-    Delhi: ["New Delhi", "North Delhi", "South Delhi", "East Delhi", "West Delhi"],
   };
 
   return (
