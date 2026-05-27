@@ -92,7 +92,7 @@ function RegisterPage() {
     type === "old"
       ? "Old JSKO Onboarding"
       : type === "distributor"
-        ? "Distributor Onboarding"
+        ? "Distributor"
         : "New JSKO Retailer Registration";
   const amount = type === "distributor" ? 2500000 : 4999;
   const subheading =
