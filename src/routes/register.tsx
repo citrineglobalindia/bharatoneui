@@ -174,12 +174,14 @@ function RegisterPage() {
         </div>
 
         <div className="mt-5 sm:mt-6">
-          <Stepper steps={steps} current={current} />
+          {type !== "distributor" && <Stepper steps={steps} current={current} />}
         </div>
 
-        <div className="mt-4 sm:mt-6 rounded-2xl border border-border bg-card p-4 sm:p-6 md:p-8 shadow-elev">
+        <div className={type === "distributor" ? "mt-4 sm:mt-6" : "mt-4 sm:mt-6 rounded-2xl border border-border bg-card p-4 sm:p-6 md:p-8 shadow-elev"}>
           {done && submission ? (
             <SuccessStep info={submission} />
+          ) : type === "distributor" ? (
+            <DistributorSinglePage onSubmit={submit} />
           ) : (
             <>
               {StepBody}
