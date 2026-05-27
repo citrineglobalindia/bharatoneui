@@ -2,6 +2,7 @@ import { lazy, Suspense, useState } from "react";
 import { Building2, MapPin } from "lucide-react";
 import { ClientOnly } from "@tanstack/react-router";
 import { Field, inputCls, SectionCard, StepHeader } from "../field";
+import { BankDetailsSection, emptyBankDetails, type BankDetailsValue } from "../bank-details";
 
 const BusinessMap = lazy(() => import("./business-map"));
 
@@ -13,6 +14,7 @@ const MapFallback = (
 
 export function BusinessStep() {
   const [addrType, setAddrType] = useState<"urban" | "rural">("urban");
+  const [bank, setBank] = useState<BankDetailsValue>(emptyBankDetails);
 
   return (
     <div className="space-y-6">
@@ -83,23 +85,7 @@ export function BusinessStep() {
         </ClientOnly>
       </SectionCard>
 
-      <div>
-        <h3 className="text-base font-bold text-foreground">Bank Details (Optional)</h3>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <Field label="Account Holder Name">
-            <input className={inputCls} placeholder="Account holder name" />
-          </Field>
-          <Field label="Bank Name">
-            <input className={inputCls} placeholder="e.g. State Bank of India" />
-          </Field>
-          <Field label="Account Number">
-            <input className={inputCls} placeholder="Account no." />
-          </Field>
-          <Field label="IFSC Code">
-            <input className={inputCls} placeholder="IFSC" />
-          </Field>
-        </div>
-      </div>
+      <BankDetailsSection value={bank} onChange={setBank} required />
     </div>
   );
 }
