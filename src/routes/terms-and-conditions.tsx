@@ -12,6 +12,7 @@ import {
   RefreshCw,
   Gavel,
   Landmark,
+  MessageCircle,
 } from "lucide-react";
 import { BharatOneLogo } from "@/components/bharatone-logo";
 
