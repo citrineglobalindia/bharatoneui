@@ -17,6 +17,7 @@ import {
   Facebook,
   Youtube,
   Instagram,
+  Linkedin,
   Search,
 } from "lucide-react";
 import { BharatOneLogo } from "@/components/bharatone-logo";
@@ -220,6 +221,7 @@ function LoginPage() {
             <a href="https://www.instagram.com/bharatone__official?igsh=MXgxeXdyZXZzenQ2ZQ==" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="hover:text-foreground transition-colors"><Instagram className="h-4 w-4" /></a>
             <a href="https://www.facebook.com/share/14ehHxTsSc7/" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="hover:text-foreground transition-colors"><Facebook className="h-4 w-4" /></a>
             <a href="https://youtube.com/@bharatone-n3m5m?si=nm29R-B94J0EpnJb" target="_blank" rel="noopener noreferrer" aria-label="YouTube" className="hover:text-foreground transition-colors"><Youtube className="h-4 w-4" /></a>
+            <a href="https://www.linkedin.com/company/bharatone-services-and-affiliates-private-limited/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="hover:text-foreground transition-colors"><Linkedin className="h-4 w-4" /></a>
             <a href="https://www.threads.com/@bharatone__official" target="_blank" rel="noopener noreferrer" aria-label="Threads" className="hover:text-foreground transition-colors"><ThreadsIcon className="h-4 w-4" /></a>
           </div>
           <div className="text-center sm:text-right">
