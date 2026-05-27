@@ -20,7 +20,7 @@ import { PasswordField, ConfirmPasswordField } from "./password-field";
 export function DistributorSinglePage({ onSubmit }: { onSubmit: () => void }) {
   const [pwd, setPwd] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [selectedState, setSelectedState] = useState("");
+  const [selectedState, setSelectedState] = useState("Karnataka");
 
   const stateDistricts: Record<string, string[]> = {
     Karnataka: [
