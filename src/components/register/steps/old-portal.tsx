@@ -340,6 +340,19 @@ export function OldPortalStep() {
         </div>
       )}
     </div>
+    <OtpSuccessDialog
+      open={successOpen}
+      onOpenChange={setSuccessOpen}
+      channel={successChannel}
+      target={
+        successChannel === "email"
+          ? user?.email
+          : successChannel === "mobile"
+            ? maskMobile(user?.mobile ?? "")
+            : undefined
+      }
+    />
+    </>
   );
 }
 
