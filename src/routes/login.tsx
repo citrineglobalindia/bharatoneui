@@ -70,7 +70,7 @@ function LoginPage() {
             <div className="mt-4 flex justify-center">
               <div className="relative flex h-32 w-32 sm:h-36 sm:w-36 items-center justify-center rounded-full bg-white shadow-elev ring-4 ring-saffron/30">
                 <div className="absolute inset-2 rounded-full ring-2 ring-india-green/40" />
-                <BharatOneLogo size="md" />
+                <BharatOneLogo size="lg" />
               </div>
             </div>
 
@@ -96,7 +96,7 @@ function LoginPage() {
           {/* Right — Login */}
           <div className="p-5 sm:p-6 lg:p-7 border-t border-border md:border-t-0 md:border-l">
             <div className="flex justify-center md:justify-start">
-              <BharatOneLogo size="md" />
+              <BharatOneLogo size="lg" />
             </div>
             <h2 className="font-display mt-3 text-xl sm:text-2xl font-extrabold text-foreground">
               Log in to your account

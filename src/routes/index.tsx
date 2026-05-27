@@ -53,14 +53,14 @@ function Index() {
           >
             <ArrowLeft className="h-5 w-5" />
           </Link>
-          <BharatOneLogo />
+          <BharatOneLogo size="lg" />
         </div>
       </header>
 
       <main className="relative mx-auto max-w-6xl px-4 sm:px-6 py-8 sm:py-14">
         <div className="text-center sm:text-left animate-in fade-in slide-in-from-bottom-3 duration-500">
           <div className="inline-flex items-center gap-2 rounded-full border border-accent bg-white/80 backdrop-blur px-3 py-1.5 text-xs font-semibold text-saffron shadow-soft">
-            <Sparkles className="h-3.5 w-3.5" /> Onboarding Portal
+            <Sparkles className="h-3.5 w-3.5" /> JSKO Onboarding Portal
           </div>
           <h1 className="font-display mt-4 text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-foreground leading-[1.05]">
             Welcome to{" "}
