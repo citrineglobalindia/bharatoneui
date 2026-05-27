@@ -191,7 +191,7 @@ export function OldPortalStep() {
       <StepHeader
         icon={<Lock className="h-5 w-5" />}
         title="Old JSKO Portal"
-        description="Enter your JSKO Username to auto-fetch your registered details, then verify BOTH your email and mobile via OTP to continue."
+        description="Enter your JSKO Username to auto-fetch your registered details, then verify both your email and mobile via OTP to continue."
       />
 
       {/* Progress micro-strip */}
