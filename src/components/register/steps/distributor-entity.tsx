@@ -215,45 +215,23 @@ function EntityCard({
 }
 
 function PasswordPair({
-  show1, show2, setShow1, setShow2,
+  pwd,
+  confirm,
+  setPwd,
+  setConfirm,
 }: {
-  show1: boolean; show2: boolean;
-  setShow1: (v: boolean | ((p: boolean) => boolean)) => void;
-  setShow2: (v: boolean | ((p: boolean) => boolean)) => void;
+  pwd: string;
+  confirm: string;
+  setPwd: (v: string) => void;
+  setConfirm: (v: string) => void;
 }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <Field label="Password" required>
-        <div className="relative">
-          <input
-            type={show1 ? "text" : "password"}
-            className={`${inputCls} pr-10`}
-            placeholder="Min 6 characters"
-          />
-          <button
-            type="button"
-            onClick={() => setShow1((v) => !v)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-          >
-            {show1 ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-          </button>
-        </div>
+        <PasswordField value={pwd} onChange={setPwd} />
       </Field>
       <Field label="Confirm Password" required>
-        <div className="relative">
-          <input
-            type={show2 ? "text" : "password"}
-            className={`${inputCls} pr-10`}
-            placeholder="Re-enter password"
-          />
-          <button
-            type="button"
-            onClick={() => setShow2((v) => !v)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-          >
-            {show2 ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-          </button>
-        </div>
+        <ConfirmPasswordField value={confirm} onChange={setConfirm} original={pwd} />
       </Field>
     </div>
   );
