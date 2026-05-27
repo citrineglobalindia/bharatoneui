@@ -13,7 +13,7 @@ import {
   Info,
   Building2,
 } from "lucide-react";
-import { Field, inputCls } from "./field";
+import { Field } from "./field";
 import { Button } from "@/components/ui/button";
 import { PasswordField, ConfirmPasswordField } from "./password-field";
 
