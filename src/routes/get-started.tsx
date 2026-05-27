@@ -13,6 +13,7 @@ import {
   Facebook,
   Youtube,
   Instagram,
+  AtSign,
 } from "lucide-react";
 import { BharatOneLogo } from "@/components/bharatone-logo";
 
