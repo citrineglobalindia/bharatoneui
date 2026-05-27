@@ -147,11 +147,14 @@ export function DistributorSinglePage({ onSubmit }: { onSubmit: () => void }) {
           <div className="flex items-center justify-between gap-2">
             <h3 className="font-display text-base font-bold text-foreground">Instructions</h3>
             <Button
+              asChild
               type="button"
               size="sm"
               className="h-8 gap-1 rounded-lg bg-saffron-gradient text-xs font-semibold"
             >
-              Form <Download className="h-3.5 w-3.5" />
+              <a href="/distributor-onboarding-form.pdf" download>
+                Form <Download className="h-3.5 w-3.5" />
+              </a>
             </Button>
           </div>
           <p className="mt-3 text-[12.5px] leading-relaxed text-muted-foreground">
