@@ -14,12 +14,9 @@ import {
   Fingerprint,
   LayoutGrid,
   RefreshCw,
-  Twitter,
   Facebook,
-  Linkedin,
   Youtube,
   Instagram,
-  MessageCircle,
   Search,
 } from "lucide-react";
 import { BharatOneLogo } from "@/components/bharatone-logo";
