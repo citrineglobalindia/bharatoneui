@@ -3,8 +3,6 @@ import {
   User,
   Building2,
   UserCog,
-  Eye,
-  EyeOff,
   Mail,
   Phone,
   Briefcase,
@@ -14,13 +12,14 @@ import {
 } from "lucide-react";
 import { Field, inputCls, SectionCard, StepHeader, Notice } from "../field";
 import { cn } from "@/lib/utils";
+import { ConfirmPasswordField, PasswordField } from "../password-field";
 
 type EntityType = "individual" | "organisation";
 
 export function DistributorEntityStep() {
   const [entity, setEntity] = useState<EntityType>("individual");
-  const [show1, setShow1] = useState(false);
-  const [show2, setShow2] = useState(false);
+  const [pwd, setPwd] = useState("");
+  const [confirm, setConfirm] = useState("");
   const [orgType, setOrgType] = useState("pvt_ltd");
 
   return (
@@ -81,10 +80,7 @@ export function DistributorEntityStep() {
               <input className={inputCls} placeholder="XXXX XXXX XXXX" maxLength={14} />
             </Field>
           </div>
-          <PasswordPair
-            show1={show1} show2={show2}
-            setShow1={setShow1} setShow2={setShow2}
-          />
+          <PasswordPair pwd={pwd} confirm={confirm} setPwd={setPwd} setConfirm={setConfirm} />
         </SectionCard>
       ) : (
         <>
@@ -162,10 +158,7 @@ export function DistributorEntityStep() {
                 <input className={inputCls} placeholder="10 digit mobile" maxLength={10} />
               </Field>
             </div>
-            <PasswordPair
-              show1={show1} show2={show2}
-              setShow1={setShow1} setShow2={setShow2}
-            />
+            <PasswordPair pwd={pwd} confirm={confirm} setPwd={setPwd} setConfirm={setConfirm} />
           </SectionCard>
         </>
       )}
