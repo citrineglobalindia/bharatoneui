@@ -180,7 +180,7 @@ function LoginPage() {
                   <UserPlus className="h-4 w-4" />
                 </div>
                 <div className="text-left">
-                  <p className="text-sm font-bold text-foreground">Create new account</p>
+                  <p className="text-sm font-bold text-foreground">Create new JSKO account</p>
                   <p className="text-[11px] text-muted-foreground">Retailer · Distributor · JSKO</p>
                 </div>
               </div>
