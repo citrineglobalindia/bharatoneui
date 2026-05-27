@@ -14,7 +14,7 @@ import {
   XCircle,
   User,
 } from "lucide-react";
-import { Field, inputCls, Notice, SectionCard, StepHeader } from "../field";
+import { Field, inputCls, Notice, StepHeader } from "../field";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -399,35 +399,183 @@ function FetchedUserCard({
   );
 }
 
-function ChannelOption({
+function OtpCard({
+  channel,
   icon,
   title,
-  value,
-  onClick,
+  target,
+  otp,
+  setOtp,
+  error,
+  setError,
+  verified,
+  verifying,
+  sent,
+  cooldown,
+  onSend,
+  onVerify,
+  inputsRef,
 }: {
+  channel: Channel;
   icon: React.ReactNode;
   title: string;
-  value: string;
-  onClick: () => void;
+  target: string;
+  otp: string[];
+  setOtp: (v: string[]) => void;
+  error: string | null;
+  setError: (v: string | null) => void;
+  verified: boolean;
+  verifying: boolean;
+  sent: boolean;
+  cooldown: number;
+  onSend: () => void;
+  onVerify: () => void;
+  inputsRef: React.MutableRefObject<Array<HTMLInputElement | null>>;
 }) {
+  const handleChange = (i: number, val: string) => {
+    const digit = val.replace(/\D/g, "").slice(-1);
+    const next = [...otp];
+    next[i] = digit;
+    setOtp(next);
+    setError(null);
+    if (digit && i < 5) inputsRef.current[i + 1]?.focus();
+  };
+  const handleKey = (i: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace" && !otp[i] && i > 0) inputsRef.current[i - 1]?.focus();
+    if (e.key === "ArrowLeft" && i > 0) inputsRef.current[i - 1]?.focus();
+    if (e.key === "ArrowRight" && i < 5) inputsRef.current[i + 1]?.focus();
+  };
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const text = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    if (!text) return;
+    e.preventDefault();
+    const next = Array(6).fill("");
+    text.split("").forEach((c, i) => (next[i] = c));
+    setOtp(next);
+    inputsRef.current[Math.min(text.length, 5)]?.focus();
+  };
+
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="group flex items-center justify-between gap-3 rounded-xl border-2 border-dashed border-india-green/30 bg-india-green/5 p-3.5 text-left transition-all hover:border-india-green hover:bg-india-green/10 hover:-translate-y-0.5"
+    <div
+      className={cn(
+        "rounded-2xl border-2 bg-background/60 p-4 sm:p-5 shadow-soft transition-all",
+        verified
+          ? "border-emerald-300 bg-gradient-to-br from-emerald-50/80 to-white"
+          : "border-border",
+      )}
     >
-      <div className="flex items-center gap-3 min-w-0">
-        <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-india-green text-white shadow-elev">
-          {icon}
-        </span>
-        <div className="min-w-0">
-          <p className="text-sm font-bold text-foreground">{title}</p>
-          <p className="text-[12px] text-muted-foreground truncate">{value}</p>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start gap-2.5 min-w-0">
+          <span
+            className={cn(
+              "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl",
+              verified ? "bg-emerald-100 text-emerald-600" : "bg-india-green/10 text-india-green",
+            )}
+          >
+            {verified ? <CheckCircle2 className="h-4 w-4" /> : icon}
+          </span>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <h3 className="font-display text-[14px] sm:text-[15px] font-bold text-foreground">
+                {title}
+              </h3>
+              <span className="rounded-full bg-red-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-red-600 ring-1 ring-red-200">
+                Required
+              </span>
+            </div>
+            <p className="text-[12px] text-muted-foreground truncate">{target}</p>
+          </div>
         </div>
+        {verified && (
+          <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700 ring-1 ring-emerald-200">
+            <CheckCircle2 className="h-3 w-3" /> Verified
+          </span>
+        )}
       </div>
-      <span className="text-[11px] font-bold uppercase tracking-wider text-india-green opacity-0 group-hover:opacity-100 transition-opacity">
-        Send OTP →
-      </span>
-    </button>
+
+      {!verified && !sent && (
+        <Button
+          onClick={onSend}
+          className="mt-4 h-11 w-full bg-india-green text-white hover:bg-india-green/90 shadow-elev"
+        >
+          <KeyRound className="h-4 w-4" /> Send OTP to {channel === "email" ? "Email" : "Mobile"}
+        </Button>
+      )}
+
+      {!verified && sent && (
+        <>
+          <div className="mt-4 flex justify-center gap-1.5 sm:gap-2">
+            {otp.map((d, i) => (
+              <input
+                key={i}
+                ref={(el) => {
+                  inputsRef.current[i] = el;
+                }}
+                value={d}
+                onChange={(e) => handleChange(i, e.target.value)}
+                onKeyDown={(e) => handleKey(i, e)}
+                onPaste={handlePaste}
+                inputMode="numeric"
+                maxLength={1}
+                aria-label={`${title} digit ${i + 1}`}
+                className={cn(
+                  "h-11 w-9 sm:h-12 sm:w-10 rounded-lg border-2 bg-background text-center font-display text-lg font-bold text-foreground shadow-soft transition focus-visible:outline-none",
+                  error
+                    ? "border-red-400 focus-visible:ring-4 focus-visible:ring-red-500/15"
+                    : d
+                      ? "border-india-green focus-visible:ring-4 focus-visible:ring-india-green/20"
+                      : "border-input focus-visible:border-india-green focus-visible:ring-4 focus-visible:ring-india-green/15",
+                )}
+              />
+            ))}
+          </div>
+
+          {error && (
+            <p className="mt-2 flex items-center justify-center gap-1.5 text-xs font-semibold text-red-600">
+              <XCircle className="h-3.5 w-3.5" /> {error}
+            </p>
+          )}
+
+          <div className="mt-3 flex items-center justify-between gap-2">
+            <button
+              type="button"
+              onClick={onSend}
+              disabled={cooldown > 0}
+              className={cn(
+                "inline-flex items-center gap-1 text-[12px] font-semibold transition-colors",
+                cooldown > 0
+                  ? "text-muted-foreground cursor-not-allowed"
+                  : "text-india-green hover:underline",
+              )}
+            >
+              <RefreshCw className="h-3 w-3" />
+              {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend OTP"}
+            </button>
+            <Button
+              onClick={onVerify}
+              disabled={verifying || otp.join("").length !== 6}
+              size="sm"
+              className="h-9 bg-india-green text-white hover:bg-india-green/90"
+            >
+              {verifying ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> Verifying…
+                </>
+              ) : (
+                <>
+                  <ShieldCheck className="h-3.5 w-3.5" /> Verify
+                </>
+              )}
+            </Button>
+          </div>
+        </>
+      )}
+
+      {verified && (
+        <p className="mt-3 text-[12px] text-emerald-700 font-medium">
+          Successfully verified against JSKO records.
+        </p>
+      )}
+    </div>
   );
 }
