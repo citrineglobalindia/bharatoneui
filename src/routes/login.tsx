@@ -217,7 +217,7 @@ function LoginPage() {
           <div className="flex items-center gap-3 justify-center sm:justify-start">
             <Link to="/terms-and-conditions" className="hover:text-foreground">Terms & Condition</Link>
             <span className="text-border">|</span>
-            <a href="#" className="hover:text-foreground">Privacy Policy</a>
+            <Link to="/privacy-policy" className="hover:text-foreground">Privacy Policy</Link>
           </div>
           <div className="flex items-center gap-3 justify-center text-muted-foreground">
             <a href="#" aria-label="Twitter" className="hover:text-foreground"><Twitter className="h-4 w-4" /></a>
