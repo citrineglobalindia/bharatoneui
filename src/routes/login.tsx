@@ -20,6 +20,7 @@ import {
   Youtube,
   Instagram,
   MessageCircle,
+  Search,
 } from "lucide-react";
 import { BharatOneLogo } from "@/components/bharatone-logo";
 import { Button } from "@/components/ui/button";
@@ -185,6 +186,22 @@ function LoginPage() {
                 </div>
               </div>
               <ArrowRight className="h-4 w-4 text-saffron transition-transform group-hover:translate-x-1" />
+            </Link>
+
+            <Link
+              to="/track-application"
+              className="group flex items-center justify-between gap-3 rounded-lg border-2 border-dashed border-india-green/40 bg-india-green/5 px-4 py-3 transition-all hover:border-india-green hover:bg-india-green/10 mt-3"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-india-green text-white shadow-elev">
+                  <Search className="h-4 w-4" />
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-bold text-foreground">Track your application</p>
+                  <p className="text-[11px] text-muted-foreground">Check registration status</p>
+                </div>
+              </div>
+              <ArrowRight className="h-4 w-4 text-india-green transition-transform group-hover:translate-x-1" />
             </Link>
           </div>
         </div>
