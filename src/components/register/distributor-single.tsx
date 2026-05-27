@@ -97,7 +97,11 @@ export function DistributorSinglePage({ onSubmit }: { onSubmit: () => void }) {
             </Field>
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label="State Name" required>
-                <select className={compactInput} defaultValue="">
+                <select
+                  className={compactInput}
+                  value={selectedState}
+                  onChange={(e) => setSelectedState(e.target.value)}
+                >
                   <option value="" disabled>Select State</option>
                   <option>Karnataka</option>
                   <option>Maharashtra</option>
@@ -108,9 +112,9 @@ export function DistributorSinglePage({ onSubmit }: { onSubmit: () => void }) {
               <Field label="District Name" required>
                 <select className={compactInput} defaultValue="">
                   <option value="" disabled>Select District</option>
-                  <option>Bengaluru Urban</option>
-                  <option>Mysuru</option>
-                  <option>Mumbai</option>
+                  {(stateDistricts[selectedState] || []).map((d) => (
+                    <option key={d}>{d}</option>
+                  ))}
                 </select>
               </Field>
             </div>
