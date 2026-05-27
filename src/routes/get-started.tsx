@@ -50,7 +50,7 @@ function Index() {
           >
             <ArrowLeft className="h-5 w-5" />
           </Link>
-          <BharatOneLogo />
+          <BharatOneLogo size="lg" />
         </div>
       </header>
 
