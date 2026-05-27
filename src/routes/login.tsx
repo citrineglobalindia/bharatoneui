@@ -20,6 +20,7 @@ import {
   Youtube,
   Instagram,
   MessageCircle,
+  Search,
 } from "lucide-react";
 import { BharatOneLogo } from "@/components/bharatone-logo";
 import { Button } from "@/components/ui/button";
