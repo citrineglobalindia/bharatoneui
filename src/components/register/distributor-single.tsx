@@ -109,11 +109,7 @@ export function DistributorSinglePage({ onSubmit }: { onSubmit: () => void }) {
                   value={selectedState}
                   onChange={(e) => setSelectedState(e.target.value)}
                 >
-                  <option value="" disabled>Select State</option>
                   <option>Karnataka</option>
-                  <option>Maharashtra</option>
-                  <option>Tamil Nadu</option>
-                  <option>Delhi</option>
                 </select>
               </Field>
               <Field label="District Name" required>
