@@ -13,6 +13,7 @@ import {
 import { inputCls, Notice, SectionCard, StepHeader } from "../field";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { OtpSuccessDialog, type OtpSuccessChannel } from "../otp-success-dialog";
 
 const MOCK_OTP = "123456";
 const RESEND_COOLDOWN = 30;
@@ -35,6 +36,9 @@ export function AccountStep() {
   const [mobileError, setMobileError] = useState<string | null>(null);
   const [emailCooldown, setEmailCooldown] = useState(0);
   const [mobileCooldown, setMobileCooldown] = useState(0);
+
+  const [successOpen, setSuccessOpen] = useState(false);
+  const [successChannel, setSuccessChannel] = useState<OtpSuccessChannel>("email");
 
   const emailInputsRef = useRef<Array<HTMLInputElement | null>>([]);
   const mobileInputsRef = useRef<Array<HTMLInputElement | null>>([]);
@@ -87,6 +91,12 @@ export function AccountStep() {
       if (code === MOCK_OTP) {
         setEmailVerified(true);
         setEmailError(null);
+        if (mobileVerified) {
+          setSuccessChannel("all");
+        } else {
+          setSuccessChannel("email");
+        }
+        setSuccessOpen(true);
       } else setEmailError("Incorrect code. Please try again or resend.");
     } else {
       const code = mobileOtp.join("");
@@ -97,11 +107,18 @@ export function AccountStep() {
       if (code === MOCK_OTP) {
         setMobileVerified(true);
         setMobileError(null);
+        if (emailVerified) {
+          setSuccessChannel("all");
+        } else {
+          setSuccessChannel("mobile");
+        }
+        setSuccessOpen(true);
       } else setMobileError("Incorrect code. Please try again or resend.");
     }
   };
 
   return (
+    <>
     <div className="space-y-6">
       <StepHeader
         icon={<UserCheck className="h-5 w-5" />}
@@ -256,6 +273,19 @@ export function AccountStep() {
         </p>
       )}
     </div>
+    <OtpSuccessDialog
+      open={successOpen}
+      onOpenChange={setSuccessOpen}
+      channel={successChannel}
+      target={
+        successChannel === "email"
+          ? email
+          : successChannel === "mobile"
+            ? `+91 ${mobile}`
+            : undefined
+      }
+    />
+    </>
   );
 }
 
