@@ -1,6 +1,26 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { User, Lock, Eye, EyeOff, ShieldCheck, UserPlus, ArrowRight, Sparkles } from "lucide-react";
+import {
+  User,
+  Lock,
+  Eye,
+  EyeOff,
+  UserPlus,
+  ArrowRight,
+  Landmark,
+  Users,
+  Plane,
+  ShieldCheck,
+  Fingerprint,
+  LayoutGrid,
+  RefreshCw,
+  Twitter,
+  Facebook,
+  Linkedin,
+  Youtube,
+  Instagram,
+  MessageCircle,
+} from "lucide-react";
 import { BharatOneLogo } from "@/components/bharatone-logo";
 import { Button } from "@/components/ui/button";
 
@@ -20,134 +40,205 @@ export const Route = createFileRoute("/login")({
 
 function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
+  const [captcha, setCaptcha] = useState(() => genCaptcha());
   return (
     <div className="relative min-h-screen bg-tricolor flex items-center justify-center p-3 sm:p-6 lg:p-10 overflow-hidden">
-      {/* Ambient glow (static — animating blurred layers tanks performance) */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-32 -left-24 h-80 w-80 rounded-full bg-saffron-gradient opacity-20 blur-3xl"
+        className="pointer-events-none absolute -top-32 -left-24 h-80 w-80 rounded-full bg-saffron-gradient opacity-15 blur-3xl"
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute -bottom-32 -right-24 h-96 w-96 rounded-full bg-emerald-300/25 blur-3xl"
+        className="pointer-events-none absolute -bottom-32 -right-24 h-96 w-96 rounded-full bg-emerald-300/20 blur-3xl"
       />
 
-      <div className="relative w-full max-w-6xl overflow-hidden rounded-2xl border border-border bg-card shadow-elev grid md:grid-cols-2 animate-in fade-in zoom-in-95 duration-500">
-        {/* Left */}
-        <div className="relative p-5 sm:p-10 md:p-14 bg-tricolor animate-in fade-in slide-in-from-left-4 duration-700">
-          <div className="flex items-center justify-between gap-3 md:block">
-            <BharatOneLogo size="md" />
-          </div>
-          <h1 className="font-display mt-4 md:mt-6 text-[26px] sm:text-5xl font-extrabold tracking-tight text-foreground leading-[1.1]">
-            Empowering India&rsquo;s{" "}
-            <span className="bg-saffron-gradient bg-clip-text text-transparent">Digital Retailers</span>
-          </h1>
-          <p className="mt-2.5 md:mt-4 max-w-md text-[13px] sm:text-base leading-relaxed text-muted-foreground">
-            AEPS, DMT, Recharge, BBPS &amp; Business Services — unified in one professional dashboard built for Karnataka.
-          </p>
-          <div className="mt-4 md:mt-8 grid grid-cols-3 gap-2 sm:gap-3 max-w-md">
-            {[
-              { v: "10K+", l: "Retailers" },
-              { v: "50+", l: "Services" },
-              { v: "99.9%", l: "Uptime" },
-            ].map((s, i) => (
-              <div
-                key={s.l}
-                style={{ animationDelay: `${300 + i * 120}ms` }}
-                className="rounded-xl border border-border bg-card/80 backdrop-blur px-2 py-2.5 sm:px-3 sm:py-3 text-center shadow-soft animate-in fade-in slide-in-from-bottom-2 fill-mode-both duration-500 transition-transform hover:-translate-y-0.5 hover:shadow-elev"
-              >
-                <div className="font-display text-base sm:text-xl font-extrabold text-foreground">{s.v}</div>
-                <div className="mt-0.5 text-[9px] sm:text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{s.l}</div>
+      <div className="relative w-full max-w-6xl flex flex-col rounded-3xl border border-border bg-card shadow-elev overflow-hidden animate-in fade-in zoom-in-95 duration-500">
+        <div className="grid md:grid-cols-2">
+          {/* Left — Welcome */}
+          <div className="relative p-6 sm:p-10 bg-gradient-to-br from-orange-50 via-white to-emerald-50 text-center">
+            <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground leading-tight">
+              Welcome To
+              <br />
+              <span className="text-saffron">BharatOne</span>{" "}
+              <span className="text-india-green">Connect</span>
+            </h1>
+
+            <div className="mt-6 flex justify-center">
+              <div className="relative flex h-44 w-44 sm:h-52 sm:w-52 items-center justify-center rounded-full bg-white shadow-elev ring-4 ring-saffron/30">
+                <div className="absolute inset-2 rounded-full ring-2 ring-india-green/40" />
+                <BharatOneLogo size="md" />
               </div>
-            ))}
+            </div>
+
+            <h2 className="font-display mt-6 text-xl sm:text-2xl font-bold text-foreground">
+              Gateway to <span className="text-saffron">BharatOne</span>{" "}
+              <span className="text-india-green">Network!</span>
+            </h2>
+            <p className="mt-2 max-w-md mx-auto text-sm text-muted-foreground leading-relaxed">
+              BharatOne Connect is a secure authentication platform for accessing e-Governance,
+              banking, financial, travel, insurance, Aadhaar, and citizen services across India.
+            </p>
+
+            <div className="mt-6 grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-2.5">
+              <ServiceTile icon={<Landmark className="h-5 w-5" />} label="Banking" tone="saffron" />
+              <ServiceTile icon={<Users className="h-5 w-5" />} label="G2C Services" tone="green" />
+              <ServiceTile icon={<Plane className="h-5 w-5" />} label="Travel" tone="saffron" />
+              <ServiceTile icon={<ShieldCheck className="h-5 w-5" />} label="Insurance" tone="green" />
+              <ServiceTile icon={<Fingerprint className="h-5 w-5" />} label="Aadhaar" tone="saffron" />
+              <ServiceTile icon={<LayoutGrid className="h-5 w-5" />} label="& More Services" tone="green" />
+            </div>
           </div>
-          <div className="mt-5 md:absolute md:bottom-6 md:left-10 md:mt-0 text-[11px] sm:text-xs text-muted-foreground">
-            © 2026 BharatOne Digital Services · Hasan, Karnataka
+
+          {/* Right — Login */}
+          <div className="p-6 sm:p-10 border-t border-border md:border-t-0 md:border-l">
+            <div className="flex justify-center md:justify-start">
+              <BharatOneLogo size="lg" />
+            </div>
+            <h2 className="font-display mt-6 text-2xl sm:text-3xl font-extrabold text-foreground">
+              Log in to your account
+            </h2>
+
+            <form className="mt-6 space-y-4" onSubmit={(e) => e.preventDefault()}>
+              <div>
+                <label className="text-sm font-semibold text-foreground">Username or Email</label>
+                <div className="mt-1.5 relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-india-green" />
+                  <input
+                    className="h-12 w-full rounded-lg border border-input bg-background pl-10 pr-3 text-sm shadow-soft transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-india-green/15 focus-visible:border-india-green"
+                    placeholder="Username or Email"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-foreground">Password</label>
+                <div className="mt-1.5 relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-india-green" />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    className="h-12 w-full rounded-lg border border-input bg-background pl-10 pr-10 text-sm shadow-soft transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-india-green/15 focus-visible:border-india-green"
+                    placeholder="Password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Captcha */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex items-center justify-between gap-2 rounded-lg border border-input bg-muted/40 px-3 h-12">
+                  <span className="font-display select-none text-lg font-extrabold tracking-[0.25em] text-purple-700 italic">
+                    {captcha}
+                  </span>
+                  <button
+                    type="button"
+                    aria-label="Refresh captcha"
+                    onClick={() => setCaptcha(genCaptcha())}
+                    className="text-india-green hover:text-saffron transition-colors"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                  </button>
+                </div>
+                <input
+                  className="h-12 w-full rounded-lg border border-input bg-background px-3 text-sm shadow-soft transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-india-green/15 focus-visible:border-india-green"
+                  placeholder="Enter Captcha Text"
+                />
+              </div>
+
+              <div className="flex justify-end">
+                <a href="/forgot-password" className="text-sm font-semibold text-india-green hover:underline">
+                  Forgot password?
+                </a>
+              </div>
+
+              <Button
+                type="submit"
+                className="h-12 w-full rounded-lg bg-india-green text-base font-semibold text-white shadow-elev hover:bg-india-green/90 transition-all hover:scale-[1.01] active:scale-[0.99]"
+              >
+                Log In
+              </Button>
+            </form>
+
+            <div className="relative my-5 flex items-center">
+              <div className="flex-grow border-t border-border" />
+              <span className="mx-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                New to BharatOne?
+              </span>
+              <div className="flex-grow border-t border-border" />
+            </div>
+
+            <Link
+              to="/get-started"
+              className="group flex items-center justify-between gap-3 rounded-lg border-2 border-dashed border-saffron/40 bg-saffron/5 px-4 py-3 transition-all hover:border-saffron hover:bg-saffron/10"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-saffron-gradient text-white shadow-elev">
+                  <UserPlus className="h-4 w-4" />
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-bold text-foreground">Create new account</p>
+                  <p className="text-[11px] text-muted-foreground">Retailer · Distributor · JSKO</p>
+                </div>
+              </div>
+              <ArrowRight className="h-4 w-4 text-saffron transition-transform group-hover:translate-x-1" />
+            </Link>
           </div>
         </div>
 
-        {/* Right */}
-        <div className="p-5 sm:p-10 md:p-14 border-t border-border md:border-t-0 animate-in fade-in slide-in-from-right-4 duration-700">
-          <div className="inline-flex items-center gap-1.5 rounded-full border border-accent bg-white/80 backdrop-blur px-2.5 py-1 text-[11px] font-semibold text-saffron shadow-soft">
-            <Sparkles className="h-3 w-3" /> Secure Login
+        {/* Tricolor strip */}
+        <div className="h-1.5 w-full bg-gradient-to-r from-saffron via-white to-india-green" />
+
+        {/* Footer */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-card px-6 py-3 text-[11px] sm:text-xs text-muted-foreground border-t border-border">
+          <div className="flex items-center gap-3 justify-center sm:justify-start">
+            <a href="#" className="hover:text-foreground">Terms & Condition</a>
+            <span className="text-border">|</span>
+            <a href="#" className="hover:text-foreground">Privacy Policy</a>
           </div>
-          <h2 className="font-display mt-3 text-2xl sm:text-4xl font-extrabold tracking-tight text-foreground">Welcome back</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Sign in to your BharatOne account</p>
-
-          <form className="mt-7 space-y-5" onSubmit={(e) => e.preventDefault()}>
-            <div>
-              <label className="text-xs font-semibold tracking-[0.14em] text-foreground">USERNAME</label>
-              <div className="mt-2 relative group">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <input
-                  className="h-12 w-full rounded-xl border border-input bg-background pl-10 pr-3 text-sm shadow-soft transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring/15 focus-visible:border-primary"
-                  placeholder="JSKO101 or BO10001"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="text-xs font-semibold tracking-[0.14em] text-foreground">PASSWORD</label>
-              <div className="mt-2 relative group">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  className="h-12 w-full rounded-xl border border-input bg-background pl-10 pr-10 text-sm shadow-soft transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring/15 focus-visible:border-primary"
-                  placeholder="Enter your password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <label className="inline-flex items-center gap-2 text-muted-foreground">
-                <input type="checkbox" className="h-4 w-4 rounded border-input accent-saffron" />
-                Remember me
-              </label>
-              <a href="#" className="font-semibold text-saffron hover:underline">Forgot Password?</a>
-            </div>
-            <Button
-              type="submit"
-              className="h-12 w-full rounded-xl bg-saffron-gradient text-base font-semibold shadow-elev hover:opacity-95 hover:scale-[1.01] active:scale-[0.99] transition-transform"
-            >
-              <ShieldCheck className="h-4 w-4" /> Sign In Securely
-            </Button>
-          </form>
-
-          {/* Divider */}
-          <div className="relative my-6 flex items-center">
-            <div className="flex-grow border-t border-border" />
-            <span className="mx-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">New to BharatOne?</span>
-            <div className="flex-grow border-t border-border" />
+          <div className="flex items-center gap-3 justify-center text-muted-foreground">
+            <a href="#" aria-label="Twitter" className="hover:text-foreground"><Twitter className="h-4 w-4" /></a>
+            <a href="#" aria-label="Facebook" className="hover:text-foreground"><Facebook className="h-4 w-4" /></a>
+            <a href="#" aria-label="LinkedIn" className="hover:text-foreground"><Linkedin className="h-4 w-4" /></a>
+            <a href="#" aria-label="YouTube" className="hover:text-foreground"><Youtube className="h-4 w-4" /></a>
+            <a href="#" aria-label="Instagram" className="hover:text-foreground"><Instagram className="h-4 w-4" /></a>
+            <a href="#" aria-label="WhatsApp" className="hover:text-foreground"><MessageCircle className="h-4 w-4" /></a>
           </div>
-
-          {/* Register CTA */}
-          <Link
-            to="/get-started"
-            className="group flex items-center justify-between gap-3 rounded-xl border-2 border-dashed border-saffron/40 bg-saffron/5 px-4 py-3.5 transition-all hover:border-saffron hover:bg-saffron/10 hover:shadow-soft"
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-saffron-gradient text-white shadow-elev transition-transform duration-200 group-hover:scale-105">
-                <UserPlus className="h-5 w-5" />
-              </div>
-              <div className="text-left">
-                <p className="text-sm font-bold text-foreground">Create new account</p>
-                <p className="text-[11px] text-muted-foreground">Retailer · Distributor · JSKO migration</p>
-              </div>
-            </div>
-            <ArrowRight className="h-4 w-4 text-saffron transition-transform group-hover:translate-x-1" />
-          </Link>
-
-          <p className="mt-4 text-center text-xs text-muted-foreground">
-            Awaiting approval?{" "}
-            <a href="#" className="font-semibold text-saffron hover:underline">Track application →</a>
-          </p>
+          <div className="text-center sm:text-right">
+            Copyright © 2026 <span className="text-india-green font-semibold">BharatOne Services & Affiliates Pvt. Ltd.</span> All rights reserved.
+          </div>
         </div>
       </div>
     </div>
   );
+}
+
+function ServiceTile({
+  icon,
+  label,
+  tone,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  tone: "saffron" | "green";
+}) {
+  const color = tone === "saffron" ? "text-saffron" : "text-india-green";
+  return (
+    <div className="flex flex-col items-center justify-start gap-1.5 rounded-xl border border-border bg-white px-2 py-2.5 shadow-soft transition-transform hover:-translate-y-0.5 hover:shadow-elev">
+      <div className={`flex h-8 w-8 items-center justify-center ${color}`}>{icon}</div>
+      <span className="text-[10px] sm:text-[11px] font-semibold text-foreground leading-tight text-center">
+        {label}
+      </span>
+    </div>
+  );
+}
+
+function genCaptcha() {
+  const chars = "0123456789";
+  let s = "";
+  for (let i = 0; i < 6; i++) s += chars[Math.floor(Math.random() * chars.length)];
+  return s;
 }
