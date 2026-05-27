@@ -10,7 +10,7 @@ export function AccountStep() {
         description="Enter your email and mobile number. You'll verify your email at the final step (so the code never expires)."
       />
       <Notice title="Auto-generated username">
-        Your username will be created automatically (e.g. <b>BO10001</b>) after successful registration.
+        Your username will be created automatically (e.g. <b>RET00000100</b>) after successful registration.
       </Notice>
 
       <SectionCard title="Email ID" icon={<Mail className="h-4 w-4" />}>
