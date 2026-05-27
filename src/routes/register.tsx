@@ -38,6 +38,7 @@ import { SelfieStep } from "@/components/register/steps/selfie";
 import { SuccessStep, buildSubmission, type SubmissionInfo } from "@/components/register/steps/success";
 import { PaymentStep, type PaymentData } from "@/components/register/steps/payment";
 import { DistributorEntityStep } from "@/components/register/steps/distributor-entity";
+import { DistributorSinglePage } from "@/components/register/distributor-single";
 
 const searchSchema = z.object({
   type: z.enum(["old", "new", "distributor"]).optional().default("new"),
@@ -173,12 +174,14 @@ function RegisterPage() {
         </div>
 
         <div className="mt-5 sm:mt-6">
-          <Stepper steps={steps} current={current} />
+          {type !== "distributor" && <Stepper steps={steps} current={current} />}
         </div>
 
-        <div className="mt-4 sm:mt-6 rounded-2xl border border-border bg-card p-4 sm:p-6 md:p-8 shadow-elev">
+        <div className={type === "distributor" ? "mt-4 sm:mt-6" : "mt-4 sm:mt-6 rounded-2xl border border-border bg-card p-4 sm:p-6 md:p-8 shadow-elev"}>
           {done && submission ? (
             <SuccessStep info={submission} />
+          ) : type === "distributor" ? (
+            <DistributorSinglePage onSubmit={submit} />
           ) : (
             <>
               {StepBody}
