@@ -25,10 +25,10 @@ export function DistributorSinglePage({ onSubmit }: { onSubmit: () => void }) {
     <div className="grid gap-4 lg:grid-cols-[1fr_300px]">
       {/* LEFT — Form card */}
       <div className="rounded-2xl border border-border bg-card p-3 sm:p-4 shadow-elev">
-        <h2 className="font-display text-base sm:text-lg font-bold text-foreground">Add Captain</h2>
+        <h2 className="font-display text-base sm:text-lg font-bold text-foreground">Add Distributor</h2>
 
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <Field label="Captain Name" required className="sm:col-span-2" icon={<User className="h-4 w-4" />}>
+          <Field label="Distributor Name" required className="sm:col-span-2" icon={<User className="h-4 w-4" />}>
             <input className={compactInput} placeholder="Enter Name" />
           </Field>
 
