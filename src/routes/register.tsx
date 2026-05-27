@@ -38,6 +38,7 @@ import { SelfieStep } from "@/components/register/steps/selfie";
 import { SuccessStep, buildSubmission, type SubmissionInfo } from "@/components/register/steps/success";
 import { PaymentStep, type PaymentData } from "@/components/register/steps/payment";
 import { DistributorEntityStep } from "@/components/register/steps/distributor-entity";
+import { DistributorSinglePage } from "@/components/register/distributor-single";
 
 const searchSchema = z.object({
   type: z.enum(["old", "new", "distributor"]).optional().default("new"),
