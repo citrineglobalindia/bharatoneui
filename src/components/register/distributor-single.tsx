@@ -158,12 +158,12 @@ export function DistributorSinglePage({ onSubmit }: { onSubmit: () => void }) {
             </Button>
           </div>
           <p className="mt-2 text-[11.5px] leading-relaxed text-muted-foreground">
-            Please download the captain onboarding form using the button above and fill it out accurately.
+            Please download the distributor onboarding form using the button above and fill it out accurately.
             Ensure all details match your government ID.
           </p>
 
           <ul className="mt-3 space-y-2.5">
-            <InstructionItem title="Captain Name">
+            <InstructionItem title="Distributor Name">
               Ensure spelling matches your govt. ID — cannot be changed later.
             </InstructionItem>
             <InstructionItem title="Mobile No.">
