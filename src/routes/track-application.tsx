@@ -60,7 +60,7 @@ function TrackApplicationPage() {
   };
 
   return (
-    <div className="relative min-h-screen bg-tricolor flex items-center justify-center p-3 sm:p-6 lg:p-10 overflow-hidden">
+    <div className="relative min-h-screen bg-tricolor flex items-center justify-center px-3 py-4 sm:p-6 lg:p-10 overflow-hidden">
       <div
         aria-hidden
         className="pointer-events-none absolute -top-32 -left-24 h-80 w-80 rounded-full bg-saffron-gradient opacity-15 blur-3xl"
@@ -74,9 +74,9 @@ function TrackApplicationPage() {
         className="pointer-events-none absolute top-1/3 left-1/2 -translate-x-1/2 h-72 w-72 rounded-full bg-india-green/5 blur-3xl"
       />
 
-      <div className="relative w-full max-w-5xl grid lg:grid-cols-[1.1fr_1fr] gap-6 lg:gap-8 animate-in fade-in zoom-in-95 duration-500">
+      <div className="relative w-full max-w-md md:max-w-3xl lg:max-w-5xl grid md:grid-cols-[1.1fr_1fr] gap-4 sm:gap-6 lg:gap-8 animate-in fade-in zoom-in-95 duration-500">
         {/* LEFT: Brand / Info panel */}
-        <aside className="relative hidden lg:flex flex-col justify-between rounded-3xl border border-border bg-gradient-to-br from-orange-50 via-white to-emerald-50 p-8 shadow-elev overflow-hidden">
+        <aside className="relative hidden md:flex flex-col justify-between rounded-3xl border border-border bg-gradient-to-br from-orange-50 via-white to-emerald-50 p-5 sm:p-6 lg:p-8 shadow-elev overflow-hidden">
           <div
             aria-hidden
             className="pointer-events-none absolute -top-20 -right-20 h-64 w-64 rounded-full bg-saffron/10 blur-3xl"
@@ -95,8 +95,8 @@ function TrackApplicationPage() {
               Back to Login
             </a>
 
-            <div className="mt-6 flex flex-col items-start gap-5">
-              <div className="rounded-2xl bg-white/80 backdrop-blur border border-border p-4 shadow-soft">
+            <div className="mt-5 flex flex-col items-start gap-4 lg:gap-5">
+              <div className="rounded-2xl bg-white/80 backdrop-blur border border-border p-3 lg:p-4 shadow-soft">
                 <BharatOneLogo size="lg" />
               </div>
               <div>
@@ -104,24 +104,24 @@ function TrackApplicationPage() {
                   <Sparkles className="h-3 w-3" />
                   Real-time Tracking
                 </span>
-                <h1 className="mt-3 font-display text-3xl font-bold leading-tight text-foreground">
+                <h1 className="mt-3 font-display text-2xl lg:text-3xl font-bold leading-tight text-foreground">
                   Track Your <span className="text-india-green">Application</span>
                 </h1>
-                <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+                <p className="mt-2 text-xs lg:text-sm text-muted-foreground leading-relaxed">
                   Get instant updates on your BharatOne registration — from document
                   verification to final approval, all in one place.
                 </p>
               </div>
             </div>
 
-            <div className="mt-6 space-y-3">
+            <div className="mt-5 lg:mt-6 space-y-2.5 lg:space-y-3">
               <InfoRow icon={<ShieldCheck className="h-4 w-4" />} title="Secure & Verified" desc="End-to-end encrypted tracking with OTP verification." />
               <InfoRow icon={<Clock className="h-4 w-4" />} title="Live Status Updates" desc="See progress through every verification stage." />
               <InfoRow icon={<Headphones className="h-4 w-4" />} title="24×7 Support" desc="Stuck somewhere? Our team is just a call away." />
             </div>
           </div>
 
-          <div className="relative mt-6 grid grid-cols-3 gap-3">
+          <div className="relative mt-5 lg:mt-6 grid grid-cols-3 gap-2 lg:gap-3">
             <Stat value="2.4L+" label="Applications" />
             <Stat value="98%" label="Approval Rate" />
             <Stat value="48h" label="Avg. Time" />
@@ -131,7 +131,7 @@ function TrackApplicationPage() {
         {/* RIGHT: Form card */}
         <div className="relative flex flex-col rounded-3xl border border-border bg-card shadow-elev overflow-hidden">
           {/* Mobile header */}
-          <div className="flex items-center gap-3 border-b border-border bg-gradient-to-r from-orange-50 to-emerald-50 px-5 py-4 lg:hidden">
+          <div className="flex items-center gap-3 border-b border-border bg-gradient-to-r from-orange-50 to-emerald-50 px-4 sm:px-5 py-3 sm:py-4 md:hidden">
             <a
               href="/login"
               aria-label="Go back"
@@ -145,13 +145,13 @@ function TrackApplicationPage() {
             </div>
           </div>
 
-          <div className="p-6 sm:p-8">
-            <div className="hidden lg:flex items-center justify-between">
+          <div className="p-5 sm:p-6 lg:p-8">
+            <div className="hidden md:flex items-center justify-between gap-3 flex-wrap">
               <div>
-                <h2 className="font-display text-xl font-bold text-foreground">
+                <h2 className="font-display text-lg lg:text-xl font-bold text-foreground">
                   Check Status
                 </h2>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs lg:text-sm text-muted-foreground">
                   Enter your details to view application progress.
                 </p>
               </div>
@@ -196,7 +196,7 @@ function TrackApplicationPage() {
                     <input
                       value={applicationId}
                       onChange={(e) => setApplicationId(e.target.value)}
-                      className="h-12 w-full rounded-lg border border-input bg-background pl-10 pr-3 text-sm shadow-soft transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-india-green/15 focus-visible:border-india-green"
+                      className="h-11 sm:h-12 w-full rounded-lg border border-input bg-background pl-10 pr-3 text-sm shadow-soft transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-india-green/15 focus-visible:border-india-green"
                       placeholder="e.g. BO-2025-AB12345"
                     />
                   </div>
@@ -213,7 +213,7 @@ function TrackApplicationPage() {
                       value={mobile}
                       onChange={(e) => setMobile(e.target.value)}
                       inputMode="numeric"
-                      className="h-12 w-full rounded-lg border border-input bg-background pl-10 pr-3 text-sm shadow-soft transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-india-green/15 focus-visible:border-india-green"
+                      className="h-11 sm:h-12 w-full rounded-lg border border-input bg-background pl-10 pr-3 text-sm shadow-soft transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-india-green/15 focus-visible:border-india-green"
                       placeholder="+91 98XXX XXXXX"
                     />
                   </div>
@@ -226,7 +226,7 @@ function TrackApplicationPage() {
               <Button
                 type="submit"
                 disabled={status === "loading"}
-                className="h-12 w-full rounded-lg bg-india-green text-base font-semibold text-white shadow-elev hover:bg-india-green/90 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-70"
+                className="h-11 sm:h-12 w-full rounded-lg bg-india-green text-sm sm:text-base font-semibold text-white shadow-elev hover:bg-india-green/90 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-70"
               >
                 {status === "loading" ? (
                   <span className="flex items-center gap-2">
