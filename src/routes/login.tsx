@@ -212,7 +212,7 @@ function LoginPage() {
         {/* Footer */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-card px-6 py-3 text-[11px] sm:text-xs text-muted-foreground border-t border-border">
           <div className="flex items-center gap-3 justify-center sm:justify-start">
-            <a href="#" className="hover:text-foreground">Terms & Condition</a>
+            <Link to="/terms-and-conditions" className="hover:text-foreground">Terms & Condition</Link>
             <span className="text-border">|</span>
             <a href="#" className="hover:text-foreground">Privacy Policy</a>
           </div>
