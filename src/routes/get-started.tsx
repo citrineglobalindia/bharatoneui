@@ -127,6 +127,24 @@ function Index() {
             note="Onboarded across India"
           />
         </div>
+
+        {/* Footer */}
+        <div className="mt-10 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-t border-border pt-4 text-[11px] text-muted-foreground">
+          <div className="flex items-center gap-3 justify-center sm:justify-start">
+            <Link to="/terms-and-conditions" className="hover:text-foreground">Terms & Condition</Link>
+            <span className="text-border">|</span>
+            <Link to="/privacy-policy" className="hover:text-foreground">Privacy Policy</Link>
+          </div>
+          <div className="flex items-center gap-3 justify-center text-muted-foreground">
+            <a href="https://www.instagram.com/bharatone__official?igsh=MXgxeXdyZXZzenQ2ZQ==" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="hover:text-foreground transition-colors"><Instagram className="h-4 w-4" /></a>
+            <a href="https://www.facebook.com/share/14ehHxTsSc7/" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="hover:text-foreground transition-colors"><Facebook className="h-4 w-4" /></a>
+            <a href="https://youtube.com/@bharatone-n3m5m?si=nm29R-B94J0EpnJb" target="_blank" rel="noopener noreferrer" aria-label="YouTube" className="hover:text-foreground transition-colors"><Youtube className="h-4 w-4" /></a>
+            <a href="https://www.threads.com/@bharatone__official" target="_blank" rel="noopener noreferrer" aria-label="Threads" className="hover:text-foreground transition-colors"><ThreadsIcon className="h-4 w-4" /></a>
+          </div>
+          <div className="text-center sm:text-right">
+            Copyright © 2026 <span className="text-india-green font-semibold">BharatOne Services & Affiliates Pvt. Ltd.</span> All rights reserved.
+          </div>
+        </div>
       </main>
     </div>
   );
