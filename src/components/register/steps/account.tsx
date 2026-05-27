@@ -118,6 +118,7 @@ export function AccountStep() {
   };
 
   return (
+    <>
     <div className="space-y-6">
       <StepHeader
         icon={<UserCheck className="h-5 w-5" />}
