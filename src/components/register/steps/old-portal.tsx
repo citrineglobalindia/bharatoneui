@@ -186,6 +186,7 @@ export function OldPortalStep() {
   };
 
   return (
+    <>
     <div className="space-y-6">
       <StepHeader
         icon={<Lock className="h-5 w-5" />}
