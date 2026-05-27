@@ -44,7 +44,7 @@ function LoginPage() {
     setCaptcha(genCaptcha());
   }, []);
   return (
-    <div className="relative min-h-screen lg:h-screen bg-tricolor flex items-center justify-center p-2 sm:p-3 lg:p-4 overflow-hidden">
+    <div className="relative min-h-screen bg-tricolor flex items-center justify-center p-2 sm:p-3 lg:p-4 overflow-x-hidden">
       <div
         aria-hidden
         className="pointer-events-none absolute -top-32 -left-24 h-80 w-80 rounded-full bg-saffron-gradient opacity-15 blur-3xl"
@@ -54,10 +54,10 @@ function LoginPage() {
         className="pointer-events-none absolute -bottom-32 -right-24 h-96 w-96 rounded-full bg-emerald-300/20 blur-3xl"
       />
 
-      <div className="relative w-full max-w-6xl lg:max-h-full flex flex-col rounded-2xl border border-border bg-card shadow-elev overflow-hidden animate-in fade-in zoom-in-95 duration-500">
+      <div className="relative w-full max-w-6xl flex flex-col rounded-2xl border border-border bg-card shadow-elev overflow-hidden animate-in fade-in zoom-in-95 duration-500">
         <div className="grid md:grid-cols-2 min-h-0">
           {/* Left — Welcome */}
-          <div className="relative p-5 sm:p-6 lg:p-7 bg-gradient-to-br from-orange-50 via-white to-emerald-50 text-center">
+          <div className="relative p-4 sm:p-5 lg:p-6 bg-gradient-to-br from-orange-50 via-white to-emerald-50 text-center">
             <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground leading-tight">
               Welcome To
               <br />
@@ -65,14 +65,14 @@ function LoginPage() {
               <span className="text-india-green">Connect</span>
             </h1>
 
-            <div className="mt-4 flex justify-center">
-              <div className="relative flex h-32 w-32 sm:h-36 sm:w-36 items-center justify-center rounded-full bg-white shadow-elev ring-4 ring-saffron/30">
+            <div className="mt-3 flex justify-center">
+              <div className="relative flex h-24 w-24 sm:h-28 sm:w-28 lg:h-32 lg:w-32 items-center justify-center rounded-full bg-white shadow-elev ring-4 ring-saffron/30">
                 <div className="absolute inset-2 rounded-full ring-2 ring-india-green/40" />
                 <BharatOneLogo size="lg" />
               </div>
             </div>
 
-            <h2 className="font-display mt-4 text-lg sm:text-xl font-bold text-foreground">
+            <h2 className="font-display mt-3 text-base sm:text-lg lg:text-xl font-bold text-foreground">
               Gateway to <span className="text-saffron">BharatOne</span>{" "}
               <span className="text-india-green">Network!</span>
             </h2>
@@ -81,7 +81,7 @@ function LoginPage() {
               banking, financial, travel, insurance, Aadhaar, and citizen services across India.
             </p>
 
-            <div className="mt-4 grid grid-cols-3 sm:grid-cols-6 gap-2">
+            <div className="mt-3 grid grid-cols-3 sm:grid-cols-6 gap-2">
               <ServiceTile icon={<Landmark className="h-5 w-5" />} label="Banking" tone="saffron" />
               <ServiceTile icon={<Users className="h-5 w-5" />} label="G2C Services" tone="green" />
               <ServiceTile icon={<Plane className="h-5 w-5" />} label="Travel" tone="saffron" />
@@ -92,21 +92,21 @@ function LoginPage() {
           </div>
 
           {/* Right — Login */}
-          <div className="p-5 sm:p-6 lg:p-7 border-t border-border md:border-t-0 md:border-l">
+          <div className="p-4 sm:p-5 lg:p-6 border-t border-border md:border-t-0 md:border-l">
             <div className="flex justify-center md:justify-start">
               <BharatOneLogo size="lg" />
             </div>
-            <h2 className="font-display mt-3 text-xl sm:text-2xl font-extrabold text-foreground">
+            <h2 className="font-display mt-2 text-lg sm:text-xl lg:text-2xl font-extrabold text-foreground">
               Log in to your account
             </h2>
 
-            <form className="mt-4 space-y-3" onSubmit={(e) => e.preventDefault()}>
+            <form className="mt-3 space-y-2.5" onSubmit={(e) => e.preventDefault()}>
               <div>
                 <label className="text-sm font-semibold text-foreground">Username or Email</label>
                 <div className="mt-1 relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-india-green" />
                   <input
-                    className="h-11 w-full rounded-lg border border-input bg-background pl-10 pr-3 text-sm shadow-soft transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-india-green/15 focus-visible:border-india-green"
+                    className="h-10 w-full rounded-lg border border-input bg-background pl-10 pr-3 text-sm shadow-soft transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-india-green/15 focus-visible:border-india-green"
                     placeholder="Username or Email"
                   />
                 </div>
@@ -117,7 +117,7 @@ function LoginPage() {
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-india-green" />
                   <input
                     type={showPassword ? "text" : "password"}
-                    className="h-11 w-full rounded-lg border border-input bg-background pl-10 pr-10 text-sm shadow-soft transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-india-green/15 focus-visible:border-india-green"
+                    className="h-10 w-full rounded-lg border border-input bg-background pl-10 pr-10 text-sm shadow-soft transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-india-green/15 focus-visible:border-india-green"
                     placeholder="Password"
                   />
                   <button
@@ -132,7 +132,7 @@ function LoginPage() {
 
               {/* Captcha */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="flex items-center justify-between gap-2 rounded-lg border border-input bg-muted/40 px-3 h-11">
+                <div className="flex items-center justify-between gap-2 rounded-lg border border-input bg-muted/40 px-3 h-10">
                   <span className="font-display select-none text-lg font-extrabold tracking-[0.25em] text-purple-700 italic">
                     {captcha}
                   </span>
@@ -146,7 +146,7 @@ function LoginPage() {
                   </button>
                 </div>
                 <input
-                  className="h-11 w-full rounded-lg border border-input bg-background px-3 text-sm shadow-soft transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-india-green/15 focus-visible:border-india-green"
+                  className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm shadow-soft transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-india-green/15 focus-visible:border-india-green"
                   placeholder="Enter Captcha Text"
                 />
               </div>
@@ -159,13 +159,13 @@ function LoginPage() {
 
               <Button
                 type="submit"
-                className="h-11 w-full rounded-lg bg-india-green text-base font-semibold text-white shadow-elev hover:bg-india-green/90 transition-all hover:scale-[1.01] active:scale-[0.99]"
+                className="h-10 w-full rounded-lg bg-india-green text-sm font-semibold text-white shadow-elev hover:bg-india-green/90 transition-all hover:scale-[1.01] active:scale-[0.99]"
               >
                 Log In
               </Button>
             </form>
 
-            <div className="relative my-3 flex items-center">
+            <div className="relative my-2.5 flex items-center">
               <div className="flex-grow border-t border-border" />
               <span className="mx-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 New to BharatOne?
