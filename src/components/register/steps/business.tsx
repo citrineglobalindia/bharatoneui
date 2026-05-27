@@ -43,38 +43,79 @@ export function BusinessStep() {
         title={addrType === "urban" ? "Urban Address" : "Rural Address"}
         icon={<MapPin className="h-5 w-5" />}
       >
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Building / Shop No" required>
-            <input className={inputCls} placeholder="Building or shop number" />
-          </Field>
-          <Field label="Street / Area">
-            <input className={inputCls} placeholder="Street or area name" />
-          </Field>
-          <Field label={addrType === "urban" ? "Ward Number" : "Village"}>
-            <input className={inputCls} placeholder={addrType === "urban" ? "Ward number" : "Village name"} />
-          </Field>
-          <Field label="Landmark">
-            <input className={inputCls} placeholder="Nearby landmark" />
-          </Field>
-          <Field label={addrType === "urban" ? "City" : "Taluk"} required>
-            <input className={inputCls} placeholder={addrType === "urban" ? "City" : "Taluk"} />
-          </Field>
-          <Field label="District" required>
-            <select className={inputCls}>
-              <option>Select district</option>
-              <option>Bengaluru Urban</option>
-              <option>Bengaluru Rural</option>
-              <option>Hassan</option>
-              <option>Mysuru</option>
-            </select>
-          </Field>
-          <Field label="State" required>
-            <input className={inputCls} defaultValue="Karnataka" />
-          </Field>
-          <Field label="Pincode" required>
-            <input className={inputCls} placeholder="6 digit pincode" maxLength={6} />
-          </Field>
-        </div>
+        {addrType === "urban" ? (
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Building / Shop No" required>
+              <input className={inputCls} placeholder="Building or shop number" />
+            </Field>
+            <Field label="Street / Area">
+              <input className={inputCls} placeholder="Street or area name" />
+            </Field>
+            <Field label="Ward Number">
+              <input className={inputCls} placeholder="Ward number" />
+            </Field>
+            <Field label="Landmark">
+              <input className={inputCls} placeholder="Nearby landmark" />
+            </Field>
+            <Field label="City" required>
+              <input className={inputCls} placeholder="City" />
+            </Field>
+            <Field label="District" required>
+              <select className={inputCls}>
+                <option>Select district</option>
+                <option>Bengaluru Urban</option>
+                <option>Bengaluru Rural</option>
+                <option>Hassan</option>
+                <option>Mysuru</option>
+              </select>
+            </Field>
+            <Field label="State" required>
+              <input className={inputCls} defaultValue="Karnataka" />
+            </Field>
+            <Field label="Pincode" required>
+              <input className={inputCls} placeholder="6 digit pincode" maxLength={6} />
+            </Field>
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Shop No." required>
+              <input className={inputCls} placeholder="Shop number" />
+            </Field>
+            <Field label="Village Name" required>
+              <input className={inputCls} placeholder="Village name" />
+            </Field>
+            <Field label="Gram Panchayat" required>
+              <input className={inputCls} placeholder="Gram Panchayat" />
+            </Field>
+            <Field label="Hobli Name" required>
+              <input className={inputCls} placeholder="Hobli name" />
+            </Field>
+            <Field label="Post Office" required>
+              <input className={inputCls} placeholder="Post office" />
+            </Field>
+            <Field label="Post Office Name">
+              <input className={inputCls} placeholder="Post office name" />
+            </Field>
+            <Field label="PIN Code" required>
+              <input className={inputCls} placeholder="6 digit pincode" maxLength={6} />
+            </Field>
+            <Field label="Taluk" required>
+              <input className={inputCls} placeholder="Taluk" />
+            </Field>
+            <Field label="District" required>
+              <select className={inputCls}>
+                <option>Select district</option>
+                <option>Bengaluru Urban</option>
+                <option>Bengaluru Rural</option>
+                <option>Hassan</option>
+                <option>Mysuru</option>
+              </select>
+            </Field>
+            <Field label="State" required>
+              <input className={inputCls} defaultValue="Karnataka" />
+            </Field>
+          </div>
+        )}
       </SectionCard>
 
       <SectionCard title="Pin Shop Location on Map" icon={<MapPin className="h-5 w-5" />}>
