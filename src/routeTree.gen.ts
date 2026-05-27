@@ -9,11 +9,17 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TrackApplicationRouteImport } from './routes/track-application'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as GetStartedRouteImport } from './routes/get-started'
 import { Route as IndexRouteImport } from './routes/index'
 
+const TrackApplicationRoute = TrackApplicationRouteImport.update({
+  id: '/track-application',
+  path: '/track-application',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
@@ -40,12 +46,14 @@ export interface FileRoutesByFullPath {
   '/get-started': typeof GetStartedRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/track-application': typeof TrackApplicationRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/get-started': typeof GetStartedRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/track-application': typeof TrackApplicationRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +61,25 @@ export interface FileRoutesById {
   '/get-started': typeof GetStartedRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/track-application': typeof TrackApplicationRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/get-started' | '/login' | '/register'
+  fullPaths:
+    | '/'
+    | '/get-started'
+    | '/login'
+    | '/register'
+    | '/track-application'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/get-started' | '/login' | '/register'
-  id: '__root__' | '/' | '/get-started' | '/login' | '/register'
+  to: '/' | '/get-started' | '/login' | '/register' | '/track-application'
+  id:
+    | '__root__'
+    | '/'
+    | '/get-started'
+    | '/login'
+    | '/register'
+    | '/track-application'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,10 +87,18 @@ export interface RootRouteChildren {
   GetStartedRoute: typeof GetStartedRoute
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
+  TrackApplicationRoute: typeof TrackApplicationRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/track-application': {
+      id: '/track-application'
+      path: '/track-application'
+      fullPath: '/track-application'
+      preLoaderRoute: typeof TrackApplicationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/register': {
       id: '/register'
       path: '/register'
@@ -107,6 +135,7 @@ const rootRouteChildren: RootRouteChildren = {
   GetStartedRoute: GetStartedRoute,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
+  TrackApplicationRoute: TrackApplicationRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
