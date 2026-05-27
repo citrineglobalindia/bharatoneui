@@ -123,7 +123,7 @@ export function AccountStep() {
       <StepHeader
         icon={<UserCheck className="h-5 w-5" />}
         title="Account Details"
-        description="Enter your email and mobile number, then verify BOTH via OTP to continue."
+        description="Enter your email and mobile number, then verify both via OTP to continue."
       />
       <Notice title="Auto-generated username">
         Your username will be created automatically (e.g. <b>RET00000100</b>) after successful registration.
