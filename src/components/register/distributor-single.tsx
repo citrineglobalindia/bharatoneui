@@ -20,7 +20,7 @@ import { PasswordField, ConfirmPasswordField } from "./password-field";
 export function DistributorSinglePage({ onSubmit }: { onSubmit: () => void }) {
   const [pwd, setPwd] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [selectedState, setSelectedState] = useState("");
+  const [selectedState, setSelectedState] = useState("Karnataka");
 
   const stateDistricts: Record<string, string[]> = {
     Karnataka: [
@@ -32,9 +32,6 @@ export function DistributorSinglePage({ onSubmit }: { onSubmit: () => void }) {
       "Raichur", "Ramanagara", "Shivamogga (Shimoga)", "Tumakuru (Tumkur)",
       "Udupi", "Uttara Kannada (Karwar)", "Vijayapura (Bijapur)", "Yadgir", "Vijayanagara"
     ],
-    Maharashtra: ["Mumbai", "Pune", "Nagpur", "Thane", "Nashik"],
-    "Tamil Nadu": ["Chennai", "Coimbatore", "Madurai", "Salem", "Tiruchirappalli"],
-    Delhi: ["New Delhi", "North Delhi", "South Delhi", "East Delhi", "West Delhi"],
   };
 
   return (
@@ -112,11 +109,7 @@ export function DistributorSinglePage({ onSubmit }: { onSubmit: () => void }) {
                   value={selectedState}
                   onChange={(e) => setSelectedState(e.target.value)}
                 >
-                  <option value="" disabled>Select State</option>
                   <option>Karnataka</option>
-                  <option>Maharashtra</option>
-                  <option>Tamil Nadu</option>
-                  <option>Delhi</option>
                 </select>
               </Field>
               <Field label="District Name" required>
