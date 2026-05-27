@@ -48,6 +48,16 @@ export function DistributorSinglePage({ onSubmit }: { onSubmit: () => void }) {
             <input className={compactInput} placeholder="Enter Name" />
           </Field>
 
+          <Field label="Individual / Proprietor Name" required icon={<User className="h-4 w-4" />}>
+            <input className={compactInput} placeholder="Enter Proprietor Name" />
+          </Field>
+          <Field label="Company / Firm Name" required icon={<Building2 className="h-4 w-4" />}>
+            <input className={compactInput} placeholder="Enter Company / Firm Name" />
+          </Field>
+
+          <Field label="GST Number" icon={<Hash className="h-4 w-4" />}>
+            <input className={`${compactInput} uppercase`} placeholder="Enter GST Number" maxLength={15} />
+          </Field>
           <Field label="Date of Birth" required>
             <input type="date" className={compactInput} placeholder="Pick a date" />
           </Field>
