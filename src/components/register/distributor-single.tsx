@@ -110,7 +110,7 @@ export function DistributorSinglePage({ onSubmit }: { onSubmit: () => void }) {
             label="Form PDF"
             required
             icon={<FileText className="h-4 w-4" />}
-            hint={<span className="inline-flex items-center gap-1"><Info className="h-3 w-3" /> Upload the filled & signed captain onboarding form.</span>}
+            hint={<span className="inline-flex items-center gap-1"><Info className="h-3 w-3" /> Upload the filled & signed distributor onboarding form.</span>}
           >
             <div className="flex items-center gap-2">
               <label className="inline-flex h-10 cursor-pointer items-center rounded-lg border border-input bg-background px-3 text-sm font-medium shadow-soft hover:bg-muted">
