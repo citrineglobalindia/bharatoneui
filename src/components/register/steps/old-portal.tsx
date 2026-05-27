@@ -17,6 +17,7 @@ import {
 import { Field, inputCls, Notice, StepHeader } from "../field";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { OtpSuccessDialog, type OtpSuccessChannel } from "../otp-success-dialog";
 
 type Stage = "lookup" | "fetched" | "otp" | "verified";
 type Channel = "email" | "mobile";
@@ -66,6 +67,9 @@ export function OldPortalStep() {
   const [mobileCooldown, setMobileCooldown] = useState(0);
   const emailInputsRef = useRef<Array<HTMLInputElement | null>>([]);
   const mobileInputsRef = useRef<Array<HTMLInputElement | null>>([]);
+
+  const [successOpen, setSuccessOpen] = useState(false);
+  const [successChannel, setSuccessChannel] = useState<OtpSuccessChannel>("email");
 
   useEffect(() => {
     if (emailCooldown <= 0) return;
@@ -131,7 +135,13 @@ export function OldPortalStep() {
       if (code === MOCK_OTP) {
         setEmailVerified(true);
         setEmailError(null);
-        if (mobileVerified) setStage("verified");
+        if (mobileVerified) {
+          setStage("verified");
+          setSuccessChannel("all");
+        } else {
+          setSuccessChannel("email");
+        }
+        setSuccessOpen(true);
       } else {
         setEmailError("Incorrect code. Please try again or resend.");
       }
@@ -147,7 +157,13 @@ export function OldPortalStep() {
       if (code === MOCK_OTP) {
         setMobileVerified(true);
         setMobileError(null);
-        if (emailVerified) setStage("verified");
+        if (emailVerified) {
+          setStage("verified");
+          setSuccessChannel("all");
+        } else {
+          setSuccessChannel("mobile");
+        }
+        setSuccessOpen(true);
       } else {
         setMobileError("Incorrect code. Please try again or resend.");
       }
