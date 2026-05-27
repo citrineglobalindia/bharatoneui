@@ -10,6 +10,9 @@ import {
   Sparkles,
   Clock,
   Users,
+  Facebook,
+  Youtube,
+  Instagram,
 } from "lucide-react";
 import { BharatOneLogo } from "@/components/bharatone-logo";
 
