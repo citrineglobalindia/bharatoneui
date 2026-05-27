@@ -51,18 +51,33 @@ export function OldPortalStep() {
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [user, setUser] = useState<FetchedUser | null>(null);
 
-  const [channel, setChannel] = useState<Channel>("email");
-  const [otp, setOtp] = useState<string[]>(Array(6).fill(""));
-  const [otpError, setOtpError] = useState<string | null>(null);
-  const [verifying, setVerifying] = useState(false);
-  const [cooldown, setCooldown] = useState(0);
-  const inputsRef = useRef<Array<HTMLInputElement | null>>([]);
+  // Both channels are mandatory — track each independently.
+  const [emailOtp, setEmailOtp] = useState<string[]>(Array(6).fill(""));
+  const [mobileOtp, setMobileOtp] = useState<string[]>(Array(6).fill(""));
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [mobileError, setMobileError] = useState<string | null>(null);
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [mobileVerified, setMobileVerified] = useState(false);
+  const [verifyingEmail, setVerifyingEmail] = useState(false);
+  const [verifyingMobile, setVerifyingMobile] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
+  const [mobileSent, setMobileSent] = useState(false);
+  const [emailCooldown, setEmailCooldown] = useState(0);
+  const [mobileCooldown, setMobileCooldown] = useState(0);
+  const emailInputsRef = useRef<Array<HTMLInputElement | null>>([]);
+  const mobileInputsRef = useRef<Array<HTMLInputElement | null>>([]);
 
   useEffect(() => {
-    if (cooldown <= 0) return;
-    const t = setInterval(() => setCooldown((c) => Math.max(0, c - 1)), 1000);
+    if (emailCooldown <= 0) return;
+    const t = setInterval(() => setEmailCooldown((c) => Math.max(0, c - 1)), 1000);
     return () => clearInterval(t);
-  }, [cooldown]);
+  }, [emailCooldown]);
+
+  useEffect(() => {
+    if (mobileCooldown <= 0) return;
+    const t = setInterval(() => setMobileCooldown((c) => Math.max(0, c - 1)), 1000);
+    return () => clearInterval(t);
+  }, [mobileCooldown]);
 
   const handleFetch = async () => {
     setLookupError(null);
@@ -84,74 +99,74 @@ export function OldPortalStep() {
       email: "ramesh.sharma@example.com",
       mobile: "9845098450",
     });
-    setStage("fetched");
-  };
-
-  const sendOtp = async (selected: Channel) => {
-    setChannel(selected);
-    setOtp(Array(6).fill(""));
-    setOtpError(null);
     setStage("otp");
-    setCooldown(RESEND_COOLDOWN);
-    // simulate dispatch — focus first OTP cell
-    setTimeout(() => inputsRef.current[0]?.focus(), 50);
   };
 
-  const resendOtp = () => {
-    if (cooldown > 0) return;
-    setOtp(Array(6).fill(""));
-    setOtpError(null);
-    setCooldown(RESEND_COOLDOWN);
-    inputsRef.current[0]?.focus();
-  };
-
-  const handleOtpChange = (i: number, val: string) => {
-    const digit = val.replace(/\D/g, "").slice(-1);
-    const next = [...otp];
-    next[i] = digit;
-    setOtp(next);
-    setOtpError(null);
-    if (digit && i < 5) inputsRef.current[i + 1]?.focus();
-  };
-
-  const handleOtpKey = (i: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Backspace" && !otp[i] && i > 0) inputsRef.current[i - 1]?.focus();
-    if (e.key === "ArrowLeft" && i > 0) inputsRef.current[i - 1]?.focus();
-    if (e.key === "ArrowRight" && i < 5) inputsRef.current[i + 1]?.focus();
-  };
-
-  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
-    const text = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
-    if (!text) return;
-    e.preventDefault();
-    const next = Array(6).fill("");
-    text.split("").forEach((c, i) => (next[i] = c));
-    setOtp(next);
-    inputsRef.current[Math.min(text.length, 5)]?.focus();
-  };
-
-  const verifyOtp = async () => {
-    const code = otp.join("");
-    if (code.length !== 6) {
-      setOtpError("Please enter the complete 6-digit code.");
-      return;
-    }
-    setVerifying(true);
-    await new Promise((r) => setTimeout(r, 800));
-    setVerifying(false);
-    if (code === MOCK_OTP) {
-      setStage("verified");
+  const sendOtp = (ch: Channel) => {
+    if (ch === "email") {
+      setEmailOtp(Array(6).fill(""));
+      setEmailError(null);
+      setEmailSent(true);
+      setEmailCooldown(RESEND_COOLDOWN);
+      setTimeout(() => emailInputsRef.current[0]?.focus(), 50);
     } else {
-      setOtpError("Incorrect code. Please try again or resend.");
+      setMobileOtp(Array(6).fill(""));
+      setMobileError(null);
+      setMobileSent(true);
+      setMobileCooldown(RESEND_COOLDOWN);
+      setTimeout(() => mobileInputsRef.current[0]?.focus(), 50);
+    }
+  };
+
+  const verifyChannel = async (ch: Channel) => {
+    if (ch === "email") {
+      const code = emailOtp.join("");
+      if (code.length !== 6) {
+        setEmailError("Please enter the complete 6-digit code.");
+        return;
+      }
+      setVerifyingEmail(true);
+      await new Promise((r) => setTimeout(r, 700));
+      setVerifyingEmail(false);
+      if (code === MOCK_OTP) {
+        setEmailVerified(true);
+        setEmailError(null);
+        if (mobileVerified) setStage("verified");
+      } else {
+        setEmailError("Incorrect code. Please try again or resend.");
+      }
+    } else {
+      const code = mobileOtp.join("");
+      if (code.length !== 6) {
+        setMobileError("Please enter the complete 6-digit code.");
+        return;
+      }
+      setVerifyingMobile(true);
+      await new Promise((r) => setTimeout(r, 700));
+      setVerifyingMobile(false);
+      if (code === MOCK_OTP) {
+        setMobileVerified(true);
+        setMobileError(null);
+        if (emailVerified) setStage("verified");
+      } else {
+        setMobileError("Incorrect code. Please try again or resend.");
+      }
     }
   };
 
   const resetAll = () => {
     setStage("lookup");
     setUser(null);
-    setOtp(Array(6).fill(""));
-    setOtpError(null);
-    setCooldown(0);
+    setEmailOtp(Array(6).fill(""));
+    setMobileOtp(Array(6).fill(""));
+    setEmailError(null);
+    setMobileError(null);
+    setEmailVerified(false);
+    setMobileVerified(false);
+    setEmailSent(false);
+    setMobileSent(false);
+    setEmailCooldown(0);
+    setMobileCooldown(0);
   };
 
   return (
@@ -159,7 +174,7 @@ export function OldPortalStep() {
       <StepHeader
         icon={<Lock className="h-5 w-5" />}
         title="Old JSKO Portal"
-        description="Enter your JSKO Username to auto-fetch your registered details, then verify your email or mobile via OTP to continue."
+        description="Enter your JSKO Username to auto-fetch your registered details, then verify BOTH your email and mobile via OTP to continue."
       />
 
       {/* Progress micro-strip */}
@@ -167,12 +182,16 @@ export function OldPortalStep() {
         <MiniStep label="Fetch" active={stage === "lookup"} done={stage !== "lookup"} />
         <Dash done={stage !== "lookup"} />
         <MiniStep
-          label="Choose Channel"
-          active={stage === "fetched"}
-          done={stage === "otp" || stage === "verified"}
+          label="Verify Email"
+          active={stage === "otp" && !emailVerified}
+          done={emailVerified}
         />
-        <Dash done={stage === "otp" || stage === "verified"} />
-        <MiniStep label="Verify OTP" active={stage === "otp"} done={stage === "verified"} />
+        <Dash done={emailVerified} />
+        <MiniStep
+          label="Verify Mobile"
+          active={stage === "otp" && !mobileVerified}
+          done={mobileVerified}
+        />
       </div>
 
       {/* Stage 1 — lookup */}
@@ -225,182 +244,77 @@ export function OldPortalStep() {
         </div>
       )}
 
-      {/* Stage 2 — fetched, choose channel */}
-      {stage === "fetched" && user && (
+      {/* Stage 2 — dual OTP (both mandatory) */}
+      {(stage === "otp" || stage === "verified") && user && (
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-          <FetchedUserCard user={user} onChange={resetAll} />
-          <SectionCard title="Send verification code to" icon={<ShieldCheck className="h-4 w-4" />}>
-            <p className="text-[13px] text-muted-foreground">
-              Choose where you'd like to receive your 6-digit OTP. We'll match it against your old
-              JSKO records.
-            </p>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <ChannelOption
-                icon={<Mail className="h-5 w-5" />}
-                title="Email"
-                value={maskEmail(user.email)}
-                onClick={() => sendOtp("email")}
-              />
-              <ChannelOption
-                icon={<Phone className="h-5 w-5" />}
-                title="Mobile (SMS)"
-                value={maskMobile(user.mobile)}
-                onClick={() => sendOtp("mobile")}
-              />
-            </div>
-          </SectionCard>
-        </div>
-      )}
+          <FetchedUserCard user={user} onChange={resetAll} compact={stage === "verified"} />
 
-      {/* Stage 3 — OTP */}
-      {stage === "otp" && user && (
-        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-          <FetchedUserCard user={user} onChange={resetAll} compact />
+          {stage === "otp" && (
+            <Notice tone="warn" title="Both verifications required">
+              For your security, you must verify <span className="font-semibold">both</span> your
+              registered email and mobile to proceed.
+            </Notice>
+          )}
 
-          <div className="rounded-2xl border border-border bg-background/60 p-4 sm:p-5 shadow-soft">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="flex items-start gap-3">
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-india-green/10 text-india-green">
-                  <KeyRound className="h-4 w-4" />
-                </span>
-                <div>
-                  <h3 className="font-display text-[15px] sm:text-base font-bold text-foreground">
-                    Enter the 6-digit OTP
-                  </h3>
-                  <p className="text-[12px] text-muted-foreground">
-                    Code sent to{" "}
-                    <span className="font-semibold text-foreground">
-                      {channel === "email" ? maskEmail(user.email) : maskMobile(user.mobile)}
-                    </span>{" "}
-                    · expires in 10 minutes.
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setStage("fetched")}
-                className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold text-india-green hover:bg-india-green/10 transition-colors"
-              >
-                <PencilLine className="h-3 w-3" /> Change channel
-              </button>
-            </div>
-
-            <div className="mt-4 flex justify-center gap-2 sm:gap-3">
-              {otp.map((d, i) => (
-                <input
-                  key={i}
-                  ref={(el) => {
-                    inputsRef.current[i] = el;
-                  }}
-                  value={d}
-                  onChange={(e) => handleOtpChange(i, e.target.value)}
-                  onKeyDown={(e) => handleOtpKey(i, e)}
-                  onPaste={handlePaste}
-                  inputMode="numeric"
-                  maxLength={1}
-                  aria-label={`Digit ${i + 1}`}
-                  className={cn(
-                    "h-12 w-10 sm:h-14 sm:w-12 rounded-xl border-2 bg-background text-center font-display text-xl font-bold text-foreground shadow-soft transition focus-visible:outline-none",
-                    otpError
-                      ? "border-red-400 focus-visible:border-red-500 focus-visible:ring-4 focus-visible:ring-red-500/15"
-                      : d
-                        ? "border-india-green focus-visible:ring-4 focus-visible:ring-india-green/20"
-                        : "border-input focus-visible:border-india-green focus-visible:ring-4 focus-visible:ring-india-green/15",
-                  )}
-                />
-              ))}
-            </div>
-
-            {otpError && (
-              <p className="mt-3 flex items-center justify-center gap-1.5 text-xs font-semibold text-red-600">
-                <XCircle className="h-3.5 w-3.5" /> {otpError}
-              </p>
-            )}
-
-            <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div className="text-[12px] text-muted-foreground">
-                Didn't receive the code?{" "}
-                <button
-                  type="button"
-                  onClick={resendOtp}
-                  disabled={cooldown > 0}
-                  className={cn(
-                    "inline-flex items-center gap-1 font-semibold transition-colors",
-                    cooldown > 0
-                      ? "text-muted-foreground cursor-not-allowed"
-                      : "text-india-green hover:underline",
-                  )}
-                >
-                  <RefreshCw className={cn("h-3 w-3", cooldown === 0 && "")} />
-                  {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend OTP"}
-                </button>
-                {channel === "email" && (
-                  <>
-                    {" · "}
-                    <button
-                      type="button"
-                      onClick={() => sendOtp("mobile")}
-                      className="font-semibold text-india-green hover:underline"
-                    >
-                      Try SMS instead
-                    </button>
-                  </>
-                )}
-                {channel === "mobile" && (
-                  <>
-                    {" · "}
-                    <button
-                      type="button"
-                      onClick={() => sendOtp("email")}
-                      className="font-semibold text-india-green hover:underline"
-                    >
-                      Try Email instead
-                    </button>
-                  </>
-                )}
-              </div>
-              <Button
-                onClick={verifyOtp}
-                disabled={verifying || otp.join("").length !== 6}
-                className="h-11 bg-india-green text-white hover:bg-india-green/90 shadow-elev"
-              >
-                {verifying ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" /> Verifying…
-                  </>
-                ) : (
-                  <>
-                    <ShieldCheck className="h-4 w-4" /> Verify OTP
-                  </>
-                )}
-              </Button>
-            </div>
-
-            <p className="mt-3 text-center text-[11px] text-muted-foreground">
-              Demo OTP: <span className="font-mono font-semibold text-foreground">123456</span>
-            </p>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <OtpCard
+              channel="email"
+              icon={<Mail className="h-4 w-4" />}
+              title="Email Verification"
+              target={maskEmail(user.email)}
+              otp={emailOtp}
+              setOtp={setEmailOtp}
+              error={emailError}
+              setError={setEmailError}
+              verified={emailVerified}
+              verifying={verifyingEmail}
+              sent={emailSent}
+              cooldown={emailCooldown}
+              onSend={() => sendOtp("email")}
+              onVerify={() => verifyChannel("email")}
+              inputsRef={emailInputsRef}
+            />
+            <OtpCard
+              channel="mobile"
+              icon={<Phone className="h-4 w-4" />}
+              title="Mobile Verification"
+              target={maskMobile(user.mobile)}
+              otp={mobileOtp}
+              setOtp={setMobileOtp}
+              error={mobileError}
+              setError={setMobileError}
+              verified={mobileVerified}
+              verifying={verifyingMobile}
+              sent={mobileSent}
+              cooldown={mobileCooldown}
+              onSend={() => sendOtp("mobile")}
+              onVerify={() => verifyChannel("mobile")}
+              inputsRef={mobileInputsRef}
+            />
           </div>
+
+          <p className="text-center text-[11px] text-muted-foreground">
+            Demo OTP: <span className="font-mono font-semibold text-foreground">123456</span> (use
+            for both)
+          </p>
         </div>
       )}
 
       {/* Stage 4 — verified */}
       {stage === "verified" && user && (
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-          <FetchedUserCard user={user} onChange={resetAll} compact />
           <div className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50/80 to-white p-4 sm:p-5">
             <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 ring-4 ring-emerald-50">
               <CheckCircle2 className="h-5 w-5 text-emerald-600" />
             </span>
             <div className="min-w-0">
               <h3 className="font-display text-base font-bold text-foreground">
-                Verification successful
+                Both verifications successful
               </h3>
               <p className="mt-0.5 text-[13px] text-muted-foreground">
-                Your{" "}
-                <span className="font-semibold text-foreground">
-                  {channel === "email" ? "email" : "mobile"}
-                </span>{" "}
-                has been verified against the JSKO records. Click{" "}
+                Your <span className="font-semibold text-foreground">email</span> and{" "}
+                <span className="font-semibold text-foreground">mobile</span> have both been verified
+                against the JSKO records. Click{" "}
                 <span className="font-semibold text-foreground">Next</span> to continue with your
                 personal details.
               </p>
