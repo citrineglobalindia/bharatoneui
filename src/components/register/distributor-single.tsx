@@ -20,6 +20,22 @@ import { PasswordField, ConfirmPasswordField } from "./password-field";
 export function DistributorSinglePage({ onSubmit }: { onSubmit: () => void }) {
   const [pwd, setPwd] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [selectedState, setSelectedState] = useState("");
+
+  const stateDistricts: Record<string, string[]> = {
+    Karnataka: [
+      "Bagalkot", "Ballari (Bellary)", "Belagavi (Belgaum)", "Bengaluru Rural",
+      "Bengaluru Urban", "Bidar", "Chamarajanagar", "Chikkaballapur",
+      "Chikkamagaluru (Chikmagalur)", "Chitradurga", "Dakshina Kannada",
+      "Davanagere", "Dharwad", "Gadag", "Hassan", "Haveri", "Kalaburagi (Gulbarga)",
+      "Kodagu (Coorg)", "Kolar", "Koppal", "Mandya", "Mysuru (Mysore)",
+      "Raichur", "Ramanagara", "Shivamogga (Shimoga)", "Tumakuru (Tumkur)",
+      "Udupi", "Uttara Kannada (Karwar)", "Vijayapura (Bijapur)", "Yadgir", "Vijayanagara"
+    ],
+    Maharashtra: ["Mumbai", "Pune", "Nagpur", "Thane", "Nashik"],
+    "Tamil Nadu": ["Chennai", "Coimbatore", "Madurai", "Salem", "Tiruchirappalli"],
+    Delhi: ["New Delhi", "North Delhi", "South Delhi", "East Delhi", "West Delhi"],
+  };
 
   return (
     <div className="grid gap-4 lg:grid-cols-[1fr_300px]">
@@ -81,7 +97,11 @@ export function DistributorSinglePage({ onSubmit }: { onSubmit: () => void }) {
             </Field>
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label="State Name" required>
-                <select className={compactInput} defaultValue="">
+                <select
+                  className={compactInput}
+                  value={selectedState}
+                  onChange={(e) => setSelectedState(e.target.value)}
+                >
                   <option value="" disabled>Select State</option>
                   <option>Karnataka</option>
                   <option>Maharashtra</option>
@@ -92,9 +112,9 @@ export function DistributorSinglePage({ onSubmit }: { onSubmit: () => void }) {
               <Field label="District Name" required>
                 <select className={compactInput} defaultValue="">
                   <option value="" disabled>Select District</option>
-                  <option>Bengaluru Urban</option>
-                  <option>Mysuru</option>
-                  <option>Mumbai</option>
+                  {(stateDistricts[selectedState] || []).map((d) => (
+                    <option key={d}>{d}</option>
+                  ))}
                 </select>
               </Field>
             </div>
