@@ -25,10 +25,10 @@ export function DistributorSinglePage({ onSubmit }: { onSubmit: () => void }) {
     <div className="grid gap-4 lg:grid-cols-[1fr_300px]">
       {/* LEFT — Form card */}
       <div className="rounded-2xl border border-border bg-card p-3 sm:p-4 shadow-elev">
-        <h2 className="font-display text-base sm:text-lg font-bold text-foreground">Add Captain</h2>
+        <h2 className="font-display text-base sm:text-lg font-bold text-foreground">Add Distributor</h2>
 
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <Field label="Captain Name" required className="sm:col-span-2" icon={<User className="h-4 w-4" />}>
+          <Field label="Distributor Name" required className="sm:col-span-2" icon={<User className="h-4 w-4" />}>
             <input className={compactInput} placeholder="Enter Name" />
           </Field>
 
@@ -110,7 +110,7 @@ export function DistributorSinglePage({ onSubmit }: { onSubmit: () => void }) {
             label="Form PDF"
             required
             icon={<FileText className="h-4 w-4" />}
-            hint={<span className="inline-flex items-center gap-1"><Info className="h-3 w-3" /> Upload the filled & signed captain onboarding form.</span>}
+            hint={<span className="inline-flex items-center gap-1"><Info className="h-3 w-3" /> Upload the filled & signed distributor onboarding form.</span>}
           >
             <div className="flex items-center gap-2">
               <label className="inline-flex h-10 cursor-pointer items-center rounded-lg border border-input bg-background px-3 text-sm font-medium shadow-soft hover:bg-muted">
@@ -158,12 +158,12 @@ export function DistributorSinglePage({ onSubmit }: { onSubmit: () => void }) {
             </Button>
           </div>
           <p className="mt-2 text-[11.5px] leading-relaxed text-muted-foreground">
-            Please download the captain onboarding form using the button above and fill it out accurately.
+            Please download the distributor onboarding form using the button above and fill it out accurately.
             Ensure all details match your government ID.
           </p>
 
           <ul className="mt-3 space-y-2.5">
-            <InstructionItem title="Captain Name">
+            <InstructionItem title="Distributor Name">
               Ensure spelling matches your govt. ID — cannot be changed later.
             </InstructionItem>
             <InstructionItem title="Mobile No.">
