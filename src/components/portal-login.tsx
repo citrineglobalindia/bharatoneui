@@ -314,6 +314,7 @@ export const PORTAL_CONFIGS: Record<PortalRole, PortalConfig> = {
     accent: "indigo",
     icon: ClipboardCheck,
     demo: { username: "qc.admin", password: "QC@2026", displayName: "QC Reviewer" },
+    redirectTo: "/qc/dashboard",
   },
   accountant: {
     role: "accountant",
