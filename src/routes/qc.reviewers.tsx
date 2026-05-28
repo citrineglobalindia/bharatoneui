@@ -16,7 +16,7 @@ const REVIEWERS = [
   { name: "Mohammed Ali", id: "9888776655", level: "Level 1", status: "Offline", approved: 42, rejected: 3, hold: 1, sla: "90%" },
 ];
 
-export default function ReviewersPage() {
+function ReviewersPage() {
   return (
     <QcShell>
       <div className="space-y-5">
