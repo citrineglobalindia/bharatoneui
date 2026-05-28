@@ -19,7 +19,6 @@ import {
   LifeBuoy,
   Settings,
   LogOut,
-  Bell,
   ChevronDown,
   IdCard,
   Menu,
@@ -27,6 +26,7 @@ import {
   Search,
 } from "lucide-react";
 import { BharatOneLogo } from "@/components/bharatone-logo";
+import { NotificationsBell } from "@/components/retailer/notifications-bell";
 
 type NavItem = { label: string; icon: React.ReactNode; to: string };
 type NavSection = { heading: string; items: NavItem[] };
@@ -185,10 +185,7 @@ export function RetailerShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button className="relative h-9 w-9 rounded-full hover:bg-muted flex items-center justify-center">
-              <Bell className="h-4 w-4" />
-              <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-saffron" />
-            </button>
+            <NotificationsBell />
             <button className="flex items-center gap-2 rounded-full hover:bg-muted pl-1 pr-2 py-1">
               <div className="h-7 w-7 rounded-full bg-india-green text-white text-xs font-bold flex items-center justify-center">H</div>
               <span className="hidden sm:inline text-sm font-semibold">Harshitha</span>
