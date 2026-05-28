@@ -23,6 +23,89 @@ export interface KycApplicant {
   documents: { label: string; type: string; size: string; verified: boolean }[];
   flags: string[];
   assignedTo?: string;
+  // ---- Extended onboarding profile ----
+  personal?: {
+    firstName: string;
+    middleName?: string;
+    surname: string;
+    gender: "Male" | "Female" | "Other";
+    fatherName?: string;
+    maritalStatus?: string;
+    nationality?: string;
+  };
+  account?: {
+    username: string;
+    emailVerified: boolean;
+    mobileVerified: boolean;
+    referralCode?: string;
+    registeredOn: string;
+  };
+  address?: {
+    type: "Urban" | "Rural";
+    shopName: string;
+    building?: string;
+    street?: string;
+    ward?: string;
+    landmark?: string;
+    village?: string;
+    gramPanchayat?: string;
+    hobli?: string;
+    postOffice?: string;
+    taluk?: string;
+    district: string;
+    geo?: { lat: number; lng: number; capturedAt: string };
+  };
+  entity?: {
+    name: string;
+    type: string;
+    dateOfIncorporation?: string;
+    pan: string;
+    cin?: string;
+    gstin?: string;
+    website?: string;
+    udyam?: string;
+    fssai?: string;
+  };
+  bankDetails?: {
+    holder: string;
+    accountType: "Savings" | "Current";
+    branch?: string;
+    reEntered: boolean;
+    pennyDropAt?: string;
+    pennyDropAmount?: string;
+  };
+  payment?: {
+    method: "UPI" | "NEFT" | "IMPS" | "RTGS";
+    date: string;
+    utr: string;
+    payerName: string;
+    payerBank?: string;
+    payerAccount?: string;
+    amount: string;
+    remarks?: string;
+    receiptVerified: boolean;
+  };
+  videoKyc?: {
+    completedAt: string;
+    durationSec: number;
+    agent: string;
+    geoMatch: boolean;
+    randomCodeMatch: boolean;
+    languageSpoken: string;
+  };
+  selfie?: {
+    capturedAt: string;
+    geoMatch: boolean;
+    deviceModel: string;
+  };
+  consents?: { label: string; acceptedAt: string }[];
+  deviceMeta?: {
+    ip: string;
+    device: string;
+    os: string;
+    appVersion: string;
+    location: string;
+  };
 }
 
 export const QC_APPLICANTS: KycApplicant[] = [
@@ -55,6 +138,53 @@ export const QC_APPLICANTS: KycApplicant[] = [
       { label: "Video KYC", type: "video/mp4", size: "4.2 MB", verified: true },
     ],
     flags: [],
+    personal: {
+      firstName: "Harshitha", middleName: "", surname: "N",
+      gender: "Female", fatherName: "Narayan Murthy",
+      maritalStatus: "Single", nationality: "Indian",
+    },
+    account: {
+      username: "harshitha.n", emailVerified: true, mobileVerified: true,
+      referralCode: "BO-REF-2284", registeredOn: "2026-05-27 09:58",
+    },
+    address: {
+      type: "Urban", shopName: "Sri Sai Mobile World",
+      building: "#42, 1st Floor, Sai Complex", street: "MG Road",
+      ward: "Ward 14", landmark: "Opp Reliance Fresh",
+      taluk: "Bengaluru North", district: "Bengaluru Urban",
+      geo: { lat: 12.9716, lng: 77.5946, capturedAt: "2026-05-27 10:21" },
+    },
+    entity: {
+      name: "Sri Sai Enterprises", type: "Proprietorship",
+      dateOfIncorporation: "2019-04-12", pan: "ABCDE1234F",
+      gstin: "29ABCDE1234F1Z5", udyam: "UDYAM-KR-03-0012345",
+      fssai: "10012021000123", website: "srisai.example.in",
+    },
+    bankDetails: {
+      holder: "Harshitha N", accountType: "Savings", branch: "Yeshwanthpur",
+      reEntered: true, pennyDropAt: "2026-05-27 10:30", pennyDropAmount: "₹1.00",
+    },
+    payment: {
+      method: "UPI", date: "2026-05-27 10:35", utr: "428912776541",
+      payerName: "Harshitha N", payerBank: "HDFC Bank",
+      payerAccount: "harshitha@okhdfc", amount: "₹2,999",
+      remarks: "Onboarding fee", receiptVerified: true,
+    },
+    videoKyc: {
+      completedAt: "2026-05-27 10:40", durationSec: 84, agent: "Agent ID VKA-22",
+      geoMatch: true, randomCodeMatch: true, languageSpoken: "Kannada",
+    },
+    selfie: { capturedAt: "2026-05-27 10:25", geoMatch: true, deviceModel: "Redmi Note 12" },
+    consents: [
+      { label: "Terms & Conditions", acceptedAt: "2026-05-27 09:58" },
+      { label: "Privacy Policy", acceptedAt: "2026-05-27 09:58" },
+      { label: "Aadhaar e-KYC Consent", acceptedAt: "2026-05-27 10:05" },
+      { label: "Penny-drop Authorisation", acceptedAt: "2026-05-27 10:30" },
+    ],
+    deviceMeta: {
+      ip: "103.21.58.214", device: "Redmi Note 12", os: "Android 13",
+      appVersion: "BharatOne v3.4.1", location: "Bengaluru, KA",
+    },
   },
   {
     id: "BO-KYC-24090",

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import {
   ArrowLeft, ShieldCheck, AlertTriangle, CheckCircle2, XCircle, PauseCircle, FileText, Image as ImageIcon, Video, Download, Eye, MapPin, Phone, Mail, Calendar, Building2, Landmark, IdCard, Camera, Sparkles, FileSearch,
+  User, Users, CreditCard, Smartphone, Globe, Wifi, Hash, Languages, BadgeCheck, Clock, Receipt, MapPinned,
 } from "lucide-react";
 import { QcShell } from "@/components/qc/qc-shell";
 import { PageHeader, StatusBadge } from "@/components/retailer/page-header";
@@ -29,6 +30,31 @@ function ScoreBar({ label, value, icon }: { label: string; value: number; icon: 
       <div className="h-2 rounded-full bg-muted overflow-hidden">
         <div className={`h-full ${fill} transition-all`} style={{ width: `${value}%` }} />
       </div>
+    </div>
+  );
+}
+
+function Info({ label, value, mono, verified }: { label: string; value: string; mono?: boolean; verified?: boolean }) {
+  return (
+    <div className="rounded-lg bg-muted/40 p-2">
+      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className={`text-xs font-semibold text-slate-900 break-words inline-flex items-center gap-1 ${mono ? "font-mono" : ""}`}>
+        {value}
+        {verified !== undefined && (
+          verified
+            ? <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+            : <AlertTriangle className="h-3 w-3 text-amber-600" />
+        )}
+      </p>
+    </div>
+  );
+}
+
+function Row({ k, v, tone }: { k: string; v: string; tone?: "good" | "bad" }) {
+  return (
+    <div className="flex justify-between">
+      <span className="text-muted-foreground">{k}</span>
+      <span className={`font-semibold ${tone === "good" ? "text-emerald-700" : tone === "bad" ? "text-rose-700" : ""}`}>{v}</span>
     </div>
   );
 }
@@ -91,6 +117,8 @@ function KycReviewPage() {
       </QcShell>
     );
   }
+
+  const a = applicant;
 
   const submit = (status: "Approved" | "Rejected" | "On Hold") => {
     if (status !== "Approved" && remark.trim().length < 5) {
@@ -181,15 +209,184 @@ function KycReviewPage() {
                 <div className="flex justify-between"><span className="text-muted-foreground">Bank</span><span className="font-semibold">{applicant.bank.name}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">IFSC</span><span className="font-mono font-semibold">{applicant.bank.ifsc}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Account</span><span className="font-mono font-semibold">{applicant.bank.account}</span></div>
+                {a.bankDetails && (
+                  <>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Holder</span><span className="font-semibold">{a.bankDetails.holder}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Type</span><span className="font-semibold">{a.bankDetails.accountType}</span></div>
+                    {a.bankDetails.branch && <div className="flex justify-between"><span className="text-muted-foreground">Branch</span><span className="font-semibold">{a.bankDetails.branch}</span></div>}
+                    {a.bankDetails.pennyDropAmount && <div className="flex justify-between"><span className="text-muted-foreground">Penny-drop</span><span className="font-mono font-semibold">{a.bankDetails.pennyDropAmount}</span></div>}
+                  </>
+                )}
                 <div className="mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">
                   <CheckCircle2 className="h-3 w-3" /> Penny-drop verified
                 </div>
               </div>
             </div>
+
+            {a.deviceMeta && (
+              <div className="rounded-xl border border-border bg-card p-4 shadow-soft">
+                <h3 className="text-sm font-bold flex items-center gap-1.5 mb-3"><Smartphone className="h-4 w-4 text-slate-600" /> Device & Session</h3>
+                <div className="space-y-1.5 text-xs">
+                  <div className="flex justify-between"><span className="text-muted-foreground">Device</span><span className="font-semibold">{a.deviceMeta.device}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">OS</span><span className="font-semibold">{a.deviceMeta.os}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">App</span><span className="font-semibold">{a.deviceMeta.appVersion}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground inline-flex items-center gap-1"><Wifi className="h-3 w-3" /> IP</span><span className="font-mono font-semibold">{a.deviceMeta.ip}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Location</span><span className="font-semibold">{a.deviceMeta.location}</span></div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Middle + Right: Documents & decision */}
           <div className="lg:col-span-2 space-y-4">
+            {/* Personal details */}
+            {a.personal && (
+              <div className="rounded-xl border border-border bg-card p-4 shadow-soft">
+                <h3 className="text-sm font-bold flex items-center gap-1.5 mb-3"><User className="h-4 w-4 text-indigo-600" /> Personal Details</h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+                  <Info label="First Name" value={a.personal.firstName} />
+                  <Info label="Middle Name" value={a.personal.middleName || "—"} />
+                  <Info label="Surname" value={a.personal.surname} />
+                  <Info label="Gender" value={a.personal.gender} />
+                  <Info label="Date of Birth" value={a.dob} />
+                  <Info label="Father's Name" value={a.personal.fatherName || "—"} />
+                  <Info label="Marital Status" value={a.personal.maritalStatus || "—"} />
+                  <Info label="Nationality" value={a.personal.nationality || "Indian"} />
+                </div>
+              </div>
+            )}
+
+            {/* Account & contact */}
+            {a.account && (
+              <div className="rounded-xl border border-border bg-card p-4 shadow-soft">
+                <h3 className="text-sm font-bold flex items-center gap-1.5 mb-3"><BadgeCheck className="h-4 w-4 text-emerald-600" /> Account & Contact</h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+                  <Info label="Username" value={a.account.username} />
+                  <Info label="Email" value={a.email} verified={a.account.emailVerified} />
+                  <Info label="Mobile" value={a.phone} verified={a.account.mobileVerified} />
+                  <Info label="Referral Code" value={a.account.referralCode || "—"} />
+                  <Info label="Registered" value={a.account.registeredOn} />
+                  <Info label="Channel" value={a.channel} />
+                </div>
+              </div>
+            )}
+
+            {/* Address */}
+            {a.address && (
+              <div className="rounded-xl border border-border bg-card p-4 shadow-soft">
+                <h3 className="text-sm font-bold flex items-center gap-1.5 mb-3">
+                  <MapPinned className="h-4 w-4 text-rose-600" /> Business Address
+                  <span className="ml-1 text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded">{a.address.type}</span>
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+                  <Info label="Shop / Business" value={a.address.shopName} />
+                  {a.address.type === "Urban" ? (
+                    <>
+                      <Info label="Building / Shop No" value={a.address.building || "—"} />
+                      <Info label="Street / Area" value={a.address.street || "—"} />
+                      <Info label="Ward" value={a.address.ward || "—"} />
+                      <Info label="Landmark" value={a.address.landmark || "—"} />
+                    </>
+                  ) : (
+                    <>
+                      <Info label="Village" value={a.address.village || "—"} />
+                      <Info label="Gram Panchayat" value={a.address.gramPanchayat || "—"} />
+                      <Info label="Hobli" value={a.address.hobli || "—"} />
+                      <Info label="Post Office" value={a.address.postOffice || "—"} />
+                    </>
+                  )}
+                  <Info label="Taluk" value={a.address.taluk || "—"} />
+                  <Info label="City" value={a.city} />
+                  <Info label="District" value={a.address.district} />
+                  <Info label="State" value={a.state} />
+                  <Info label="Pincode" value={a.pincode} />
+                  {a.address.geo && (
+                    <Info label="Geo-tag" value={`${a.address.geo.lat.toFixed(4)}, ${a.address.geo.lng.toFixed(4)}`} />
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Business entity */}
+            {a.entity && (
+              <div className="rounded-xl border border-border bg-card p-4 shadow-soft">
+                <h3 className="text-sm font-bold flex items-center gap-1.5 mb-3"><Building2 className="h-4 w-4 text-violet-600" /> Business Entity</h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+                  <Info label="Legal Name" value={a.entity.name} />
+                  <Info label="Entity Type" value={a.entity.type} />
+                  <Info label="Incorporation" value={a.entity.dateOfIncorporation || "—"} />
+                  <Info label="Organisation PAN" value={a.entity.pan} mono />
+                  {a.entity.cin && <Info label="CIN" value={a.entity.cin} mono />}
+                  {a.entity.gstin && <Info label="GSTIN" value={a.entity.gstin} mono />}
+                  {a.entity.udyam && <Info label="Udyam" value={a.entity.udyam} mono />}
+                  {a.entity.fssai && <Info label="FSSAI" value={a.entity.fssai} mono />}
+                  {a.entity.website && <Info label="Website" value={a.entity.website} />}
+                </div>
+              </div>
+            )}
+
+            {/* Payment */}
+            {a.payment && (
+              <div className="rounded-xl border border-border bg-card p-4 shadow-soft">
+                <h3 className="text-sm font-bold flex items-center gap-1.5 mb-3"><Receipt className="h-4 w-4 text-amber-600" /> Onboarding Payment</h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+                  <Info label="Method" value={a.payment.method} />
+                  <Info label="Date" value={a.payment.date} />
+                  <Info label="UTR / Txn ID" value={a.payment.utr} mono />
+                  <Info label="Payer Name" value={a.payment.payerName} />
+                  <Info label="Payer Bank" value={a.payment.payerBank || "—"} />
+                  <Info label="Payer Account / UPI" value={a.payment.payerAccount || "—"} mono />
+                  <Info label="Amount" value={a.payment.amount} />
+                  <Info label="Receipt" value={a.payment.receiptVerified ? "Verified" : "Pending"} />
+                  <Info label="Remarks" value={a.payment.remarks || "—"} />
+                </div>
+              </div>
+            )}
+
+            {/* Selfie + Video KYC */}
+            {(a.selfie || a.videoKyc) && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {a.selfie && (
+                  <div className="rounded-xl border border-border bg-card p-4 shadow-soft">
+                    <h3 className="text-sm font-bold flex items-center gap-1.5 mb-3"><Camera className="h-4 w-4 text-indigo-600" /> Selfie Capture</h3>
+                    <div className="space-y-1.5 text-xs">
+                      <Row k="Captured at" v={a.selfie.capturedAt} />
+                      <Row k="Device" v={a.selfie.deviceModel} />
+                      <Row k="Geo match" v={a.selfie.geoMatch ? "Match" : "Mismatch"} tone={a.selfie.geoMatch ? "good" : "bad"} />
+                    </div>
+                  </div>
+                )}
+                {a.videoKyc && (
+                  <div className="rounded-xl border border-border bg-card p-4 shadow-soft">
+                    <h3 className="text-sm font-bold flex items-center gap-1.5 mb-3"><Video className="h-4 w-4 text-violet-600" /> Video KYC</h3>
+                    <div className="space-y-1.5 text-xs">
+                      <Row k="Completed at" v={a.videoKyc.completedAt} />
+                      <Row k="Duration" v={`${a.videoKyc.durationSec}s`} />
+                      <Row k="Agent" v={a.videoKyc.agent} />
+                      <Row k="Random code" v={a.videoKyc.randomCodeMatch ? "Match" : "Mismatch"} tone={a.videoKyc.randomCodeMatch ? "good" : "bad"} />
+                      <Row k="Geo match" v={a.videoKyc.geoMatch ? "Match" : "Mismatch"} tone={a.videoKyc.geoMatch ? "good" : "bad"} />
+                      <Row k="Language" v={a.videoKyc.languageSpoken} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Consents */}
+            {a.consents && a.consents.length > 0 && (
+              <div className="rounded-xl border border-border bg-card p-4 shadow-soft">
+                <h3 className="text-sm font-bold flex items-center gap-1.5 mb-3"><ShieldCheck className="h-4 w-4 text-emerald-600" /> Consents & Authorisations</h3>
+                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {a.consents.map((c) => (
+                    <li key={c.label} className="flex items-center justify-between rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-2 text-xs">
+                      <span className="font-semibold text-emerald-900 inline-flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5" /> {c.label}</span>
+                      <span className="text-emerald-700 text-[10px] font-mono">{c.acceptedAt}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             <div className="rounded-xl border border-border bg-card p-4 shadow-soft">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-bold flex items-center gap-1.5"><IdCard className="h-4 w-4 text-indigo-600" /> Submitted Documents ({applicant.documents.length})</h3>
