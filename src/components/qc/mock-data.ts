@@ -92,11 +92,24 @@ export interface KycApplicant {
     geoMatch: boolean;
     randomCodeMatch: boolean;
     languageSpoken: string;
+    randomCode?: string;
+    declarationAccepted?: boolean;
+    livenessPassed?: boolean;
+    faceMatchVsAadhaar?: number;
+    idShownOnCamera?: "Aadhaar" | "PAN" | "Both";
+    geoCoords?: { lat: number; lng: number };
+    videoSizeMB?: number;
   };
   selfie?: {
     capturedAt: string;
     geoMatch: boolean;
     deviceModel: string;
+    livenessScore?: number;
+    faceMatchVsAadhaar?: number;
+    blurScore?: number;
+    brightnessScore?: number;
+    geoCoords?: { lat: number; lng: number };
+    galleryUploadBlocked?: boolean;
   };
   consents?: { label: string; acceptedAt: string }[];
   deviceMeta?: {
@@ -105,6 +118,13 @@ export interface KycApplicant {
     os: string;
     appVersion: string;
     location: string;
+  };
+  charges?: {
+    plan: string;
+    items: { label: string; amount: number; gstPct?: number }[];
+    receiptId: string;
+    paidAt: string;
+    paidVia: string;
   };
 }
 
