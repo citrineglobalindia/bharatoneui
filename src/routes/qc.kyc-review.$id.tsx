@@ -115,6 +115,17 @@ function KycReviewPage() {
   );
   const [remark, setRemark] = useState("");
   const [preview, setPreview] = useState<string | null>(null);
+  const [dialog, setDialog] = useState<null | "Approved" | "Rejected" | "On Hold">(null);
+  const [holdReason, setHoldReason] = useState("");
+  const [rejectReason, setRejectReason] = useState("");
+  const [processing, setProcessing] = useState(false);
+  const [credentials, setCredentials] = useState<null | {
+    userId: string;
+    password: string;
+    role: "Retailer" | "Distributor" | "Master Distributor";
+    emailSent: boolean;
+    whatsappSent: boolean;
+  }>(null);
 
   if (!applicant) {
     return (
@@ -129,14 +140,68 @@ function KycReviewPage() {
 
   const a = applicant;
 
-  const submit = (status: "Approved" | "Rejected" | "On Hold") => {
-    if (status !== "Approved" && remark.trim().length < 5) {
-      toast.error("Please add a remark", { description: "Reason required for rejection or hold." });
+  const generateUserId = (role: "Retailer" | "Distributor" | "Master Distributor") => {
+    const prefix = role === "Retailer" ? "RET" : role === "Distributor" ? "DIS" : "MDS";
+    const key = `bo-${prefix.toLowerCase()}-seq`;
+    const start = 100;
+    const current = Number(localStorage.getItem(key) || start);
+    const next = current + 1;
+    localStorage.setItem(key, String(next));
+    return `${prefix}${String(current).padStart(8, "0")}`;
+  };
+
+  const generatePassword = () => {
+    const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+    let p = "";
+    for (let i = 0; i < 10; i++) p += chars[Math.floor(Math.random() * chars.length)];
+    return `Bo@${p}`;
+  };
+
+  const confirmApprove = async () => {
+    setProcessing(true);
+    // Simulate async ID generation + dispatch to Email & WhatsApp
+    await new Promise((r) => setTimeout(r, 1400));
+    const userId = generateUserId(a.channel);
+    const password = generatePassword();
+    setCredentials({ userId, password, role: a.channel, emailSent: true, whatsappSent: true });
+    setDecision("Approved");
+    setProcessing(false);
+    toast.success("KYC Approved", { description: `${userId} provisioned & credentials dispatched.` });
+  };
+
+  const confirmReject = async () => {
+    if (rejectReason.trim().length < 5) {
+      toast.error("Reason required", { description: "Please specify why this KYC is rejected." });
       return;
     }
-    setDecision(status);
-    toast.success(`KYC ${status}`, { description: `${applicant.id} marked as ${status}.` });
+    setProcessing(true);
+    await new Promise((r) => setTimeout(r, 700));
+    setDecision("Rejected");
+    setRemark(rejectReason);
+    setProcessing(false);
+    setDialog(null);
+    toast.success("KYC Rejected", { description: `${applicant.id} rejected. Applicant notified.` });
     setTimeout(() => navigate({ to: "/qc/kyc-queue" }), 900);
+  };
+
+  const confirmHold = async () => {
+    if (holdReason.trim().length < 5) {
+      toast.error("Reason required", { description: "Please specify why this KYC is being held." });
+      return;
+    }
+    setProcessing(true);
+    await new Promise((r) => setTimeout(r, 700));
+    setDecision("On Hold");
+    setRemark(holdReason);
+    setProcessing(false);
+    setDialog(null);
+    toast.success("KYC On Hold", { description: `${applicant.id} placed on hold. Applicant informed.` });
+    setTimeout(() => navigate({ to: "/qc/kyc-queue" }), 900);
+  };
+
+  const copy = (txt: string, label: string) => {
+    navigator.clipboard.writeText(txt);
+    toast.success(`${label} copied`);
   };
 
   return (
