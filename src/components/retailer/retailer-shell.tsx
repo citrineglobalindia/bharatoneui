@@ -2,8 +2,8 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useState } from "react";
 import {
   LayoutDashboard,
-  Video,
   Banknote,
+  FileCheck2,
   CheckCircle2,
   ArrowLeftRight,
   Smartphone,
