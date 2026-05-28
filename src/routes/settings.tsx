@@ -42,10 +42,10 @@ function SettingsPage() {
             {tab === "profile" && (
               <SectionCard title="Profile Information">
                 <form onSubmit={(e) => { e.preventDefault(); toast.success("Profile updated"); }} className="grid sm:grid-cols-2 gap-3">
-                  <Field label="Full Name"><Input defaultValue="Demo Retailer" /></Field>
-                  <Field label="Mobile"><Input defaultValue="9000000004" /></Field>
-                  <Field label="Email"><Input defaultValue="demo@bharatone.in" /></Field>
-                  <Field label="Date of Birth"><Input type="date" /></Field>
+                  <Field label="Full Name"><Input defaultValue="Harshitha" /></Field>
+                  <Field label="Mobile"><Input defaultValue="9876789876" /></Field>
+                  <Field label="Email"><Input defaultValue="Harshitha@bharatone.in" /></Field>
+                  <Field label="Date of Birth"><Input type="date" defaultValue="2001-02-28" /></Field>
                   <div className="sm:col-span-2 flex justify-end pt-2 border-t border-border"><PrimaryButton type="submit">Save Changes</PrimaryButton></div>
                 </form>
               </SectionCard>
