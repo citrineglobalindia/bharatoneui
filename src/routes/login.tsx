@@ -23,6 +23,16 @@ import {
 } from "lucide-react";
 import { BharatOneLogo } from "@/components/bharatone-logo";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+
+const DEMO_RETAILER = {
+  phone: "9876789876",
+  email: "harshitha@bharatone.in",
+  password: "Password@55",
+  name: "Harshitha",
+  dob: "28/02/2001",
+  role: "retailer" as const,
+};
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -41,6 +51,9 @@ export const Route = createFileRoute("/login")({
 function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [captcha, setCaptcha] = useState("------");
+  const [identifier, setIdentifier] = useState("");
+  const [password, setPassword] = useState("");
+  const [captchaInput, setCaptchaInput] = useState("");
   const navigate = useNavigate();
   useEffect(() => {
     setCaptcha(genCaptcha());
@@ -106,6 +119,35 @@ function LoginPage() {
               className="mt-3 space-y-2.5"
               onSubmit={(e) => {
                 e.preventDefault();
+                const id = identifier.trim().toLowerCase();
+                const matchesId =
+                  id === DEMO_RETAILER.phone || id === DEMO_RETAILER.email;
+                if (!matchesId || password !== DEMO_RETAILER.password) {
+                  toast.error("Invalid credentials", {
+                    description: "Check your username/email and password.",
+                  });
+                  return;
+                }
+                if (captchaInput.trim() !== captcha) {
+                  toast.error("Captcha does not match");
+                  return;
+                }
+                try {
+                  localStorage.setItem(
+                    "bharatone:auth",
+                    JSON.stringify({
+                      name: DEMO_RETAILER.name,
+                      email: DEMO_RETAILER.email,
+                      phone: DEMO_RETAILER.phone,
+                      dob: DEMO_RETAILER.dob,
+                      role: DEMO_RETAILER.role,
+                      loggedInAt: new Date().toISOString(),
+                    }),
+                  );
+                } catch {}
+                toast.success(`Welcome, ${DEMO_RETAILER.name}`, {
+                  description: "Signed in as Retailer.",
+                });
                 navigate({ to: "/dashboard" });
               }}
             >
@@ -114,6 +156,8 @@ function LoginPage() {
                 <div className="mt-1 relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-india-green" />
                   <input
+                    value={identifier}
+                    onChange={(e) => setIdentifier(e.target.value)}
                     className="h-10 w-full rounded-lg border border-input bg-background pl-10 pr-3 text-sm shadow-soft transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-india-green/15 focus-visible:border-india-green"
                     placeholder="Username or Email"
                   />
@@ -125,6 +169,8 @@ function LoginPage() {
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-india-green" />
                   <input
                     type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     className="h-10 w-full rounded-lg border border-input bg-background pl-10 pr-10 text-sm shadow-soft transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-india-green/15 focus-visible:border-india-green"
                     placeholder="Password"
                   />
@@ -154,6 +200,8 @@ function LoginPage() {
                   </button>
                 </div>
                 <input
+                  value={captchaInput}
+                  onChange={(e) => setCaptchaInput(e.target.value)}
                   className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm shadow-soft transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-india-green/15 focus-visible:border-india-green"
                   placeholder="Enter Captcha Text"
                 />
@@ -172,6 +220,11 @@ function LoginPage() {
                 Log In
               </Button>
             </form>
+
+            <div className="mt-2 rounded-md border border-dashed border-india-green/30 bg-india-green/5 px-3 py-2 text-[11px] text-muted-foreground">
+              <span className="font-semibold text-india-green">Demo Retailer:</span>{" "}
+              9876789876 / harshitha@bharatone.in · <span className="font-mono">Password@55</span>
+            </div>
 
             <div className="relative my-2.5 flex items-center">
               <div className="flex-grow border-t border-border" />
