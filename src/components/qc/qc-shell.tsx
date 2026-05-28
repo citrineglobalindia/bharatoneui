@@ -141,10 +141,12 @@ export function QcShell({ children }: { children: React.ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
   const [now, setNow] = useState(() => new Date());
+  const [mounted, setMounted] = useState(false);
   const [dense, setDense] = useState(false);
   const [dark, setDark] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const t = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
@@ -233,9 +235,9 @@ export function QcShell({ children }: { children: React.ReactNode }) {
             {/* Live clock */}
             <div className="hidden md:flex items-center gap-2 rounded-xl border border-border bg-white px-3 h-10 shadow-soft">
               <Activity className="h-3.5 w-3.5 text-indigo-600" />
-              <div className="leading-tight text-right">
-                <p className="font-mono text-[13px] font-bold tabular-nums text-slate-900">{timeStr}</p>
-                <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">{dateStr} · IST</p>
+              <div className="leading-tight text-right min-w-[78px]" suppressHydrationWarning>
+                <p className="font-mono text-[13px] font-bold tabular-nums text-slate-900">{mounted ? timeStr : "--:--:--"}</p>
+                <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">{mounted ? `${dateStr} · IST` : "IST"}</p>
               </div>
             </div>
 
@@ -341,8 +343,8 @@ export function QcShell({ children }: { children: React.ReactNode }) {
                   </div>
                 </div>
                 <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">Account</DropdownMenuLabel>
-                <DropdownMenuItem><UserCircle2 className="h-4 w-4" /> My profile</DropdownMenuItem>
-                <DropdownMenuItem><KeyRound className="h-4 w-4" /> Change password</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate({ to: "/qc/profile" })}><UserCircle2 className="h-4 w-4" /> My profile</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate({ to: "/qc/change-password" })}><KeyRound className="h-4 w-4" /> Change password</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate({ to: "/qc/settings" })}><Settings className="h-4 w-4" /> Portal settings</DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">Session</DropdownMenuLabel>
