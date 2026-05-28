@@ -9,24 +9,46 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WalletRouteImport } from './routes/wallet'
 import { Route as VideoKycRouteImport } from './routes/video-kyc'
+import { Route as TransactionsRouteImport } from './routes/transactions'
 import { Route as TrackApplicationRouteImport } from './routes/track-application'
 import { Route as TermsAndConditionsRouteImport } from './routes/terms-and-conditions'
+import { Route as SupportRouteImport } from './routes/support'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as ServicesRouteImport } from './routes/services'
+import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as RechargeRouteImport } from './routes/recharge'
 import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
+import { Route as PanRouteImport } from './routes/pan'
+import { Route as NewServiceRequestRouteImport } from './routes/new-service-request'
 import { Route as MoneyTransferRouteImport } from './routes/money-transfer'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as GstRouteImport } from './routes/gst'
+import { Route as GovServicesRouteImport } from './routes/gov-services'
 import { Route as GetStartedRouteImport } from './routes/get-started'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as BusinessRegRouteImport } from './routes/business-reg'
 import { Route as BbpsRouteImport } from './routes/bbps'
+import { Route as ApplicationsRouteImport } from './routes/applications'
 import { Route as AepsActivationRouteImport } from './routes/aeps-activation'
 import { Route as AepsRouteImport } from './routes/aeps'
 import { Route as IndexRouteImport } from './routes/index'
 
+const WalletRoute = WalletRouteImport.update({
+  id: '/wallet',
+  path: '/wallet',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VideoKycRoute = VideoKycRouteImport.update({
   id: '/video-kyc',
   path: '/video-kyc',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TransactionsRoute = TransactionsRouteImport.update({
+  id: '/transactions',
+  path: '/transactions',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TrackApplicationRoute = TrackApplicationRouteImport.update({
@@ -37,6 +59,26 @@ const TrackApplicationRoute = TrackApplicationRouteImport.update({
 const TermsAndConditionsRoute = TermsAndConditionsRouteImport.update({
   id: '/terms-and-conditions',
   path: '/terms-and-conditions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SupportRoute = SupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ServicesRoute = ServicesRouteImport.update({
+  id: '/services',
+  path: '/services',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportsRoute = ReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RegisterRoute = RegisterRouteImport.update({
@@ -54,6 +96,16 @@ const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
   path: '/privacy-policy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PanRoute = PanRouteImport.update({
+  id: '/pan',
+  path: '/pan',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NewServiceRequestRoute = NewServiceRequestRouteImport.update({
+  id: '/new-service-request',
+  path: '/new-service-request',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MoneyTransferRoute = MoneyTransferRouteImport.update({
   id: '/money-transfer',
   path: '/money-transfer',
@@ -62,6 +114,16 @@ const MoneyTransferRoute = MoneyTransferRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GstRoute = GstRouteImport.update({
+  id: '/gst',
+  path: '/gst',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GovServicesRoute = GovServicesRouteImport.update({
+  id: '/gov-services',
+  path: '/gov-services',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GetStartedRoute = GetStartedRouteImport.update({
@@ -74,9 +136,19 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BusinessRegRoute = BusinessRegRouteImport.update({
+  id: '/business-reg',
+  path: '/business-reg',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BbpsRoute = BbpsRouteImport.update({
   id: '/bbps',
   path: '/bbps',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApplicationsRoute = ApplicationsRouteImport.update({
+  id: '/applications',
+  path: '/applications',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AepsActivationRoute = AepsActivationRouteImport.update({
@@ -99,50 +171,86 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/aeps': typeof AepsRoute
   '/aeps-activation': typeof AepsActivationRoute
+  '/applications': typeof ApplicationsRoute
   '/bbps': typeof BbpsRoute
+  '/business-reg': typeof BusinessRegRoute
   '/dashboard': typeof DashboardRoute
   '/get-started': typeof GetStartedRoute
+  '/gov-services': typeof GovServicesRoute
+  '/gst': typeof GstRoute
   '/login': typeof LoginRoute
   '/money-transfer': typeof MoneyTransferRoute
+  '/new-service-request': typeof NewServiceRequestRoute
+  '/pan': typeof PanRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/recharge': typeof RechargeRoute
   '/register': typeof RegisterRoute
+  '/reports': typeof ReportsRoute
+  '/services': typeof ServicesRoute
+  '/settings': typeof SettingsRoute
+  '/support': typeof SupportRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/track-application': typeof TrackApplicationRoute
+  '/transactions': typeof TransactionsRoute
   '/video-kyc': typeof VideoKycRoute
+  '/wallet': typeof WalletRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/aeps': typeof AepsRoute
   '/aeps-activation': typeof AepsActivationRoute
+  '/applications': typeof ApplicationsRoute
   '/bbps': typeof BbpsRoute
+  '/business-reg': typeof BusinessRegRoute
   '/dashboard': typeof DashboardRoute
   '/get-started': typeof GetStartedRoute
+  '/gov-services': typeof GovServicesRoute
+  '/gst': typeof GstRoute
   '/login': typeof LoginRoute
   '/money-transfer': typeof MoneyTransferRoute
+  '/new-service-request': typeof NewServiceRequestRoute
+  '/pan': typeof PanRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/recharge': typeof RechargeRoute
   '/register': typeof RegisterRoute
+  '/reports': typeof ReportsRoute
+  '/services': typeof ServicesRoute
+  '/settings': typeof SettingsRoute
+  '/support': typeof SupportRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/track-application': typeof TrackApplicationRoute
+  '/transactions': typeof TransactionsRoute
   '/video-kyc': typeof VideoKycRoute
+  '/wallet': typeof WalletRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/aeps': typeof AepsRoute
   '/aeps-activation': typeof AepsActivationRoute
+  '/applications': typeof ApplicationsRoute
   '/bbps': typeof BbpsRoute
+  '/business-reg': typeof BusinessRegRoute
   '/dashboard': typeof DashboardRoute
   '/get-started': typeof GetStartedRoute
+  '/gov-services': typeof GovServicesRoute
+  '/gst': typeof GstRoute
   '/login': typeof LoginRoute
   '/money-transfer': typeof MoneyTransferRoute
+  '/new-service-request': typeof NewServiceRequestRoute
+  '/pan': typeof PanRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/recharge': typeof RechargeRoute
   '/register': typeof RegisterRoute
+  '/reports': typeof ReportsRoute
+  '/services': typeof ServicesRoute
+  '/settings': typeof SettingsRoute
+  '/support': typeof SupportRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/track-application': typeof TrackApplicationRoute
+  '/transactions': typeof TransactionsRoute
   '/video-kyc': typeof VideoKycRoute
+  '/wallet': typeof WalletRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -150,75 +258,137 @@ export interface FileRouteTypes {
     | '/'
     | '/aeps'
     | '/aeps-activation'
+    | '/applications'
     | '/bbps'
+    | '/business-reg'
     | '/dashboard'
     | '/get-started'
+    | '/gov-services'
+    | '/gst'
     | '/login'
     | '/money-transfer'
+    | '/new-service-request'
+    | '/pan'
     | '/privacy-policy'
     | '/recharge'
     | '/register'
+    | '/reports'
+    | '/services'
+    | '/settings'
+    | '/support'
     | '/terms-and-conditions'
     | '/track-application'
+    | '/transactions'
     | '/video-kyc'
+    | '/wallet'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/aeps'
     | '/aeps-activation'
+    | '/applications'
     | '/bbps'
+    | '/business-reg'
     | '/dashboard'
     | '/get-started'
+    | '/gov-services'
+    | '/gst'
     | '/login'
     | '/money-transfer'
+    | '/new-service-request'
+    | '/pan'
     | '/privacy-policy'
     | '/recharge'
     | '/register'
+    | '/reports'
+    | '/services'
+    | '/settings'
+    | '/support'
     | '/terms-and-conditions'
     | '/track-application'
+    | '/transactions'
     | '/video-kyc'
+    | '/wallet'
   id:
     | '__root__'
     | '/'
     | '/aeps'
     | '/aeps-activation'
+    | '/applications'
     | '/bbps'
+    | '/business-reg'
     | '/dashboard'
     | '/get-started'
+    | '/gov-services'
+    | '/gst'
     | '/login'
     | '/money-transfer'
+    | '/new-service-request'
+    | '/pan'
     | '/privacy-policy'
     | '/recharge'
     | '/register'
+    | '/reports'
+    | '/services'
+    | '/settings'
+    | '/support'
     | '/terms-and-conditions'
     | '/track-application'
+    | '/transactions'
     | '/video-kyc'
+    | '/wallet'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AepsRoute: typeof AepsRoute
   AepsActivationRoute: typeof AepsActivationRoute
+  ApplicationsRoute: typeof ApplicationsRoute
   BbpsRoute: typeof BbpsRoute
+  BusinessRegRoute: typeof BusinessRegRoute
   DashboardRoute: typeof DashboardRoute
   GetStartedRoute: typeof GetStartedRoute
+  GovServicesRoute: typeof GovServicesRoute
+  GstRoute: typeof GstRoute
   LoginRoute: typeof LoginRoute
   MoneyTransferRoute: typeof MoneyTransferRoute
+  NewServiceRequestRoute: typeof NewServiceRequestRoute
+  PanRoute: typeof PanRoute
   PrivacyPolicyRoute: typeof PrivacyPolicyRoute
   RechargeRoute: typeof RechargeRoute
   RegisterRoute: typeof RegisterRoute
+  ReportsRoute: typeof ReportsRoute
+  ServicesRoute: typeof ServicesRoute
+  SettingsRoute: typeof SettingsRoute
+  SupportRoute: typeof SupportRoute
   TermsAndConditionsRoute: typeof TermsAndConditionsRoute
   TrackApplicationRoute: typeof TrackApplicationRoute
+  TransactionsRoute: typeof TransactionsRoute
   VideoKycRoute: typeof VideoKycRoute
+  WalletRoute: typeof WalletRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/wallet': {
+      id: '/wallet'
+      path: '/wallet'
+      fullPath: '/wallet'
+      preLoaderRoute: typeof WalletRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/video-kyc': {
       id: '/video-kyc'
       path: '/video-kyc'
       fullPath: '/video-kyc'
       preLoaderRoute: typeof VideoKycRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/transactions': {
+      id: '/transactions'
+      path: '/transactions'
+      fullPath: '/transactions'
+      preLoaderRoute: typeof TransactionsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/track-application': {
@@ -233,6 +403,34 @@ declare module '@tanstack/react-router' {
       path: '/terms-and-conditions'
       fullPath: '/terms-and-conditions'
       preLoaderRoute: typeof TermsAndConditionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/support': {
+      id: '/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof SupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/services': {
+      id: '/services'
+      path: '/services'
+      fullPath: '/services'
+      preLoaderRoute: typeof ServicesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports': {
+      id: '/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof ReportsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/register': {
@@ -256,6 +454,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrivacyPolicyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pan': {
+      id: '/pan'
+      path: '/pan'
+      fullPath: '/pan'
+      preLoaderRoute: typeof PanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/new-service-request': {
+      id: '/new-service-request'
+      path: '/new-service-request'
+      fullPath: '/new-service-request'
+      preLoaderRoute: typeof NewServiceRequestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/money-transfer': {
       id: '/money-transfer'
       path: '/money-transfer'
@@ -268,6 +480,20 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/gst': {
+      id: '/gst'
+      path: '/gst'
+      fullPath: '/gst'
+      preLoaderRoute: typeof GstRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/gov-services': {
+      id: '/gov-services'
+      path: '/gov-services'
+      fullPath: '/gov-services'
+      preLoaderRoute: typeof GovServicesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/get-started': {
@@ -284,11 +510,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/business-reg': {
+      id: '/business-reg'
+      path: '/business-reg'
+      fullPath: '/business-reg'
+      preLoaderRoute: typeof BusinessRegRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/bbps': {
       id: '/bbps'
       path: '/bbps'
       fullPath: '/bbps'
       preLoaderRoute: typeof BbpsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/applications': {
+      id: '/applications'
+      path: '/applications'
+      fullPath: '/applications'
+      preLoaderRoute: typeof ApplicationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/aeps-activation': {
@@ -319,17 +559,29 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AepsRoute: AepsRoute,
   AepsActivationRoute: AepsActivationRoute,
+  ApplicationsRoute: ApplicationsRoute,
   BbpsRoute: BbpsRoute,
+  BusinessRegRoute: BusinessRegRoute,
   DashboardRoute: DashboardRoute,
   GetStartedRoute: GetStartedRoute,
+  GovServicesRoute: GovServicesRoute,
+  GstRoute: GstRoute,
   LoginRoute: LoginRoute,
   MoneyTransferRoute: MoneyTransferRoute,
+  NewServiceRequestRoute: NewServiceRequestRoute,
+  PanRoute: PanRoute,
   PrivacyPolicyRoute: PrivacyPolicyRoute,
   RechargeRoute: RechargeRoute,
   RegisterRoute: RegisterRoute,
+  ReportsRoute: ReportsRoute,
+  ServicesRoute: ServicesRoute,
+  SettingsRoute: SettingsRoute,
+  SupportRoute: SupportRoute,
   TermsAndConditionsRoute: TermsAndConditionsRoute,
   TrackApplicationRoute: TrackApplicationRoute,
+  TransactionsRoute: TransactionsRoute,
   VideoKycRoute: VideoKycRoute,
+  WalletRoute: WalletRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
