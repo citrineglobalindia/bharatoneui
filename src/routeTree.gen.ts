@@ -44,7 +44,9 @@ import { Route as AepsRouteImport } from './routes/aeps'
 import { Route as AdminLoginRouteImport } from './routes/admin-login'
 import { Route as AccountantLoginRouteImport } from './routes/accountant-login'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as QcSettingsRouteImport } from './routes/qc.settings'
 import { Route as QcReviewersRouteImport } from './routes/qc.reviewers'
+import { Route as QcReportsRouteImport } from './routes/qc.reports'
 import { Route as QcKycQueueRouteImport } from './routes/qc.kyc-queue'
 import { Route as QcFlaggedRouteImport } from './routes/qc.flagged'
 import { Route as QcDocumentSearchRouteImport } from './routes/qc.document-search'
@@ -227,9 +229,19 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const QcSettingsRoute = QcSettingsRouteImport.update({
+  id: '/qc/settings',
+  path: '/qc/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const QcReviewersRoute = QcReviewersRouteImport.update({
   id: '/qc/reviewers',
   path: '/qc/reviewers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QcReportsRoute = QcReportsRouteImport.update({
+  id: '/qc/reports',
+  path: '/qc/reports',
   getParentRoute: () => rootRouteImport,
 } as any)
 const QcKycQueueRoute = QcKycQueueRouteImport.update({
@@ -304,7 +316,9 @@ export interface FileRoutesByFullPath {
   '/qc/document-search': typeof QcDocumentSearchRoute
   '/qc/flagged': typeof QcFlaggedRoute
   '/qc/kyc-queue': typeof QcKycQueueRoute
+  '/qc/reports': typeof QcReportsRoute
   '/qc/reviewers': typeof QcReviewersRoute
+  '/qc/settings': typeof QcSettingsRoute
   '/qc/kyc-review/$id': typeof QcKycReviewIdRoute
 }
 export interface FileRoutesByTo {
@@ -348,7 +362,9 @@ export interface FileRoutesByTo {
   '/qc/document-search': typeof QcDocumentSearchRoute
   '/qc/flagged': typeof QcFlaggedRoute
   '/qc/kyc-queue': typeof QcKycQueueRoute
+  '/qc/reports': typeof QcReportsRoute
   '/qc/reviewers': typeof QcReviewersRoute
+  '/qc/settings': typeof QcSettingsRoute
   '/qc/kyc-review/$id': typeof QcKycReviewIdRoute
 }
 export interface FileRoutesById {
@@ -393,7 +409,9 @@ export interface FileRoutesById {
   '/qc/document-search': typeof QcDocumentSearchRoute
   '/qc/flagged': typeof QcFlaggedRoute
   '/qc/kyc-queue': typeof QcKycQueueRoute
+  '/qc/reports': typeof QcReportsRoute
   '/qc/reviewers': typeof QcReviewersRoute
+  '/qc/settings': typeof QcSettingsRoute
   '/qc/kyc-review/$id': typeof QcKycReviewIdRoute
 }
 export interface FileRouteTypes {
@@ -439,7 +457,9 @@ export interface FileRouteTypes {
     | '/qc/document-search'
     | '/qc/flagged'
     | '/qc/kyc-queue'
+    | '/qc/reports'
     | '/qc/reviewers'
+    | '/qc/settings'
     | '/qc/kyc-review/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -483,7 +503,9 @@ export interface FileRouteTypes {
     | '/qc/document-search'
     | '/qc/flagged'
     | '/qc/kyc-queue'
+    | '/qc/reports'
     | '/qc/reviewers'
+    | '/qc/settings'
     | '/qc/kyc-review/$id'
   id:
     | '__root__'
@@ -527,7 +549,9 @@ export interface FileRouteTypes {
     | '/qc/document-search'
     | '/qc/flagged'
     | '/qc/kyc-queue'
+    | '/qc/reports'
     | '/qc/reviewers'
+    | '/qc/settings'
     | '/qc/kyc-review/$id'
   fileRoutesById: FileRoutesById
 }
@@ -572,7 +596,9 @@ export interface RootRouteChildren {
   QcDocumentSearchRoute: typeof QcDocumentSearchRoute
   QcFlaggedRoute: typeof QcFlaggedRoute
   QcKycQueueRoute: typeof QcKycQueueRoute
+  QcReportsRoute: typeof QcReportsRoute
   QcReviewersRoute: typeof QcReviewersRoute
+  QcSettingsRoute: typeof QcSettingsRoute
   QcKycReviewIdRoute: typeof QcKycReviewIdRoute
 }
 
@@ -823,11 +849,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/qc/settings': {
+      id: '/qc/settings'
+      path: '/qc/settings'
+      fullPath: '/qc/settings'
+      preLoaderRoute: typeof QcSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/qc/reviewers': {
       id: '/qc/reviewers'
       path: '/qc/reviewers'
       fullPath: '/qc/reviewers'
       preLoaderRoute: typeof QcReviewersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/qc/reports': {
+      id: '/qc/reports'
+      path: '/qc/reports'
+      fullPath: '/qc/reports'
+      preLoaderRoute: typeof QcReportsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/qc/kyc-queue': {
@@ -916,7 +956,9 @@ const rootRouteChildren: RootRouteChildren = {
   QcDocumentSearchRoute: QcDocumentSearchRoute,
   QcFlaggedRoute: QcFlaggedRoute,
   QcKycQueueRoute: QcKycQueueRoute,
+  QcReportsRoute: QcReportsRoute,
   QcReviewersRoute: QcReviewersRoute,
+  QcSettingsRoute: QcSettingsRoute,
   QcKycReviewIdRoute: QcKycReviewIdRoute,
 }
 export const routeTree = rootRouteImport
