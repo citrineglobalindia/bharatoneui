@@ -95,25 +95,40 @@ function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: 
             <ul className="space-y-0.5">
               {sec.items.map((it) => {
                 const active = pathname === it.to;
+                const isSignOut = it.label === "Sign Out";
                 return (
                   <li key={it.label}>
-                    <Link
-                      to={it.to}
-                      onClick={onNavigate}
-                      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        active
-                          ? "bg-indigo-500/15 text-indigo-200 ring-1 ring-indigo-400/30"
-                          : "text-slate-300 hover:bg-white/5 hover:text-white"
-                      }`}
-                    >
-                      <span className={active ? "text-indigo-300" : "text-slate-400"}>{it.icon}</span>
-                      <span className="truncate flex-1">{it.label}</span>
-                      {it.badge && (
-                        <span className="text-[10px] font-bold bg-indigo-500 text-white px-1.5 py-0.5 rounded-full">
-                          {it.badge}
-                        </span>
-                      )}
-                    </Link>
+                    {isSignOut ? (
+                      <button
+                        onClick={() => {
+                          onNavigate?.();
+                          try { localStorage.removeItem("bharatone:auth"); } catch {}
+                          navigate({ to: "/qc-login" });
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-rose-300 hover:bg-rose-500/10 hover:text-rose-200"
+                      >
+                        <span className="text-rose-400">{it.icon}</span>
+                        <span className="truncate flex-1">{it.label}</span>
+                      </button>
+                    ) : (
+                      <Link
+                        to={it.to}
+                        onClick={onNavigate}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          active
+                            ? "bg-indigo-500/15 text-indigo-200 ring-1 ring-indigo-400/30"
+                            : "text-slate-300 hover:bg-white/5 hover:text-white"
+                        }`}
+                      >
+                        <span className={active ? "text-indigo-300" : "text-slate-400"}>{it.icon}</span>
+                        <span className="truncate flex-1">{it.label}</span>
+                        {it.badge && (
+                          <span className="text-[10px] font-bold bg-indigo-500 text-white px-1.5 py-0.5 rounded-full">
+                            {it.badge}
+                          </span>
+                        )}
+                      </Link>
+                    )}
                   </li>
                 );
               })}
