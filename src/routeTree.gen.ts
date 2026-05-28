@@ -20,6 +20,7 @@ import { Route as ServicesRouteImport } from './routes/services'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as RechargeRouteImport } from './routes/recharge'
+import { Route as QcLoginRouteImport } from './routes/qc-login'
 import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
 import { Route as PanRouteImport } from './routes/pan'
 import { Route as NotificationsRouteImport } from './routes/notifications'
@@ -90,6 +91,11 @@ const RegisterRoute = RegisterRouteImport.update({
 const RechargeRoute = RechargeRouteImport.update({
   id: '/recharge',
   path: '/recharge',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QcLoginRoute = QcLoginRouteImport.update({
+  id: '/qc-login',
+  path: '/qc-login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
@@ -190,6 +196,7 @@ export interface FileRoutesByFullPath {
   '/notifications': typeof NotificationsRoute
   '/pan': typeof PanRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
+  '/qc-login': typeof QcLoginRoute
   '/recharge': typeof RechargeRoute
   '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
@@ -219,6 +226,7 @@ export interface FileRoutesByTo {
   '/notifications': typeof NotificationsRoute
   '/pan': typeof PanRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
+  '/qc-login': typeof QcLoginRoute
   '/recharge': typeof RechargeRoute
   '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
@@ -249,6 +257,7 @@ export interface FileRoutesById {
   '/notifications': typeof NotificationsRoute
   '/pan': typeof PanRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
+  '/qc-login': typeof QcLoginRoute
   '/recharge': typeof RechargeRoute
   '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
@@ -280,6 +289,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/pan'
     | '/privacy-policy'
+    | '/qc-login'
     | '/recharge'
     | '/register'
     | '/reports'
@@ -309,6 +319,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/pan'
     | '/privacy-policy'
+    | '/qc-login'
     | '/recharge'
     | '/register'
     | '/reports'
@@ -338,6 +349,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/pan'
     | '/privacy-policy'
+    | '/qc-login'
     | '/recharge'
     | '/register'
     | '/reports'
@@ -368,6 +380,7 @@ export interface RootRouteChildren {
   NotificationsRoute: typeof NotificationsRoute
   PanRoute: typeof PanRoute
   PrivacyPolicyRoute: typeof PrivacyPolicyRoute
+  QcLoginRoute: typeof QcLoginRoute
   RechargeRoute: typeof RechargeRoute
   RegisterRoute: typeof RegisterRoute
   ReportsRoute: typeof ReportsRoute
@@ -458,6 +471,13 @@ declare module '@tanstack/react-router' {
       path: '/recharge'
       fullPath: '/recharge'
       preLoaderRoute: typeof RechargeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/qc-login': {
+      id: '/qc-login'
+      path: '/qc-login'
+      fullPath: '/qc-login'
+      preLoaderRoute: typeof QcLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy-policy': {
@@ -592,6 +612,7 @@ const rootRouteChildren: RootRouteChildren = {
   NotificationsRoute: NotificationsRoute,
   PanRoute: PanRoute,
   PrivacyPolicyRoute: PrivacyPolicyRoute,
+  QcLoginRoute: QcLoginRoute,
   RechargeRoute: RechargeRoute,
   RegisterRoute: RegisterRoute,
   ReportsRoute: ReportsRoute,
