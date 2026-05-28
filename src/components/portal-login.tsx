@@ -313,7 +313,7 @@ export const PORTAL_CONFIGS: Record<PortalRole, PortalConfig> = {
     tagline: "Review KYC, applications and on-boarding submissions.",
     accent: "indigo",
     icon: ClipboardCheck,
-    demo: { username: "Anil 9845224260", password: "Password@66", displayName: "QC Reviewer" },
+    demo: { username: "9845224260", password: "Password@66", displayName: "QC Reviewer" },
     redirectTo: "/qc/dashboard",
   },
   accountant: {
