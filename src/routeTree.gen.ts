@@ -46,6 +46,7 @@ import { Route as AccountantLoginRouteImport } from './routes/accountant-login'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as QcKycQueueRouteImport } from './routes/qc.kyc-queue'
 import { Route as QcFlaggedRouteImport } from './routes/qc.flagged'
+import { Route as QcDocumentSearchRouteImport } from './routes/qc.document-search'
 import { Route as QcDashboardRouteImport } from './routes/qc.dashboard'
 import { Route as QcApprovedRouteImport } from './routes/qc.approved'
 import { Route as QcKycReviewIdRouteImport } from './routes/qc.kyc-review.$id'
@@ -235,6 +236,11 @@ const QcFlaggedRoute = QcFlaggedRouteImport.update({
   path: '/qc/flagged',
   getParentRoute: () => rootRouteImport,
 } as any)
+const QcDocumentSearchRoute = QcDocumentSearchRouteImport.update({
+  id: '/qc/document-search',
+  path: '/qc/document-search',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const QcDashboardRoute = QcDashboardRouteImport.update({
   id: '/qc/dashboard',
   path: '/qc/dashboard',
@@ -289,6 +295,7 @@ export interface FileRoutesByFullPath {
   '/wallet': typeof WalletRoute
   '/qc/approved': typeof QcApprovedRoute
   '/qc/dashboard': typeof QcDashboardRoute
+  '/qc/document-search': typeof QcDocumentSearchRoute
   '/qc/flagged': typeof QcFlaggedRoute
   '/qc/kyc-queue': typeof QcKycQueueRoute
   '/qc/kyc-review/$id': typeof QcKycReviewIdRoute
@@ -331,6 +338,7 @@ export interface FileRoutesByTo {
   '/wallet': typeof WalletRoute
   '/qc/approved': typeof QcApprovedRoute
   '/qc/dashboard': typeof QcDashboardRoute
+  '/qc/document-search': typeof QcDocumentSearchRoute
   '/qc/flagged': typeof QcFlaggedRoute
   '/qc/kyc-queue': typeof QcKycQueueRoute
   '/qc/kyc-review/$id': typeof QcKycReviewIdRoute
@@ -374,6 +382,7 @@ export interface FileRoutesById {
   '/wallet': typeof WalletRoute
   '/qc/approved': typeof QcApprovedRoute
   '/qc/dashboard': typeof QcDashboardRoute
+  '/qc/document-search': typeof QcDocumentSearchRoute
   '/qc/flagged': typeof QcFlaggedRoute
   '/qc/kyc-queue': typeof QcKycQueueRoute
   '/qc/kyc-review/$id': typeof QcKycReviewIdRoute
@@ -418,6 +427,7 @@ export interface FileRouteTypes {
     | '/wallet'
     | '/qc/approved'
     | '/qc/dashboard'
+    | '/qc/document-search'
     | '/qc/flagged'
     | '/qc/kyc-queue'
     | '/qc/kyc-review/$id'
@@ -460,6 +470,7 @@ export interface FileRouteTypes {
     | '/wallet'
     | '/qc/approved'
     | '/qc/dashboard'
+    | '/qc/document-search'
     | '/qc/flagged'
     | '/qc/kyc-queue'
     | '/qc/kyc-review/$id'
@@ -502,6 +513,7 @@ export interface FileRouteTypes {
     | '/wallet'
     | '/qc/approved'
     | '/qc/dashboard'
+    | '/qc/document-search'
     | '/qc/flagged'
     | '/qc/kyc-queue'
     | '/qc/kyc-review/$id'
@@ -545,6 +557,7 @@ export interface RootRouteChildren {
   WalletRoute: typeof WalletRoute
   QcApprovedRoute: typeof QcApprovedRoute
   QcDashboardRoute: typeof QcDashboardRoute
+  QcDocumentSearchRoute: typeof QcDocumentSearchRoute
   QcFlaggedRoute: typeof QcFlaggedRoute
   QcKycQueueRoute: typeof QcKycQueueRoute
   QcKycReviewIdRoute: typeof QcKycReviewIdRoute
@@ -811,6 +824,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof QcFlaggedRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/qc/document-search': {
+      id: '/qc/document-search'
+      path: '/qc/document-search'
+      fullPath: '/qc/document-search'
+      preLoaderRoute: typeof QcDocumentSearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/qc/dashboard': {
       id: '/qc/dashboard'
       path: '/qc/dashboard'
@@ -873,6 +893,7 @@ const rootRouteChildren: RootRouteChildren = {
   WalletRoute: WalletRoute,
   QcApprovedRoute: QcApprovedRoute,
   QcDashboardRoute: QcDashboardRoute,
+  QcDocumentSearchRoute: QcDocumentSearchRoute,
   QcFlaggedRoute: QcFlaggedRoute,
   QcKycQueueRoute: QcKycQueueRoute,
   QcKycReviewIdRoute: QcKycReviewIdRoute,
