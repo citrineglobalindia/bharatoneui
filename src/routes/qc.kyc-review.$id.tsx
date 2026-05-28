@@ -4,11 +4,19 @@ import { toast } from "sonner";
 import {
   ArrowLeft, ShieldCheck, AlertTriangle, CheckCircle2, XCircle, PauseCircle, FileText, Image as ImageIcon, Video, Download, Eye, MapPin, Phone, Mail, Calendar, Building2, Landmark, IdCard, Camera, Sparkles, FileSearch,
   User, Users, CreditCard, Smartphone, Globe, Wifi, Hash, Languages, BadgeCheck, Clock, Receipt, MapPinned,
-  Play, ScanFace, ShieldAlert, FileCheck2, IndianRupee, Lock, QrCode,
+  Play, ScanFace, ShieldAlert, FileCheck2, IndianRupee, Lock, QrCode, KeyRound, Copy, MessageCircle, Send, Loader2, PartyPopper,
 } from "lucide-react";
 import { QcShell } from "@/components/qc/qc-shell";
 import { PageHeader, StatusBadge } from "@/components/retailer/page-header";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { getApplicant } from "@/components/qc/mock-data";
 
 export const Route = createFileRoute("/qc/kyc-review/$id")({
