@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VideoKycRouteImport } from './routes/video-kyc'
 import { Route as TrackApplicationRouteImport } from './routes/track-application'
 import { Route as TermsAndConditionsRouteImport } from './routes/terms-and-conditions'
 import { Route as RegisterRouteImport } from './routes/register'
@@ -18,6 +19,11 @@ import { Route as GetStartedRouteImport } from './routes/get-started'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 
+const VideoKycRoute = VideoKycRouteImport.update({
+  id: '/video-kyc',
+  path: '/video-kyc',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TrackApplicationRoute = TrackApplicationRouteImport.update({
   id: '/track-application',
   path: '/track-application',
@@ -68,6 +74,7 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/track-application': typeof TrackApplicationRoute
+  '/video-kyc': typeof VideoKycRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -78,6 +85,7 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/track-application': typeof TrackApplicationRoute
+  '/video-kyc': typeof VideoKycRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -89,6 +97,7 @@ export interface FileRoutesById {
   '/register': typeof RegisterRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/track-application': typeof TrackApplicationRoute
+  '/video-kyc': typeof VideoKycRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -101,6 +110,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/terms-and-conditions'
     | '/track-application'
+    | '/video-kyc'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -111,6 +121,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/terms-and-conditions'
     | '/track-application'
+    | '/video-kyc'
   id:
     | '__root__'
     | '/'
@@ -121,6 +132,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/terms-and-conditions'
     | '/track-application'
+    | '/video-kyc'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -132,10 +144,18 @@ export interface RootRouteChildren {
   RegisterRoute: typeof RegisterRoute
   TermsAndConditionsRoute: typeof TermsAndConditionsRoute
   TrackApplicationRoute: typeof TrackApplicationRoute
+  VideoKycRoute: typeof VideoKycRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/video-kyc': {
+      id: '/video-kyc'
+      path: '/video-kyc'
+      fullPath: '/video-kyc'
+      preLoaderRoute: typeof VideoKycRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/track-application': {
       id: '/track-application'
       path: '/track-application'
@@ -204,6 +224,7 @@ const rootRouteChildren: RootRouteChildren = {
   RegisterRoute: RegisterRoute,
   TermsAndConditionsRoute: TermsAndConditionsRoute,
   TrackApplicationRoute: TrackApplicationRoute,
+  VideoKycRoute: VideoKycRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
