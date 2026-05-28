@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import {
   User,
   Lock,
@@ -40,6 +41,7 @@ export const Route = createFileRoute("/login")({
 function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [captcha, setCaptcha] = useState("------");
+  const navigate = useNavigate();
   useEffect(() => {
     setCaptcha(genCaptcha());
   }, []);
@@ -100,7 +102,13 @@ function LoginPage() {
               Log in to your account
             </h2>
 
-            <form className="mt-3 space-y-2.5" onSubmit={(e) => e.preventDefault()}>
+            <form
+              className="mt-3 space-y-2.5"
+              onSubmit={(e) => {
+                e.preventDefault();
+                navigate({ to: "/dashboard" });
+              }}
+            >
               <div>
                 <label className="text-sm font-semibold text-foreground">Username or Email</label>
                 <div className="mt-1 relative">
