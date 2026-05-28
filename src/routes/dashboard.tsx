@@ -21,18 +21,6 @@ export const Route = createFileRoute("/dashboard")({
   component: DashboardPage,
 });
 
-const SERVICE_STATUS = [
-  { label: "AEPS", icon: <Banknote className="h-4 w-4" />, tone: "bg-sky-500", active: true },
-  { label: "Money Transfer", icon: <ArrowLeftRight className="h-4 w-4" />, tone: "bg-orange-500", active: true },
-  { label: "Recharge", icon: <Smartphone className="h-4 w-4" />, tone: "bg-emerald-600", active: true },
-  { label: "Bill Payments", icon: <Receipt className="h-4 w-4" />, tone: "bg-orange-500", active: true },
-  { label: "GST Services", icon: <FileText className="h-4 w-4" />, tone: "bg-emerald-600", active: true },
-  { label: "PAN Services", icon: <IdCard className="h-4 w-4" />, tone: "bg-rose-500", active: true },
-  { label: "Business Reg.", icon: <Building2 className="h-4 w-4" />, tone: "bg-slate-400", active: false },
-  { label: "MSME / Udyam", icon: <Landmark className="h-4 w-4" />, tone: "bg-slate-400", active: false },
-  { label: "ITR Filing", icon: <FileSpreadsheet className="h-4 w-4" />, tone: "bg-slate-400", active: false },
-  { label: "Digital Sign.", icon: <ShieldCheck className="h-4 w-4" />, tone: "bg-slate-400", active: false },
-];
 
 const QUICK_LINKS = [
   { label: "AEPS", to: "/aeps", icon: <Banknote className="h-5 w-5" />, tone: "bg-sky-500" },
@@ -167,31 +155,6 @@ function DashboardPage() {
           </div>
         </div>
 
-        {/* Service status */}
-        <section>
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Service Status</p>
-            <span className="text-[11px] text-muted-foreground">6 active · 4 inactive</span>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-            {SERVICE_STATUS.map((s) => (
-              <div
-                key={s.label}
-                className={`rounded-xl border bg-card px-3 py-2.5 flex items-center gap-2.5 ${
-                  s.active ? "border-emerald-200" : "border-border opacity-70"
-                }`}
-              >
-                <div className={`h-8 w-8 rounded-lg ${s.tone} text-white flex items-center justify-center`}>{s.icon}</div>
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold truncate">{s.label}</p>
-                  <p className={`text-[11px] font-semibold ${s.active ? "text-india-green" : "text-muted-foreground"}`}>
-                    {s.active ? "● Active" : "○ Inactive"}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
 
         {/* Quick links */}
         <section>
