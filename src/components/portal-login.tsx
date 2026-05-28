@@ -312,7 +312,7 @@ export const PORTAL_CONFIGS: Record<PortalRole, PortalConfig> = {
     shortName: "QC",
     tagline: "Review KYC, applications and on-boarding submissions.",
     accent: "indigo",
-    icon: ShieldCheck,
+    icon: ClipboardCheck,
     demo: { username: "qc.admin", password: "QC@2026", displayName: "QC Reviewer" },
   },
   accountant: {
@@ -321,7 +321,7 @@ export const PORTAL_CONFIGS: Record<PortalRole, PortalConfig> = {
     shortName: "Accounts",
     tagline: "Settlements, ledgers, payouts and reconciliation.",
     accent: "green",
-    icon: ShieldCheck,
+    icon: Calculator,
     demo: { username: "accounts.admin", password: "Acc@2026", displayName: "Accounts Officer" },
   },
   admin: {
@@ -330,7 +330,7 @@ export const PORTAL_CONFIGS: Record<PortalRole, PortalConfig> = {
     shortName: "Admin",
     tagline: "Master control for BharatOne network operations.",
     accent: "saffron",
-    icon: ShieldCheck,
+    icon: Crown,
     demo: { username: "super.admin", password: "Admin@2026", displayName: "Super Admin" },
   },
   distributor: {
@@ -339,7 +339,7 @@ export const PORTAL_CONFIGS: Record<PortalRole, PortalConfig> = {
     shortName: "Distributor",
     tagline: "Manage your retailer network, stock and commissions.",
     accent: "sky",
-    icon: ShieldCheck,
+    icon: Truck,
     demo: { username: "distributor.demo", password: "Dist@2026", displayName: "Distributor" },
   },
   "master-distributor": {
@@ -348,7 +348,7 @@ export const PORTAL_CONFIGS: Record<PortalRole, PortalConfig> = {
     shortName: "Master Distributor",
     tagline: "Oversee distributors and regional performance.",
     accent: "violet",
-    icon: ShieldCheck,
+    icon: Building2,
     demo: {
       username: "master.distributor",
       password: "Master@2026",
@@ -361,7 +361,7 @@ export const PORTAL_CONFIGS: Record<PortalRole, PortalConfig> = {
     shortName: "DRO",
     tagline: "District-level oversight, approvals and audits.",
     accent: "rose",
-    icon: ShieldCheck,
+    icon: Map,
     demo: { username: "dro.officer", password: "DRO@2026", displayName: "District Officer" },
   },
   tro: {
@@ -370,7 +370,7 @@ export const PORTAL_CONFIGS: Record<PortalRole, PortalConfig> = {
     shortName: "TRO",
     tagline: "Taluk-level field operations and onboarding.",
     accent: "amber",
-    icon: ShieldCheck,
+    icon: MapPin,
     demo: { username: "tro.officer", password: "TRO@2026", displayName: "Taluk Officer" },
   },
 };
