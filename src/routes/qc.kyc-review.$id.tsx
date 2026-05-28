@@ -34,6 +34,31 @@ function ScoreBar({ label, value, icon }: { label: string; value: number; icon: 
   );
 }
 
+function Info({ label, value, mono, verified }: { label: string; value: string; mono?: boolean; verified?: boolean }) {
+  return (
+    <div className="rounded-lg bg-muted/40 p-2">
+      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className={`text-xs font-semibold text-slate-900 break-words inline-flex items-center gap-1 ${mono ? "font-mono" : ""}`}>
+        {value}
+        {verified !== undefined && (
+          verified
+            ? <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+            : <AlertTriangle className="h-3 w-3 text-amber-600" />
+        )}
+      </p>
+    </div>
+  );
+}
+
+function Row({ k, v, tone }: { k: string; v: string; tone?: "good" | "bad" }) {
+  return (
+    <div className="flex justify-between">
+      <span className="text-muted-foreground">{k}</span>
+      <span className={`font-semibold ${tone === "good" ? "text-emerald-700" : tone === "bad" ? "text-rose-700" : ""}`}>{v}</span>
+    </div>
+  );
+}
+
 function DocTile({ label, type, size, verified, onView }: { label: string; type: string; size: string; verified: boolean; onView: () => void }) {
   const isVideo = type.startsWith("video");
   const isPdf = type.includes("pdf");
