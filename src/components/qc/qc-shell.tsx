@@ -90,10 +90,6 @@ function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: 
             </div>
           </div>
           <div className="leading-tight min-w-0 flex-1">
-            <div className="flex items-center gap-1.5">
-              <ShieldCheck className="h-3 w-3 text-indigo-300" />
-              <p className="text-[9px] uppercase tracking-[0.18em] text-indigo-300 font-bold">Quality Control</p>
-            </div>
             <p className="text-sm font-bold text-white tracking-tight">Reviewer Portal</p>
           </div>
         </div>
