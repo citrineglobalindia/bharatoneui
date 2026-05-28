@@ -136,16 +136,6 @@ function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: 
           </div>
         ))}
       </nav>
-      <button
-        onClick={() => {
-          onNavigate?.();
-          try { localStorage.removeItem("bharatone:auth"); } catch {}
-          navigate({ to: "/qc-login" });
-        }}
-        className="m-3 flex items-center justify-center gap-2 rounded-lg bg-white/5 text-slate-200 px-3 py-2 text-sm font-semibold hover:bg-white/10"
-      >
-        <LogOut className="h-4 w-4" /> Sign Out
-      </button>
     </div>
   );
 }
