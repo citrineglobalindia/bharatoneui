@@ -687,6 +687,192 @@ function KycReviewPage() {
             </div>
           </div>
         )}
+
+        {/* ===== Approve KYC dialog ===== */}
+        <Dialog open={dialog === "Approved"} onOpenChange={(o) => { if (!o && !processing) { setDialog(null); if (credentials) setTimeout(() => navigate({ to: "/qc/kyc-queue" }), 200); } }}>
+          <DialogContent className="max-w-lg overflow-hidden p-0">
+            {!credentials ? (
+              <div>
+                <div className="relative bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-600 p-6 text-white">
+                  <div className="absolute -right-6 -top-6 h-28 w-28 rounded-full bg-white/10 blur-2xl" />
+                  <div className="relative flex items-start gap-3">
+                    <div className="h-12 w-12 rounded-2xl bg-white/15 ring-1 ring-white/30 flex items-center justify-center backdrop-blur">
+                      <ShieldCheck className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <DialogTitle className="text-white text-xl font-extrabold">Approve KYC</DialogTitle>
+                      <DialogDescription className="text-white/85 mt-1">
+                        You're about to approve <span className="font-bold">{a.name}</span> as a verified <span className="font-bold">{a.channel}</span>.
+                      </DialogDescription>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-6 space-y-4">
+                  <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-3 text-xs space-y-2">
+                    <p className="font-bold text-emerald-900 flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5" /> The following will happen automatically</p>
+                    <ul className="space-y-1 text-emerald-900/90">
+                      <li className="flex items-center gap-2"><KeyRound className="h-3.5 w-3.5" /> Unique {a.channel} ID + secure password generated</li>
+                      <li className="flex items-center gap-2"><Mail className="h-3.5 w-3.5" /> Welcome email sent to <span className="font-semibold">{a.email}</span></li>
+                      <li className="flex items-center gap-2"><MessageCircle className="h-3.5 w-3.5" /> WhatsApp credentials sent to <span className="font-semibold">{a.phone}</span></li>
+                      <li className="flex items-center gap-2"><BadgeCheck className="h-3.5 w-3.5" /> Account activated for BharatOne services</li>
+                    </ul>
+                  </div>
+                  <DialogFooter className="gap-2 sm:gap-2">
+                    <Button variant="outline" disabled={processing} onClick={() => setDialog(null)}>Cancel</Button>
+                    <Button disabled={processing} onClick={confirmApprove} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                      {processing ? (<><Loader2 className="h-4 w-4 animate-spin" /> Provisioning…</>) : (<><CheckCircle2 className="h-4 w-4" /> Confirm & Approve</>)}
+                    </Button>
+                  </DialogFooter>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div className="relative bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-600 p-6 text-white text-center">
+                  <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_top,white,transparent_60%)]" />
+                  <div className="relative">
+                    <div className="mx-auto h-16 w-16 rounded-full bg-white/15 ring-4 ring-white/30 flex items-center justify-center backdrop-blur animate-in zoom-in-50 duration-500">
+                      <PartyPopper className="h-8 w-8" />
+                    </div>
+                    <DialogTitle className="text-white text-2xl font-extrabold mt-3">Successfully Approved!</DialogTitle>
+                    <DialogDescription className="text-white/90 mt-1">
+                      {credentials.role} account provisioned for <span className="font-bold">{a.name}</span>
+                    </DialogDescription>
+                  </div>
+                </div>
+                <div className="p-6 space-y-4">
+                  <div className="rounded-xl border-2 border-dashed border-emerald-300 bg-gradient-to-br from-emerald-50 to-teal-50 p-4 space-y-3">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 flex items-center gap-1"><Lock className="h-3 w-3" /> Generated Login Credentials</p>
+
+                    <div className="rounded-lg bg-white border border-emerald-200 p-3 flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{credentials.role} ID</p>
+                        <p className="font-mono font-extrabold text-emerald-700 text-lg truncate">{credentials.userId}</p>
+                      </div>
+                      <Button size="sm" variant="outline" onClick={() => copy(credentials.userId, "ID")}>
+                        <Copy className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+
+                    <div className="rounded-lg bg-white border border-emerald-200 p-3 flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Temporary Password</p>
+                        <p className="font-mono font-extrabold text-slate-900 text-lg truncate">{credentials.password}</p>
+                      </div>
+                      <Button size="sm" variant="outline" onClick={() => copy(credentials.password, "Password")}>
+                        <Copy className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+
+                    <p className="text-[10px] text-emerald-900/70 flex items-start gap-1"><AlertTriangle className="h-3 w-3 mt-0.5 shrink-0" /> Applicant will be prompted to reset this password on first login.</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-2.5">
+                      <div className="flex items-center gap-1.5 text-emerald-800">
+                        <Mail className="h-3.5 w-3.5" />
+                        <p className="text-[11px] font-bold">Email Sent</p>
+                        <CheckCircle2 className="h-3 w-3 ml-auto" />
+                      </div>
+                      <p className="text-[10px] text-emerald-900/70 truncate mt-0.5">{a.email}</p>
+                    </div>
+                    <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-2.5">
+                      <div className="flex items-center gap-1.5 text-emerald-800">
+                        <MessageCircle className="h-3.5 w-3.5" />
+                        <p className="text-[11px] font-bold">WhatsApp Sent</p>
+                        <CheckCircle2 className="h-3 w-3 ml-auto" />
+                      </div>
+                      <p className="text-[10px] text-emerald-900/70 truncate mt-0.5">{a.phone}</p>
+                    </div>
+                  </div>
+
+                  <DialogFooter>
+                    <Button onClick={() => { setDialog(null); navigate({ to: "/qc/kyc-queue" }); }} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white">
+                      <Send className="h-4 w-4" /> Done · Back to Queue
+                    </Button>
+                  </DialogFooter>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* ===== Reject KYC dialog ===== */}
+        <Dialog open={dialog === "Rejected"} onOpenChange={(o) => !processing && setDialog(o ? "Rejected" : null)}>
+          <DialogContent className="max-w-lg overflow-hidden p-0">
+            <div className="relative bg-gradient-to-br from-rose-500 via-rose-600 to-red-600 p-6 text-white">
+              <div className="relative flex items-start gap-3">
+                <div className="h-12 w-12 rounded-2xl bg-white/15 ring-1 ring-white/30 flex items-center justify-center backdrop-blur">
+                  <XCircle className="h-6 w-6" />
+                </div>
+                <div>
+                  <DialogTitle className="text-white text-xl font-extrabold">Reject KYC</DialogTitle>
+                  <DialogDescription className="text-white/85 mt-1">
+                    Applicant <span className="font-bold">{a.name}</span> will be notified. They may re-apply after addressing the issues.
+                  </DialogDescription>
+                </div>
+              </div>
+            </div>
+            <div className="p-6 space-y-3">
+              <label className="text-xs font-bold text-slate-700">Reason for rejection <span className="text-rose-600">*</span></label>
+              <textarea
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                rows={4}
+                placeholder="e.g. Aadhaar photo mismatch with selfie, address proof unreadable…"
+                className="w-full rounded-lg border border-input bg-background p-3 text-sm focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-rose-500/15 focus-visible:border-rose-500"
+              />
+              <div className="rounded-lg bg-rose-50 border border-rose-200 p-2.5 text-[11px] text-rose-900 flex gap-2">
+                <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                Reason will be shared with the applicant via Email & WhatsApp.
+              </div>
+              <DialogFooter className="gap-2 sm:gap-2">
+                <Button variant="outline" disabled={processing} onClick={() => setDialog(null)}>Cancel</Button>
+                <Button disabled={processing} onClick={confirmReject} className="bg-rose-600 hover:bg-rose-700 text-white">
+                  {processing ? (<><Loader2 className="h-4 w-4 animate-spin" /> Submitting…</>) : (<><XCircle className="h-4 w-4" /> Confirm Reject</>)}
+                </Button>
+              </DialogFooter>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* ===== Hold KYC dialog ===== */}
+        <Dialog open={dialog === "On Hold"} onOpenChange={(o) => !processing && setDialog(o ? "On Hold" : null)}>
+          <DialogContent className="max-w-lg overflow-hidden p-0">
+            <div className="relative bg-gradient-to-br from-amber-500 via-amber-600 to-orange-600 p-6 text-white">
+              <div className="relative flex items-start gap-3">
+                <div className="h-12 w-12 rounded-2xl bg-white/15 ring-1 ring-white/30 flex items-center justify-center backdrop-blur">
+                  <PauseCircle className="h-6 w-6" />
+                </div>
+                <div>
+                  <DialogTitle className="text-white text-xl font-extrabold">Put KYC On Hold</DialogTitle>
+                  <DialogDescription className="text-white/85 mt-1">
+                    Pause review for <span className="font-bold">{a.name}</span> pending additional clarification.
+                  </DialogDescription>
+                </div>
+              </div>
+            </div>
+            <div className="p-6 space-y-3">
+              <label className="text-xs font-bold text-slate-700">Reason / Information needed <span className="text-amber-600">*</span></label>
+              <textarea
+                value={holdReason}
+                onChange={(e) => setHoldReason(e.target.value)}
+                rows={4}
+                placeholder="e.g. Awaiting clearer shop photo, pending bank account confirmation…"
+                className="w-full rounded-lg border border-input bg-background p-3 text-sm focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-500/15 focus-visible:border-amber-500"
+              />
+              <div className="rounded-lg bg-amber-50 border border-amber-200 p-2.5 text-[11px] text-amber-900 flex gap-2">
+                <Clock className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                Applicant will receive a notification via Email & WhatsApp explaining what's required.
+              </div>
+              <DialogFooter className="gap-2 sm:gap-2">
+                <Button variant="outline" disabled={processing} onClick={() => setDialog(null)}>Cancel</Button>
+                <Button disabled={processing} onClick={confirmHold} className="bg-amber-600 hover:bg-amber-700 text-white">
+                  {processing ? (<><Loader2 className="h-4 w-4 animate-spin" /> Submitting…</>) : (<><PauseCircle className="h-4 w-4" /> Confirm Hold</>)}
+                </Button>
+              </DialogFooter>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </QcShell>
   );
