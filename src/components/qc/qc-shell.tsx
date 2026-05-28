@@ -95,13 +95,6 @@ function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: 
               <p className="text-[9px] uppercase tracking-[0.18em] text-indigo-300 font-bold">Quality Control</p>
             </div>
             <p className="text-sm font-bold text-white tracking-tight">Reviewer Portal</p>
-            <div className="mt-1 flex items-center gap-1.5">
-              <span className="relative flex h-1.5 w-1.5">
-                <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
-                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
-              </span>
-              <p className="text-[9px] font-semibold uppercase tracking-wider text-emerald-300/90">Live · Secure</p>
-            </div>
           </div>
         </div>
       </div>
