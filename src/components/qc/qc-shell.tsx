@@ -56,7 +56,7 @@ function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: 
         </div>
         <div className="leading-tight">
           <p className="text-[10px] uppercase tracking-widest text-indigo-300 font-bold">Quality Control</p>
-          <p className="text-xs font-semibold">Reviewer Console</p>
+          <p className="text-xs font-semibold">Portal</p>
         </div>
       </div>
       <div className="px-4 py-3 border-b border-white/10 flex items-center gap-3">
