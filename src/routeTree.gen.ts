@@ -47,10 +47,12 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as QcSettingsRouteImport } from './routes/qc.settings'
 import { Route as QcReviewersRouteImport } from './routes/qc.reviewers'
 import { Route as QcReportsRouteImport } from './routes/qc.reports'
+import { Route as QcProfileRouteImport } from './routes/qc.profile'
 import { Route as QcKycQueueRouteImport } from './routes/qc.kyc-queue'
 import { Route as QcFlaggedRouteImport } from './routes/qc.flagged'
 import { Route as QcDocumentSearchRouteImport } from './routes/qc.document-search'
 import { Route as QcDashboardRouteImport } from './routes/qc.dashboard'
+import { Route as QcChangePasswordRouteImport } from './routes/qc.change-password'
 import { Route as QcApprovedRouteImport } from './routes/qc.approved'
 import { Route as QcKycReviewIdRouteImport } from './routes/qc.kyc-review.$id'
 
@@ -244,6 +246,11 @@ const QcReportsRoute = QcReportsRouteImport.update({
   path: '/qc/reports',
   getParentRoute: () => rootRouteImport,
 } as any)
+const QcProfileRoute = QcProfileRouteImport.update({
+  id: '/qc/profile',
+  path: '/qc/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const QcKycQueueRoute = QcKycQueueRouteImport.update({
   id: '/qc/kyc-queue',
   path: '/qc/kyc-queue',
@@ -262,6 +269,11 @@ const QcDocumentSearchRoute = QcDocumentSearchRouteImport.update({
 const QcDashboardRoute = QcDashboardRouteImport.update({
   id: '/qc/dashboard',
   path: '/qc/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QcChangePasswordRoute = QcChangePasswordRouteImport.update({
+  id: '/qc/change-password',
+  path: '/qc/change-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const QcApprovedRoute = QcApprovedRouteImport.update({
@@ -312,10 +324,12 @@ export interface FileRoutesByFullPath {
   '/video-kyc': typeof VideoKycRoute
   '/wallet': typeof WalletRoute
   '/qc/approved': typeof QcApprovedRoute
+  '/qc/change-password': typeof QcChangePasswordRoute
   '/qc/dashboard': typeof QcDashboardRoute
   '/qc/document-search': typeof QcDocumentSearchRoute
   '/qc/flagged': typeof QcFlaggedRoute
   '/qc/kyc-queue': typeof QcKycQueueRoute
+  '/qc/profile': typeof QcProfileRoute
   '/qc/reports': typeof QcReportsRoute
   '/qc/reviewers': typeof QcReviewersRoute
   '/qc/settings': typeof QcSettingsRoute
@@ -358,10 +372,12 @@ export interface FileRoutesByTo {
   '/video-kyc': typeof VideoKycRoute
   '/wallet': typeof WalletRoute
   '/qc/approved': typeof QcApprovedRoute
+  '/qc/change-password': typeof QcChangePasswordRoute
   '/qc/dashboard': typeof QcDashboardRoute
   '/qc/document-search': typeof QcDocumentSearchRoute
   '/qc/flagged': typeof QcFlaggedRoute
   '/qc/kyc-queue': typeof QcKycQueueRoute
+  '/qc/profile': typeof QcProfileRoute
   '/qc/reports': typeof QcReportsRoute
   '/qc/reviewers': typeof QcReviewersRoute
   '/qc/settings': typeof QcSettingsRoute
@@ -405,10 +421,12 @@ export interface FileRoutesById {
   '/video-kyc': typeof VideoKycRoute
   '/wallet': typeof WalletRoute
   '/qc/approved': typeof QcApprovedRoute
+  '/qc/change-password': typeof QcChangePasswordRoute
   '/qc/dashboard': typeof QcDashboardRoute
   '/qc/document-search': typeof QcDocumentSearchRoute
   '/qc/flagged': typeof QcFlaggedRoute
   '/qc/kyc-queue': typeof QcKycQueueRoute
+  '/qc/profile': typeof QcProfileRoute
   '/qc/reports': typeof QcReportsRoute
   '/qc/reviewers': typeof QcReviewersRoute
   '/qc/settings': typeof QcSettingsRoute
@@ -453,10 +471,12 @@ export interface FileRouteTypes {
     | '/video-kyc'
     | '/wallet'
     | '/qc/approved'
+    | '/qc/change-password'
     | '/qc/dashboard'
     | '/qc/document-search'
     | '/qc/flagged'
     | '/qc/kyc-queue'
+    | '/qc/profile'
     | '/qc/reports'
     | '/qc/reviewers'
     | '/qc/settings'
@@ -499,10 +519,12 @@ export interface FileRouteTypes {
     | '/video-kyc'
     | '/wallet'
     | '/qc/approved'
+    | '/qc/change-password'
     | '/qc/dashboard'
     | '/qc/document-search'
     | '/qc/flagged'
     | '/qc/kyc-queue'
+    | '/qc/profile'
     | '/qc/reports'
     | '/qc/reviewers'
     | '/qc/settings'
@@ -545,10 +567,12 @@ export interface FileRouteTypes {
     | '/video-kyc'
     | '/wallet'
     | '/qc/approved'
+    | '/qc/change-password'
     | '/qc/dashboard'
     | '/qc/document-search'
     | '/qc/flagged'
     | '/qc/kyc-queue'
+    | '/qc/profile'
     | '/qc/reports'
     | '/qc/reviewers'
     | '/qc/settings'
@@ -592,10 +616,12 @@ export interface RootRouteChildren {
   VideoKycRoute: typeof VideoKycRoute
   WalletRoute: typeof WalletRoute
   QcApprovedRoute: typeof QcApprovedRoute
+  QcChangePasswordRoute: typeof QcChangePasswordRoute
   QcDashboardRoute: typeof QcDashboardRoute
   QcDocumentSearchRoute: typeof QcDocumentSearchRoute
   QcFlaggedRoute: typeof QcFlaggedRoute
   QcKycQueueRoute: typeof QcKycQueueRoute
+  QcProfileRoute: typeof QcProfileRoute
   QcReportsRoute: typeof QcReportsRoute
   QcReviewersRoute: typeof QcReviewersRoute
   QcSettingsRoute: typeof QcSettingsRoute
@@ -870,6 +896,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof QcReportsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/qc/profile': {
+      id: '/qc/profile'
+      path: '/qc/profile'
+      fullPath: '/qc/profile'
+      preLoaderRoute: typeof QcProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/qc/kyc-queue': {
       id: '/qc/kyc-queue'
       path: '/qc/kyc-queue'
@@ -896,6 +929,13 @@ declare module '@tanstack/react-router' {
       path: '/qc/dashboard'
       fullPath: '/qc/dashboard'
       preLoaderRoute: typeof QcDashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/qc/change-password': {
+      id: '/qc/change-password'
+      path: '/qc/change-password'
+      fullPath: '/qc/change-password'
+      preLoaderRoute: typeof QcChangePasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/qc/approved': {
@@ -952,10 +992,12 @@ const rootRouteChildren: RootRouteChildren = {
   VideoKycRoute: VideoKycRoute,
   WalletRoute: WalletRoute,
   QcApprovedRoute: QcApprovedRoute,
+  QcChangePasswordRoute: QcChangePasswordRoute,
   QcDashboardRoute: QcDashboardRoute,
   QcDocumentSearchRoute: QcDocumentSearchRoute,
   QcFlaggedRoute: QcFlaggedRoute,
   QcKycQueueRoute: QcKycQueueRoute,
+  QcProfileRoute: QcProfileRoute,
   QcReportsRoute: QcReportsRoute,
   QcReviewersRoute: QcReviewersRoute,
   QcSettingsRoute: QcSettingsRoute,
