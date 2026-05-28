@@ -290,8 +290,6 @@ export function PortalLogin({ config }: { config: PortalConfig }) {
         </div>
 
         <div className="h-1.5 w-full bg-gradient-to-r from-saffron via-white to-india-green" />
-
-        <div className="h-1.5 w-full bg-gradient-to-r from-saffron via-white to-india-green" />
       </div>
     </div>
   );
