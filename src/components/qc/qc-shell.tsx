@@ -78,17 +78,6 @@ function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: 
           <p className="text-xs font-semibold">Portal</p>
         </div>
       </div>
-      <div className="px-4 py-3 border-b border-white/10 flex items-center gap-3">
-        <div className="relative">
-          <div className="h-10 w-10 rounded-full bg-indigo-500 text-white flex items-center justify-center font-bold">Q</div>
-          <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-400 border-2 border-slate-900" />
-        </div>
-        <div className="min-w-0">
-          <p className="text-sm font-bold truncate">QC Reviewer</p>
-          <p className="text-[11px] text-slate-400">qc.admin</p>
-          <span className="inline-block mt-0.5 text-[10px] font-semibold bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded">Level 2 · Verified</span>
-        </div>
-      </div>
       <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-4">
         {NAV.map((sec) => (
           <div key={sec.heading}>
