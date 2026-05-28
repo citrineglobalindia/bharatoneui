@@ -287,10 +287,9 @@ export function PortalLogin({ config }: { config: PortalConfig }) {
               Sign in to {config.shortName} Portal
             </Button>
           </form>
-
-            Access restricted to authorised personnel only. All activity is monitored.
-          </p>
         </div>
+
+        <div className="h-1.5 w-full bg-gradient-to-r from-saffron via-white to-india-green" />
 
         <div className="h-1.5 w-full bg-gradient-to-r from-saffron via-white to-india-green" />
       </div>
