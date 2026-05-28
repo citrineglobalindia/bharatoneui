@@ -60,7 +60,7 @@ const ALL_SERVICES: Service[] = [
 
 function DashboardPage() {
   return (
-    <RetailerShell activeLabel="Dashboard">
+    <RetailerShell>
       <div className="space-y-5">
           {/* Greeting */}
           <div className="flex items-start justify-between gap-4 flex-wrap">

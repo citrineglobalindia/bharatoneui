@@ -32,7 +32,7 @@ The Aadhaar / PAN document shown in this video belongs to me. I agree to BharatO
 function VideoKycPage() {
   const [agreed, setAgreed] = useState(false);
   return (
-    <RetailerShell activeLabel="Video KYC">
+    <RetailerShell>
       <div className="max-w-4xl mx-auto space-y-5">
         {/* Header */}
         <div className="flex items-start justify-between gap-4 flex-wrap">
