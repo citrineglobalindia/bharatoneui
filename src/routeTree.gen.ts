@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WalletRouteImport } from './routes/wallet'
 import { Route as VideoKycRouteImport } from './routes/video-kyc'
+import { Route as TroLoginRouteImport } from './routes/tro-login'
 import { Route as TransactionsRouteImport } from './routes/transactions'
 import { Route as TrackApplicationRouteImport } from './routes/track-application'
 import { Route as TermsAndConditionsRouteImport } from './routes/terms-and-conditions'
@@ -20,21 +21,28 @@ import { Route as ServicesRouteImport } from './routes/services'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as RechargeRouteImport } from './routes/recharge'
+import { Route as QcLoginRouteImport } from './routes/qc-login'
 import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
+import { Route as PortalsRouteImport } from './routes/portals'
 import { Route as PanRouteImport } from './routes/pan'
 import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as NewServiceRequestRouteImport } from './routes/new-service-request'
 import { Route as MoneyTransferRouteImport } from './routes/money-transfer'
+import { Route as MasterDistributorLoginRouteImport } from './routes/master-distributor-login'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as GstRouteImport } from './routes/gst'
 import { Route as GovServicesRouteImport } from './routes/gov-services'
 import { Route as GetStartedRouteImport } from './routes/get-started'
+import { Route as DroLoginRouteImport } from './routes/dro-login'
+import { Route as DistributorLoginRouteImport } from './routes/distributor-login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as BusinessRegRouteImport } from './routes/business-reg'
 import { Route as BbpsRouteImport } from './routes/bbps'
 import { Route as ApplicationsRouteImport } from './routes/applications'
 import { Route as AepsActivationRouteImport } from './routes/aeps-activation'
 import { Route as AepsRouteImport } from './routes/aeps'
+import { Route as AdminLoginRouteImport } from './routes/admin-login'
+import { Route as AccountantLoginRouteImport } from './routes/accountant-login'
 import { Route as IndexRouteImport } from './routes/index'
 
 const WalletRoute = WalletRouteImport.update({
@@ -45,6 +53,11 @@ const WalletRoute = WalletRouteImport.update({
 const VideoKycRoute = VideoKycRouteImport.update({
   id: '/video-kyc',
   path: '/video-kyc',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TroLoginRoute = TroLoginRouteImport.update({
+  id: '/tro-login',
+  path: '/tro-login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TransactionsRoute = TransactionsRouteImport.update({
@@ -92,9 +105,19 @@ const RechargeRoute = RechargeRouteImport.update({
   path: '/recharge',
   getParentRoute: () => rootRouteImport,
 } as any)
+const QcLoginRoute = QcLoginRouteImport.update({
+  id: '/qc-login',
+  path: '/qc-login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
   id: '/privacy-policy',
   path: '/privacy-policy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortalsRoute = PortalsRouteImport.update({
+  id: '/portals',
+  path: '/portals',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PanRoute = PanRouteImport.update({
@@ -117,6 +140,11 @@ const MoneyTransferRoute = MoneyTransferRouteImport.update({
   path: '/money-transfer',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MasterDistributorLoginRoute = MasterDistributorLoginRouteImport.update({
+  id: '/master-distributor-login',
+  path: '/master-distributor-login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -135,6 +163,16 @@ const GovServicesRoute = GovServicesRouteImport.update({
 const GetStartedRoute = GetStartedRouteImport.update({
   id: '/get-started',
   path: '/get-started',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DroLoginRoute = DroLoginRouteImport.update({
+  id: '/dro-login',
+  path: '/dro-login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DistributorLoginRoute = DistributorLoginRouteImport.update({
+  id: '/distributor-login',
+  path: '/distributor-login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -167,6 +205,16 @@ const AepsRoute = AepsRouteImport.update({
   path: '/aeps',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminLoginRoute = AdminLoginRouteImport.update({
+  id: '/admin-login',
+  path: '/admin-login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountantLoginRoute = AccountantLoginRouteImport.update({
+  id: '/accountant-login',
+  path: '/accountant-login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -175,21 +223,28 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/accountant-login': typeof AccountantLoginRoute
+  '/admin-login': typeof AdminLoginRoute
   '/aeps': typeof AepsRoute
   '/aeps-activation': typeof AepsActivationRoute
   '/applications': typeof ApplicationsRoute
   '/bbps': typeof BbpsRoute
   '/business-reg': typeof BusinessRegRoute
   '/dashboard': typeof DashboardRoute
+  '/distributor-login': typeof DistributorLoginRoute
+  '/dro-login': typeof DroLoginRoute
   '/get-started': typeof GetStartedRoute
   '/gov-services': typeof GovServicesRoute
   '/gst': typeof GstRoute
   '/login': typeof LoginRoute
+  '/master-distributor-login': typeof MasterDistributorLoginRoute
   '/money-transfer': typeof MoneyTransferRoute
   '/new-service-request': typeof NewServiceRequestRoute
   '/notifications': typeof NotificationsRoute
   '/pan': typeof PanRoute
+  '/portals': typeof PortalsRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
+  '/qc-login': typeof QcLoginRoute
   '/recharge': typeof RechargeRoute
   '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
@@ -199,26 +254,34 @@ export interface FileRoutesByFullPath {
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/track-application': typeof TrackApplicationRoute
   '/transactions': typeof TransactionsRoute
+  '/tro-login': typeof TroLoginRoute
   '/video-kyc': typeof VideoKycRoute
   '/wallet': typeof WalletRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/accountant-login': typeof AccountantLoginRoute
+  '/admin-login': typeof AdminLoginRoute
   '/aeps': typeof AepsRoute
   '/aeps-activation': typeof AepsActivationRoute
   '/applications': typeof ApplicationsRoute
   '/bbps': typeof BbpsRoute
   '/business-reg': typeof BusinessRegRoute
   '/dashboard': typeof DashboardRoute
+  '/distributor-login': typeof DistributorLoginRoute
+  '/dro-login': typeof DroLoginRoute
   '/get-started': typeof GetStartedRoute
   '/gov-services': typeof GovServicesRoute
   '/gst': typeof GstRoute
   '/login': typeof LoginRoute
+  '/master-distributor-login': typeof MasterDistributorLoginRoute
   '/money-transfer': typeof MoneyTransferRoute
   '/new-service-request': typeof NewServiceRequestRoute
   '/notifications': typeof NotificationsRoute
   '/pan': typeof PanRoute
+  '/portals': typeof PortalsRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
+  '/qc-login': typeof QcLoginRoute
   '/recharge': typeof RechargeRoute
   '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
@@ -228,27 +291,35 @@ export interface FileRoutesByTo {
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/track-application': typeof TrackApplicationRoute
   '/transactions': typeof TransactionsRoute
+  '/tro-login': typeof TroLoginRoute
   '/video-kyc': typeof VideoKycRoute
   '/wallet': typeof WalletRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/accountant-login': typeof AccountantLoginRoute
+  '/admin-login': typeof AdminLoginRoute
   '/aeps': typeof AepsRoute
   '/aeps-activation': typeof AepsActivationRoute
   '/applications': typeof ApplicationsRoute
   '/bbps': typeof BbpsRoute
   '/business-reg': typeof BusinessRegRoute
   '/dashboard': typeof DashboardRoute
+  '/distributor-login': typeof DistributorLoginRoute
+  '/dro-login': typeof DroLoginRoute
   '/get-started': typeof GetStartedRoute
   '/gov-services': typeof GovServicesRoute
   '/gst': typeof GstRoute
   '/login': typeof LoginRoute
+  '/master-distributor-login': typeof MasterDistributorLoginRoute
   '/money-transfer': typeof MoneyTransferRoute
   '/new-service-request': typeof NewServiceRequestRoute
   '/notifications': typeof NotificationsRoute
   '/pan': typeof PanRoute
+  '/portals': typeof PortalsRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
+  '/qc-login': typeof QcLoginRoute
   '/recharge': typeof RechargeRoute
   '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
@@ -258,6 +329,7 @@ export interface FileRoutesById {
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/track-application': typeof TrackApplicationRoute
   '/transactions': typeof TransactionsRoute
+  '/tro-login': typeof TroLoginRoute
   '/video-kyc': typeof VideoKycRoute
   '/wallet': typeof WalletRoute
 }
@@ -265,21 +337,28 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/accountant-login'
+    | '/admin-login'
     | '/aeps'
     | '/aeps-activation'
     | '/applications'
     | '/bbps'
     | '/business-reg'
     | '/dashboard'
+    | '/distributor-login'
+    | '/dro-login'
     | '/get-started'
     | '/gov-services'
     | '/gst'
     | '/login'
+    | '/master-distributor-login'
     | '/money-transfer'
     | '/new-service-request'
     | '/notifications'
     | '/pan'
+    | '/portals'
     | '/privacy-policy'
+    | '/qc-login'
     | '/recharge'
     | '/register'
     | '/reports'
@@ -289,26 +368,34 @@ export interface FileRouteTypes {
     | '/terms-and-conditions'
     | '/track-application'
     | '/transactions'
+    | '/tro-login'
     | '/video-kyc'
     | '/wallet'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/accountant-login'
+    | '/admin-login'
     | '/aeps'
     | '/aeps-activation'
     | '/applications'
     | '/bbps'
     | '/business-reg'
     | '/dashboard'
+    | '/distributor-login'
+    | '/dro-login'
     | '/get-started'
     | '/gov-services'
     | '/gst'
     | '/login'
+    | '/master-distributor-login'
     | '/money-transfer'
     | '/new-service-request'
     | '/notifications'
     | '/pan'
+    | '/portals'
     | '/privacy-policy'
+    | '/qc-login'
     | '/recharge'
     | '/register'
     | '/reports'
@@ -318,26 +405,34 @@ export interface FileRouteTypes {
     | '/terms-and-conditions'
     | '/track-application'
     | '/transactions'
+    | '/tro-login'
     | '/video-kyc'
     | '/wallet'
   id:
     | '__root__'
     | '/'
+    | '/accountant-login'
+    | '/admin-login'
     | '/aeps'
     | '/aeps-activation'
     | '/applications'
     | '/bbps'
     | '/business-reg'
     | '/dashboard'
+    | '/distributor-login'
+    | '/dro-login'
     | '/get-started'
     | '/gov-services'
     | '/gst'
     | '/login'
+    | '/master-distributor-login'
     | '/money-transfer'
     | '/new-service-request'
     | '/notifications'
     | '/pan'
+    | '/portals'
     | '/privacy-policy'
+    | '/qc-login'
     | '/recharge'
     | '/register'
     | '/reports'
@@ -347,27 +442,35 @@ export interface FileRouteTypes {
     | '/terms-and-conditions'
     | '/track-application'
     | '/transactions'
+    | '/tro-login'
     | '/video-kyc'
     | '/wallet'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AccountantLoginRoute: typeof AccountantLoginRoute
+  AdminLoginRoute: typeof AdminLoginRoute
   AepsRoute: typeof AepsRoute
   AepsActivationRoute: typeof AepsActivationRoute
   ApplicationsRoute: typeof ApplicationsRoute
   BbpsRoute: typeof BbpsRoute
   BusinessRegRoute: typeof BusinessRegRoute
   DashboardRoute: typeof DashboardRoute
+  DistributorLoginRoute: typeof DistributorLoginRoute
+  DroLoginRoute: typeof DroLoginRoute
   GetStartedRoute: typeof GetStartedRoute
   GovServicesRoute: typeof GovServicesRoute
   GstRoute: typeof GstRoute
   LoginRoute: typeof LoginRoute
+  MasterDistributorLoginRoute: typeof MasterDistributorLoginRoute
   MoneyTransferRoute: typeof MoneyTransferRoute
   NewServiceRequestRoute: typeof NewServiceRequestRoute
   NotificationsRoute: typeof NotificationsRoute
   PanRoute: typeof PanRoute
+  PortalsRoute: typeof PortalsRoute
   PrivacyPolicyRoute: typeof PrivacyPolicyRoute
+  QcLoginRoute: typeof QcLoginRoute
   RechargeRoute: typeof RechargeRoute
   RegisterRoute: typeof RegisterRoute
   ReportsRoute: typeof ReportsRoute
@@ -377,6 +480,7 @@ export interface RootRouteChildren {
   TermsAndConditionsRoute: typeof TermsAndConditionsRoute
   TrackApplicationRoute: typeof TrackApplicationRoute
   TransactionsRoute: typeof TransactionsRoute
+  TroLoginRoute: typeof TroLoginRoute
   VideoKycRoute: typeof VideoKycRoute
   WalletRoute: typeof WalletRoute
 }
@@ -395,6 +499,13 @@ declare module '@tanstack/react-router' {
       path: '/video-kyc'
       fullPath: '/video-kyc'
       preLoaderRoute: typeof VideoKycRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tro-login': {
+      id: '/tro-login'
+      path: '/tro-login'
+      fullPath: '/tro-login'
+      preLoaderRoute: typeof TroLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/transactions': {
@@ -460,11 +571,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RechargeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/qc-login': {
+      id: '/qc-login'
+      path: '/qc-login'
+      fullPath: '/qc-login'
+      preLoaderRoute: typeof QcLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/privacy-policy': {
       id: '/privacy-policy'
       path: '/privacy-policy'
       fullPath: '/privacy-policy'
       preLoaderRoute: typeof PrivacyPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portals': {
+      id: '/portals'
+      path: '/portals'
+      fullPath: '/portals'
+      preLoaderRoute: typeof PortalsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pan': {
@@ -495,6 +620,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MoneyTransferRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/master-distributor-login': {
+      id: '/master-distributor-login'
+      path: '/master-distributor-login'
+      fullPath: '/master-distributor-login'
+      preLoaderRoute: typeof MasterDistributorLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -521,6 +653,20 @@ declare module '@tanstack/react-router' {
       path: '/get-started'
       fullPath: '/get-started'
       preLoaderRoute: typeof GetStartedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dro-login': {
+      id: '/dro-login'
+      path: '/dro-login'
+      fullPath: '/dro-login'
+      preLoaderRoute: typeof DroLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/distributor-login': {
+      id: '/distributor-login'
+      path: '/distributor-login'
+      fullPath: '/distributor-login'
+      preLoaderRoute: typeof DistributorLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -565,6 +711,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AepsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin-login': {
+      id: '/admin-login'
+      path: '/admin-login'
+      fullPath: '/admin-login'
+      preLoaderRoute: typeof AdminLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/accountant-login': {
+      id: '/accountant-login'
+      path: '/accountant-login'
+      fullPath: '/accountant-login'
+      preLoaderRoute: typeof AccountantLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -577,21 +737,28 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AccountantLoginRoute: AccountantLoginRoute,
+  AdminLoginRoute: AdminLoginRoute,
   AepsRoute: AepsRoute,
   AepsActivationRoute: AepsActivationRoute,
   ApplicationsRoute: ApplicationsRoute,
   BbpsRoute: BbpsRoute,
   BusinessRegRoute: BusinessRegRoute,
   DashboardRoute: DashboardRoute,
+  DistributorLoginRoute: DistributorLoginRoute,
+  DroLoginRoute: DroLoginRoute,
   GetStartedRoute: GetStartedRoute,
   GovServicesRoute: GovServicesRoute,
   GstRoute: GstRoute,
   LoginRoute: LoginRoute,
+  MasterDistributorLoginRoute: MasterDistributorLoginRoute,
   MoneyTransferRoute: MoneyTransferRoute,
   NewServiceRequestRoute: NewServiceRequestRoute,
   NotificationsRoute: NotificationsRoute,
   PanRoute: PanRoute,
+  PortalsRoute: PortalsRoute,
   PrivacyPolicyRoute: PrivacyPolicyRoute,
+  QcLoginRoute: QcLoginRoute,
   RechargeRoute: RechargeRoute,
   RegisterRoute: RegisterRoute,
   ReportsRoute: ReportsRoute,
@@ -601,6 +768,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsAndConditionsRoute: TermsAndConditionsRoute,
   TrackApplicationRoute: TrackApplicationRoute,
   TransactionsRoute: TransactionsRoute,
+  TroLoginRoute: TroLoginRoute,
   VideoKycRoute: VideoKycRoute,
   WalletRoute: WalletRoute,
 }
