@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import {
   ArrowLeft, ShieldCheck, AlertTriangle, CheckCircle2, XCircle, PauseCircle, FileText, Image as ImageIcon, Video, Download, Eye, MapPin, Phone, Mail, Calendar, Building2, Landmark, IdCard, Camera, Sparkles, FileSearch,
   User, Users, CreditCard, Smartphone, Globe, Wifi, Hash, Languages, BadgeCheck, Clock, Receipt, MapPinned,
+  Play, ScanFace, ShieldAlert, FileCheck2, IndianRupee, Lock, QrCode,
 } from "lucide-react";
 import { QcShell } from "@/components/qc/qc-shell";
 import { PageHeader, StatusBadge } from "@/components/retailer/page-header";
