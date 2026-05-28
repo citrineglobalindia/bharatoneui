@@ -22,6 +22,7 @@ import { Route as RegisterRouteImport } from './routes/register'
 import { Route as RechargeRouteImport } from './routes/recharge'
 import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
 import { Route as PanRouteImport } from './routes/pan'
+import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as NewServiceRequestRouteImport } from './routes/new-service-request'
 import { Route as MoneyTransferRouteImport } from './routes/money-transfer'
 import { Route as LoginRouteImport } from './routes/login'
@@ -99,6 +100,11 @@ const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
 const PanRoute = PanRouteImport.update({
   id: '/pan',
   path: '/pan',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NewServiceRequestRoute = NewServiceRequestRouteImport.update({
@@ -181,6 +187,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/money-transfer': typeof MoneyTransferRoute
   '/new-service-request': typeof NewServiceRequestRoute
+  '/notifications': typeof NotificationsRoute
   '/pan': typeof PanRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/recharge': typeof RechargeRoute
@@ -209,6 +216,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/money-transfer': typeof MoneyTransferRoute
   '/new-service-request': typeof NewServiceRequestRoute
+  '/notifications': typeof NotificationsRoute
   '/pan': typeof PanRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/recharge': typeof RechargeRoute
@@ -238,6 +246,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/money-transfer': typeof MoneyTransferRoute
   '/new-service-request': typeof NewServiceRequestRoute
+  '/notifications': typeof NotificationsRoute
   '/pan': typeof PanRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/recharge': typeof RechargeRoute
@@ -268,6 +277,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/money-transfer'
     | '/new-service-request'
+    | '/notifications'
     | '/pan'
     | '/privacy-policy'
     | '/recharge'
@@ -296,6 +306,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/money-transfer'
     | '/new-service-request'
+    | '/notifications'
     | '/pan'
     | '/privacy-policy'
     | '/recharge'
@@ -324,6 +335,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/money-transfer'
     | '/new-service-request'
+    | '/notifications'
     | '/pan'
     | '/privacy-policy'
     | '/recharge'
@@ -353,6 +365,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   MoneyTransferRoute: typeof MoneyTransferRoute
   NewServiceRequestRoute: typeof NewServiceRequestRoute
+  NotificationsRoute: typeof NotificationsRoute
   PanRoute: typeof PanRoute
   PrivacyPolicyRoute: typeof PrivacyPolicyRoute
   RechargeRoute: typeof RechargeRoute
@@ -459,6 +472,13 @@ declare module '@tanstack/react-router' {
       path: '/pan'
       fullPath: '/pan'
       preLoaderRoute: typeof PanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/new-service-request': {
@@ -569,6 +589,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   MoneyTransferRoute: MoneyTransferRoute,
   NewServiceRequestRoute: NewServiceRequestRoute,
+  NotificationsRoute: NotificationsRoute,
   PanRoute: PanRoute,
   PrivacyPolicyRoute: PrivacyPolicyRoute,
   RechargeRoute: RechargeRoute,
