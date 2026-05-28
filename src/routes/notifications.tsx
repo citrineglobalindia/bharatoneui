@@ -59,7 +59,7 @@ function NotificationsPage() {
           icon={<Bell className="h-5 w-5" />}
           title="Notifications"
           subtitle={unread > 0 ? `You have ${unread} unread notifications` : "You're all caught up"}
-          action={
+          actions={
             unread > 0 ? (
               <button
                 onClick={() => setItems((xs) => xs.map((n) => ({ ...n, read: true })))}
