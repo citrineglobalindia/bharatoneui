@@ -108,10 +108,10 @@ function DashboardPage() {
               <div className="h-10 w-10 rounded-lg bg-amber-200/70 text-amber-700 flex items-center justify-center">
                 <Video className="h-4 w-4" />
               </div>
-              <p className="font-bold text-amber-900">Complete Video KYC</p>
+              <p className="font-bold text-amber-900">Complete KYC Documents</p>
             </div>
             <p className="text-xs text-amber-800/80 mt-2 flex-1">
-              Required to activate AEPS, DMT, and Business services. Takes under 2 minutes.
+              Upload Aadhaar, PAN, address proof, bank proof, shop photo and Video KYC selfie to activate all services.
             </p>
             <span className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-amber-900">
               Start KYC <ArrowUpRight className="h-3 w-3" />

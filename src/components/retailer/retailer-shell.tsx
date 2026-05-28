@@ -2,8 +2,8 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useState } from "react";
 import {
   LayoutDashboard,
-  Video,
   Banknote,
+  FileCheck2,
   CheckCircle2,
   ArrowLeftRight,
   Smartphone,
@@ -36,7 +36,7 @@ const NAV: NavSection[] = [
     heading: "Main",
     items: [
       { label: "Dashboard", icon: <LayoutDashboard className="h-4 w-4" />, to: "/dashboard" },
-      { label: "Video KYC", icon: <Video className="h-4 w-4" />, to: "/video-kyc" },
+      { label: "KYC Docs", icon: <FileCheck2 className="h-4 w-4" />, to: "/video-kyc" },
     ],
   },
   {

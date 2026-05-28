@@ -9,12 +9,12 @@ import {
   ShieldCheck,
   LifeBuoy,
   LogOut,
-  Video,
+  FileCheck2,
 } from "lucide-react";
 
 const ITEMS: { label: string; to: string; icon: React.ReactNode; hint?: string }[] = [
   { label: "My Profile", to: "/settings", icon: <User className="h-4 w-4" />, hint: "Personal details" },
-  { label: "Video KYC", to: "/video-kyc", icon: <Video className="h-4 w-4" />, hint: "Identity verification" },
+  { label: "KYC Docs", to: "/video-kyc", icon: <FileCheck2 className="h-4 w-4" />, hint: "Identity & verification" },
   { label: "Wallet", to: "/wallet", icon: <WalletIcon className="h-4 w-4" />, hint: "Balance & top-up" },
   { label: "My Applications", to: "/applications", icon: <ClipboardList className="h-4 w-4" />, hint: "Service requests" },
   { label: "Security", to: "/settings", icon: <ShieldCheck className="h-4 w-4" />, hint: "Password & 2FA" },
