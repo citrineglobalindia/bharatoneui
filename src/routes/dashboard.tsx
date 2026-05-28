@@ -63,7 +63,7 @@ function DashboardPage() {
     <RetailerShell>
       <div className="space-y-5">
         <PageHeader
-          title="Hello, Demo Retailer 👋"
+          title="Hello, Harshitha 👋"
           subtitle="Here's what's happening with your business today."
           actions={
             <>
