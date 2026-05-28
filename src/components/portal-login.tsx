@@ -288,13 +288,6 @@ export function PortalLogin({ config }: { config: PortalConfig }) {
             </Button>
           </form>
 
-          <div className={`mt-3 rounded-md border border-dashed px-3 py-2 text-[11px] text-muted-foreground ${a.chip}`}>
-            <span className="font-semibold">Demo {config.shortName}:</span>{" "}
-            <span className="font-mono">{config.demo.username}</span> ·{" "}
-            <span className="font-mono">{config.demo.password}</span>
-          </div>
-
-          <p className="mt-3 text-center text-[11px] text-muted-foreground">
             Access restricted to authorised personnel only. All activity is monitored.
           </p>
         </div>
