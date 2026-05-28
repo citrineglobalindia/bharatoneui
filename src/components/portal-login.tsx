@@ -10,6 +10,15 @@ import {
   User,
   type LucideIcon,
 } from "lucide-react";
+import {
+  ClipboardCheck,
+  Calculator,
+  Crown,
+  Truck,
+  Building2,
+  Map,
+  MapPin,
+} from "lucide-react";
 import { toast } from "sonner";
 import { BharatOneLogo } from "@/components/bharatone-logo";
 import { Button } from "@/components/ui/button";
