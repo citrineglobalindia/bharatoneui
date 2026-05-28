@@ -648,19 +648,25 @@ function KycReviewPage() {
               <div className="mt-3 flex flex-wrap gap-2 justify-end">
                 <Button
                   variant="outline"
-                  onClick={() => submit("On Hold")}
+                  onClick={() => { setHoldReason(remark); setDialog("On Hold"); }}
+                  disabled={!!decision}
                   className="border-amber-300 text-amber-800 hover:bg-amber-50"
                 >
                   <PauseCircle className="h-4 w-4" /> Put On Hold
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => submit("Rejected")}
+                  onClick={() => { setRejectReason(remark); setDialog("Rejected"); }}
+                  disabled={!!decision}
                   className="border-rose-300 text-rose-700 hover:bg-rose-50"
                 >
                   <XCircle className="h-4 w-4" /> Reject
                 </Button>
-                <Button onClick={() => submit("Approved")} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                <Button
+                  onClick={() => setDialog("Approved")}
+                  disabled={!!decision}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                >
                   <CheckCircle2 className="h-4 w-4" /> Approve KYC
                 </Button>
               </div>
