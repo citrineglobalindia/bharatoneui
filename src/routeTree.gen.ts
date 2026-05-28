@@ -13,10 +13,15 @@ import { Route as VideoKycRouteImport } from './routes/video-kyc'
 import { Route as TrackApplicationRouteImport } from './routes/track-application'
 import { Route as TermsAndConditionsRouteImport } from './routes/terms-and-conditions'
 import { Route as RegisterRouteImport } from './routes/register'
+import { Route as RechargeRouteImport } from './routes/recharge'
 import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
+import { Route as MoneyTransferRouteImport } from './routes/money-transfer'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as GetStartedRouteImport } from './routes/get-started'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as BbpsRouteImport } from './routes/bbps'
+import { Route as AepsActivationRouteImport } from './routes/aeps-activation'
+import { Route as AepsRouteImport } from './routes/aeps'
 import { Route as IndexRouteImport } from './routes/index'
 
 const VideoKycRoute = VideoKycRouteImport.update({
@@ -39,9 +44,19 @@ const RegisterRoute = RegisterRouteImport.update({
   path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RechargeRoute = RechargeRouteImport.update({
+  id: '/recharge',
+  path: '/recharge',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
   id: '/privacy-policy',
   path: '/privacy-policy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MoneyTransferRoute = MoneyTransferRouteImport.update({
+  id: '/money-transfer',
+  path: '/money-transfer',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -59,6 +74,21 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BbpsRoute = BbpsRouteImport.update({
+  id: '/bbps',
+  path: '/bbps',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AepsActivationRoute = AepsActivationRouteImport.update({
+  id: '/aeps-activation',
+  path: '/aeps-activation',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AepsRoute = AepsRouteImport.update({
+  id: '/aeps',
+  path: '/aeps',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -67,10 +97,15 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/aeps': typeof AepsRoute
+  '/aeps-activation': typeof AepsActivationRoute
+  '/bbps': typeof BbpsRoute
   '/dashboard': typeof DashboardRoute
   '/get-started': typeof GetStartedRoute
   '/login': typeof LoginRoute
+  '/money-transfer': typeof MoneyTransferRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
+  '/recharge': typeof RechargeRoute
   '/register': typeof RegisterRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/track-application': typeof TrackApplicationRoute
@@ -78,10 +113,15 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/aeps': typeof AepsRoute
+  '/aeps-activation': typeof AepsActivationRoute
+  '/bbps': typeof BbpsRoute
   '/dashboard': typeof DashboardRoute
   '/get-started': typeof GetStartedRoute
   '/login': typeof LoginRoute
+  '/money-transfer': typeof MoneyTransferRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
+  '/recharge': typeof RechargeRoute
   '/register': typeof RegisterRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/track-application': typeof TrackApplicationRoute
@@ -90,10 +130,15 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/aeps': typeof AepsRoute
+  '/aeps-activation': typeof AepsActivationRoute
+  '/bbps': typeof BbpsRoute
   '/dashboard': typeof DashboardRoute
   '/get-started': typeof GetStartedRoute
   '/login': typeof LoginRoute
+  '/money-transfer': typeof MoneyTransferRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
+  '/recharge': typeof RechargeRoute
   '/register': typeof RegisterRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/track-application': typeof TrackApplicationRoute
@@ -103,10 +148,15 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/aeps'
+    | '/aeps-activation'
+    | '/bbps'
     | '/dashboard'
     | '/get-started'
     | '/login'
+    | '/money-transfer'
     | '/privacy-policy'
+    | '/recharge'
     | '/register'
     | '/terms-and-conditions'
     | '/track-application'
@@ -114,10 +164,15 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/aeps'
+    | '/aeps-activation'
+    | '/bbps'
     | '/dashboard'
     | '/get-started'
     | '/login'
+    | '/money-transfer'
     | '/privacy-policy'
+    | '/recharge'
     | '/register'
     | '/terms-and-conditions'
     | '/track-application'
@@ -125,10 +180,15 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/aeps'
+    | '/aeps-activation'
+    | '/bbps'
     | '/dashboard'
     | '/get-started'
     | '/login'
+    | '/money-transfer'
     | '/privacy-policy'
+    | '/recharge'
     | '/register'
     | '/terms-and-conditions'
     | '/track-application'
@@ -137,10 +197,15 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AepsRoute: typeof AepsRoute
+  AepsActivationRoute: typeof AepsActivationRoute
+  BbpsRoute: typeof BbpsRoute
   DashboardRoute: typeof DashboardRoute
   GetStartedRoute: typeof GetStartedRoute
   LoginRoute: typeof LoginRoute
+  MoneyTransferRoute: typeof MoneyTransferRoute
   PrivacyPolicyRoute: typeof PrivacyPolicyRoute
+  RechargeRoute: typeof RechargeRoute
   RegisterRoute: typeof RegisterRoute
   TermsAndConditionsRoute: typeof TermsAndConditionsRoute
   TrackApplicationRoute: typeof TrackApplicationRoute
@@ -177,11 +242,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/recharge': {
+      id: '/recharge'
+      path: '/recharge'
+      fullPath: '/recharge'
+      preLoaderRoute: typeof RechargeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/privacy-policy': {
       id: '/privacy-policy'
       path: '/privacy-policy'
       fullPath: '/privacy-policy'
       preLoaderRoute: typeof PrivacyPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/money-transfer': {
+      id: '/money-transfer'
+      path: '/money-transfer'
+      fullPath: '/money-transfer'
+      preLoaderRoute: typeof MoneyTransferRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -205,6 +284,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/bbps': {
+      id: '/bbps'
+      path: '/bbps'
+      fullPath: '/bbps'
+      preLoaderRoute: typeof BbpsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/aeps-activation': {
+      id: '/aeps-activation'
+      path: '/aeps-activation'
+      fullPath: '/aeps-activation'
+      preLoaderRoute: typeof AepsActivationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/aeps': {
+      id: '/aeps'
+      path: '/aeps'
+      fullPath: '/aeps'
+      preLoaderRoute: typeof AepsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -217,10 +317,15 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AepsRoute: AepsRoute,
+  AepsActivationRoute: AepsActivationRoute,
+  BbpsRoute: BbpsRoute,
   DashboardRoute: DashboardRoute,
   GetStartedRoute: GetStartedRoute,
   LoginRoute: LoginRoute,
+  MoneyTransferRoute: MoneyTransferRoute,
   PrivacyPolicyRoute: PrivacyPolicyRoute,
+  RechargeRoute: RechargeRoute,
   RegisterRoute: RegisterRoute,
   TermsAndConditionsRoute: TermsAndConditionsRoute,
   TrackApplicationRoute: TrackApplicationRoute,
