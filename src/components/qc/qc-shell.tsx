@@ -79,13 +79,30 @@ function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: 
   const navigate = useNavigate();
   return (
     <div className="flex h-full flex-col bg-slate-900 text-slate-100">
-      <div className="px-4 py-4 border-b border-white/10 flex items-center gap-2">
-        <div className="rounded-lg bg-white p-1.5">
-          <BharatOneLogo size="sm" />
-        </div>
-        <div className="leading-tight">
-          <p className="text-[10px] uppercase tracking-widest text-indigo-300 font-bold">Quality Control</p>
-          <p className="text-xs font-semibold">Portal</p>
+      <div className="relative px-4 py-4 border-b border-white/10 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/30 via-violet-600/15 to-transparent pointer-events-none" />
+        <div className="absolute -top-8 -right-8 h-24 w-24 rounded-full bg-indigo-500/20 blur-2xl pointer-events-none" />
+        <div className="relative flex items-center gap-3">
+          <div className="relative shrink-0">
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-indigo-400 to-violet-500 blur-md opacity-60" />
+            <div className="relative rounded-xl bg-white p-1.5 ring-1 ring-white/20 shadow-lg">
+              <BharatOneLogo size="sm" />
+            </div>
+          </div>
+          <div className="leading-tight min-w-0 flex-1">
+            <div className="flex items-center gap-1.5">
+              <ShieldCheck className="h-3 w-3 text-indigo-300" />
+              <p className="text-[9px] uppercase tracking-[0.18em] text-indigo-300 font-bold">Quality Control</p>
+            </div>
+            <p className="text-sm font-bold text-white tracking-tight">Reviewer Portal</p>
+            <div className="mt-1 flex items-center gap-1.5">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
+              </span>
+              <p className="text-[9px] font-semibold uppercase tracking-wider text-emerald-300/90">Live · Secure</p>
+            </div>
+          </div>
         </div>
       </div>
       <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-4">
