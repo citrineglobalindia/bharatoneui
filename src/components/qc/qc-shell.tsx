@@ -63,6 +63,16 @@ const NAV: NavSection[] = [
       { label: "Settings", icon: <Settings className="h-4 w-4" />, to: "/qc/settings" },
     ],
   },
+  {
+    heading: "Session",
+    items: [
+      {
+        label: "Sign Out",
+        icon: <LogOut className="h-4 w-4" />,
+        to: "/qc-login",
+      },
+    ],
+  },
 ];
 
 function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
