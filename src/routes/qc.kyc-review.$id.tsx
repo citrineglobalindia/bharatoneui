@@ -326,52 +326,192 @@ function KycReviewPage() {
               </div>
             )}
 
-            {/* Payment */}
-            {a.payment && (
-              <div className="rounded-xl border border-border bg-card p-4 shadow-soft">
-                <h3 className="text-sm font-bold flex items-center gap-1.5 mb-3"><Receipt className="h-4 w-4 text-amber-600" /> Onboarding Payment</h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
-                  <Info label="Method" value={a.payment.method} />
-                  <Info label="Date" value={a.payment.date} />
-                  <Info label="UTR / Txn ID" value={a.payment.utr} mono />
-                  <Info label="Payer Name" value={a.payment.payerName} />
-                  <Info label="Payer Bank" value={a.payment.payerBank || "—"} />
-                  <Info label="Payer Account / UPI" value={a.payment.payerAccount || "—"} mono />
-                  <Info label="Amount" value={a.payment.amount} />
-                  <Info label="Receipt" value={a.payment.receiptVerified ? "Verified" : "Pending"} />
-                  <Info label="Remarks" value={a.payment.remarks || "—"} />
-                </div>
-              </div>
-            )}
-
-            {/* Selfie + Video KYC */}
+            {/* Live Selfie + Video KYC – advanced verification panels */}
             {(a.selfie || a.videoKyc) && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {a.selfie && (
-                  <div className="rounded-xl border border-border bg-card p-4 shadow-soft">
-                    <h3 className="text-sm font-bold flex items-center gap-1.5 mb-3"><Camera className="h-4 w-4 text-indigo-600" /> Selfie Capture</h3>
-                    <div className="space-y-1.5 text-xs">
-                      <Row k="Captured at" v={a.selfie.capturedAt} />
-                      <Row k="Device" v={a.selfie.deviceModel} />
-                      <Row k="Geo match" v={a.selfie.geoMatch ? "Match" : "Mismatch"} tone={a.selfie.geoMatch ? "good" : "bad"} />
+                  <div className="rounded-xl border border-border bg-card shadow-soft overflow-hidden">
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-gradient-to-r from-indigo-50 to-white">
+                      <h3 className="text-sm font-bold flex items-center gap-1.5"><ScanFace className="h-4 w-4 text-indigo-600" /> Live Selfie Verification</h3>
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
+                        <CheckCircle2 className="h-3 w-3" /> Captured Live
+                      </span>
+                    </div>
+                    <div className="p-4 space-y-3">
+                      <button
+                        onClick={() => setPreview("Live Selfie")}
+                        className="group relative w-full aspect-[4/3] rounded-lg overflow-hidden bg-gradient-to-br from-indigo-100 via-violet-100 to-indigo-50 border border-border flex items-center justify-center"
+                      >
+                        <Camera className="h-14 w-14 text-indigo-500/70" />
+                        <span className="absolute bottom-2 left-2 text-[10px] font-bold bg-black/70 text-white px-2 py-0.5 rounded">LIVE · {a.selfie.capturedAt.split(" ")[1]}</span>
+                        <span className="absolute top-2 right-2 text-[10px] font-bold bg-emerald-500 text-white px-2 py-0.5 rounded inline-flex items-center gap-1"><Lock className="h-3 w-3" /> Camera only</span>
+                        <span className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                          <span className="rounded-lg bg-white text-foreground px-3 h-8 inline-flex items-center gap-1 text-xs font-bold"><Eye className="h-3.5 w-3.5" /> Open preview</span>
+                        </span>
+                      </button>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-2">
+                          <p className="text-[10px] font-bold uppercase text-emerald-700">Face Match vs Aadhaar</p>
+                          <p className="text-lg font-extrabold text-emerald-800">{a.selfie.faceMatchVsAadhaar ?? a.matchScore}%</p>
+                        </div>
+                        <div className="rounded-lg bg-indigo-50 border border-indigo-200 p-2">
+                          <p className="text-[10px] font-bold uppercase text-indigo-700">Liveness Score</p>
+                          <p className="text-lg font-extrabold text-indigo-800">{a.selfie.livenessScore ?? a.livenessScore}%</p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <Info label="Captured At" value={a.selfie.capturedAt} />
+                        <Info label="Device" value={a.selfie.deviceModel} />
+                        <Info label="Blur" value={`${a.selfie.blurScore ?? 10} (low)`} />
+                        <Info label="Brightness" value={`${a.selfie.brightnessScore ?? 90}%`} />
+                        <Info label="Geo Match" value={a.selfie.geoMatch ? "Within 50m" : "Mismatch"} verified={a.selfie.geoMatch} />
+                        <Info label="Gallery Upload" value={a.selfie.galleryUploadBlocked ? "Blocked" : "Allowed"} verified={a.selfie.galleryUploadBlocked} />
+                        {a.selfie.geoCoords && (
+                          <div className="col-span-2">
+                            <Info label="GPS Coordinates" value={`${a.selfie.geoCoords.lat.toFixed(4)}, ${a.selfie.geoCoords.lng.toFixed(4)}`} mono />
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 )}
                 {a.videoKyc && (
-                  <div className="rounded-xl border border-border bg-card p-4 shadow-soft">
-                    <h3 className="text-sm font-bold flex items-center gap-1.5 mb-3"><Video className="h-4 w-4 text-violet-600" /> Video KYC</h3>
-                    <div className="space-y-1.5 text-xs">
-                      <Row k="Completed at" v={a.videoKyc.completedAt} />
-                      <Row k="Duration" v={`${a.videoKyc.durationSec}s`} />
-                      <Row k="Agent" v={a.videoKyc.agent} />
-                      <Row k="Random code" v={a.videoKyc.randomCodeMatch ? "Match" : "Mismatch"} tone={a.videoKyc.randomCodeMatch ? "good" : "bad"} />
-                      <Row k="Geo match" v={a.videoKyc.geoMatch ? "Match" : "Mismatch"} tone={a.videoKyc.geoMatch ? "good" : "bad"} />
-                      <Row k="Language" v={a.videoKyc.languageSpoken} />
+                  <div className="rounded-xl border border-border bg-card shadow-soft overflow-hidden">
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-gradient-to-r from-violet-50 to-white">
+                      <h3 className="text-sm font-bold flex items-center gap-1.5"><Video className="h-4 w-4 text-violet-600" /> Video KYC — Self Declaration</h3>
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full">
+                        <Clock className="h-3 w-3" /> {a.videoKyc.durationSec}s recorded
+                      </span>
+                    </div>
+                    <div className="p-4 space-y-3">
+                      <button
+                        onClick={() => setPreview("Video KYC Recording")}
+                        className="group relative w-full aspect-video rounded-lg overflow-hidden bg-gradient-to-br from-violet-200 via-violet-100 to-indigo-100 border border-border flex items-center justify-center"
+                      >
+                        <div className="h-14 w-14 rounded-full bg-white/90 flex items-center justify-center shadow">
+                          <Play className="h-6 w-6 text-violet-700 fill-violet-700 ml-1" />
+                        </div>
+                        <span className="absolute bottom-2 left-2 text-[10px] font-bold bg-black/70 text-white px-2 py-0.5 rounded">REC · {a.videoKyc.completedAt.split(" ")[1]} · {a.videoKyc.videoSizeMB ?? 4}MB</span>
+                        <span className="absolute top-2 right-2 text-[10px] font-bold bg-rose-500 text-white px-2 py-0.5 rounded inline-flex items-center gap-1">● LIVE REC</span>
+                      </button>
+                      <div className="rounded-lg border border-amber-200 bg-amber-50 p-2.5">
+                        <p className="text-[10px] font-bold uppercase text-amber-800 flex items-center gap-1"><FileCheck2 className="h-3 w-3" /> Declaration Read on Camera</p>
+                        <p className="text-[11px] text-amber-900 mt-1 leading-relaxed line-clamp-2">
+                          "I, {a.name}, hereby declare that all information provided during registration is true. I am voluntarily registering as a BharatOne {a.channel}. I consent to this video being recorded and used for KYC verification."
+                        </p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <Info label="Agent" value={a.videoKyc.agent} />
+                        <Info label="Language" value={a.videoKyc.languageSpoken} />
+                        <Info label="Random Code" value={a.videoKyc.randomCode ?? "BO-0000"} mono verified={a.videoKyc.randomCodeMatch} />
+                        <Info label="ID Shown" value={a.videoKyc.idShownOnCamera ?? "Aadhaar"} verified />
+                        <Info label="Declaration" value={a.videoKyc.declarationAccepted ? "Read & Accepted" : "Skipped"} verified={a.videoKyc.declarationAccepted} />
+                        <Info label="Liveness" value={a.videoKyc.livenessPassed ? "Passed" : "Failed"} verified={a.videoKyc.livenessPassed} />
+                        <Info label="Face vs Aadhaar" value={`${a.videoKyc.faceMatchVsAadhaar ?? 95}%`} verified={(a.videoKyc.faceMatchVsAadhaar ?? 95) > 80} />
+                        <Info label="Geo Match" value={a.videoKyc.geoMatch ? "Within range" : "Mismatch"} verified={a.videoKyc.geoMatch} />
+                        {a.videoKyc.geoCoords && (
+                          <div className="col-span-2">
+                            <Info label="GPS Coordinates" value={`${a.videoKyc.geoCoords.lat.toFixed(4)}, ${a.videoKyc.geoCoords.lng.toFixed(4)}`} mono />
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 )}
               </div>
             )}
+
+            {/* KYC Verification Charges — receipt */}
+            {a.payment && (() => {
+              const items = a.charges?.items ?? [
+                { label: "KYC Verification Charges", amount: 1499, gstPct: 18 },
+                { label: "Onboarding & Platform Fee", amount: 2000, gstPct: 18 },
+                { label: "Video KYC Agent Charges", amount: 500, gstPct: 18 },
+              ];
+              const subtotal = items.reduce((s, i) => s + i.amount, 0);
+              const gst = items.reduce((s, i) => s + (i.amount * (i.gstPct ?? 0)) / 100, 0);
+              const total = subtotal + gst;
+              const inr = (n: number) => `₹${n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+              return (
+                <div className="rounded-xl border border-border bg-card shadow-soft overflow-hidden">
+                  <div className="relative">
+                    <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-amber-500 via-emerald-500 to-emerald-600" />
+                    <div className="flex flex-wrap items-center justify-between gap-2 px-4 pt-4 pb-3 border-b border-border bg-gradient-to-r from-amber-50/60 to-emerald-50/40">
+                      <div>
+                        <h3 className="text-sm font-bold flex items-center gap-1.5"><IndianRupee className="h-4 w-4 text-emerald-700" /> KYC Verification Charges</h3>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">Receipt <span className="font-mono font-bold text-foreground">#{a.charges?.receiptId ?? a.payment.utr}</span> · {a.charges?.plan ?? "Onboarding"}</p>
+                      </div>
+                      <span className="inline-flex items-center gap-1.5 text-[11px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300 px-2.5 py-1 rounded-full">
+                        <CheckCircle2 className="h-3.5 w-3.5" /> PAID · {inr(total)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="p-4 grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-4">
+                    <div>
+                      <div className="rounded-lg border border-border overflow-hidden">
+                        <table className="w-full text-xs">
+                          <thead className="bg-muted/60 text-[10px] uppercase tracking-wider text-muted-foreground">
+                            <tr>
+                              <th className="text-left px-3 py-2 font-bold">Item</th>
+                              <th className="text-right px-3 py-2 font-bold">Amount</th>
+                              <th className="text-right px-3 py-2 font-bold">GST</th>
+                              <th className="text-right px-3 py-2 font-bold">Total</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-border">
+                            {items.map((i) => {
+                              const g = (i.amount * (i.gstPct ?? 0)) / 100;
+                              return (
+                                <tr key={i.label}>
+                                  <td className="px-3 py-2 font-semibold">{i.label}</td>
+                                  <td className="px-3 py-2 text-right font-mono">{inr(i.amount)}</td>
+                                  <td className="px-3 py-2 text-right font-mono text-muted-foreground">{i.gstPct ?? 0}% · {inr(g)}</td>
+                                  <td className="px-3 py-2 text-right font-mono font-bold">{inr(i.amount + g)}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                          <tfoot className="bg-emerald-50/60">
+                            <tr>
+                              <td colSpan={3} className="px-3 py-2 text-right text-xs font-bold text-muted-foreground">Subtotal</td>
+                              <td className="px-3 py-2 text-right font-mono font-bold">{inr(subtotal)}</td>
+                            </tr>
+                            <tr>
+                              <td colSpan={3} className="px-3 py-2 text-right text-xs font-bold text-muted-foreground">GST</td>
+                              <td className="px-3 py-2 text-right font-mono font-bold">{inr(gst)}</td>
+                            </tr>
+                            <tr className="border-t border-emerald-200">
+                              <td colSpan={3} className="px-3 py-2.5 text-right text-sm font-extrabold">Amount Paid</td>
+                              <td className="px-3 py-2.5 text-right font-mono text-base font-extrabold text-emerald-700">{inr(total)}</td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      </div>
+                      <div className="mt-3 grid grid-cols-2 md:grid-cols-3 gap-2 text-xs">
+                        <Info label="Payment Method" value={a.payment.method} />
+                        <Info label="Paid At" value={a.charges?.paidAt ?? a.payment.date} />
+                        <Info label="UTR / Txn ID" value={a.payment.utr} mono verified={a.payment.receiptVerified} />
+                        <Info label="Payer Name" value={a.payment.payerName} />
+                        <Info label="Payer Bank" value={a.payment.payerBank || "—"} />
+                        <Info label="Payer UPI / A/C" value={a.payment.payerAccount || "—"} mono />
+                        <Info label="Receipt" value={a.payment.receiptVerified ? "Verified" : "Pending"} verified={a.payment.receiptVerified} />
+                        <Info label="Plan" value={a.charges?.plan ?? "Onboarding"} />
+                        <Info label="Remarks" value={a.payment.remarks || "—"} />
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-muted/30 p-4 lg:w-44">
+                      <div className="h-28 w-28 rounded-lg bg-white border border-border flex items-center justify-center">
+                        <QrCode className="h-20 w-20 text-foreground" />
+                      </div>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Scan to verify</p>
+                      <Button variant="outline" size="sm" className="w-full">
+                        <Download className="h-3.5 w-3.5" /> Receipt PDF
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Consents */}
             {a.consents && a.consents.length > 0 && (
