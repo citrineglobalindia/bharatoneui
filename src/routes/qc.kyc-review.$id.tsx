@@ -4,11 +4,19 @@ import { toast } from "sonner";
 import {
   ArrowLeft, ShieldCheck, AlertTriangle, CheckCircle2, XCircle, PauseCircle, FileText, Image as ImageIcon, Video, Download, Eye, MapPin, Phone, Mail, Calendar, Building2, Landmark, IdCard, Camera, Sparkles, FileSearch,
   User, Users, CreditCard, Smartphone, Globe, Wifi, Hash, Languages, BadgeCheck, Clock, Receipt, MapPinned,
-  Play, ScanFace, ShieldAlert, FileCheck2, IndianRupee, Lock, QrCode,
+  Play, ScanFace, ShieldAlert, FileCheck2, IndianRupee, Lock, QrCode, KeyRound, Copy, MessageCircle, Send, Loader2, PartyPopper,
 } from "lucide-react";
 import { QcShell } from "@/components/qc/qc-shell";
 import { PageHeader, StatusBadge } from "@/components/retailer/page-header";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { getApplicant } from "@/components/qc/mock-data";
 
 export const Route = createFileRoute("/qc/kyc-review/$id")({
@@ -107,6 +115,17 @@ function KycReviewPage() {
   );
   const [remark, setRemark] = useState("");
   const [preview, setPreview] = useState<string | null>(null);
+  const [dialog, setDialog] = useState<null | "Approved" | "Rejected" | "On Hold">(null);
+  const [holdReason, setHoldReason] = useState("");
+  const [rejectReason, setRejectReason] = useState("");
+  const [processing, setProcessing] = useState(false);
+  const [credentials, setCredentials] = useState<null | {
+    userId: string;
+    password: string;
+    role: "Retailer" | "Distributor" | "Master Distributor";
+    emailSent: boolean;
+    whatsappSent: boolean;
+  }>(null);
 
   if (!applicant) {
     return (
@@ -121,14 +140,68 @@ function KycReviewPage() {
 
   const a = applicant;
 
-  const submit = (status: "Approved" | "Rejected" | "On Hold") => {
-    if (status !== "Approved" && remark.trim().length < 5) {
-      toast.error("Please add a remark", { description: "Reason required for rejection or hold." });
+  const generateUserId = (role: "Retailer" | "Distributor" | "Master Distributor") => {
+    const prefix = role === "Retailer" ? "RET" : role === "Distributor" ? "DIS" : "MDS";
+    const key = `bo-${prefix.toLowerCase()}-seq`;
+    const start = 100;
+    const current = Number(localStorage.getItem(key) || start);
+    const next = current + 1;
+    localStorage.setItem(key, String(next));
+    return `${prefix}${String(current).padStart(8, "0")}`;
+  };
+
+  const generatePassword = () => {
+    const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+    let p = "";
+    for (let i = 0; i < 10; i++) p += chars[Math.floor(Math.random() * chars.length)];
+    return `Bo@${p}`;
+  };
+
+  const confirmApprove = async () => {
+    setProcessing(true);
+    // Simulate async ID generation + dispatch to Email & WhatsApp
+    await new Promise((r) => setTimeout(r, 1400));
+    const userId = generateUserId(a.channel);
+    const password = generatePassword();
+    setCredentials({ userId, password, role: a.channel, emailSent: true, whatsappSent: true });
+    setDecision("Approved");
+    setProcessing(false);
+    toast.success("KYC Approved", { description: `${userId} provisioned & credentials dispatched.` });
+  };
+
+  const confirmReject = async () => {
+    if (rejectReason.trim().length < 5) {
+      toast.error("Reason required", { description: "Please specify why this KYC is rejected." });
       return;
     }
-    setDecision(status);
-    toast.success(`KYC ${status}`, { description: `${applicant.id} marked as ${status}.` });
+    setProcessing(true);
+    await new Promise((r) => setTimeout(r, 700));
+    setDecision("Rejected");
+    setRemark(rejectReason);
+    setProcessing(false);
+    setDialog(null);
+    toast.success("KYC Rejected", { description: `${applicant.id} rejected. Applicant notified.` });
     setTimeout(() => navigate({ to: "/qc/kyc-queue" }), 900);
+  };
+
+  const confirmHold = async () => {
+    if (holdReason.trim().length < 5) {
+      toast.error("Reason required", { description: "Please specify why this KYC is being held." });
+      return;
+    }
+    setProcessing(true);
+    await new Promise((r) => setTimeout(r, 700));
+    setDecision("On Hold");
+    setRemark(holdReason);
+    setProcessing(false);
+    setDialog(null);
+    toast.success("KYC On Hold", { description: `${applicant.id} placed on hold. Applicant informed.` });
+    setTimeout(() => navigate({ to: "/qc/kyc-queue" }), 900);
+  };
+
+  const copy = (txt: string, label: string) => {
+    navigator.clipboard.writeText(txt);
+    toast.success(`${label} copied`);
   };
 
   return (
@@ -575,19 +648,25 @@ function KycReviewPage() {
               <div className="mt-3 flex flex-wrap gap-2 justify-end">
                 <Button
                   variant="outline"
-                  onClick={() => submit("On Hold")}
+                  onClick={() => { setHoldReason(remark); setDialog("On Hold"); }}
+                  disabled={!!decision}
                   className="border-amber-300 text-amber-800 hover:bg-amber-50"
                 >
                   <PauseCircle className="h-4 w-4" /> Put On Hold
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => submit("Rejected")}
+                  onClick={() => { setRejectReason(remark); setDialog("Rejected"); }}
+                  disabled={!!decision}
                   className="border-rose-300 text-rose-700 hover:bg-rose-50"
                 >
                   <XCircle className="h-4 w-4" /> Reject
                 </Button>
-                <Button onClick={() => submit("Approved")} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                <Button
+                  onClick={() => setDialog("Approved")}
+                  disabled={!!decision}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                >
                   <CheckCircle2 className="h-4 w-4" /> Approve KYC
                 </Button>
               </div>
@@ -608,6 +687,192 @@ function KycReviewPage() {
             </div>
           </div>
         )}
+
+        {/* ===== Approve KYC dialog ===== */}
+        <Dialog open={dialog === "Approved"} onOpenChange={(o) => { if (!o && !processing) { setDialog(null); if (credentials) setTimeout(() => navigate({ to: "/qc/kyc-queue" }), 200); } }}>
+          <DialogContent className="max-w-lg overflow-hidden p-0">
+            {!credentials ? (
+              <div>
+                <div className="relative bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-600 p-6 text-white">
+                  <div className="absolute -right-6 -top-6 h-28 w-28 rounded-full bg-white/10 blur-2xl" />
+                  <div className="relative flex items-start gap-3">
+                    <div className="h-12 w-12 rounded-2xl bg-white/15 ring-1 ring-white/30 flex items-center justify-center backdrop-blur">
+                      <ShieldCheck className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <DialogTitle className="text-white text-xl font-extrabold">Approve KYC</DialogTitle>
+                      <DialogDescription className="text-white/85 mt-1">
+                        You're about to approve <span className="font-bold">{a.name}</span> as a verified <span className="font-bold">{a.channel}</span>.
+                      </DialogDescription>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-6 space-y-4">
+                  <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-3 text-xs space-y-2">
+                    <p className="font-bold text-emerald-900 flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5" /> The following will happen automatically</p>
+                    <ul className="space-y-1 text-emerald-900/90">
+                      <li className="flex items-center gap-2"><KeyRound className="h-3.5 w-3.5" /> Unique {a.channel} ID + secure password generated</li>
+                      <li className="flex items-center gap-2"><Mail className="h-3.5 w-3.5" /> Welcome email sent to <span className="font-semibold">{a.email}</span></li>
+                      <li className="flex items-center gap-2"><MessageCircle className="h-3.5 w-3.5" /> WhatsApp credentials sent to <span className="font-semibold">{a.phone}</span></li>
+                      <li className="flex items-center gap-2"><BadgeCheck className="h-3.5 w-3.5" /> Account activated for BharatOne services</li>
+                    </ul>
+                  </div>
+                  <DialogFooter className="gap-2 sm:gap-2">
+                    <Button variant="outline" disabled={processing} onClick={() => setDialog(null)}>Cancel</Button>
+                    <Button disabled={processing} onClick={confirmApprove} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                      {processing ? (<><Loader2 className="h-4 w-4 animate-spin" /> Provisioning…</>) : (<><CheckCircle2 className="h-4 w-4" /> Confirm & Approve</>)}
+                    </Button>
+                  </DialogFooter>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div className="relative bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-600 p-6 text-white text-center">
+                  <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_top,white,transparent_60%)]" />
+                  <div className="relative">
+                    <div className="mx-auto h-16 w-16 rounded-full bg-white/15 ring-4 ring-white/30 flex items-center justify-center backdrop-blur animate-in zoom-in-50 duration-500">
+                      <PartyPopper className="h-8 w-8" />
+                    </div>
+                    <DialogTitle className="text-white text-2xl font-extrabold mt-3">Successfully Approved!</DialogTitle>
+                    <DialogDescription className="text-white/90 mt-1">
+                      {credentials.role} account provisioned for <span className="font-bold">{a.name}</span>
+                    </DialogDescription>
+                  </div>
+                </div>
+                <div className="p-6 space-y-4">
+                  <div className="rounded-xl border-2 border-dashed border-emerald-300 bg-gradient-to-br from-emerald-50 to-teal-50 p-4 space-y-3">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 flex items-center gap-1"><Lock className="h-3 w-3" /> Generated Login Credentials</p>
+
+                    <div className="rounded-lg bg-white border border-emerald-200 p-3 flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{credentials.role} ID</p>
+                        <p className="font-mono font-extrabold text-emerald-700 text-lg truncate">{credentials.userId}</p>
+                      </div>
+                      <Button size="sm" variant="outline" onClick={() => copy(credentials.userId, "ID")}>
+                        <Copy className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+
+                    <div className="rounded-lg bg-white border border-emerald-200 p-3 flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Temporary Password</p>
+                        <p className="font-mono font-extrabold text-slate-900 text-lg truncate">{credentials.password}</p>
+                      </div>
+                      <Button size="sm" variant="outline" onClick={() => copy(credentials.password, "Password")}>
+                        <Copy className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+
+                    <p className="text-[10px] text-emerald-900/70 flex items-start gap-1"><AlertTriangle className="h-3 w-3 mt-0.5 shrink-0" /> Applicant will be prompted to reset this password on first login.</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-2.5">
+                      <div className="flex items-center gap-1.5 text-emerald-800">
+                        <Mail className="h-3.5 w-3.5" />
+                        <p className="text-[11px] font-bold">Email Sent</p>
+                        <CheckCircle2 className="h-3 w-3 ml-auto" />
+                      </div>
+                      <p className="text-[10px] text-emerald-900/70 truncate mt-0.5">{a.email}</p>
+                    </div>
+                    <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-2.5">
+                      <div className="flex items-center gap-1.5 text-emerald-800">
+                        <MessageCircle className="h-3.5 w-3.5" />
+                        <p className="text-[11px] font-bold">WhatsApp Sent</p>
+                        <CheckCircle2 className="h-3 w-3 ml-auto" />
+                      </div>
+                      <p className="text-[10px] text-emerald-900/70 truncate mt-0.5">{a.phone}</p>
+                    </div>
+                  </div>
+
+                  <DialogFooter>
+                    <Button onClick={() => { setDialog(null); navigate({ to: "/qc/kyc-queue" }); }} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white">
+                      <Send className="h-4 w-4" /> Done · Back to Queue
+                    </Button>
+                  </DialogFooter>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* ===== Reject KYC dialog ===== */}
+        <Dialog open={dialog === "Rejected"} onOpenChange={(o) => !processing && setDialog(o ? "Rejected" : null)}>
+          <DialogContent className="max-w-lg overflow-hidden p-0">
+            <div className="relative bg-gradient-to-br from-rose-500 via-rose-600 to-red-600 p-6 text-white">
+              <div className="relative flex items-start gap-3">
+                <div className="h-12 w-12 rounded-2xl bg-white/15 ring-1 ring-white/30 flex items-center justify-center backdrop-blur">
+                  <XCircle className="h-6 w-6" />
+                </div>
+                <div>
+                  <DialogTitle className="text-white text-xl font-extrabold">Reject KYC</DialogTitle>
+                  <DialogDescription className="text-white/85 mt-1">
+                    Applicant <span className="font-bold">{a.name}</span> will be notified. They may re-apply after addressing the issues.
+                  </DialogDescription>
+                </div>
+              </div>
+            </div>
+            <div className="p-6 space-y-3">
+              <label className="text-xs font-bold text-slate-700">Reason for rejection <span className="text-rose-600">*</span></label>
+              <textarea
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                rows={4}
+                placeholder="e.g. Aadhaar photo mismatch with selfie, address proof unreadable…"
+                className="w-full rounded-lg border border-input bg-background p-3 text-sm focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-rose-500/15 focus-visible:border-rose-500"
+              />
+              <div className="rounded-lg bg-rose-50 border border-rose-200 p-2.5 text-[11px] text-rose-900 flex gap-2">
+                <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                Reason will be shared with the applicant via Email & WhatsApp.
+              </div>
+              <DialogFooter className="gap-2 sm:gap-2">
+                <Button variant="outline" disabled={processing} onClick={() => setDialog(null)}>Cancel</Button>
+                <Button disabled={processing} onClick={confirmReject} className="bg-rose-600 hover:bg-rose-700 text-white">
+                  {processing ? (<><Loader2 className="h-4 w-4 animate-spin" /> Submitting…</>) : (<><XCircle className="h-4 w-4" /> Confirm Reject</>)}
+                </Button>
+              </DialogFooter>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* ===== Hold KYC dialog ===== */}
+        <Dialog open={dialog === "On Hold"} onOpenChange={(o) => !processing && setDialog(o ? "On Hold" : null)}>
+          <DialogContent className="max-w-lg overflow-hidden p-0">
+            <div className="relative bg-gradient-to-br from-amber-500 via-amber-600 to-orange-600 p-6 text-white">
+              <div className="relative flex items-start gap-3">
+                <div className="h-12 w-12 rounded-2xl bg-white/15 ring-1 ring-white/30 flex items-center justify-center backdrop-blur">
+                  <PauseCircle className="h-6 w-6" />
+                </div>
+                <div>
+                  <DialogTitle className="text-white text-xl font-extrabold">Put KYC On Hold</DialogTitle>
+                  <DialogDescription className="text-white/85 mt-1">
+                    Pause review for <span className="font-bold">{a.name}</span> pending additional clarification.
+                  </DialogDescription>
+                </div>
+              </div>
+            </div>
+            <div className="p-6 space-y-3">
+              <label className="text-xs font-bold text-slate-700">Reason / Information needed <span className="text-amber-600">*</span></label>
+              <textarea
+                value={holdReason}
+                onChange={(e) => setHoldReason(e.target.value)}
+                rows={4}
+                placeholder="e.g. Awaiting clearer shop photo, pending bank account confirmation…"
+                className="w-full rounded-lg border border-input bg-background p-3 text-sm focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-500/15 focus-visible:border-amber-500"
+              />
+              <div className="rounded-lg bg-amber-50 border border-amber-200 p-2.5 text-[11px] text-amber-900 flex gap-2">
+                <Clock className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                Applicant will receive a notification via Email & WhatsApp explaining what's required.
+              </div>
+              <DialogFooter className="gap-2 sm:gap-2">
+                <Button variant="outline" disabled={processing} onClick={() => setDialog(null)}>Cancel</Button>
+                <Button disabled={processing} onClick={confirmHold} className="bg-amber-600 hover:bg-amber-700 text-white">
+                  {processing ? (<><Loader2 className="h-4 w-4 animate-spin" /> Submitting…</>) : (<><PauseCircle className="h-4 w-4" /> Confirm Hold</>)}
+                </Button>
+              </DialogFooter>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </QcShell>
   );
