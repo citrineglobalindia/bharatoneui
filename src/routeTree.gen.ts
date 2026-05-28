@@ -44,8 +44,14 @@ import { Route as AepsRouteImport } from './routes/aeps'
 import { Route as AdminLoginRouteImport } from './routes/admin-login'
 import { Route as AccountantLoginRouteImport } from './routes/accountant-login'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as QcSettingsRouteImport } from './routes/qc.settings'
+import { Route as QcReviewersRouteImport } from './routes/qc.reviewers'
+import { Route as QcReportsRouteImport } from './routes/qc.reports'
 import { Route as QcKycQueueRouteImport } from './routes/qc.kyc-queue'
+import { Route as QcFlaggedRouteImport } from './routes/qc.flagged'
+import { Route as QcDocumentSearchRouteImport } from './routes/qc.document-search'
 import { Route as QcDashboardRouteImport } from './routes/qc.dashboard'
+import { Route as QcApprovedRouteImport } from './routes/qc.approved'
 import { Route as QcKycReviewIdRouteImport } from './routes/qc.kyc-review.$id'
 
 const WalletRoute = WalletRouteImport.update({
@@ -223,14 +229,44 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const QcSettingsRoute = QcSettingsRouteImport.update({
+  id: '/qc/settings',
+  path: '/qc/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QcReviewersRoute = QcReviewersRouteImport.update({
+  id: '/qc/reviewers',
+  path: '/qc/reviewers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QcReportsRoute = QcReportsRouteImport.update({
+  id: '/qc/reports',
+  path: '/qc/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const QcKycQueueRoute = QcKycQueueRouteImport.update({
   id: '/qc/kyc-queue',
   path: '/qc/kyc-queue',
   getParentRoute: () => rootRouteImport,
 } as any)
+const QcFlaggedRoute = QcFlaggedRouteImport.update({
+  id: '/qc/flagged',
+  path: '/qc/flagged',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QcDocumentSearchRoute = QcDocumentSearchRouteImport.update({
+  id: '/qc/document-search',
+  path: '/qc/document-search',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const QcDashboardRoute = QcDashboardRouteImport.update({
   id: '/qc/dashboard',
   path: '/qc/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QcApprovedRoute = QcApprovedRouteImport.update({
+  id: '/qc/approved',
+  path: '/qc/approved',
   getParentRoute: () => rootRouteImport,
 } as any)
 const QcKycReviewIdRoute = QcKycReviewIdRouteImport.update({
@@ -275,8 +311,14 @@ export interface FileRoutesByFullPath {
   '/tro-login': typeof TroLoginRoute
   '/video-kyc': typeof VideoKycRoute
   '/wallet': typeof WalletRoute
+  '/qc/approved': typeof QcApprovedRoute
   '/qc/dashboard': typeof QcDashboardRoute
+  '/qc/document-search': typeof QcDocumentSearchRoute
+  '/qc/flagged': typeof QcFlaggedRoute
   '/qc/kyc-queue': typeof QcKycQueueRoute
+  '/qc/reports': typeof QcReportsRoute
+  '/qc/reviewers': typeof QcReviewersRoute
+  '/qc/settings': typeof QcSettingsRoute
   '/qc/kyc-review/$id': typeof QcKycReviewIdRoute
 }
 export interface FileRoutesByTo {
@@ -315,8 +357,14 @@ export interface FileRoutesByTo {
   '/tro-login': typeof TroLoginRoute
   '/video-kyc': typeof VideoKycRoute
   '/wallet': typeof WalletRoute
+  '/qc/approved': typeof QcApprovedRoute
   '/qc/dashboard': typeof QcDashboardRoute
+  '/qc/document-search': typeof QcDocumentSearchRoute
+  '/qc/flagged': typeof QcFlaggedRoute
   '/qc/kyc-queue': typeof QcKycQueueRoute
+  '/qc/reports': typeof QcReportsRoute
+  '/qc/reviewers': typeof QcReviewersRoute
+  '/qc/settings': typeof QcSettingsRoute
   '/qc/kyc-review/$id': typeof QcKycReviewIdRoute
 }
 export interface FileRoutesById {
@@ -356,8 +404,14 @@ export interface FileRoutesById {
   '/tro-login': typeof TroLoginRoute
   '/video-kyc': typeof VideoKycRoute
   '/wallet': typeof WalletRoute
+  '/qc/approved': typeof QcApprovedRoute
   '/qc/dashboard': typeof QcDashboardRoute
+  '/qc/document-search': typeof QcDocumentSearchRoute
+  '/qc/flagged': typeof QcFlaggedRoute
   '/qc/kyc-queue': typeof QcKycQueueRoute
+  '/qc/reports': typeof QcReportsRoute
+  '/qc/reviewers': typeof QcReviewersRoute
+  '/qc/settings': typeof QcSettingsRoute
   '/qc/kyc-review/$id': typeof QcKycReviewIdRoute
 }
 export interface FileRouteTypes {
@@ -398,8 +452,14 @@ export interface FileRouteTypes {
     | '/tro-login'
     | '/video-kyc'
     | '/wallet'
+    | '/qc/approved'
     | '/qc/dashboard'
+    | '/qc/document-search'
+    | '/qc/flagged'
     | '/qc/kyc-queue'
+    | '/qc/reports'
+    | '/qc/reviewers'
+    | '/qc/settings'
     | '/qc/kyc-review/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -438,8 +498,14 @@ export interface FileRouteTypes {
     | '/tro-login'
     | '/video-kyc'
     | '/wallet'
+    | '/qc/approved'
     | '/qc/dashboard'
+    | '/qc/document-search'
+    | '/qc/flagged'
     | '/qc/kyc-queue'
+    | '/qc/reports'
+    | '/qc/reviewers'
+    | '/qc/settings'
     | '/qc/kyc-review/$id'
   id:
     | '__root__'
@@ -478,8 +544,14 @@ export interface FileRouteTypes {
     | '/tro-login'
     | '/video-kyc'
     | '/wallet'
+    | '/qc/approved'
     | '/qc/dashboard'
+    | '/qc/document-search'
+    | '/qc/flagged'
     | '/qc/kyc-queue'
+    | '/qc/reports'
+    | '/qc/reviewers'
+    | '/qc/settings'
     | '/qc/kyc-review/$id'
   fileRoutesById: FileRoutesById
 }
@@ -519,8 +591,14 @@ export interface RootRouteChildren {
   TroLoginRoute: typeof TroLoginRoute
   VideoKycRoute: typeof VideoKycRoute
   WalletRoute: typeof WalletRoute
+  QcApprovedRoute: typeof QcApprovedRoute
   QcDashboardRoute: typeof QcDashboardRoute
+  QcDocumentSearchRoute: typeof QcDocumentSearchRoute
+  QcFlaggedRoute: typeof QcFlaggedRoute
   QcKycQueueRoute: typeof QcKycQueueRoute
+  QcReportsRoute: typeof QcReportsRoute
+  QcReviewersRoute: typeof QcReviewersRoute
+  QcSettingsRoute: typeof QcSettingsRoute
   QcKycReviewIdRoute: typeof QcKycReviewIdRoute
 }
 
@@ -771,6 +849,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/qc/settings': {
+      id: '/qc/settings'
+      path: '/qc/settings'
+      fullPath: '/qc/settings'
+      preLoaderRoute: typeof QcSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/qc/reviewers': {
+      id: '/qc/reviewers'
+      path: '/qc/reviewers'
+      fullPath: '/qc/reviewers'
+      preLoaderRoute: typeof QcReviewersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/qc/reports': {
+      id: '/qc/reports'
+      path: '/qc/reports'
+      fullPath: '/qc/reports'
+      preLoaderRoute: typeof QcReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/qc/kyc-queue': {
       id: '/qc/kyc-queue'
       path: '/qc/kyc-queue'
@@ -778,11 +877,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof QcKycQueueRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/qc/flagged': {
+      id: '/qc/flagged'
+      path: '/qc/flagged'
+      fullPath: '/qc/flagged'
+      preLoaderRoute: typeof QcFlaggedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/qc/document-search': {
+      id: '/qc/document-search'
+      path: '/qc/document-search'
+      fullPath: '/qc/document-search'
+      preLoaderRoute: typeof QcDocumentSearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/qc/dashboard': {
       id: '/qc/dashboard'
       path: '/qc/dashboard'
       fullPath: '/qc/dashboard'
       preLoaderRoute: typeof QcDashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/qc/approved': {
+      id: '/qc/approved'
+      path: '/qc/approved'
+      fullPath: '/qc/approved'
+      preLoaderRoute: typeof QcApprovedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/qc/kyc-review/$id': {
@@ -831,8 +951,14 @@ const rootRouteChildren: RootRouteChildren = {
   TroLoginRoute: TroLoginRoute,
   VideoKycRoute: VideoKycRoute,
   WalletRoute: WalletRoute,
+  QcApprovedRoute: QcApprovedRoute,
   QcDashboardRoute: QcDashboardRoute,
+  QcDocumentSearchRoute: QcDocumentSearchRoute,
+  QcFlaggedRoute: QcFlaggedRoute,
   QcKycQueueRoute: QcKycQueueRoute,
+  QcReportsRoute: QcReportsRoute,
+  QcReviewersRoute: QcReviewersRoute,
+  QcSettingsRoute: QcSettingsRoute,
   QcKycReviewIdRoute: QcKycReviewIdRoute,
 }
 export const routeTree = rootRouteImport
