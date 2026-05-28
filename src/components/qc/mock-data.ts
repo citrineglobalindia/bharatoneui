@@ -92,11 +92,24 @@ export interface KycApplicant {
     geoMatch: boolean;
     randomCodeMatch: boolean;
     languageSpoken: string;
+    randomCode?: string;
+    declarationAccepted?: boolean;
+    livenessPassed?: boolean;
+    faceMatchVsAadhaar?: number;
+    idShownOnCamera?: "Aadhaar" | "PAN" | "Both";
+    geoCoords?: { lat: number; lng: number };
+    videoSizeMB?: number;
   };
   selfie?: {
     capturedAt: string;
     geoMatch: boolean;
     deviceModel: string;
+    livenessScore?: number;
+    faceMatchVsAadhaar?: number;
+    blurScore?: number;
+    brightnessScore?: number;
+    geoCoords?: { lat: number; lng: number };
+    galleryUploadBlocked?: boolean;
   };
   consents?: { label: string; acceptedAt: string }[];
   deviceMeta?: {
@@ -105,6 +118,13 @@ export interface KycApplicant {
     os: string;
     appVersion: string;
     location: string;
+  };
+  charges?: {
+    plan: string;
+    items: { label: string; amount: number; gstPct?: number }[];
+    receiptId: string;
+    paidAt: string;
+    paidVia: string;
   };
 }
 
@@ -173,8 +193,15 @@ export const QC_APPLICANTS: KycApplicant[] = [
     videoKyc: {
       completedAt: "2026-05-27 10:40", durationSec: 84, agent: "Agent ID VKA-22",
       geoMatch: true, randomCodeMatch: true, languageSpoken: "Kannada",
+      randomCode: "BO-4827", declarationAccepted: true, livenessPassed: true,
+      faceMatchVsAadhaar: 96, idShownOnCamera: "Both",
+      geoCoords: { lat: 12.9716, lng: 77.5946 }, videoSizeMB: 4.2,
     },
-    selfie: { capturedAt: "2026-05-27 10:25", geoMatch: true, deviceModel: "Redmi Note 12" },
+    selfie: {
+      capturedAt: "2026-05-27 10:25", geoMatch: true, deviceModel: "Redmi Note 12",
+      livenessScore: 99, faceMatchVsAadhaar: 97, blurScore: 8, brightnessScore: 92,
+      geoCoords: { lat: 12.9716, lng: 77.5946 }, galleryUploadBlocked: true,
+    },
     consents: [
       { label: "Terms & Conditions", acceptedAt: "2026-05-27 09:58" },
       { label: "Privacy Policy", acceptedAt: "2026-05-27 09:58" },
@@ -184,6 +211,17 @@ export const QC_APPLICANTS: KycApplicant[] = [
     deviceMeta: {
       ip: "103.21.58.214", device: "Redmi Note 12", os: "Android 13",
       appVersion: "BharatOne v3.4.1", location: "Bengaluru, KA",
+    },
+    charges: {
+      plan: "New JSKO Retailer Registration",
+      receiptId: "BO-MPPSGW67-L3FHF",
+      paidAt: "2026-05-27 10:35",
+      paidVia: "UPI · harshitha@okhdfc",
+      items: [
+        { label: "KYC Verification Charges", amount: 1499, gstPct: 18 },
+        { label: "Onboarding & Platform Fee", amount: 2000, gstPct: 18 },
+        { label: "Video KYC Agent Charges", amount: 500, gstPct: 18 },
+      ],
     },
   },
   {
