@@ -45,6 +45,7 @@ import { Route as AdminLoginRouteImport } from './routes/admin-login'
 import { Route as AccountantLoginRouteImport } from './routes/accountant-login'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as QcKycQueueRouteImport } from './routes/qc.kyc-queue'
+import { Route as QcFlaggedRouteImport } from './routes/qc.flagged'
 import { Route as QcDashboardRouteImport } from './routes/qc.dashboard'
 import { Route as QcKycReviewIdRouteImport } from './routes/qc.kyc-review.$id'
 
@@ -228,6 +229,11 @@ const QcKycQueueRoute = QcKycQueueRouteImport.update({
   path: '/qc/kyc-queue',
   getParentRoute: () => rootRouteImport,
 } as any)
+const QcFlaggedRoute = QcFlaggedRouteImport.update({
+  id: '/qc/flagged',
+  path: '/qc/flagged',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const QcDashboardRoute = QcDashboardRouteImport.update({
   id: '/qc/dashboard',
   path: '/qc/dashboard',
@@ -276,6 +282,7 @@ export interface FileRoutesByFullPath {
   '/video-kyc': typeof VideoKycRoute
   '/wallet': typeof WalletRoute
   '/qc/dashboard': typeof QcDashboardRoute
+  '/qc/flagged': typeof QcFlaggedRoute
   '/qc/kyc-queue': typeof QcKycQueueRoute
   '/qc/kyc-review/$id': typeof QcKycReviewIdRoute
 }
@@ -316,6 +323,7 @@ export interface FileRoutesByTo {
   '/video-kyc': typeof VideoKycRoute
   '/wallet': typeof WalletRoute
   '/qc/dashboard': typeof QcDashboardRoute
+  '/qc/flagged': typeof QcFlaggedRoute
   '/qc/kyc-queue': typeof QcKycQueueRoute
   '/qc/kyc-review/$id': typeof QcKycReviewIdRoute
 }
@@ -357,6 +365,7 @@ export interface FileRoutesById {
   '/video-kyc': typeof VideoKycRoute
   '/wallet': typeof WalletRoute
   '/qc/dashboard': typeof QcDashboardRoute
+  '/qc/flagged': typeof QcFlaggedRoute
   '/qc/kyc-queue': typeof QcKycQueueRoute
   '/qc/kyc-review/$id': typeof QcKycReviewIdRoute
 }
@@ -399,6 +408,7 @@ export interface FileRouteTypes {
     | '/video-kyc'
     | '/wallet'
     | '/qc/dashboard'
+    | '/qc/flagged'
     | '/qc/kyc-queue'
     | '/qc/kyc-review/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -439,6 +449,7 @@ export interface FileRouteTypes {
     | '/video-kyc'
     | '/wallet'
     | '/qc/dashboard'
+    | '/qc/flagged'
     | '/qc/kyc-queue'
     | '/qc/kyc-review/$id'
   id:
@@ -479,6 +490,7 @@ export interface FileRouteTypes {
     | '/video-kyc'
     | '/wallet'
     | '/qc/dashboard'
+    | '/qc/flagged'
     | '/qc/kyc-queue'
     | '/qc/kyc-review/$id'
   fileRoutesById: FileRoutesById
@@ -520,6 +532,7 @@ export interface RootRouteChildren {
   VideoKycRoute: typeof VideoKycRoute
   WalletRoute: typeof WalletRoute
   QcDashboardRoute: typeof QcDashboardRoute
+  QcFlaggedRoute: typeof QcFlaggedRoute
   QcKycQueueRoute: typeof QcKycQueueRoute
   QcKycReviewIdRoute: typeof QcKycReviewIdRoute
 }
@@ -778,6 +791,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof QcKycQueueRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/qc/flagged': {
+      id: '/qc/flagged'
+      path: '/qc/flagged'
+      fullPath: '/qc/flagged'
+      preLoaderRoute: typeof QcFlaggedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/qc/dashboard': {
       id: '/qc/dashboard'
       path: '/qc/dashboard'
@@ -832,6 +852,7 @@ const rootRouteChildren: RootRouteChildren = {
   VideoKycRoute: VideoKycRoute,
   WalletRoute: WalletRoute,
   QcDashboardRoute: QcDashboardRoute,
+  QcFlaggedRoute: QcFlaggedRoute,
   QcKycQueueRoute: QcKycQueueRoute,
   QcKycReviewIdRoute: QcKycReviewIdRoute,
 }
