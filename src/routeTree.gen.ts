@@ -54,6 +54,7 @@ import { Route as QcDocumentSearchRouteImport } from './routes/qc.document-searc
 import { Route as QcDashboardRouteImport } from './routes/qc.dashboard'
 import { Route as QcChangePasswordRouteImport } from './routes/qc.change-password'
 import { Route as QcApprovedRouteImport } from './routes/qc.approved'
+import { Route as AccountantDashboardRouteImport } from './routes/accountant.dashboard'
 import { Route as QcKycReviewIdRouteImport } from './routes/qc.kyc-review.$id'
 
 const WalletRoute = WalletRouteImport.update({
@@ -281,6 +282,11 @@ const QcApprovedRoute = QcApprovedRouteImport.update({
   path: '/qc/approved',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountantDashboardRoute = AccountantDashboardRouteImport.update({
+  id: '/accountant/dashboard',
+  path: '/accountant/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const QcKycReviewIdRoute = QcKycReviewIdRouteImport.update({
   id: '/qc/kyc-review/$id',
   path: '/qc/kyc-review/$id',
@@ -323,6 +329,7 @@ export interface FileRoutesByFullPath {
   '/tro-login': typeof TroLoginRoute
   '/video-kyc': typeof VideoKycRoute
   '/wallet': typeof WalletRoute
+  '/accountant/dashboard': typeof AccountantDashboardRoute
   '/qc/approved': typeof QcApprovedRoute
   '/qc/change-password': typeof QcChangePasswordRoute
   '/qc/dashboard': typeof QcDashboardRoute
@@ -371,6 +378,7 @@ export interface FileRoutesByTo {
   '/tro-login': typeof TroLoginRoute
   '/video-kyc': typeof VideoKycRoute
   '/wallet': typeof WalletRoute
+  '/accountant/dashboard': typeof AccountantDashboardRoute
   '/qc/approved': typeof QcApprovedRoute
   '/qc/change-password': typeof QcChangePasswordRoute
   '/qc/dashboard': typeof QcDashboardRoute
@@ -420,6 +428,7 @@ export interface FileRoutesById {
   '/tro-login': typeof TroLoginRoute
   '/video-kyc': typeof VideoKycRoute
   '/wallet': typeof WalletRoute
+  '/accountant/dashboard': typeof AccountantDashboardRoute
   '/qc/approved': typeof QcApprovedRoute
   '/qc/change-password': typeof QcChangePasswordRoute
   '/qc/dashboard': typeof QcDashboardRoute
@@ -470,6 +479,7 @@ export interface FileRouteTypes {
     | '/tro-login'
     | '/video-kyc'
     | '/wallet'
+    | '/accountant/dashboard'
     | '/qc/approved'
     | '/qc/change-password'
     | '/qc/dashboard'
@@ -518,6 +528,7 @@ export interface FileRouteTypes {
     | '/tro-login'
     | '/video-kyc'
     | '/wallet'
+    | '/accountant/dashboard'
     | '/qc/approved'
     | '/qc/change-password'
     | '/qc/dashboard'
@@ -566,6 +577,7 @@ export interface FileRouteTypes {
     | '/tro-login'
     | '/video-kyc'
     | '/wallet'
+    | '/accountant/dashboard'
     | '/qc/approved'
     | '/qc/change-password'
     | '/qc/dashboard'
@@ -615,6 +627,7 @@ export interface RootRouteChildren {
   TroLoginRoute: typeof TroLoginRoute
   VideoKycRoute: typeof VideoKycRoute
   WalletRoute: typeof WalletRoute
+  AccountantDashboardRoute: typeof AccountantDashboardRoute
   QcApprovedRoute: typeof QcApprovedRoute
   QcChangePasswordRoute: typeof QcChangePasswordRoute
   QcDashboardRoute: typeof QcDashboardRoute
@@ -945,6 +958,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof QcApprovedRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/accountant/dashboard': {
+      id: '/accountant/dashboard'
+      path: '/accountant/dashboard'
+      fullPath: '/accountant/dashboard'
+      preLoaderRoute: typeof AccountantDashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/qc/kyc-review/$id': {
       id: '/qc/kyc-review/$id'
       path: '/qc/kyc-review/$id'
@@ -991,6 +1011,7 @@ const rootRouteChildren: RootRouteChildren = {
   TroLoginRoute: TroLoginRoute,
   VideoKycRoute: VideoKycRoute,
   WalletRoute: WalletRoute,
+  AccountantDashboardRoute: AccountantDashboardRoute,
   QcApprovedRoute: QcApprovedRoute,
   QcChangePasswordRoute: QcChangePasswordRoute,
   QcDashboardRoute: QcDashboardRoute,
