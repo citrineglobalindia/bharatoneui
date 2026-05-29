@@ -253,7 +253,7 @@ export function AccountantShell({ children }: { children: React.ReactNode }) {
               <DropdownMenuContent align="end" className="w-80 p-0 overflow-hidden">
                 <div className="px-3 py-2.5 border-b bg-gradient-to-r from-emerald-600 to-teal-600 text-white">
                   <p className="text-xs font-bold">Notifications</p>
-                  <p className="text-[10px] opacity-90">{notifications.length} new \u00B7 approvals and payouts</p>
+                  <p className="text-[10px] opacity-90">{notifications.length} new · approvals and payouts</p>
                 </div>
                 <ul className="max-h-80 overflow-y-auto">
                   {notifications.map((n) => (
@@ -295,7 +295,7 @@ export function AccountantShell({ children }: { children: React.ReactNode }) {
                   </div>
                   <div className="hidden md:block leading-tight text-left">
                     <p className="text-[11px] font-bold text-slate-900">Mahesh</p>
-                    <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Accountant \u00B7 On duty</p>
+                    <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Accountant · On duty</p>
                   </div>
                   <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
                 </button>
