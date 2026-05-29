@@ -7,6 +7,7 @@ import {
   Wallet,
   ArrowDownToLine,
   Banknote,
+  BookOpenCheck,
   LogOut,
   Menu,
   X,
@@ -63,6 +64,7 @@ const NAV: NavSection[] = [
     items: [
       { label: "Services & Commission", icon: <Wrench className="h-4 w-4" />, to: "/accountant/services" },
       { label: "Main Account Recharge", icon: <Banknote className="h-4 w-4" />, to: "/accountant/main-recharge" },
+      { label: "Ledger", icon: <BookOpenCheck className="h-4 w-4" />, to: "/accountant/ledger" },
     ],
   },
   {
