@@ -205,10 +205,10 @@ export function AccountantShell({ children }: { children: React.ReactNode }) {
             <div className="hidden lg:flex items-center gap-2 rounded-xl bg-slate-100/80 ring-1 ring-slate-200 focus-within:ring-2 focus-within:ring-emerald-400/40 focus-within:bg-white px-3 h-10 max-w-xl flex-1 transition-all">
               <Search className="h-4 w-4 text-muted-foreground" />
               <input
-                placeholder="Search by name, UTR, request ID, phone\u2026"
+                placeholder="Search by name, UTR, request ID, phone…"
                 className="bg-transparent flex-1 text-sm outline-none placeholder:text-muted-foreground"
               />
-              <kbd className="text-[10px] font-bold text-muted-foreground bg-white border border-border rounded px-1.5 py-0.5">\u2318K</kbd>
+              <kbd className="text-[10px] font-bold text-muted-foreground bg-white border border-border rounded px-1.5 py-0.5">⌘K</kbd>
             </div>
           </div>
 
