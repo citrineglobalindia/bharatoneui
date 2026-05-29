@@ -54,7 +54,11 @@ import { Route as QcDocumentSearchRouteImport } from './routes/qc.document-searc
 import { Route as QcDashboardRouteImport } from './routes/qc.dashboard'
 import { Route as QcChangePasswordRouteImport } from './routes/qc.change-password'
 import { Route as QcApprovedRouteImport } from './routes/qc.approved'
+import { Route as AccountantWithdrawalsRouteImport } from './routes/accountant.withdrawals'
+import { Route as AccountantWalletRequestsRouteImport } from './routes/accountant.wallet-requests'
+import { Route as AccountantServicesRouteImport } from './routes/accountant.services'
 import { Route as AccountantRegistrationsRouteImport } from './routes/accountant.registrations'
+import { Route as AccountantMainRechargeRouteImport } from './routes/accountant.main-recharge'
 import { Route as AccountantDashboardRouteImport } from './routes/accountant.dashboard'
 import { Route as QcKycReviewIdRouteImport } from './routes/qc.kyc-review.$id'
 
@@ -283,9 +287,30 @@ const QcApprovedRoute = QcApprovedRouteImport.update({
   path: '/qc/approved',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountantWithdrawalsRoute = AccountantWithdrawalsRouteImport.update({
+  id: '/accountant/withdrawals',
+  path: '/accountant/withdrawals',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountantWalletRequestsRoute =
+  AccountantWalletRequestsRouteImport.update({
+    id: '/accountant/wallet-requests',
+    path: '/accountant/wallet-requests',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AccountantServicesRoute = AccountantServicesRouteImport.update({
+  id: '/accountant/services',
+  path: '/accountant/services',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AccountantRegistrationsRoute = AccountantRegistrationsRouteImport.update({
   id: '/accountant/registrations',
   path: '/accountant/registrations',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountantMainRechargeRoute = AccountantMainRechargeRouteImport.update({
+  id: '/accountant/main-recharge',
+  path: '/accountant/main-recharge',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AccountantDashboardRoute = AccountantDashboardRouteImport.update({
@@ -336,7 +361,11 @@ export interface FileRoutesByFullPath {
   '/video-kyc': typeof VideoKycRoute
   '/wallet': typeof WalletRoute
   '/accountant/dashboard': typeof AccountantDashboardRoute
+  '/accountant/main-recharge': typeof AccountantMainRechargeRoute
   '/accountant/registrations': typeof AccountantRegistrationsRoute
+  '/accountant/services': typeof AccountantServicesRoute
+  '/accountant/wallet-requests': typeof AccountantWalletRequestsRoute
+  '/accountant/withdrawals': typeof AccountantWithdrawalsRoute
   '/qc/approved': typeof QcApprovedRoute
   '/qc/change-password': typeof QcChangePasswordRoute
   '/qc/dashboard': typeof QcDashboardRoute
@@ -386,7 +415,11 @@ export interface FileRoutesByTo {
   '/video-kyc': typeof VideoKycRoute
   '/wallet': typeof WalletRoute
   '/accountant/dashboard': typeof AccountantDashboardRoute
+  '/accountant/main-recharge': typeof AccountantMainRechargeRoute
   '/accountant/registrations': typeof AccountantRegistrationsRoute
+  '/accountant/services': typeof AccountantServicesRoute
+  '/accountant/wallet-requests': typeof AccountantWalletRequestsRoute
+  '/accountant/withdrawals': typeof AccountantWithdrawalsRoute
   '/qc/approved': typeof QcApprovedRoute
   '/qc/change-password': typeof QcChangePasswordRoute
   '/qc/dashboard': typeof QcDashboardRoute
@@ -437,7 +470,11 @@ export interface FileRoutesById {
   '/video-kyc': typeof VideoKycRoute
   '/wallet': typeof WalletRoute
   '/accountant/dashboard': typeof AccountantDashboardRoute
+  '/accountant/main-recharge': typeof AccountantMainRechargeRoute
   '/accountant/registrations': typeof AccountantRegistrationsRoute
+  '/accountant/services': typeof AccountantServicesRoute
+  '/accountant/wallet-requests': typeof AccountantWalletRequestsRoute
+  '/accountant/withdrawals': typeof AccountantWithdrawalsRoute
   '/qc/approved': typeof QcApprovedRoute
   '/qc/change-password': typeof QcChangePasswordRoute
   '/qc/dashboard': typeof QcDashboardRoute
@@ -489,7 +526,11 @@ export interface FileRouteTypes {
     | '/video-kyc'
     | '/wallet'
     | '/accountant/dashboard'
+    | '/accountant/main-recharge'
     | '/accountant/registrations'
+    | '/accountant/services'
+    | '/accountant/wallet-requests'
+    | '/accountant/withdrawals'
     | '/qc/approved'
     | '/qc/change-password'
     | '/qc/dashboard'
@@ -539,7 +580,11 @@ export interface FileRouteTypes {
     | '/video-kyc'
     | '/wallet'
     | '/accountant/dashboard'
+    | '/accountant/main-recharge'
     | '/accountant/registrations'
+    | '/accountant/services'
+    | '/accountant/wallet-requests'
+    | '/accountant/withdrawals'
     | '/qc/approved'
     | '/qc/change-password'
     | '/qc/dashboard'
@@ -589,7 +634,11 @@ export interface FileRouteTypes {
     | '/video-kyc'
     | '/wallet'
     | '/accountant/dashboard'
+    | '/accountant/main-recharge'
     | '/accountant/registrations'
+    | '/accountant/services'
+    | '/accountant/wallet-requests'
+    | '/accountant/withdrawals'
     | '/qc/approved'
     | '/qc/change-password'
     | '/qc/dashboard'
@@ -640,7 +689,11 @@ export interface RootRouteChildren {
   VideoKycRoute: typeof VideoKycRoute
   WalletRoute: typeof WalletRoute
   AccountantDashboardRoute: typeof AccountantDashboardRoute
+  AccountantMainRechargeRoute: typeof AccountantMainRechargeRoute
   AccountantRegistrationsRoute: typeof AccountantRegistrationsRoute
+  AccountantServicesRoute: typeof AccountantServicesRoute
+  AccountantWalletRequestsRoute: typeof AccountantWalletRequestsRoute
+  AccountantWithdrawalsRoute: typeof AccountantWithdrawalsRoute
   QcApprovedRoute: typeof QcApprovedRoute
   QcChangePasswordRoute: typeof QcChangePasswordRoute
   QcDashboardRoute: typeof QcDashboardRoute
@@ -971,11 +1024,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof QcApprovedRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/accountant/withdrawals': {
+      id: '/accountant/withdrawals'
+      path: '/accountant/withdrawals'
+      fullPath: '/accountant/withdrawals'
+      preLoaderRoute: typeof AccountantWithdrawalsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/accountant/wallet-requests': {
+      id: '/accountant/wallet-requests'
+      path: '/accountant/wallet-requests'
+      fullPath: '/accountant/wallet-requests'
+      preLoaderRoute: typeof AccountantWalletRequestsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/accountant/services': {
+      id: '/accountant/services'
+      path: '/accountant/services'
+      fullPath: '/accountant/services'
+      preLoaderRoute: typeof AccountantServicesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/accountant/registrations': {
       id: '/accountant/registrations'
       path: '/accountant/registrations'
       fullPath: '/accountant/registrations'
       preLoaderRoute: typeof AccountantRegistrationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/accountant/main-recharge': {
+      id: '/accountant/main-recharge'
+      path: '/accountant/main-recharge'
+      fullPath: '/accountant/main-recharge'
+      preLoaderRoute: typeof AccountantMainRechargeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/accountant/dashboard': {
@@ -1032,7 +1113,11 @@ const rootRouteChildren: RootRouteChildren = {
   VideoKycRoute: VideoKycRoute,
   WalletRoute: WalletRoute,
   AccountantDashboardRoute: AccountantDashboardRoute,
+  AccountantMainRechargeRoute: AccountantMainRechargeRoute,
   AccountantRegistrationsRoute: AccountantRegistrationsRoute,
+  AccountantServicesRoute: AccountantServicesRoute,
+  AccountantWalletRequestsRoute: AccountantWalletRequestsRoute,
+  AccountantWithdrawalsRoute: AccountantWithdrawalsRoute,
   QcApprovedRoute: QcApprovedRoute,
   QcChangePasswordRoute: QcChangePasswordRoute,
   QcDashboardRoute: QcDashboardRoute,
