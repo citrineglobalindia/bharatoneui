@@ -54,6 +54,7 @@ import { Route as QcDocumentSearchRouteImport } from './routes/qc.document-searc
 import { Route as QcDashboardRouteImport } from './routes/qc.dashboard'
 import { Route as QcChangePasswordRouteImport } from './routes/qc.change-password'
 import { Route as QcApprovedRouteImport } from './routes/qc.approved'
+import { Route as AccountantRegistrationsRouteImport } from './routes/accountant.registrations'
 import { Route as AccountantDashboardRouteImport } from './routes/accountant.dashboard'
 import { Route as QcKycReviewIdRouteImport } from './routes/qc.kyc-review.$id'
 
@@ -282,6 +283,11 @@ const QcApprovedRoute = QcApprovedRouteImport.update({
   path: '/qc/approved',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountantRegistrationsRoute = AccountantRegistrationsRouteImport.update({
+  id: '/accountant/registrations',
+  path: '/accountant/registrations',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AccountantDashboardRoute = AccountantDashboardRouteImport.update({
   id: '/accountant/dashboard',
   path: '/accountant/dashboard',
@@ -330,6 +336,7 @@ export interface FileRoutesByFullPath {
   '/video-kyc': typeof VideoKycRoute
   '/wallet': typeof WalletRoute
   '/accountant/dashboard': typeof AccountantDashboardRoute
+  '/accountant/registrations': typeof AccountantRegistrationsRoute
   '/qc/approved': typeof QcApprovedRoute
   '/qc/change-password': typeof QcChangePasswordRoute
   '/qc/dashboard': typeof QcDashboardRoute
@@ -379,6 +386,7 @@ export interface FileRoutesByTo {
   '/video-kyc': typeof VideoKycRoute
   '/wallet': typeof WalletRoute
   '/accountant/dashboard': typeof AccountantDashboardRoute
+  '/accountant/registrations': typeof AccountantRegistrationsRoute
   '/qc/approved': typeof QcApprovedRoute
   '/qc/change-password': typeof QcChangePasswordRoute
   '/qc/dashboard': typeof QcDashboardRoute
@@ -429,6 +437,7 @@ export interface FileRoutesById {
   '/video-kyc': typeof VideoKycRoute
   '/wallet': typeof WalletRoute
   '/accountant/dashboard': typeof AccountantDashboardRoute
+  '/accountant/registrations': typeof AccountantRegistrationsRoute
   '/qc/approved': typeof QcApprovedRoute
   '/qc/change-password': typeof QcChangePasswordRoute
   '/qc/dashboard': typeof QcDashboardRoute
@@ -480,6 +489,7 @@ export interface FileRouteTypes {
     | '/video-kyc'
     | '/wallet'
     | '/accountant/dashboard'
+    | '/accountant/registrations'
     | '/qc/approved'
     | '/qc/change-password'
     | '/qc/dashboard'
@@ -529,6 +539,7 @@ export interface FileRouteTypes {
     | '/video-kyc'
     | '/wallet'
     | '/accountant/dashboard'
+    | '/accountant/registrations'
     | '/qc/approved'
     | '/qc/change-password'
     | '/qc/dashboard'
@@ -578,6 +589,7 @@ export interface FileRouteTypes {
     | '/video-kyc'
     | '/wallet'
     | '/accountant/dashboard'
+    | '/accountant/registrations'
     | '/qc/approved'
     | '/qc/change-password'
     | '/qc/dashboard'
@@ -628,6 +640,7 @@ export interface RootRouteChildren {
   VideoKycRoute: typeof VideoKycRoute
   WalletRoute: typeof WalletRoute
   AccountantDashboardRoute: typeof AccountantDashboardRoute
+  AccountantRegistrationsRoute: typeof AccountantRegistrationsRoute
   QcApprovedRoute: typeof QcApprovedRoute
   QcChangePasswordRoute: typeof QcChangePasswordRoute
   QcDashboardRoute: typeof QcDashboardRoute
@@ -958,6 +971,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof QcApprovedRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/accountant/registrations': {
+      id: '/accountant/registrations'
+      path: '/accountant/registrations'
+      fullPath: '/accountant/registrations'
+      preLoaderRoute: typeof AccountantRegistrationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/accountant/dashboard': {
       id: '/accountant/dashboard'
       path: '/accountant/dashboard'
@@ -1012,6 +1032,7 @@ const rootRouteChildren: RootRouteChildren = {
   VideoKycRoute: VideoKycRoute,
   WalletRoute: WalletRoute,
   AccountantDashboardRoute: AccountantDashboardRoute,
+  AccountantRegistrationsRoute: AccountantRegistrationsRoute,
   QcApprovedRoute: QcApprovedRoute,
   QcChangePasswordRoute: QcChangePasswordRoute,
   QcDashboardRoute: QcDashboardRoute,
