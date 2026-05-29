@@ -309,9 +309,9 @@ export function AccountantShell({ children }: { children: React.ReactNode }) {
                   </div>
                 </div>
                 <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">Account</DropdownMenuLabel>
-                <DropdownMenuItem><UserCircle2 className="h-4 w-4" /> My profile</DropdownMenuItem>
-                <DropdownMenuItem><KeyRound className="h-4 w-4" /> Change password</DropdownMenuItem>
-                <DropdownMenuItem><Settings className="h-4 w-4" /> Portal settings</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate({ to: "/accountant/profile" })}><UserCircle2 className="h-4 w-4" /> My profile</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate({ to: "/accountant/change-password" })}><KeyRound className="h-4 w-4" /> Change password</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate({ to: "/accountant/settings" })}><Settings className="h-4 w-4" /> Portal settings</DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <div className="px-2 py-1.5 text-[11px] text-muted-foreground flex items-center justify-between">
                   <span>Approved today</span><span className="font-bold text-emerald-700">32 items</span>

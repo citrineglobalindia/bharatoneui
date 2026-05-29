@@ -56,10 +56,13 @@ import { Route as QcChangePasswordRouteImport } from './routes/qc.change-passwor
 import { Route as QcApprovedRouteImport } from './routes/qc.approved'
 import { Route as AccountantWithdrawalsRouteImport } from './routes/accountant.withdrawals'
 import { Route as AccountantWalletRequestsRouteImport } from './routes/accountant.wallet-requests'
+import { Route as AccountantSettingsRouteImport } from './routes/accountant.settings'
 import { Route as AccountantServicesRouteImport } from './routes/accountant.services'
 import { Route as AccountantRegistrationsRouteImport } from './routes/accountant.registrations'
+import { Route as AccountantProfileRouteImport } from './routes/accountant.profile'
 import { Route as AccountantMainRechargeRouteImport } from './routes/accountant.main-recharge'
 import { Route as AccountantDashboardRouteImport } from './routes/accountant.dashboard'
+import { Route as AccountantChangePasswordRouteImport } from './routes/accountant.change-password'
 import { Route as QcKycReviewIdRouteImport } from './routes/qc.kyc-review.$id'
 
 const WalletRoute = WalletRouteImport.update({
@@ -298,6 +301,11 @@ const AccountantWalletRequestsRoute =
     path: '/accountant/wallet-requests',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AccountantSettingsRoute = AccountantSettingsRouteImport.update({
+  id: '/accountant/settings',
+  path: '/accountant/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AccountantServicesRoute = AccountantServicesRouteImport.update({
   id: '/accountant/services',
   path: '/accountant/services',
@@ -306,6 +314,11 @@ const AccountantServicesRoute = AccountantServicesRouteImport.update({
 const AccountantRegistrationsRoute = AccountantRegistrationsRouteImport.update({
   id: '/accountant/registrations',
   path: '/accountant/registrations',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountantProfileRoute = AccountantProfileRouteImport.update({
+  id: '/accountant/profile',
+  path: '/accountant/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AccountantMainRechargeRoute = AccountantMainRechargeRouteImport.update({
@@ -318,6 +331,12 @@ const AccountantDashboardRoute = AccountantDashboardRouteImport.update({
   path: '/accountant/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountantChangePasswordRoute =
+  AccountantChangePasswordRouteImport.update({
+    id: '/accountant/change-password',
+    path: '/accountant/change-password',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const QcKycReviewIdRoute = QcKycReviewIdRouteImport.update({
   id: '/qc/kyc-review/$id',
   path: '/qc/kyc-review/$id',
@@ -360,10 +379,13 @@ export interface FileRoutesByFullPath {
   '/tro-login': typeof TroLoginRoute
   '/video-kyc': typeof VideoKycRoute
   '/wallet': typeof WalletRoute
+  '/accountant/change-password': typeof AccountantChangePasswordRoute
   '/accountant/dashboard': typeof AccountantDashboardRoute
   '/accountant/main-recharge': typeof AccountantMainRechargeRoute
+  '/accountant/profile': typeof AccountantProfileRoute
   '/accountant/registrations': typeof AccountantRegistrationsRoute
   '/accountant/services': typeof AccountantServicesRoute
+  '/accountant/settings': typeof AccountantSettingsRoute
   '/accountant/wallet-requests': typeof AccountantWalletRequestsRoute
   '/accountant/withdrawals': typeof AccountantWithdrawalsRoute
   '/qc/approved': typeof QcApprovedRoute
@@ -414,10 +436,13 @@ export interface FileRoutesByTo {
   '/tro-login': typeof TroLoginRoute
   '/video-kyc': typeof VideoKycRoute
   '/wallet': typeof WalletRoute
+  '/accountant/change-password': typeof AccountantChangePasswordRoute
   '/accountant/dashboard': typeof AccountantDashboardRoute
   '/accountant/main-recharge': typeof AccountantMainRechargeRoute
+  '/accountant/profile': typeof AccountantProfileRoute
   '/accountant/registrations': typeof AccountantRegistrationsRoute
   '/accountant/services': typeof AccountantServicesRoute
+  '/accountant/settings': typeof AccountantSettingsRoute
   '/accountant/wallet-requests': typeof AccountantWalletRequestsRoute
   '/accountant/withdrawals': typeof AccountantWithdrawalsRoute
   '/qc/approved': typeof QcApprovedRoute
@@ -469,10 +494,13 @@ export interface FileRoutesById {
   '/tro-login': typeof TroLoginRoute
   '/video-kyc': typeof VideoKycRoute
   '/wallet': typeof WalletRoute
+  '/accountant/change-password': typeof AccountantChangePasswordRoute
   '/accountant/dashboard': typeof AccountantDashboardRoute
   '/accountant/main-recharge': typeof AccountantMainRechargeRoute
+  '/accountant/profile': typeof AccountantProfileRoute
   '/accountant/registrations': typeof AccountantRegistrationsRoute
   '/accountant/services': typeof AccountantServicesRoute
+  '/accountant/settings': typeof AccountantSettingsRoute
   '/accountant/wallet-requests': typeof AccountantWalletRequestsRoute
   '/accountant/withdrawals': typeof AccountantWithdrawalsRoute
   '/qc/approved': typeof QcApprovedRoute
@@ -525,10 +553,13 @@ export interface FileRouteTypes {
     | '/tro-login'
     | '/video-kyc'
     | '/wallet'
+    | '/accountant/change-password'
     | '/accountant/dashboard'
     | '/accountant/main-recharge'
+    | '/accountant/profile'
     | '/accountant/registrations'
     | '/accountant/services'
+    | '/accountant/settings'
     | '/accountant/wallet-requests'
     | '/accountant/withdrawals'
     | '/qc/approved'
@@ -579,10 +610,13 @@ export interface FileRouteTypes {
     | '/tro-login'
     | '/video-kyc'
     | '/wallet'
+    | '/accountant/change-password'
     | '/accountant/dashboard'
     | '/accountant/main-recharge'
+    | '/accountant/profile'
     | '/accountant/registrations'
     | '/accountant/services'
+    | '/accountant/settings'
     | '/accountant/wallet-requests'
     | '/accountant/withdrawals'
     | '/qc/approved'
@@ -633,10 +667,13 @@ export interface FileRouteTypes {
     | '/tro-login'
     | '/video-kyc'
     | '/wallet'
+    | '/accountant/change-password'
     | '/accountant/dashboard'
     | '/accountant/main-recharge'
+    | '/accountant/profile'
     | '/accountant/registrations'
     | '/accountant/services'
+    | '/accountant/settings'
     | '/accountant/wallet-requests'
     | '/accountant/withdrawals'
     | '/qc/approved'
@@ -688,10 +725,13 @@ export interface RootRouteChildren {
   TroLoginRoute: typeof TroLoginRoute
   VideoKycRoute: typeof VideoKycRoute
   WalletRoute: typeof WalletRoute
+  AccountantChangePasswordRoute: typeof AccountantChangePasswordRoute
   AccountantDashboardRoute: typeof AccountantDashboardRoute
   AccountantMainRechargeRoute: typeof AccountantMainRechargeRoute
+  AccountantProfileRoute: typeof AccountantProfileRoute
   AccountantRegistrationsRoute: typeof AccountantRegistrationsRoute
   AccountantServicesRoute: typeof AccountantServicesRoute
+  AccountantSettingsRoute: typeof AccountantSettingsRoute
   AccountantWalletRequestsRoute: typeof AccountantWalletRequestsRoute
   AccountantWithdrawalsRoute: typeof AccountantWithdrawalsRoute
   QcApprovedRoute: typeof QcApprovedRoute
@@ -1038,6 +1078,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountantWalletRequestsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/accountant/settings': {
+      id: '/accountant/settings'
+      path: '/accountant/settings'
+      fullPath: '/accountant/settings'
+      preLoaderRoute: typeof AccountantSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/accountant/services': {
       id: '/accountant/services'
       path: '/accountant/services'
@@ -1052,6 +1099,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountantRegistrationsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/accountant/profile': {
+      id: '/accountant/profile'
+      path: '/accountant/profile'
+      fullPath: '/accountant/profile'
+      preLoaderRoute: typeof AccountantProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/accountant/main-recharge': {
       id: '/accountant/main-recharge'
       path: '/accountant/main-recharge'
@@ -1064,6 +1118,13 @@ declare module '@tanstack/react-router' {
       path: '/accountant/dashboard'
       fullPath: '/accountant/dashboard'
       preLoaderRoute: typeof AccountantDashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/accountant/change-password': {
+      id: '/accountant/change-password'
+      path: '/accountant/change-password'
+      fullPath: '/accountant/change-password'
+      preLoaderRoute: typeof AccountantChangePasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/qc/kyc-review/$id': {
@@ -1112,10 +1173,13 @@ const rootRouteChildren: RootRouteChildren = {
   TroLoginRoute: TroLoginRoute,
   VideoKycRoute: VideoKycRoute,
   WalletRoute: WalletRoute,
+  AccountantChangePasswordRoute: AccountantChangePasswordRoute,
   AccountantDashboardRoute: AccountantDashboardRoute,
   AccountantMainRechargeRoute: AccountantMainRechargeRoute,
+  AccountantProfileRoute: AccountantProfileRoute,
   AccountantRegistrationsRoute: AccountantRegistrationsRoute,
   AccountantServicesRoute: AccountantServicesRoute,
+  AccountantSettingsRoute: AccountantSettingsRoute,
   AccountantWalletRequestsRoute: AccountantWalletRequestsRoute,
   AccountantWithdrawalsRoute: AccountantWithdrawalsRoute,
   QcApprovedRoute: QcApprovedRoute,
