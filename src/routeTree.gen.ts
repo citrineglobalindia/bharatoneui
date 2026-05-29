@@ -61,6 +61,7 @@ import { Route as AccountantRegistrationsRouteImport } from './routes/accountant
 import { Route as AccountantProfileRouteImport } from './routes/accountant.profile'
 import { Route as AccountantMainRechargeRouteImport } from './routes/accountant.main-recharge'
 import { Route as AccountantDashboardRouteImport } from './routes/accountant.dashboard'
+import { Route as AccountantChangePasswordRouteImport } from './routes/accountant.change-password'
 import { Route as QcKycReviewIdRouteImport } from './routes/qc.kyc-review.$id'
 
 const WalletRoute = WalletRouteImport.update({
@@ -324,6 +325,12 @@ const AccountantDashboardRoute = AccountantDashboardRouteImport.update({
   path: '/accountant/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountantChangePasswordRoute =
+  AccountantChangePasswordRouteImport.update({
+    id: '/accountant/change-password',
+    path: '/accountant/change-password',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const QcKycReviewIdRoute = QcKycReviewIdRouteImport.update({
   id: '/qc/kyc-review/$id',
   path: '/qc/kyc-review/$id',
@@ -366,6 +373,7 @@ export interface FileRoutesByFullPath {
   '/tro-login': typeof TroLoginRoute
   '/video-kyc': typeof VideoKycRoute
   '/wallet': typeof WalletRoute
+  '/accountant/change-password': typeof AccountantChangePasswordRoute
   '/accountant/dashboard': typeof AccountantDashboardRoute
   '/accountant/main-recharge': typeof AccountantMainRechargeRoute
   '/accountant/profile': typeof AccountantProfileRoute
@@ -421,6 +429,7 @@ export interface FileRoutesByTo {
   '/tro-login': typeof TroLoginRoute
   '/video-kyc': typeof VideoKycRoute
   '/wallet': typeof WalletRoute
+  '/accountant/change-password': typeof AccountantChangePasswordRoute
   '/accountant/dashboard': typeof AccountantDashboardRoute
   '/accountant/main-recharge': typeof AccountantMainRechargeRoute
   '/accountant/profile': typeof AccountantProfileRoute
@@ -477,6 +486,7 @@ export interface FileRoutesById {
   '/tro-login': typeof TroLoginRoute
   '/video-kyc': typeof VideoKycRoute
   '/wallet': typeof WalletRoute
+  '/accountant/change-password': typeof AccountantChangePasswordRoute
   '/accountant/dashboard': typeof AccountantDashboardRoute
   '/accountant/main-recharge': typeof AccountantMainRechargeRoute
   '/accountant/profile': typeof AccountantProfileRoute
@@ -534,6 +544,7 @@ export interface FileRouteTypes {
     | '/tro-login'
     | '/video-kyc'
     | '/wallet'
+    | '/accountant/change-password'
     | '/accountant/dashboard'
     | '/accountant/main-recharge'
     | '/accountant/profile'
@@ -589,6 +600,7 @@ export interface FileRouteTypes {
     | '/tro-login'
     | '/video-kyc'
     | '/wallet'
+    | '/accountant/change-password'
     | '/accountant/dashboard'
     | '/accountant/main-recharge'
     | '/accountant/profile'
@@ -644,6 +656,7 @@ export interface FileRouteTypes {
     | '/tro-login'
     | '/video-kyc'
     | '/wallet'
+    | '/accountant/change-password'
     | '/accountant/dashboard'
     | '/accountant/main-recharge'
     | '/accountant/profile'
@@ -700,6 +713,7 @@ export interface RootRouteChildren {
   TroLoginRoute: typeof TroLoginRoute
   VideoKycRoute: typeof VideoKycRoute
   WalletRoute: typeof WalletRoute
+  AccountantChangePasswordRoute: typeof AccountantChangePasswordRoute
   AccountantDashboardRoute: typeof AccountantDashboardRoute
   AccountantMainRechargeRoute: typeof AccountantMainRechargeRoute
   AccountantProfileRoute: typeof AccountantProfileRoute
@@ -1086,6 +1100,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountantDashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/accountant/change-password': {
+      id: '/accountant/change-password'
+      path: '/accountant/change-password'
+      fullPath: '/accountant/change-password'
+      preLoaderRoute: typeof AccountantChangePasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/qc/kyc-review/$id': {
       id: '/qc/kyc-review/$id'
       path: '/qc/kyc-review/$id'
@@ -1132,6 +1153,7 @@ const rootRouteChildren: RootRouteChildren = {
   TroLoginRoute: TroLoginRoute,
   VideoKycRoute: VideoKycRoute,
   WalletRoute: WalletRoute,
+  AccountantChangePasswordRoute: AccountantChangePasswordRoute,
   AccountantDashboardRoute: AccountantDashboardRoute,
   AccountantMainRechargeRoute: AccountantMainRechargeRoute,
   AccountantProfileRoute: AccountantProfileRoute,
