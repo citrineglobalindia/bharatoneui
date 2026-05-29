@@ -7,6 +7,7 @@ import {
   Wallet,
   ArrowDownToLine,
   Banknote,
+  BookOpenCheck,
   LogOut,
   Menu,
   X,
