@@ -17,7 +17,6 @@ import {
   UserCircle2,
   KeyRound,
   Settings,
-  IndianRupee,
   TrendingUp,
   Clock,
 } from "lucide-react";
