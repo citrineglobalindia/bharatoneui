@@ -183,10 +183,10 @@ function LedgerPage() {
         />
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <StatCard icon={<TrendingUp className="h-5 w-5" />} label="Total Credit" value={inr(totals.credit)} tone="emerald" />
+          <StatCard icon={<TrendingUp className="h-5 w-5" />} label="Total Credit" value={inr(totals.credit)} tone="green" />
           <StatCard icon={<TrendingDown className="h-5 w-5" />} label="Total Debit" value={inr(totals.debit)} tone="rose" />
-          <StatCard icon={<Scale className="h-5 w-5" />} label="Net Position" value={inr(totals.net)} tone="indigo" />
-          <StatCard icon={<BookOpenCheck className="h-5 w-5" />} label="Entries" value={String(totals.count)} tone="amber" />
+          <StatCard icon={<Scale className="h-5 w-5" />} label="Net Position" value={inr(totals.net)} tone="violet" />
+          <StatCard icon={<BookOpenCheck className="h-5 w-5" />} label="Entries" value={String(totals.count)} tone="sky" />
         </div>
 
         <div className="rounded-2xl border border-border bg-white p-4 shadow-soft space-y-3">
