@@ -56,6 +56,7 @@ import { Route as QcChangePasswordRouteImport } from './routes/qc.change-passwor
 import { Route as QcApprovedRouteImport } from './routes/qc.approved'
 import { Route as AccountantWithdrawalsRouteImport } from './routes/accountant.withdrawals'
 import { Route as AccountantWalletRequestsRouteImport } from './routes/accountant.wallet-requests'
+import { Route as AccountantSettingsRouteImport } from './routes/accountant.settings'
 import { Route as AccountantServicesRouteImport } from './routes/accountant.services'
 import { Route as AccountantRegistrationsRouteImport } from './routes/accountant.registrations'
 import { Route as AccountantProfileRouteImport } from './routes/accountant.profile'
@@ -300,6 +301,11 @@ const AccountantWalletRequestsRoute =
     path: '/accountant/wallet-requests',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AccountantSettingsRoute = AccountantSettingsRouteImport.update({
+  id: '/accountant/settings',
+  path: '/accountant/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AccountantServicesRoute = AccountantServicesRouteImport.update({
   id: '/accountant/services',
   path: '/accountant/services',
@@ -379,6 +385,7 @@ export interface FileRoutesByFullPath {
   '/accountant/profile': typeof AccountantProfileRoute
   '/accountant/registrations': typeof AccountantRegistrationsRoute
   '/accountant/services': typeof AccountantServicesRoute
+  '/accountant/settings': typeof AccountantSettingsRoute
   '/accountant/wallet-requests': typeof AccountantWalletRequestsRoute
   '/accountant/withdrawals': typeof AccountantWithdrawalsRoute
   '/qc/approved': typeof QcApprovedRoute
@@ -435,6 +442,7 @@ export interface FileRoutesByTo {
   '/accountant/profile': typeof AccountantProfileRoute
   '/accountant/registrations': typeof AccountantRegistrationsRoute
   '/accountant/services': typeof AccountantServicesRoute
+  '/accountant/settings': typeof AccountantSettingsRoute
   '/accountant/wallet-requests': typeof AccountantWalletRequestsRoute
   '/accountant/withdrawals': typeof AccountantWithdrawalsRoute
   '/qc/approved': typeof QcApprovedRoute
@@ -492,6 +500,7 @@ export interface FileRoutesById {
   '/accountant/profile': typeof AccountantProfileRoute
   '/accountant/registrations': typeof AccountantRegistrationsRoute
   '/accountant/services': typeof AccountantServicesRoute
+  '/accountant/settings': typeof AccountantSettingsRoute
   '/accountant/wallet-requests': typeof AccountantWalletRequestsRoute
   '/accountant/withdrawals': typeof AccountantWithdrawalsRoute
   '/qc/approved': typeof QcApprovedRoute
@@ -550,6 +559,7 @@ export interface FileRouteTypes {
     | '/accountant/profile'
     | '/accountant/registrations'
     | '/accountant/services'
+    | '/accountant/settings'
     | '/accountant/wallet-requests'
     | '/accountant/withdrawals'
     | '/qc/approved'
@@ -606,6 +616,7 @@ export interface FileRouteTypes {
     | '/accountant/profile'
     | '/accountant/registrations'
     | '/accountant/services'
+    | '/accountant/settings'
     | '/accountant/wallet-requests'
     | '/accountant/withdrawals'
     | '/qc/approved'
@@ -662,6 +673,7 @@ export interface FileRouteTypes {
     | '/accountant/profile'
     | '/accountant/registrations'
     | '/accountant/services'
+    | '/accountant/settings'
     | '/accountant/wallet-requests'
     | '/accountant/withdrawals'
     | '/qc/approved'
@@ -719,6 +731,7 @@ export interface RootRouteChildren {
   AccountantProfileRoute: typeof AccountantProfileRoute
   AccountantRegistrationsRoute: typeof AccountantRegistrationsRoute
   AccountantServicesRoute: typeof AccountantServicesRoute
+  AccountantSettingsRoute: typeof AccountantSettingsRoute
   AccountantWalletRequestsRoute: typeof AccountantWalletRequestsRoute
   AccountantWithdrawalsRoute: typeof AccountantWithdrawalsRoute
   QcApprovedRoute: typeof QcApprovedRoute
@@ -1065,6 +1078,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountantWalletRequestsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/accountant/settings': {
+      id: '/accountant/settings'
+      path: '/accountant/settings'
+      fullPath: '/accountant/settings'
+      preLoaderRoute: typeof AccountantSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/accountant/services': {
       id: '/accountant/services'
       path: '/accountant/services'
@@ -1159,6 +1179,7 @@ const rootRouteChildren: RootRouteChildren = {
   AccountantProfileRoute: AccountantProfileRoute,
   AccountantRegistrationsRoute: AccountantRegistrationsRoute,
   AccountantServicesRoute: AccountantServicesRoute,
+  AccountantSettingsRoute: AccountantSettingsRoute,
   AccountantWalletRequestsRoute: AccountantWalletRequestsRoute,
   AccountantWithdrawalsRoute: AccountantWithdrawalsRoute,
   QcApprovedRoute: QcApprovedRoute,
