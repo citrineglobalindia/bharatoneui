@@ -58,6 +58,7 @@ import { Route as AccountantWithdrawalsRouteImport } from './routes/accountant.w
 import { Route as AccountantWalletRequestsRouteImport } from './routes/accountant.wallet-requests'
 import { Route as AccountantServicesRouteImport } from './routes/accountant.services'
 import { Route as AccountantRegistrationsRouteImport } from './routes/accountant.registrations'
+import { Route as AccountantProfileRouteImport } from './routes/accountant.profile'
 import { Route as AccountantMainRechargeRouteImport } from './routes/accountant.main-recharge'
 import { Route as AccountantDashboardRouteImport } from './routes/accountant.dashboard'
 import { Route as QcKycReviewIdRouteImport } from './routes/qc.kyc-review.$id'
@@ -308,6 +309,11 @@ const AccountantRegistrationsRoute = AccountantRegistrationsRouteImport.update({
   path: '/accountant/registrations',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountantProfileRoute = AccountantProfileRouteImport.update({
+  id: '/accountant/profile',
+  path: '/accountant/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AccountantMainRechargeRoute = AccountantMainRechargeRouteImport.update({
   id: '/accountant/main-recharge',
   path: '/accountant/main-recharge',
@@ -362,6 +368,7 @@ export interface FileRoutesByFullPath {
   '/wallet': typeof WalletRoute
   '/accountant/dashboard': typeof AccountantDashboardRoute
   '/accountant/main-recharge': typeof AccountantMainRechargeRoute
+  '/accountant/profile': typeof AccountantProfileRoute
   '/accountant/registrations': typeof AccountantRegistrationsRoute
   '/accountant/services': typeof AccountantServicesRoute
   '/accountant/wallet-requests': typeof AccountantWalletRequestsRoute
@@ -416,6 +423,7 @@ export interface FileRoutesByTo {
   '/wallet': typeof WalletRoute
   '/accountant/dashboard': typeof AccountantDashboardRoute
   '/accountant/main-recharge': typeof AccountantMainRechargeRoute
+  '/accountant/profile': typeof AccountantProfileRoute
   '/accountant/registrations': typeof AccountantRegistrationsRoute
   '/accountant/services': typeof AccountantServicesRoute
   '/accountant/wallet-requests': typeof AccountantWalletRequestsRoute
@@ -471,6 +479,7 @@ export interface FileRoutesById {
   '/wallet': typeof WalletRoute
   '/accountant/dashboard': typeof AccountantDashboardRoute
   '/accountant/main-recharge': typeof AccountantMainRechargeRoute
+  '/accountant/profile': typeof AccountantProfileRoute
   '/accountant/registrations': typeof AccountantRegistrationsRoute
   '/accountant/services': typeof AccountantServicesRoute
   '/accountant/wallet-requests': typeof AccountantWalletRequestsRoute
@@ -527,6 +536,7 @@ export interface FileRouteTypes {
     | '/wallet'
     | '/accountant/dashboard'
     | '/accountant/main-recharge'
+    | '/accountant/profile'
     | '/accountant/registrations'
     | '/accountant/services'
     | '/accountant/wallet-requests'
@@ -581,6 +591,7 @@ export interface FileRouteTypes {
     | '/wallet'
     | '/accountant/dashboard'
     | '/accountant/main-recharge'
+    | '/accountant/profile'
     | '/accountant/registrations'
     | '/accountant/services'
     | '/accountant/wallet-requests'
@@ -635,6 +646,7 @@ export interface FileRouteTypes {
     | '/wallet'
     | '/accountant/dashboard'
     | '/accountant/main-recharge'
+    | '/accountant/profile'
     | '/accountant/registrations'
     | '/accountant/services'
     | '/accountant/wallet-requests'
@@ -690,6 +702,7 @@ export interface RootRouteChildren {
   WalletRoute: typeof WalletRoute
   AccountantDashboardRoute: typeof AccountantDashboardRoute
   AccountantMainRechargeRoute: typeof AccountantMainRechargeRoute
+  AccountantProfileRoute: typeof AccountantProfileRoute
   AccountantRegistrationsRoute: typeof AccountantRegistrationsRoute
   AccountantServicesRoute: typeof AccountantServicesRoute
   AccountantWalletRequestsRoute: typeof AccountantWalletRequestsRoute
@@ -1052,6 +1065,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountantRegistrationsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/accountant/profile': {
+      id: '/accountant/profile'
+      path: '/accountant/profile'
+      fullPath: '/accountant/profile'
+      preLoaderRoute: typeof AccountantProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/accountant/main-recharge': {
       id: '/accountant/main-recharge'
       path: '/accountant/main-recharge'
@@ -1114,6 +1134,7 @@ const rootRouteChildren: RootRouteChildren = {
   WalletRoute: WalletRoute,
   AccountantDashboardRoute: AccountantDashboardRoute,
   AccountantMainRechargeRoute: AccountantMainRechargeRoute,
+  AccountantProfileRoute: AccountantProfileRoute,
   AccountantRegistrationsRoute: AccountantRegistrationsRoute,
   AccountantServicesRoute: AccountantServicesRoute,
   AccountantWalletRequestsRoute: AccountantWalletRequestsRoute,
