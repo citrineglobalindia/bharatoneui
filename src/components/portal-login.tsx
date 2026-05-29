@@ -313,7 +313,8 @@ export const PORTAL_CONFIGS: Record<PortalRole, PortalConfig> = {
     tagline: "Settlements, ledgers, payouts and reconciliation.",
     accent: "green",
     icon: Calculator,
-    demo: { username: "accounts.admin", password: "Acc@2026", displayName: "Accounts Officer" },
+    demo: { username: "8879789067", password: "Password@66", displayName: "Mahesh" },
+    redirectTo: "/accountant/dashboard",
   },
   admin: {
     role: "admin",
