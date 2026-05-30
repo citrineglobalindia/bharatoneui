@@ -23,6 +23,7 @@ import {
   Menu,
   X,
   Search,
+  Smile,
 } from "lucide-react";
 import { BharatOneLogo } from "@/components/bharatone-logo";
 import { NotificationsBell } from "@/components/retailer/notifications-bell";
@@ -73,6 +74,7 @@ const NAV: NavSection[] = [
     heading: "Support",
     items: [
       { label: "Support Tickets", icon: <LifeBuoy className="h-4 w-4" />, to: "/support" },
+      { label: "Feedback", icon: <Smile className="h-4 w-4" />, to: "/feedback" },
       { label: "Settings", icon: <Settings className="h-4 w-4" />, to: "/settings" },
     ],
   },

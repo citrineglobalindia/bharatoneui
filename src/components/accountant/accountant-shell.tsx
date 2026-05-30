@@ -10,6 +10,8 @@ import {
   BookOpenCheck,
   LogOut,
   Menu,
+  LifeBuoy,
+  Smile,
   X,
   Search,
   Bell,
@@ -65,6 +67,13 @@ const NAV: NavSection[] = [
       { label: "Services & Commission", icon: <Wrench className="h-4 w-4" />, to: "/accountant/services" },
       { label: "Main Account Recharge", icon: <Banknote className="h-4 w-4" />, to: "/accountant/main-recharge" },
       { label: "Ledger", icon: <BookOpenCheck className="h-4 w-4" />, to: "/accountant/ledger" },
+    ],
+  },
+  {
+    heading: "Help",
+    items: [
+      { label: "Support", icon: <LifeBuoy className="h-4 w-4" />, to: "/accountant/support" },
+      { label: "Feedback", icon: <Smile className="h-4 w-4" />, to: "/accountant/feedback" },
     ],
   },
   {
