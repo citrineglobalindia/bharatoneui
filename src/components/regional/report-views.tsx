@@ -4,7 +4,7 @@ import {
   ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, Legend,
 } from "recharts";
 import {
-  Users, Activity, Layers, IndianRupee, Download, Search, MapPin, TrendingUp, Store,
+  Users, Activity, Layers, IndianRupee, Download, Search, MapPin, TrendingUp, Store, Grid3x3, CheckCircle2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { RegionalShell, type RegionalConfig } from "@/components/regional/regional-shell";
@@ -324,6 +324,114 @@ export function ReportServices({ cfg, rows, district }: { cfg: RegionalConfig; r
           </div>
         </div>
         <p className="text-[11px] text-muted-foreground flex items-center gap-1.5"><IndianRupee className="h-3 w-3" /> {district ? "Aggregated across all taluks in the district." : "Aggregated across all retailers in the taluk."}</p>
+      </div>
+    </RegionalShell>
+  );
+}
+
+/* ---------------- Services Directory ---------------- */
+const SERVICE_DESC: Record<string, string> = {
+  AEPS: "Aadhaar-enabled cash withdrawals & balance enquiry.",
+  DMT: "Domestic money transfer to any bank account.",
+  Recharge: "Prepaid mobile, DTH and data card recharges.",
+  BBPS: "Electricity, water, gas and utility bill payments.",
+  PAN: "New PAN card application & corrections.",
+  GST: "GST registration and return filing assistance.",
+};
+
+export function ReportServiceCatalog({ cfg, rows, district }: { cfg: RegionalConfig; rows: RetailerActivity[]; district: boolean }) {
+  const [query, setQuery] = useState("");
+  const mix = useMemo(() => aggregateServices(rows), [rows]);
+  const total = mix.reduce((sum, m) => sum + m.count, 0);
+  const hex = accentHex(cfg);
+
+  const catalog = useMemo(() => {
+    return mix.map((m) => {
+      const offering = rows.filter((r) => r.today[m.key as keyof RetailerActivity["today"]] > 0).length;
+      const live = rows.filter((r) => r.active).length;
+      return {
+        ...m,
+        desc: SERVICE_DESC[m.key] ?? "",
+        offering,
+        adoption: live ? Math.round((offering / live) * 100) : 0,
+        share: total ? Math.round((m.count / total) * 100) : 0,
+      };
+    });
+  }, [mix, rows, total]);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return catalog;
+    return catalog.filter((c) => c.key.toLowerCase().includes(q) || c.label.toLowerCase().includes(q));
+  }, [catalog, query]);
+
+  return (
+    <RegionalShell cfg={cfg}>
+      <div className="space-y-6">
+        <PageHeader
+          icon={<Grid3x3 className="h-5 w-5" />}
+          title="Services Directory"
+          subtitle={`All services being offered across ${cfg.scope}.`}
+        />
+
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <StatCard label="Total Services" value={String(mix.length)} delta={{ value: "live in region", positive: true }} icon={<Layers className="h-5 w-5" />} tone={accentTone(cfg)} />
+          <StatCard label="Transactions Today" value={total.toLocaleString("en-IN")} delta={{ value: "all services", positive: true }} icon={<Activity className="h-5 w-5" />} tone="violet" />
+          <StatCard label="Retailers Live" value={String(rows.filter((r) => r.active).length)} delta={{ value: "offering services", positive: true }} icon={<Store className="h-5 w-5" />} tone="green" />
+          <StatCard label="Top Service" value={[...mix].sort((a, b) => b.count - a.count)[0]?.key ?? "—"} delta={{ value: "by volume", positive: true }} icon={<TrendingUp className="h-5 w-5" />} tone="sky" />
+        </div>
+
+        <div className="flex items-center gap-2 rounded-lg border border-border bg-white px-3 h-9 max-w-md">
+          <Search className="h-4 w-4 text-muted-foreground" />
+          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search a service…" className="bg-transparent flex-1 text-sm outline-none" />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {filtered.map((c) => (
+            <div key={c.key} className="rounded-xl border border-border bg-card p-4 shadow-soft">
+              <div className="flex items-start gap-3">
+                <div className="h-10 w-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${c.color}1a` }}>
+                  <Layers className="h-5 w-5" style={{ color: c.color }} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <h3 className="text-sm font-bold truncate">{c.label}</h3>
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                  </div>
+                  <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">{c.desc}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 mt-3 text-center">
+                <div className="rounded-lg bg-muted/50 py-1.5">
+                  <p className="font-display text-lg font-extrabold leading-none" style={{ color: c.color }}>{c.count}</p>
+                  <p className="text-[9px] uppercase tracking-wider text-muted-foreground mt-0.5">Today</p>
+                </div>
+                <div className="rounded-lg bg-muted/50 py-1.5">
+                  <p className="font-display text-lg font-extrabold leading-none">{c.offering}</p>
+                  <p className="text-[9px] uppercase tracking-wider text-muted-foreground mt-0.5">Retailers</p>
+                </div>
+                <div className="rounded-lg bg-muted/50 py-1.5">
+                  <p className="font-display text-lg font-extrabold leading-none">{c.share}%</p>
+                  <p className="text-[9px] uppercase tracking-wider text-muted-foreground mt-0.5">Share</p>
+                </div>
+              </div>
+
+              <div className="mt-3">
+                <div className="flex items-center justify-between text-[10px] font-semibold text-muted-foreground mb-1">
+                  <span>Adoption</span><span>{c.adoption}%</span>
+                </div>
+                <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                  <div className="h-full rounded-full" style={{ width: `${c.adoption}%`, background: c.color }} />
+                </div>
+              </div>
+            </div>
+          ))}
+          {filtered.length === 0 && (
+            <div className="col-span-full rounded-xl border border-border bg-card p-8 text-center text-sm text-muted-foreground">No services match your search.</div>
+          )}
+        </div>
+        <p className="text-[11px] text-muted-foreground flex items-center gap-1.5"><IndianRupee className="h-3 w-3" /> {district ? "Service offerings aggregated across all taluks." : "Service offerings across retailers in the taluk."} <span style={{ color: hex }}>·</span> Read-only</p>
       </div>
     </RegionalShell>
   );
