@@ -25,6 +25,8 @@ import {
   UserCircle2,
   KeyRound,
   ShieldAlert,
+  LifeBuoy,
+  Smile,
 } from "lucide-react";
 import { BharatOneLogo } from "@/components/bharatone-logo";
 import {
@@ -61,6 +63,13 @@ const NAV: NavSection[] = [
       { label: "Reviewers", icon: <Users className="h-4 w-4" />, to: "/qc/reviewers" },
       { label: "Reports", icon: <BarChart3 className="h-4 w-4" />, to: "/qc/reports" },
       { label: "Settings", icon: <Settings className="h-4 w-4" />, to: "/qc/settings" },
+    ],
+  },
+  {
+    heading: "Help",
+    items: [
+      { label: "Support", icon: <LifeBuoy className="h-4 w-4" />, to: "/qc/support" },
+      { label: "Feedback", icon: <Smile className="h-4 w-4" />, to: "/qc/feedback" },
     ],
   },
   {
