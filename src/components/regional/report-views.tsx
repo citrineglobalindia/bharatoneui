@@ -16,6 +16,7 @@ import {
 } from "@/components/regional/regional-mock-data";
 
 const accentHex = (cfg: RegionalConfig) => (cfg.accent === "rose" ? "#f43f5e" : "#f59e0b");
+const accentTone = (cfg: RegionalConfig): "rose" | "saffron" => (cfg.accent === "rose" ? "rose" : "saffron");
 
 /* ---------------- Dashboard ---------------- */
 export function ReportDashboard({ cfg, rows, district }: { cfg: RegionalConfig; rows: RetailerActivity[]; district: boolean }) {
@@ -40,7 +41,7 @@ export function ReportDashboard({ cfg, rows, district }: { cfg: RegionalConfig; 
         />
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <StatCard label={district ? "District Retailers" : "Taluk Retailers"} value={String(s.totalRetailers)} delta={{ value: `${s.activeToday} active`, positive: true }} icon={<Users className="h-5 w-5" />} tone={cfg.accent} />
+          <StatCard label={district ? "District Retailers" : "Taluk Retailers"} value={String(s.totalRetailers)} delta={{ value: `${s.activeToday} active`, positive: true }} icon={<Users className="h-5 w-5" />} tone={accentTone(cfg)} />
           <StatCard label="Active Today" value={String(s.activeToday)} delta={{ value: `${Math.round((s.activeToday / Math.max(s.totalRetailers,1)) * 100)}% live`, positive: true }} icon={<Store className="h-5 w-5" />} tone="green" />
           <StatCard label="Services Today" value={s.servicesToday.toLocaleString("en-IN")} delta={{ value: "across all services", positive: true }} icon={<Layers className="h-5 w-5" />} tone="violet" />
           <StatCard label="Revenue Today" value={inr(s.revenueToday)} delta={{ value: "+12.4% vs avg", positive: true }} icon={<IndianRupee className="h-5 w-5" />} tone="sky" />
