@@ -48,6 +48,8 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as TroSupportRouteImport } from './routes/tro.support'
 import { Route as TroServicesRouteImport } from './routes/tro.services'
 import { Route as TroRetailersRouteImport } from './routes/tro.retailers'
+import { Route as TroProfileRouteImport } from './routes/tro.profile'
+import { Route as TroNotificationsRouteImport } from './routes/tro.notifications'
 import { Route as TroFeedbackRouteImport } from './routes/tro.feedback'
 import { Route as TroDashboardRouteImport } from './routes/tro.dashboard'
 import { Route as TroCatalogRouteImport } from './routes/tro.catalog'
@@ -66,6 +68,8 @@ import { Route as QcApprovedRouteImport } from './routes/qc.approved'
 import { Route as DroSupportRouteImport } from './routes/dro.support'
 import { Route as DroServicesRouteImport } from './routes/dro.services'
 import { Route as DroRetailersRouteImport } from './routes/dro.retailers'
+import { Route as DroProfileRouteImport } from './routes/dro.profile'
+import { Route as DroNotificationsRouteImport } from './routes/dro.notifications'
 import { Route as DroFeedbackRouteImport } from './routes/dro.feedback'
 import { Route as DroDashboardRouteImport } from './routes/dro.dashboard'
 import { Route as DroCatalogRouteImport } from './routes/dro.catalog'
@@ -278,6 +282,16 @@ const TroRetailersRoute = TroRetailersRouteImport.update({
   path: '/tro/retailers',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TroProfileRoute = TroProfileRouteImport.update({
+  id: '/tro/profile',
+  path: '/tro/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TroNotificationsRoute = TroNotificationsRouteImport.update({
+  id: '/tro/notifications',
+  path: '/tro/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TroFeedbackRoute = TroFeedbackRouteImport.update({
   id: '/tro/feedback',
   path: '/tro/feedback',
@@ -366,6 +380,16 @@ const DroServicesRoute = DroServicesRouteImport.update({
 const DroRetailersRoute = DroRetailersRouteImport.update({
   id: '/dro/retailers',
   path: '/dro/retailers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DroProfileRoute = DroProfileRouteImport.update({
+  id: '/dro/profile',
+  path: '/dro/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DroNotificationsRoute = DroNotificationsRouteImport.update({
+  id: '/dro/notifications',
+  path: '/dro/notifications',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DroFeedbackRoute = DroFeedbackRouteImport.update({
@@ -503,6 +527,8 @@ export interface FileRoutesByFullPath {
   '/dro/catalog': typeof DroCatalogRoute
   '/dro/dashboard': typeof DroDashboardRoute
   '/dro/feedback': typeof DroFeedbackRoute
+  '/dro/notifications': typeof DroNotificationsRoute
+  '/dro/profile': typeof DroProfileRoute
   '/dro/retailers': typeof DroRetailersRoute
   '/dro/services': typeof DroServicesRoute
   '/dro/support': typeof DroSupportRoute
@@ -521,6 +547,8 @@ export interface FileRoutesByFullPath {
   '/tro/catalog': typeof TroCatalogRoute
   '/tro/dashboard': typeof TroDashboardRoute
   '/tro/feedback': typeof TroFeedbackRoute
+  '/tro/notifications': typeof TroNotificationsRoute
+  '/tro/profile': typeof TroProfileRoute
   '/tro/retailers': typeof TroRetailersRoute
   '/tro/services': typeof TroServicesRoute
   '/tro/support': typeof TroSupportRoute
@@ -578,6 +606,8 @@ export interface FileRoutesByTo {
   '/dro/catalog': typeof DroCatalogRoute
   '/dro/dashboard': typeof DroDashboardRoute
   '/dro/feedback': typeof DroFeedbackRoute
+  '/dro/notifications': typeof DroNotificationsRoute
+  '/dro/profile': typeof DroProfileRoute
   '/dro/retailers': typeof DroRetailersRoute
   '/dro/services': typeof DroServicesRoute
   '/dro/support': typeof DroSupportRoute
@@ -596,6 +626,8 @@ export interface FileRoutesByTo {
   '/tro/catalog': typeof TroCatalogRoute
   '/tro/dashboard': typeof TroDashboardRoute
   '/tro/feedback': typeof TroFeedbackRoute
+  '/tro/notifications': typeof TroNotificationsRoute
+  '/tro/profile': typeof TroProfileRoute
   '/tro/retailers': typeof TroRetailersRoute
   '/tro/services': typeof TroServicesRoute
   '/tro/support': typeof TroSupportRoute
@@ -654,6 +686,8 @@ export interface FileRoutesById {
   '/dro/catalog': typeof DroCatalogRoute
   '/dro/dashboard': typeof DroDashboardRoute
   '/dro/feedback': typeof DroFeedbackRoute
+  '/dro/notifications': typeof DroNotificationsRoute
+  '/dro/profile': typeof DroProfileRoute
   '/dro/retailers': typeof DroRetailersRoute
   '/dro/services': typeof DroServicesRoute
   '/dro/support': typeof DroSupportRoute
@@ -672,6 +706,8 @@ export interface FileRoutesById {
   '/tro/catalog': typeof TroCatalogRoute
   '/tro/dashboard': typeof TroDashboardRoute
   '/tro/feedback': typeof TroFeedbackRoute
+  '/tro/notifications': typeof TroNotificationsRoute
+  '/tro/profile': typeof TroProfileRoute
   '/tro/retailers': typeof TroRetailersRoute
   '/tro/services': typeof TroServicesRoute
   '/tro/support': typeof TroSupportRoute
@@ -731,6 +767,8 @@ export interface FileRouteTypes {
     | '/dro/catalog'
     | '/dro/dashboard'
     | '/dro/feedback'
+    | '/dro/notifications'
+    | '/dro/profile'
     | '/dro/retailers'
     | '/dro/services'
     | '/dro/support'
@@ -749,6 +787,8 @@ export interface FileRouteTypes {
     | '/tro/catalog'
     | '/tro/dashboard'
     | '/tro/feedback'
+    | '/tro/notifications'
+    | '/tro/profile'
     | '/tro/retailers'
     | '/tro/services'
     | '/tro/support'
@@ -806,6 +846,8 @@ export interface FileRouteTypes {
     | '/dro/catalog'
     | '/dro/dashboard'
     | '/dro/feedback'
+    | '/dro/notifications'
+    | '/dro/profile'
     | '/dro/retailers'
     | '/dro/services'
     | '/dro/support'
@@ -824,6 +866,8 @@ export interface FileRouteTypes {
     | '/tro/catalog'
     | '/tro/dashboard'
     | '/tro/feedback'
+    | '/tro/notifications'
+    | '/tro/profile'
     | '/tro/retailers'
     | '/tro/services'
     | '/tro/support'
@@ -881,6 +925,8 @@ export interface FileRouteTypes {
     | '/dro/catalog'
     | '/dro/dashboard'
     | '/dro/feedback'
+    | '/dro/notifications'
+    | '/dro/profile'
     | '/dro/retailers'
     | '/dro/services'
     | '/dro/support'
@@ -899,6 +945,8 @@ export interface FileRouteTypes {
     | '/tro/catalog'
     | '/tro/dashboard'
     | '/tro/feedback'
+    | '/tro/notifications'
+    | '/tro/profile'
     | '/tro/retailers'
     | '/tro/services'
     | '/tro/support'
@@ -957,6 +1005,8 @@ export interface RootRouteChildren {
   DroCatalogRoute: typeof DroCatalogRoute
   DroDashboardRoute: typeof DroDashboardRoute
   DroFeedbackRoute: typeof DroFeedbackRoute
+  DroNotificationsRoute: typeof DroNotificationsRoute
+  DroProfileRoute: typeof DroProfileRoute
   DroRetailersRoute: typeof DroRetailersRoute
   DroServicesRoute: typeof DroServicesRoute
   DroSupportRoute: typeof DroSupportRoute
@@ -975,6 +1025,8 @@ export interface RootRouteChildren {
   TroCatalogRoute: typeof TroCatalogRoute
   TroDashboardRoute: typeof TroDashboardRoute
   TroFeedbackRoute: typeof TroFeedbackRoute
+  TroNotificationsRoute: typeof TroNotificationsRoute
+  TroProfileRoute: typeof TroProfileRoute
   TroRetailersRoute: typeof TroRetailersRoute
   TroServicesRoute: typeof TroServicesRoute
   TroSupportRoute: typeof TroSupportRoute
@@ -1256,6 +1308,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TroRetailersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tro/profile': {
+      id: '/tro/profile'
+      path: '/tro/profile'
+      fullPath: '/tro/profile'
+      preLoaderRoute: typeof TroProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tro/notifications': {
+      id: '/tro/notifications'
+      path: '/tro/notifications'
+      fullPath: '/tro/notifications'
+      preLoaderRoute: typeof TroNotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/tro/feedback': {
       id: '/tro/feedback'
       path: '/tro/feedback'
@@ -1380,6 +1446,20 @@ declare module '@tanstack/react-router' {
       path: '/dro/retailers'
       fullPath: '/dro/retailers'
       preLoaderRoute: typeof DroRetailersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dro/profile': {
+      id: '/dro/profile'
+      path: '/dro/profile'
+      fullPath: '/dro/profile'
+      preLoaderRoute: typeof DroProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dro/notifications': {
+      id: '/dro/notifications'
+      path: '/dro/notifications'
+      fullPath: '/dro/notifications'
+      preLoaderRoute: typeof DroNotificationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dro/feedback': {
@@ -1549,6 +1629,8 @@ const rootRouteChildren: RootRouteChildren = {
   DroCatalogRoute: DroCatalogRoute,
   DroDashboardRoute: DroDashboardRoute,
   DroFeedbackRoute: DroFeedbackRoute,
+  DroNotificationsRoute: DroNotificationsRoute,
+  DroProfileRoute: DroProfileRoute,
   DroRetailersRoute: DroRetailersRoute,
   DroServicesRoute: DroServicesRoute,
   DroSupportRoute: DroSupportRoute,
@@ -1567,6 +1649,8 @@ const rootRouteChildren: RootRouteChildren = {
   TroCatalogRoute: TroCatalogRoute,
   TroDashboardRoute: TroDashboardRoute,
   TroFeedbackRoute: TroFeedbackRoute,
+  TroNotificationsRoute: TroNotificationsRoute,
+  TroProfileRoute: TroProfileRoute,
   TroRetailersRoute: TroRetailersRoute,
   TroServicesRoute: TroServicesRoute,
   TroSupportRoute: TroSupportRoute,
