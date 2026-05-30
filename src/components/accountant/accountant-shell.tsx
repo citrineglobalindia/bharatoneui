@@ -77,6 +77,14 @@ const NAV: NavSection[] = [
   },
 ];
 
+NAV.splice(NAV.length - 1, 0, {
+  heading: "Help",
+  items: [
+    { label: "Support", icon: <LifeBuoy className="h-4 w-4" />, to: "/accountant/support" },
+    { label: "Feedback", icon: <Smile className="h-4 w-4" />, to: "/accountant/feedback" },
+  ],
+});
+
 function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
   const navigate = useNavigate();
   return (
