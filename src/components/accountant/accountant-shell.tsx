@@ -10,6 +10,8 @@ import {
   BookOpenCheck,
   LogOut,
   Menu,
+  LifeBuoy,
+  Smile,
   X,
   Search,
   Bell,
