@@ -13,6 +13,8 @@ import {
   ChevronDown,
   MapPin,
   ShieldCheck,
+  LifeBuoy,
+  Smile,
 } from "lucide-react";
 import { BharatOneLogo } from "@/components/bharatone-logo";
 import {
@@ -67,6 +69,13 @@ function navItems(base: string) {
     { label: "Retailer Activity", icon: <Users className="h-4 w-4" />, to: `${base}/retailers` },
     { label: "Services", icon: <Grid3x3 className="h-4 w-4" />, to: `${base}/catalog` },
     { label: "Service Analytics", icon: <PieChart className="h-4 w-4" />, to: `${base}/services` },
+  ];
+}
+
+function helpItems(base: string) {
+  return [
+    { label: "Support", icon: <LifeBuoy className="h-4 w-4" />, to: `${base}/support` },
+    { label: "Feedback", icon: <Smile className="h-4 w-4" />, to: `${base}/feedback` },
   ];
 }
 
