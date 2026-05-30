@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   Users,
   PieChart,
+  Grid3x3,
   LogOut,
   Menu,
   X,
@@ -64,6 +65,7 @@ function navItems(base: string) {
   return [
     { label: "Dashboard", icon: <LayoutDashboard className="h-4 w-4" />, to: `${base}/dashboard` },
     { label: "Retailer Activity", icon: <Users className="h-4 w-4" />, to: `${base}/retailers` },
+    { label: "Services", icon: <Grid3x3 className="h-4 w-4" />, to: `${base}/catalog` },
     { label: "Service Analytics", icon: <PieChart className="h-4 w-4" />, to: `${base}/services` },
   ];
 }
