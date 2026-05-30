@@ -40,7 +40,7 @@ export function RegionalProfile({ cfg }: { cfg: RegionalConfig }) {
               </button>
             </div>
             <h3 className="mt-3 text-lg font-extrabold">{cfg.user.name}</h3>
-            <p className="text-sm text-muted-foreground">{cfg.user.role} · {cfg.shortName}</p>
+            <p className="text-sm text-muted-foreground">{cfg.user.role} · {cfg.scope}</p>
             <div className="mt-4 space-y-2 text-left">
               <div className="flex items-center gap-2 text-sm"><Phone className="h-4 w-4 text-muted-foreground" /> {cfg.user.phone}</div>
               <div className="flex items-center gap-2 text-sm"><Mail className="h-4 w-4 text-muted-foreground" /> {email}</div>
