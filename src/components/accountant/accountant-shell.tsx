@@ -70,6 +70,13 @@ const NAV: NavSection[] = [
     ],
   },
   {
+    heading: "Help",
+    items: [
+      { label: "Support", icon: <LifeBuoy className="h-4 w-4" />, to: "/accountant/support" },
+      { label: "Feedback", icon: <Smile className="h-4 w-4" />, to: "/accountant/feedback" },
+    ],
+  },
+  {
     heading: "Session",
     items: [
       { label: "Sign Out", icon: <LogOut className="h-4 w-4" />, to: "/accountant-login" },
