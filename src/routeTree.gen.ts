@@ -47,6 +47,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as TroServicesRouteImport } from './routes/tro.services'
 import { Route as TroRetailersRouteImport } from './routes/tro.retailers'
 import { Route as TroDashboardRouteImport } from './routes/tro.dashboard'
+import { Route as TroCatalogRouteImport } from './routes/tro.catalog'
 import { Route as QcSettingsRouteImport } from './routes/qc.settings'
 import { Route as QcReviewersRouteImport } from './routes/qc.reviewers'
 import { Route as QcReportsRouteImport } from './routes/qc.reports'
@@ -60,6 +61,7 @@ import { Route as QcApprovedRouteImport } from './routes/qc.approved'
 import { Route as DroServicesRouteImport } from './routes/dro.services'
 import { Route as DroRetailersRouteImport } from './routes/dro.retailers'
 import { Route as DroDashboardRouteImport } from './routes/dro.dashboard'
+import { Route as DroCatalogRouteImport } from './routes/dro.catalog'
 import { Route as AccountantWithdrawalsRouteImport } from './routes/accountant.withdrawals'
 import { Route as AccountantWalletRequestsRouteImport } from './routes/accountant.wallet-requests'
 import { Route as AccountantSettingsRouteImport } from './routes/accountant.settings'
@@ -262,6 +264,11 @@ const TroDashboardRoute = TroDashboardRouteImport.update({
   path: '/tro/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TroCatalogRoute = TroCatalogRouteImport.update({
+  id: '/tro/catalog',
+  path: '/tro/catalog',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const QcSettingsRoute = QcSettingsRouteImport.update({
   id: '/qc/settings',
   path: '/qc/settings',
@@ -325,6 +332,11 @@ const DroRetailersRoute = DroRetailersRouteImport.update({
 const DroDashboardRoute = DroDashboardRouteImport.update({
   id: '/dro/dashboard',
   path: '/dro/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DroCatalogRoute = DroCatalogRouteImport.update({
+  id: '/dro/catalog',
+  path: '/dro/catalog',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AccountantWithdrawalsRoute = AccountantWithdrawalsRouteImport.update({
@@ -431,6 +443,7 @@ export interface FileRoutesByFullPath {
   '/accountant/settings': typeof AccountantSettingsRoute
   '/accountant/wallet-requests': typeof AccountantWalletRequestsRoute
   '/accountant/withdrawals': typeof AccountantWithdrawalsRoute
+  '/dro/catalog': typeof DroCatalogRoute
   '/dro/dashboard': typeof DroDashboardRoute
   '/dro/retailers': typeof DroRetailersRoute
   '/dro/services': typeof DroServicesRoute
@@ -444,6 +457,7 @@ export interface FileRoutesByFullPath {
   '/qc/reports': typeof QcReportsRoute
   '/qc/reviewers': typeof QcReviewersRoute
   '/qc/settings': typeof QcSettingsRoute
+  '/tro/catalog': typeof TroCatalogRoute
   '/tro/dashboard': typeof TroDashboardRoute
   '/tro/retailers': typeof TroRetailersRoute
   '/tro/services': typeof TroServicesRoute
@@ -495,6 +509,7 @@ export interface FileRoutesByTo {
   '/accountant/settings': typeof AccountantSettingsRoute
   '/accountant/wallet-requests': typeof AccountantWalletRequestsRoute
   '/accountant/withdrawals': typeof AccountantWithdrawalsRoute
+  '/dro/catalog': typeof DroCatalogRoute
   '/dro/dashboard': typeof DroDashboardRoute
   '/dro/retailers': typeof DroRetailersRoute
   '/dro/services': typeof DroServicesRoute
@@ -508,6 +523,7 @@ export interface FileRoutesByTo {
   '/qc/reports': typeof QcReportsRoute
   '/qc/reviewers': typeof QcReviewersRoute
   '/qc/settings': typeof QcSettingsRoute
+  '/tro/catalog': typeof TroCatalogRoute
   '/tro/dashboard': typeof TroDashboardRoute
   '/tro/retailers': typeof TroRetailersRoute
   '/tro/services': typeof TroServicesRoute
@@ -560,6 +576,7 @@ export interface FileRoutesById {
   '/accountant/settings': typeof AccountantSettingsRoute
   '/accountant/wallet-requests': typeof AccountantWalletRequestsRoute
   '/accountant/withdrawals': typeof AccountantWithdrawalsRoute
+  '/dro/catalog': typeof DroCatalogRoute
   '/dro/dashboard': typeof DroDashboardRoute
   '/dro/retailers': typeof DroRetailersRoute
   '/dro/services': typeof DroServicesRoute
@@ -573,6 +590,7 @@ export interface FileRoutesById {
   '/qc/reports': typeof QcReportsRoute
   '/qc/reviewers': typeof QcReviewersRoute
   '/qc/settings': typeof QcSettingsRoute
+  '/tro/catalog': typeof TroCatalogRoute
   '/tro/dashboard': typeof TroDashboardRoute
   '/tro/retailers': typeof TroRetailersRoute
   '/tro/services': typeof TroServicesRoute
@@ -626,6 +644,7 @@ export interface FileRouteTypes {
     | '/accountant/settings'
     | '/accountant/wallet-requests'
     | '/accountant/withdrawals'
+    | '/dro/catalog'
     | '/dro/dashboard'
     | '/dro/retailers'
     | '/dro/services'
@@ -639,6 +658,7 @@ export interface FileRouteTypes {
     | '/qc/reports'
     | '/qc/reviewers'
     | '/qc/settings'
+    | '/tro/catalog'
     | '/tro/dashboard'
     | '/tro/retailers'
     | '/tro/services'
@@ -690,6 +710,7 @@ export interface FileRouteTypes {
     | '/accountant/settings'
     | '/accountant/wallet-requests'
     | '/accountant/withdrawals'
+    | '/dro/catalog'
     | '/dro/dashboard'
     | '/dro/retailers'
     | '/dro/services'
@@ -703,6 +724,7 @@ export interface FileRouteTypes {
     | '/qc/reports'
     | '/qc/reviewers'
     | '/qc/settings'
+    | '/tro/catalog'
     | '/tro/dashboard'
     | '/tro/retailers'
     | '/tro/services'
@@ -754,6 +776,7 @@ export interface FileRouteTypes {
     | '/accountant/settings'
     | '/accountant/wallet-requests'
     | '/accountant/withdrawals'
+    | '/dro/catalog'
     | '/dro/dashboard'
     | '/dro/retailers'
     | '/dro/services'
@@ -767,6 +790,7 @@ export interface FileRouteTypes {
     | '/qc/reports'
     | '/qc/reviewers'
     | '/qc/settings'
+    | '/tro/catalog'
     | '/tro/dashboard'
     | '/tro/retailers'
     | '/tro/services'
@@ -819,6 +843,7 @@ export interface RootRouteChildren {
   AccountantSettingsRoute: typeof AccountantSettingsRoute
   AccountantWalletRequestsRoute: typeof AccountantWalletRequestsRoute
   AccountantWithdrawalsRoute: typeof AccountantWithdrawalsRoute
+  DroCatalogRoute: typeof DroCatalogRoute
   DroDashboardRoute: typeof DroDashboardRoute
   DroRetailersRoute: typeof DroRetailersRoute
   DroServicesRoute: typeof DroServicesRoute
@@ -832,6 +857,7 @@ export interface RootRouteChildren {
   QcReportsRoute: typeof QcReportsRoute
   QcReviewersRoute: typeof QcReviewersRoute
   QcSettingsRoute: typeof QcSettingsRoute
+  TroCatalogRoute: typeof TroCatalogRoute
   TroDashboardRoute: typeof TroDashboardRoute
   TroRetailersRoute: typeof TroRetailersRoute
   TroServicesRoute: typeof TroServicesRoute
@@ -1106,6 +1132,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TroDashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tro/catalog': {
+      id: '/tro/catalog'
+      path: '/tro/catalog'
+      fullPath: '/tro/catalog'
+      preLoaderRoute: typeof TroCatalogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/qc/settings': {
       id: '/qc/settings'
       path: '/qc/settings'
@@ -1195,6 +1228,13 @@ declare module '@tanstack/react-router' {
       path: '/dro/dashboard'
       fullPath: '/dro/dashboard'
       preLoaderRoute: typeof DroDashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dro/catalog': {
+      id: '/dro/catalog'
+      path: '/dro/catalog'
+      fullPath: '/dro/catalog'
+      preLoaderRoute: typeof DroCatalogRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/accountant/withdrawals': {
@@ -1323,6 +1363,7 @@ const rootRouteChildren: RootRouteChildren = {
   AccountantSettingsRoute: AccountantSettingsRoute,
   AccountantWalletRequestsRoute: AccountantWalletRequestsRoute,
   AccountantWithdrawalsRoute: AccountantWithdrawalsRoute,
+  DroCatalogRoute: DroCatalogRoute,
   DroDashboardRoute: DroDashboardRoute,
   DroRetailersRoute: DroRetailersRoute,
   DroServicesRoute: DroServicesRoute,
@@ -1336,6 +1377,7 @@ const rootRouteChildren: RootRouteChildren = {
   QcReportsRoute: QcReportsRoute,
   QcReviewersRoute: QcReviewersRoute,
   QcSettingsRoute: QcSettingsRoute,
+  TroCatalogRoute: TroCatalogRoute,
   TroDashboardRoute: TroDashboardRoute,
   TroRetailersRoute: TroRetailersRoute,
   TroServicesRoute: TroServicesRoute,
