@@ -15,6 +15,8 @@ import {
   ShieldCheck,
   LifeBuoy,
   Smile,
+  Bell,
+  UserCircle2,
 } from "lucide-react";
 import { BharatOneLogo } from "@/components/bharatone-logo";
 import {
