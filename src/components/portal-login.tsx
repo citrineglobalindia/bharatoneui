@@ -354,7 +354,8 @@ export const PORTAL_CONFIGS: Record<PortalRole, PortalConfig> = {
     tagline: "District-level oversight, approvals and audits.",
     accent: "rose",
     icon: Map,
-    demo: { username: "dro.officer", password: "DRO@2026", displayName: "District Officer" },
+    demo: { username: "8974532567", password: "Password@66", displayName: "Kavya" },
+    redirectTo: "/dro/dashboard",
   },
   tro: {
     role: "tro",
@@ -363,6 +364,7 @@ export const PORTAL_CONFIGS: Record<PortalRole, PortalConfig> = {
     tagline: "Taluk-level field operations and onboarding.",
     accent: "amber",
     icon: MapPin,
-    demo: { username: "tro.officer", password: "TRO@2026", displayName: "Taluk Officer" },
+    demo: { username: "8974532566", password: "Password@66", displayName: "Navya" },
+    redirectTo: "/tro/dashboard",
   },
 };
