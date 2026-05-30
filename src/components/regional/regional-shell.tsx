@@ -248,6 +248,15 @@ export function RegionalShell({ cfg, children }: { cfg: RegionalConfig; children
               </div>
             </div>
 
+            <button
+              onClick={() => navigate({ to: `${cfg.basePath}/notifications` })}
+              className="relative h-10 w-10 rounded-xl border border-border bg-white hover:bg-muted flex items-center justify-center shadow-soft"
+              aria-label="Notifications"
+            >
+              <Bell className="h-4 w-4 text-slate-700" />
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-extrabold flex items-center justify-center ring-2 ring-white">3</span>
+            </button>
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-2 h-10 pl-1 pr-2 rounded-xl border border-border bg-white hover:bg-muted shadow-soft">
@@ -275,6 +284,9 @@ export function RegionalShell({ cfg, children }: { cfg: RegionalConfig; children
                 <div className="px-2 py-1.5 text-[11px] text-muted-foreground flex items-center justify-between">
                   <span>Permission</span><span className="font-bold text-emerald-700">View reports</span>
                 </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate({ to: `${cfg.basePath}/profile` })}><UserCircle2 className="h-4 w-4" /> My profile</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate({ to: `${cfg.basePath}/notifications` })}><Bell className="h-4 w-4" /> Notifications</DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   className="text-rose-600 focus:text-rose-700"
