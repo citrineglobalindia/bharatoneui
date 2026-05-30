@@ -83,6 +83,7 @@ function SidebarBody({ cfg, pathname, onNavigate }: { cfg: RegionalConfig; pathn
   const navigate = useNavigate();
   const a = ACCENT[cfg.accent];
   const items = navItems(cfg.basePath);
+  const help = helpItems(cfg.basePath);
   return (
     <div className="flex h-full flex-col bg-slate-900 text-slate-100">
       <div className="relative px-4 py-4 border-b border-white/10 overflow-hidden">
@@ -105,6 +106,28 @@ function SidebarBody({ cfg, pathname, onNavigate }: { cfg: RegionalConfig; pathn
           <p className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">Reports</p>
           <ul className="space-y-0.5">
             {items.map((it) => {
+              const active = pathname === it.to;
+              return (
+                <li key={it.label}>
+                  <Link
+                    to={it.to}
+                    onClick={onNavigate}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      active ? `${a.activeBg} ${a.activeText} ring-1 ${a.activeRing}` : "text-slate-300 hover:bg-white/5 hover:text-white"
+                    }`}
+                  >
+                    <span className={active ? a.text : "text-slate-400"}>{it.icon}</span>
+                    <span className="truncate flex-1">{it.label}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+        <div>
+          <p className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">Help</p>
+          <ul className="space-y-0.5">
+            {help.map((it) => {
               const active = pathname === it.to;
               return (
                 <li key={it.label}>
