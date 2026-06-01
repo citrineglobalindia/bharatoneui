@@ -16,6 +16,7 @@ import {
   RETAILERS, OFFICERS, SERVICE_META, WEEKLY, inr, serviceTotal,
   retailerCommission, officerSummary,
 } from "@/components/distributor/distributor-data";
+import type { ServiceKey } from "@/components/distributor/distributor-data";
 
 const HEX = "#0ea5e9";
 
@@ -394,6 +395,199 @@ export function DistributorSettings() {
 
         <div className="flex justify-end">
           <button onClick={() => toast.success("Settings saved")} className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 text-white px-5 h-10 text-sm font-semibold shadow-elev hover:bg-slate-800">Save changes</button>
+        </div>
+      </div>
+    </DistributorShell>
+  );
+}
+
+/* ---------------- Service Detail ---------------- */
+const HOURS = ["8a", "9a", "10a", "11a", "12p", "1p", "2p", "3p", "4p", "5p", "6p", "7p"];
+const WEEK_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+function hashStr(s: string) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return h;
+}
+
+export function DistributorServiceDetail() {
+  const { key } = useParams({ from: "/distributor/services/$key" });
+  const navigate = useNavigate();
+  const meta = SERVICE_META.find((s) => s.key === (key as ServiceKey));
+
+  const data = useMemo(() => {
+    if (!meta) return null;
+    const rows = RETAILERS.map((r) => ({
+      r,
+      count: r.today[meta.key],
+      commission: r.today[meta.key] * meta.rate,
+    }));
+    const totalCount = rows.reduce((s, x) => s + x.count, 0);
+    const totalComm = rows.reduce((s, x) => s + x.commission, 0);
+    const seed = hashStr(meta.key);
+    const timeline = HOURS.map((h, i) => {
+      const v = (seed >> (i % 12)) & 7;
+      const live = totalCount > 0 && v > 1;
+      return { hour: h, status: live ? 1 : 0, txns: live ? (v + 1) * Math.max(1, Math.round(totalCount / 18)) : 0 };
+    });
+    const adoption = WEEK_DAYS.map((d, i) => ({
+      day: d,
+      shops: Math.max(0, Math.round((totalCount / 4) * (0.6 + ((seed >> i) & 3) * 0.18))),
+    }));
+    const ranked = [...rows].filter((x) => x.count > 0).sort((a, b) => b.commission - a.commission);
+    const liveHours = timeline.filter((t) => t.status === 1).length;
+    return { rows, totalCount, totalComm, timeline, adoption, ranked, liveHours };
+  }, [meta]);
+
+  if (!meta || !data) {
+    return (
+      <DistributorShell>
+        <div className="p-8 text-center">
+          <p className="text-sm text-muted-foreground">Service not found.</p>
+          <button onClick={() => navigate({ to: "/distributor/services" })} className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-slate-900 text-white px-4 h-9 text-sm font-semibold">
+            <ArrowLeft className="h-4 w-4" /> Back to services
+          </button>
+        </div>
+      </DistributorShell>
+    );
+  }
+
+  const oname = (id: string) => OFFICERS.find((o) => o.id === id)?.name ?? "—";
+  const live = data.totalCount > 0;
+
+  return (
+    <DistributorShell>
+      <div className="space-y-6">
+        <button onClick={() => navigate({ to: "/distributor/services" })} className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="h-4 w-4" /> Back to services
+        </button>
+
+        <PageHeader
+          icon={<Layers className="h-5 w-5" />}
+          title={meta.label}
+          subtitle={`Live status, adoption and commission for ${meta.key} across the network.`}
+          badge={
+            <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${live ? "border border-emerald-200 bg-emerald-50 text-emerald-700" : "border border-slate-200 bg-slate-100 text-slate-500"}`}>
+              <span className={`h-1.5 w-1.5 rounded-full ${live ? "bg-emerald-500 animate-pulse" : "bg-slate-400"}`} />
+              {live ? "Live now" : "Offline"}
+            </span>
+          }
+        />
+
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <StatCard label="Txns Today" value={String(data.totalCount)} icon={<Activity className="h-5 w-5" />} tone="sky" />
+          <StatCard label="Active Shops" value={String(data.ranked.length)} icon={<Store className="h-5 w-5" />} tone="violet" />
+          <StatCard label="Rate / Txn" value={inr(meta.rate)} icon={<IndianRupee className="h-5 w-5" />} tone="saffron" />
+          <StatCard label="Commission Today" value={inr(data.totalComm)} icon={<Coins className="h-5 w-5" />} tone="green" />
+        </div>
+
+        <div className="rounded-xl border border-border bg-card p-4 shadow-soft">
+          <h3 className="text-sm font-bold mb-3">Live / Offline Timeline (Today)</h3>
+          <div className="flex flex-wrap gap-1.5 mb-4">
+            {data.timeline.map((t) => (
+              <div key={t.hour} className="flex flex-col items-center gap-1">
+                <div
+                  title={`${t.hour}: ${t.status ? `${t.txns} txns` : "offline"}`}
+                  className={`h-9 w-9 rounded-md ${t.status ? "" : "bg-slate-200"}`}
+                  style={t.status ? { background: meta.color } : undefined}
+                />
+                <span className="text-[10px] text-muted-foreground">{t.hour}</span>
+              </div>
+            ))}
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            <span className="font-semibold text-emerald-700">{data.liveHours} hrs live</span> · {HOURS.length - data.liveHours} hrs offline today
+          </p>
+          <div className="h-40 mt-3">
+            <ResponsiveContainer>
+              <BarChart data={data.timeline}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                <XAxis dataKey="hour" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} />
+                <Tooltip />
+                <Bar dataKey="txns" radius={[4, 4, 0, 0]} fill={meta.color} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="rounded-xl border border-border bg-card p-4 shadow-soft">
+            <h3 className="text-sm font-bold mb-3">Adoption Trend (Shops / day)</h3>
+            <div className="h-60">
+              <ResponsiveContainer>
+                <AreaChart data={data.adoption}>
+                  <defs>
+                    <linearGradient id="svc-adopt" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={meta.color} stopOpacity={0.4} />
+                      <stop offset="95%" stopColor={meta.color} stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                  <XAxis dataKey="day" tick={{ fontSize: 12 }} />
+                  <YAxis tick={{ fontSize: 11 }} />
+                  <Tooltip />
+                  <Area type="monotone" dataKey="shops" stroke={meta.color} fill="url(#svc-adopt)" strokeWidth={2} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-border bg-card p-4 shadow-soft">
+            <h3 className="text-sm font-bold mb-2">Rate Card</h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center justify-between rounded-lg bg-muted/30 px-3 py-2.5">
+                <span className="text-muted-foreground">Commission per transaction</span>
+                <span className="font-bold">{inr(meta.rate)}</span>
+              </div>
+              <div className="flex items-center justify-between rounded-lg bg-muted/30 px-3 py-2.5">
+                <span className="text-muted-foreground">Transactions today</span>
+                <span className="font-bold tabular-nums">{data.totalCount}</span>
+              </div>
+              <div className="flex items-center justify-between rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-2.5">
+                <span className="text-emerald-700 font-semibold">Total commission today</span>
+                <span className="font-extrabold text-emerald-700">{inr(data.totalComm)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-border bg-card shadow-soft overflow-hidden">
+          <div className="px-4 py-3 border-b border-border"><h3 className="text-sm font-bold">Commission Breakdown by Retailer</h3></div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/50 text-[11px] uppercase tracking-wider text-muted-foreground">
+                <tr>
+                  <th className="text-left px-4 py-2.5 font-bold">Retailer</th>
+                  <th className="text-left px-3 py-2.5 font-bold">DRO / TRO</th>
+                  <th className="text-right px-3 py-2.5 font-bold">Txns</th>
+                  <th className="text-right px-3 py-2.5 font-bold">Rate</th>
+                  <th className="text-right px-4 py-2.5 font-bold">Commission</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.ranked.map(({ r, count, commission }) => (
+                  <tr key={r.id} className="border-t border-border hover:bg-muted/30 cursor-pointer" onClick={() => navigate({ to: "/distributor/retailers/$id", params: { id: r.id } })}>
+                    <td className="px-4 py-2.5">
+                      <p className="font-semibold">{r.name}</p>
+                      <p className="text-[11px] text-muted-foreground">{r.shop}</p>
+                    </td>
+                    <td className="px-3 py-2.5 text-[11px] leading-tight">
+                      <p className="font-semibold">{oname(r.droId)}</p>
+                      <p className="text-muted-foreground">{oname(r.troId)}</p>
+                    </td>
+                    <td className="px-3 py-2.5 text-right tabular-nums">{count}</td>
+                    <td className="px-3 py-2.5 text-right tabular-nums text-muted-foreground">{inr(meta.rate)}</td>
+                    <td className="px-4 py-2.5 text-right font-bold text-emerald-700">{inr(commission)}</td>
+                  </tr>
+                ))}
+                {data.ranked.length === 0 && (
+                  <tr><td colSpan={5} className="px-4 py-8 text-center text-sm text-muted-foreground">No live activity for this service today.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </DistributorShell>
