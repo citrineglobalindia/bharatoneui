@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import {
   LayoutDashboard, Network, Users, Grid3x3, Coins, LogOut, Menu, X,
   Search, Activity, ChevronDown, ShieldCheck, Bell, UserCircle2,
+  UserCog, LifeBuoy, MessageSquare, Settings as SettingsIcon,
 } from "lucide-react";
 import { BharatOneLogo } from "@/components/bharatone-logo";
 import {
@@ -22,9 +23,16 @@ export const DISTRIBUTOR = {
 const NAV = [
   { label: "Dashboard", icon: <LayoutDashboard className="h-4 w-4" />, to: "/distributor/dashboard" },
   { label: "Network Map", icon: <Network className="h-4 w-4" />, to: "/distributor/network" },
+  { label: "Officers", icon: <UserCog className="h-4 w-4" />, to: "/distributor/officers" },
   { label: "Retailers", icon: <Users className="h-4 w-4" />, to: "/distributor/retailers" },
   { label: "Services Live", icon: <Grid3x3 className="h-4 w-4" />, to: "/distributor/services" },
   { label: "Commissions", icon: <Coins className="h-4 w-4" />, to: "/distributor/commissions" },
+];
+
+const HELP_NAV = [
+  { label: "Help & Support", icon: <LifeBuoy className="h-4 w-4" />, to: "/distributor/support" },
+  { label: "Feedback", icon: <MessageSquare className="h-4 w-4" />, to: "/distributor/feedback" },
+  { label: "Settings", icon: <SettingsIcon className="h-4 w-4" />, to: "/distributor/settings" },
 ];
 
 function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
@@ -51,6 +59,28 @@ function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: 
           <p className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">Network</p>
           <ul className="space-y-0.5">
             {NAV.map((it) => {
+              const active = pathname === it.to || pathname.startsWith(it.to + "/");
+              return (
+                <li key={it.label}>
+                  <Link
+                    to={it.to}
+                    onClick={onNavigate}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      active ? "bg-sky-500/15 text-sky-200 ring-1 ring-sky-400/30" : "text-slate-300 hover:bg-white/5 hover:text-white"
+                    }`}
+                  >
+                    <span className={active ? "text-sky-300" : "text-slate-400"}>{it.icon}</span>
+                    <span className="truncate flex-1">{it.label}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+        <div>
+          <p className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">Help</p>
+          <ul className="space-y-0.5">
+            {HELP_NAV.map((it) => {
               const active = pathname === it.to;
               return (
                 <li key={it.label}>

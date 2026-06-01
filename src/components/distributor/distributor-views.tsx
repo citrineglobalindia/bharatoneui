@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import {
   AreaChart, Area, BarChart, Bar, PieChart as RePieChart, Pie, Cell,
   ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, Legend,
@@ -223,6 +224,7 @@ export function DistributorRetailers() {
   const [query, setQuery] = useState("");
   const [dro, setDro] = useState("all");
   const [onlyActive, setOnlyActive] = useState(false);
+  const navigate = useNavigate();
   const dros = OFFICERS.filter((o) => o.role === "DRO");
 
   const filtered = useMemo(() => {
@@ -285,7 +287,7 @@ export function DistributorRetailers() {
               </thead>
               <tbody>
                 {filtered.map((r) => (
-                  <tr key={r.id} className="border-t border-border hover:bg-muted/30">
+                  <tr key={r.id} className="border-t border-border hover:bg-muted/30 cursor-pointer" onClick={() => navigate({ to: "/distributor/retailers/$id", params: { id: r.id } })}>
                     <td className="px-4 py-2.5">
                       <div className="flex items-center gap-2">
                         <span className={`h-2 w-2 rounded-full ${r.active ? "bg-emerald-500" : "bg-slate-300"}`} />
