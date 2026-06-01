@@ -16,6 +16,7 @@ import {
   RETAILERS, OFFICERS, SERVICE_META, WEEKLY, inr, serviceTotal,
   retailerCommission, officerSummary,
 } from "@/components/distributor/distributor-data";
+import type { ServiceKey } from "@/components/distributor/distributor-data";
 
 const HEX = "#0ea5e9";
 
