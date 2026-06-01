@@ -7,7 +7,7 @@ import {
 import {
   Users, Building2, MapPinned, ArrowLeft, Phone, Store, Activity,
   Layers, Coins, IndianRupee, ChevronRight, ShieldCheck, Settings as SettingsIcon,
-  Bell, Globe, Lock, Search, UserCog,
+  Bell, Globe, Lock, Search, UserCog, CalendarRange,
 } from "lucide-react";
 import { toast } from "sonner";
 import { DistributorShell } from "@/components/distributor/distributor-shell";
