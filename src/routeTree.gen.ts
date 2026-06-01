@@ -95,6 +95,7 @@ import { Route as AccountantFeedbackRouteImport } from './routes/accountant.feed
 import { Route as AccountantDashboardRouteImport } from './routes/accountant.dashboard'
 import { Route as AccountantChangePasswordRouteImport } from './routes/accountant.change-password'
 import { Route as QcKycReviewIdRouteImport } from './routes/qc.kyc-review.$id'
+import { Route as DistributorServicesKeyRouteImport } from './routes/distributor.services.$key'
 import { Route as DistributorRetailersIdRouteImport } from './routes/distributor.retailers.$id'
 import { Route as DistributorOfficersIdRouteImport } from './routes/distributor.officers.$id'
 
@@ -530,6 +531,11 @@ const QcKycReviewIdRoute = QcKycReviewIdRouteImport.update({
   path: '/qc/kyc-review/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DistributorServicesKeyRoute = DistributorServicesKeyRouteImport.update({
+  id: '/$key',
+  path: '/$key',
+  getParentRoute: () => DistributorServicesRoute,
+} as any)
 const DistributorRetailersIdRoute = DistributorRetailersIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -596,7 +602,7 @@ export interface FileRoutesByFullPath {
   '/distributor/network': typeof DistributorNetworkRoute
   '/distributor/officers': typeof DistributorOfficersRouteWithChildren
   '/distributor/retailers': typeof DistributorRetailersRouteWithChildren
-  '/distributor/services': typeof DistributorServicesRoute
+  '/distributor/services': typeof DistributorServicesRouteWithChildren
   '/distributor/settings': typeof DistributorSettingsRoute
   '/distributor/support': typeof DistributorSupportRoute
   '/dro/catalog': typeof DroCatalogRoute
@@ -629,6 +635,7 @@ export interface FileRoutesByFullPath {
   '/tro/support': typeof TroSupportRoute
   '/distributor/officers/$id': typeof DistributorOfficersIdRoute
   '/distributor/retailers/$id': typeof DistributorRetailersIdRoute
+  '/distributor/services/$key': typeof DistributorServicesKeyRoute
   '/qc/kyc-review/$id': typeof QcKycReviewIdRoute
 }
 export interface FileRoutesByTo {
@@ -686,7 +693,7 @@ export interface FileRoutesByTo {
   '/distributor/network': typeof DistributorNetworkRoute
   '/distributor/officers': typeof DistributorOfficersRouteWithChildren
   '/distributor/retailers': typeof DistributorRetailersRouteWithChildren
-  '/distributor/services': typeof DistributorServicesRoute
+  '/distributor/services': typeof DistributorServicesRouteWithChildren
   '/distributor/settings': typeof DistributorSettingsRoute
   '/distributor/support': typeof DistributorSupportRoute
   '/dro/catalog': typeof DroCatalogRoute
@@ -719,6 +726,7 @@ export interface FileRoutesByTo {
   '/tro/support': typeof TroSupportRoute
   '/distributor/officers/$id': typeof DistributorOfficersIdRoute
   '/distributor/retailers/$id': typeof DistributorRetailersIdRoute
+  '/distributor/services/$key': typeof DistributorServicesKeyRoute
   '/qc/kyc-review/$id': typeof QcKycReviewIdRoute
 }
 export interface FileRoutesById {
@@ -777,7 +785,7 @@ export interface FileRoutesById {
   '/distributor/network': typeof DistributorNetworkRoute
   '/distributor/officers': typeof DistributorOfficersRouteWithChildren
   '/distributor/retailers': typeof DistributorRetailersRouteWithChildren
-  '/distributor/services': typeof DistributorServicesRoute
+  '/distributor/services': typeof DistributorServicesRouteWithChildren
   '/distributor/settings': typeof DistributorSettingsRoute
   '/distributor/support': typeof DistributorSupportRoute
   '/dro/catalog': typeof DroCatalogRoute
@@ -810,6 +818,7 @@ export interface FileRoutesById {
   '/tro/support': typeof TroSupportRoute
   '/distributor/officers/$id': typeof DistributorOfficersIdRoute
   '/distributor/retailers/$id': typeof DistributorRetailersIdRoute
+  '/distributor/services/$key': typeof DistributorServicesKeyRoute
   '/qc/kyc-review/$id': typeof QcKycReviewIdRoute
 }
 export interface FileRouteTypes {
@@ -902,6 +911,7 @@ export interface FileRouteTypes {
     | '/tro/support'
     | '/distributor/officers/$id'
     | '/distributor/retailers/$id'
+    | '/distributor/services/$key'
     | '/qc/kyc-review/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -992,6 +1002,7 @@ export interface FileRouteTypes {
     | '/tro/support'
     | '/distributor/officers/$id'
     | '/distributor/retailers/$id'
+    | '/distributor/services/$key'
     | '/qc/kyc-review/$id'
   id:
     | '__root__'
@@ -1082,6 +1093,7 @@ export interface FileRouteTypes {
     | '/tro/support'
     | '/distributor/officers/$id'
     | '/distributor/retailers/$id'
+    | '/distributor/services/$key'
     | '/qc/kyc-review/$id'
   fileRoutesById: FileRoutesById
 }
@@ -1140,7 +1152,7 @@ export interface RootRouteChildren {
   DistributorNetworkRoute: typeof DistributorNetworkRoute
   DistributorOfficersRoute: typeof DistributorOfficersRouteWithChildren
   DistributorRetailersRoute: typeof DistributorRetailersRouteWithChildren
-  DistributorServicesRoute: typeof DistributorServicesRoute
+  DistributorServicesRoute: typeof DistributorServicesRouteWithChildren
   DistributorSettingsRoute: typeof DistributorSettingsRoute
   DistributorSupportRoute: typeof DistributorSupportRoute
   DroCatalogRoute: typeof DroCatalogRoute
@@ -1778,6 +1790,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof QcKycReviewIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/distributor/services/$key': {
+      id: '/distributor/services/$key'
+      path: '/$key'
+      fullPath: '/distributor/services/$key'
+      preLoaderRoute: typeof DistributorServicesKeyRouteImport
+      parentRoute: typeof DistributorServicesRoute
+    }
     '/distributor/retailers/$id': {
       id: '/distributor/retailers/$id'
       path: '/$id'
@@ -1816,6 +1835,17 @@ const DistributorRetailersRouteChildren: DistributorRetailersRouteChildren = {
 
 const DistributorRetailersRouteWithChildren =
   DistributorRetailersRoute._addFileChildren(DistributorRetailersRouteChildren)
+
+interface DistributorServicesRouteChildren {
+  DistributorServicesKeyRoute: typeof DistributorServicesKeyRoute
+}
+
+const DistributorServicesRouteChildren: DistributorServicesRouteChildren = {
+  DistributorServicesKeyRoute: DistributorServicesKeyRoute,
+}
+
+const DistributorServicesRouteWithChildren =
+  DistributorServicesRoute._addFileChildren(DistributorServicesRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -1872,7 +1902,7 @@ const rootRouteChildren: RootRouteChildren = {
   DistributorNetworkRoute: DistributorNetworkRoute,
   DistributorOfficersRoute: DistributorOfficersRouteWithChildren,
   DistributorRetailersRoute: DistributorRetailersRouteWithChildren,
-  DistributorServicesRoute: DistributorServicesRoute,
+  DistributorServicesRoute: DistributorServicesRouteWithChildren,
   DistributorSettingsRoute: DistributorSettingsRoute,
   DistributorSupportRoute: DistributorSupportRoute,
   DroCatalogRoute: DroCatalogRoute,

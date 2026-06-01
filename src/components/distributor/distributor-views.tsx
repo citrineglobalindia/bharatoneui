@@ -320,6 +320,7 @@ export function DistributorRetailers() {
 
 /* ---------------- Services Live ---------------- */
 export function DistributorServices() {
+  const navigate = useNavigate();
   const mix = useMemo(() => aggregateServices(RETAILERS), []);
   const total = mix.reduce((sum, m) => sum + m.count, 0);
   const activeRetailers = RETAILERS.filter((r) => r.active).length;
@@ -360,7 +361,7 @@ export function DistributorServices() {
                 {mix.map((m) => {
                   const live = m.count > 0;
                   return (
-                    <tr key={m.key} className="border-t border-border hover:bg-muted/30">
+                    <tr key={m.key} className="border-t border-border hover:bg-muted/30 cursor-pointer" onClick={() => navigate({ to: "/distributor/services/$key", params: { key: m.key } })}>
                       <td className="px-4 py-2.5">
                         <div className="flex items-center gap-2">
                           <span className="h-2.5 w-2.5 rounded-sm" style={{ background: m.color }} />
