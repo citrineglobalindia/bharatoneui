@@ -59,6 +59,28 @@ function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: 
           <p className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">Network</p>
           <ul className="space-y-0.5">
             {NAV.map((it) => {
+              const active = pathname === it.to || pathname.startsWith(it.to + "/");
+              return (
+                <li key={it.label}>
+                  <Link
+                    to={it.to}
+                    onClick={onNavigate}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      active ? "bg-sky-500/15 text-sky-200 ring-1 ring-sky-400/30" : "text-slate-300 hover:bg-white/5 hover:text-white"
+                    }`}
+                  >
+                    <span className={active ? "text-sky-300" : "text-slate-400"}>{it.icon}</span>
+                    <span className="truncate flex-1">{it.label}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+        <div>
+          <p className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">Help</p>
+          <ul className="space-y-0.5">
+            {HELP_NAV.map((it) => {
               const active = pathname === it.to;
               return (
                 <li key={it.label}>
