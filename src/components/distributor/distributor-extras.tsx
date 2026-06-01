@@ -14,7 +14,7 @@ import { PageHeader } from "@/components/retailer/page-header";
 import { StatCard } from "@/components/retailer/stat-card";
 import {
   RETAILERS, OFFICERS, SERVICE_META, WEEKLY, inr, serviceTotal,
-  retailerCommission, officerSummary, type Retailer, type Officer,
+  retailerCommission, officerSummary,
 } from "@/components/distributor/distributor-data";
 
 const HEX = "#0ea5e9";
