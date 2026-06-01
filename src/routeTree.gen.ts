@@ -73,6 +73,11 @@ import { Route as DroNotificationsRouteImport } from './routes/dro.notifications
 import { Route as DroFeedbackRouteImport } from './routes/dro.feedback'
 import { Route as DroDashboardRouteImport } from './routes/dro.dashboard'
 import { Route as DroCatalogRouteImport } from './routes/dro.catalog'
+import { Route as DistributorServicesRouteImport } from './routes/distributor.services'
+import { Route as DistributorRetailersRouteImport } from './routes/distributor.retailers'
+import { Route as DistributorNetworkRouteImport } from './routes/distributor.network'
+import { Route as DistributorDashboardRouteImport } from './routes/distributor.dashboard'
+import { Route as DistributorCommissionsRouteImport } from './routes/distributor.commissions'
 import { Route as AccountantWithdrawalsRouteImport } from './routes/accountant.withdrawals'
 import { Route as AccountantWalletRequestsRouteImport } from './routes/accountant.wallet-requests'
 import { Route as AccountantSupportRouteImport } from './routes/accountant.support'
@@ -407,6 +412,31 @@ const DroCatalogRoute = DroCatalogRouteImport.update({
   path: '/dro/catalog',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DistributorServicesRoute = DistributorServicesRouteImport.update({
+  id: '/distributor/services',
+  path: '/distributor/services',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DistributorRetailersRoute = DistributorRetailersRouteImport.update({
+  id: '/distributor/retailers',
+  path: '/distributor/retailers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DistributorNetworkRoute = DistributorNetworkRouteImport.update({
+  id: '/distributor/network',
+  path: '/distributor/network',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DistributorDashboardRoute = DistributorDashboardRouteImport.update({
+  id: '/distributor/dashboard',
+  path: '/distributor/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DistributorCommissionsRoute = DistributorCommissionsRouteImport.update({
+  id: '/distributor/commissions',
+  path: '/distributor/commissions',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AccountantWithdrawalsRoute = AccountantWithdrawalsRouteImport.update({
   id: '/accountant/withdrawals',
   path: '/accountant/withdrawals',
@@ -524,6 +554,11 @@ export interface FileRoutesByFullPath {
   '/accountant/support': typeof AccountantSupportRoute
   '/accountant/wallet-requests': typeof AccountantWalletRequestsRoute
   '/accountant/withdrawals': typeof AccountantWithdrawalsRoute
+  '/distributor/commissions': typeof DistributorCommissionsRoute
+  '/distributor/dashboard': typeof DistributorDashboardRoute
+  '/distributor/network': typeof DistributorNetworkRoute
+  '/distributor/retailers': typeof DistributorRetailersRoute
+  '/distributor/services': typeof DistributorServicesRoute
   '/dro/catalog': typeof DroCatalogRoute
   '/dro/dashboard': typeof DroDashboardRoute
   '/dro/feedback': typeof DroFeedbackRoute
@@ -603,6 +638,11 @@ export interface FileRoutesByTo {
   '/accountant/support': typeof AccountantSupportRoute
   '/accountant/wallet-requests': typeof AccountantWalletRequestsRoute
   '/accountant/withdrawals': typeof AccountantWithdrawalsRoute
+  '/distributor/commissions': typeof DistributorCommissionsRoute
+  '/distributor/dashboard': typeof DistributorDashboardRoute
+  '/distributor/network': typeof DistributorNetworkRoute
+  '/distributor/retailers': typeof DistributorRetailersRoute
+  '/distributor/services': typeof DistributorServicesRoute
   '/dro/catalog': typeof DroCatalogRoute
   '/dro/dashboard': typeof DroDashboardRoute
   '/dro/feedback': typeof DroFeedbackRoute
@@ -683,6 +723,11 @@ export interface FileRoutesById {
   '/accountant/support': typeof AccountantSupportRoute
   '/accountant/wallet-requests': typeof AccountantWalletRequestsRoute
   '/accountant/withdrawals': typeof AccountantWithdrawalsRoute
+  '/distributor/commissions': typeof DistributorCommissionsRoute
+  '/distributor/dashboard': typeof DistributorDashboardRoute
+  '/distributor/network': typeof DistributorNetworkRoute
+  '/distributor/retailers': typeof DistributorRetailersRoute
+  '/distributor/services': typeof DistributorServicesRoute
   '/dro/catalog': typeof DroCatalogRoute
   '/dro/dashboard': typeof DroDashboardRoute
   '/dro/feedback': typeof DroFeedbackRoute
@@ -764,6 +809,11 @@ export interface FileRouteTypes {
     | '/accountant/support'
     | '/accountant/wallet-requests'
     | '/accountant/withdrawals'
+    | '/distributor/commissions'
+    | '/distributor/dashboard'
+    | '/distributor/network'
+    | '/distributor/retailers'
+    | '/distributor/services'
     | '/dro/catalog'
     | '/dro/dashboard'
     | '/dro/feedback'
@@ -843,6 +893,11 @@ export interface FileRouteTypes {
     | '/accountant/support'
     | '/accountant/wallet-requests'
     | '/accountant/withdrawals'
+    | '/distributor/commissions'
+    | '/distributor/dashboard'
+    | '/distributor/network'
+    | '/distributor/retailers'
+    | '/distributor/services'
     | '/dro/catalog'
     | '/dro/dashboard'
     | '/dro/feedback'
@@ -922,6 +977,11 @@ export interface FileRouteTypes {
     | '/accountant/support'
     | '/accountant/wallet-requests'
     | '/accountant/withdrawals'
+    | '/distributor/commissions'
+    | '/distributor/dashboard'
+    | '/distributor/network'
+    | '/distributor/retailers'
+    | '/distributor/services'
     | '/dro/catalog'
     | '/dro/dashboard'
     | '/dro/feedback'
@@ -1002,6 +1062,11 @@ export interface RootRouteChildren {
   AccountantSupportRoute: typeof AccountantSupportRoute
   AccountantWalletRequestsRoute: typeof AccountantWalletRequestsRoute
   AccountantWithdrawalsRoute: typeof AccountantWithdrawalsRoute
+  DistributorCommissionsRoute: typeof DistributorCommissionsRoute
+  DistributorDashboardRoute: typeof DistributorDashboardRoute
+  DistributorNetworkRoute: typeof DistributorNetworkRoute
+  DistributorRetailersRoute: typeof DistributorRetailersRoute
+  DistributorServicesRoute: typeof DistributorServicesRoute
   DroCatalogRoute: typeof DroCatalogRoute
   DroDashboardRoute: typeof DroDashboardRoute
   DroFeedbackRoute: typeof DroFeedbackRoute
@@ -1483,6 +1548,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DroCatalogRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/distributor/services': {
+      id: '/distributor/services'
+      path: '/distributor/services'
+      fullPath: '/distributor/services'
+      preLoaderRoute: typeof DistributorServicesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/distributor/retailers': {
+      id: '/distributor/retailers'
+      path: '/distributor/retailers'
+      fullPath: '/distributor/retailers'
+      preLoaderRoute: typeof DistributorRetailersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/distributor/network': {
+      id: '/distributor/network'
+      path: '/distributor/network'
+      fullPath: '/distributor/network'
+      preLoaderRoute: typeof DistributorNetworkRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/distributor/dashboard': {
+      id: '/distributor/dashboard'
+      path: '/distributor/dashboard'
+      fullPath: '/distributor/dashboard'
+      preLoaderRoute: typeof DistributorDashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/distributor/commissions': {
+      id: '/distributor/commissions'
+      path: '/distributor/commissions'
+      fullPath: '/distributor/commissions'
+      preLoaderRoute: typeof DistributorCommissionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/accountant/withdrawals': {
       id: '/accountant/withdrawals'
       path: '/accountant/withdrawals'
@@ -1626,6 +1726,11 @@ const rootRouteChildren: RootRouteChildren = {
   AccountantSupportRoute: AccountantSupportRoute,
   AccountantWalletRequestsRoute: AccountantWalletRequestsRoute,
   AccountantWithdrawalsRoute: AccountantWithdrawalsRoute,
+  DistributorCommissionsRoute: DistributorCommissionsRoute,
+  DistributorDashboardRoute: DistributorDashboardRoute,
+  DistributorNetworkRoute: DistributorNetworkRoute,
+  DistributorRetailersRoute: DistributorRetailersRoute,
+  DistributorServicesRoute: DistributorServicesRoute,
   DroCatalogRoute: DroCatalogRoute,
   DroDashboardRoute: DroDashboardRoute,
   DroFeedbackRoute: DroFeedbackRoute,
