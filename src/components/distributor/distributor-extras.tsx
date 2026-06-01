@@ -4,7 +4,7 @@ import {
   AreaChart, Area, BarChart, Bar, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, Cell,
 } from "recharts";
 import {
-  Users, Building2, MapPinned, ArrowLeft, Phone, Mail, Store, Activity,
+  Users, Building2, MapPinned, ArrowLeft, Phone, Store, Activity,
   Layers, Coins, IndianRupee, ChevronRight, ShieldCheck, Settings as SettingsIcon,
   Bell, Globe, Lock, Search, UserCog,
 } from "lucide-react";
