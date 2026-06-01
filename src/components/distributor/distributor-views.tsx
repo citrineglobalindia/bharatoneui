@@ -5,7 +5,7 @@ import {
 } from "recharts";
 import {
   Users, Activity, Layers, IndianRupee, Download, Search, Network, TrendingUp,
-  Store, Coins, MapPin, ChevronRight, Building2, MapPinned,
+  Store, Coins, ChevronRight, Building2, MapPinned,
 } from "lucide-react";
 import { toast } from "sonner";
 import { DistributorShell } from "@/components/distributor/distributor-shell";
