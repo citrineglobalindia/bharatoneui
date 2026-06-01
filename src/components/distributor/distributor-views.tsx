@@ -322,6 +322,8 @@ export function DistributorRetailers() {
 export function DistributorServices() {
   const mix = useMemo(() => aggregateServices(RETAILERS), []);
   const total = mix.reduce((sum, m) => sum + m.count, 0);
+  const activeRetailers = RETAILERS.filter((r) => r.active).length;
+  const liveServices = mix.filter((m) => m.count > 0).length;
 
   return (
     <DistributorShell>
@@ -330,7 +332,61 @@ export function DistributorServices() {
           icon={<Layers className="h-5 w-5" />}
           title="Services Live"
           subtitle="Daily / weekly / monthly service activity across the network."
+          badge={
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> {liveServices} live now
+            </span>
+          }
         />
+
+        <div className="rounded-xl border border-border bg-card shadow-soft overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+            <h3 className="text-sm font-bold">Live Service List</h3>
+            <span className="text-[11px] font-semibold text-muted-foreground">{activeRetailers} active retailers</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/50 text-[11px] uppercase tracking-wider text-muted-foreground">
+                <tr>
+                  <th className="text-left px-4 py-2.5 font-bold">Service</th>
+                  <th className="text-left px-3 py-2.5 font-bold">Status</th>
+                  <th className="text-right px-3 py-2.5 font-bold">Today</th>
+                  <th className="text-right px-3 py-2.5 font-bold">Share</th>
+                  <th className="text-right px-3 py-2.5 font-bold">Rate</th>
+                  <th className="text-right px-4 py-2.5 font-bold">Commission</th>
+                </tr>
+              </thead>
+              <tbody>
+                {mix.map((m) => {
+                  const live = m.count > 0;
+                  return (
+                    <tr key={m.key} className="border-t border-border hover:bg-muted/30">
+                      <td className="px-4 py-2.5">
+                        <div className="flex items-center gap-2">
+                          <span className="h-2.5 w-2.5 rounded-sm" style={{ background: m.color }} />
+                          <div className="leading-tight">
+                            <p className="font-semibold">{m.label}</p>
+                            <p className="text-[11px] text-muted-foreground">{m.key}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-bold ${live ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-slate-100 text-slate-500 border border-slate-200"}`}>
+                          <span className={`h-1.5 w-1.5 rounded-full ${live ? "bg-emerald-500 animate-pulse" : "bg-slate-400"}`} />
+                          {live ? "Live" : "Idle"}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2.5 text-right font-bold tabular-nums">{m.count}</td>
+                      <td className="px-3 py-2.5 text-right tabular-nums text-muted-foreground">{total ? Math.round((m.count / total) * 100) : 0}%</td>
+                      <td className="px-3 py-2.5 text-right tabular-nums text-muted-foreground">{inr(m.rate)}</td>
+                      <td className="px-4 py-2.5 text-right font-semibold text-emerald-700">{inr(m.commission)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           {mix.map((m) => (
