@@ -391,7 +391,7 @@ export function DistributorServices() {
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           {mix.map((m) => (
-            <div key={m.key} className="rounded-xl border border-border bg-card p-4 shadow-soft">
+            <div key={m.key} onClick={() => navigate({ to: "/distributor/services/$key", params: { key: m.key } })} className="rounded-xl border border-border bg-card p-4 shadow-soft cursor-pointer hover:shadow-elev transition-shadow">
               <span className="h-2.5 w-2.5 rounded-sm inline-block" style={{ background: m.color }} />
               <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mt-1">{m.key}</p>
               <p className="font-display text-2xl font-extrabold mt-1">{m.count}</p>
