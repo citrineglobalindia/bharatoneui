@@ -417,6 +417,24 @@ export function DistributorServiceDetail() {
   const navigate = useNavigate();
   const meta = SERVICE_META.find((s) => s.key === (key as ServiceKey));
 
+  const today = new Date();
+  const [startDate, setStartDate] = useState<string>(format(subDays(today, 6), "yyyy-MM-dd"));
+  const [endDate, setEndDate] = useState<string>(format(today, "yyyy-MM-dd"));
+
+  const dateRange = useMemo(() => {
+    const s = parseISO(startDate);
+    const e = parseISO(endDate);
+    const days: Date[] = [];
+    let d = new Date(s);
+    while (!isAfter(d, e)) {
+      days.push(new Date(d));
+      d.setDate(d.getDate() + 1);
+    }
+    return days;
+  }, [startDate, endDate]);
+
+  const isSingleDay = dateRange.length === 1;
+
   const data = useMemo(() => {
     if (!meta) return null;
     const rows = RETAILERS.map((r) => ({
@@ -427,19 +445,37 @@ export function DistributorServiceDetail() {
     const totalCount = rows.reduce((s, x) => s + x.count, 0);
     const totalComm = rows.reduce((s, x) => s + x.commission, 0);
     const seed = hashStr(meta.key);
-    const timeline = HOURS.map((h, i) => {
-      const v = (seed >> (i % 12)) & 7;
+
+    // Generate timeline across the date range
+    const timeline = dateRange.map((day, di) => {
+      const daySeed = (seed + di * 997) >>> 0;
+      if (isSingleDay) {
+        // Hourly blocks for single day
+        return HOURS.map((h, i) => {
+          const v = (daySeed >> (i % 12)) & 7;
+          const live = totalCount > 0 && v > 1;
+          return { label: h, status: live ? 1 : 0, txns: live ? (v + 1) * Math.max(1, Math.round(totalCount / 18)) : 0, date: day };
+        });
+      }
+      // Daily block for multi-day
+      const v = (daySeed >> (di % 12)) & 7;
       const live = totalCount > 0 && v > 1;
-      return { hour: h, status: live ? 1 : 0, txns: live ? (v + 1) * Math.max(1, Math.round(totalCount / 18)) : 0 };
-    });
-    const adoption = WEEK_DAYS.map((d, i) => ({
-      day: d,
+      const txns = live ? (v + 3) * Math.max(1, Math.round(totalCount / 3)) : 0;
+      return [{ label: format(day, "dd MMM"), status: live ? 1 : 0, txns, date: day }];
+    }).flat();
+
+    const adoption = dateRange.map((day, i) => ({
+      day: format(day, "dd MMM"),
       shops: Math.max(0, Math.round((totalCount / 4) * (0.6 + ((seed >> i) & 3) * 0.18))),
     }));
+
     const ranked = [...rows].filter((x) => x.count > 0).sort((a, b) => b.commission - a.commission);
-    const liveHours = timeline.filter((t) => t.status === 1).length;
-    return { rows, totalCount, totalComm, timeline, adoption, ranked, liveHours };
-  }, [meta]);
+    const livePeriods = timeline.filter((t) => t.status === 1).length;
+    const rangeTotal = timeline.reduce((s, t) => s + t.txns, 0);
+    const rangeComm = rangeTotal * meta.rate;
+
+    return { rows, totalCount, totalComm, timeline, adoption, ranked, livePeriods, rangeTotal, rangeComm };
+  }, [meta, dateRange, isSingleDay]);
 
   if (!meta || !data) {
     return (
@@ -483,28 +519,101 @@ export function DistributorServiceDetail() {
           <StatCard label="Commission Today" value={inr(data.totalComm)} icon={<Coins className="h-5 w-5" />} tone="green" />
         </div>
 
+        {/* Date Range Filter */}
         <div className="rounded-xl border border-border bg-card p-4 shadow-soft">
-          <h3 className="text-sm font-bold mb-3">Live / Offline Timeline (Today)</h3>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <CalendarRange className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-semibold">Period</span>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="flex items-center gap-1.5 text-sm">
+                <span className="text-[11px] font-semibold text-muted-foreground uppercase">From</span>
+                <input
+                  type="date"
+                  value={startDate}
+                  max={endDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="h-9 rounded-lg border border-input bg-background px-3 text-sm"
+                />
+              </label>
+              <label className="flex items-center gap-1.5 text-sm">
+                <span className="text-[11px] font-semibold text-muted-foreground uppercase">To</span>
+                <input
+                  type="date"
+                  value={endDate}
+                  min={startDate}
+                  max={format(today, "yyyy-MM-dd")}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="h-9 rounded-lg border border-input bg-background px-3 text-sm"
+                />
+              </label>
+              <button
+                onClick={() => {
+                  setStartDate(format(subDays(today, 6), "yyyy-MM-dd"));
+                  setEndDate(format(today, "yyyy-MM-dd"));
+                }}
+                className="h-9 rounded-lg border border-border bg-muted/40 px-3 text-[11px] font-semibold hover:bg-muted"
+              >
+                Last 7 days
+              </button>
+              <button
+                onClick={() => {
+                  setStartDate(format(subDays(today, 29), "yyyy-MM-dd"));
+                  setEndDate(format(today, "yyyy-MM-dd"));
+                }}
+                className="h-9 rounded-lg border border-border bg-muted/40 px-3 text-[11px] font-semibold hover:bg-muted"
+              >
+                Last 30 days
+              </button>
+              <button
+                onClick={() => {
+                  const s = format(today, "yyyy-MM-dd");
+                  setStartDate(s);
+                  setEndDate(s);
+                }}
+                className="h-9 rounded-lg border border-border bg-muted/40 px-3 text-[11px] font-semibold hover:bg-muted"
+              >
+                Today
+              </button>
+            </div>
+            <span className="ml-auto text-[11px] text-muted-foreground">
+              {dateRange.length} {isSingleDay ? "day" : "days"} · {data.livePeriods} live · {inr(data.rangeComm)} commission
+            </span>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-border bg-card p-4 shadow-soft">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+            <h3 className="text-sm font-bold">
+              Live / Offline Timeline {isSingleDay ? "(Today)" : `(${format(parseISO(startDate), "dd MMM")} – ${format(parseISO(endDate), "dd MMM")})`}
+            </h3>
+            <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">
+              {data.livePeriods} / {data.timeline.length} {isSingleDay ? "hrs" : "days"} live
+            </span>
+          </div>
           <div className="flex flex-wrap gap-1.5 mb-4">
-            {data.timeline.map((t) => (
-              <div key={t.hour} className="flex flex-col items-center gap-1">
+            {data.timeline.map((t, i) => (
+              <div key={`${t.label}-${i}`} className="flex flex-col items-center gap-1">
                 <div
-                  title={`${t.hour}: ${t.status ? `${t.txns} txns` : "offline"}`}
+                  title={`${t.label}: ${t.status ? `${t.txns} txns` : "offline"}`}
                   className={`h-9 w-9 rounded-md ${t.status ? "" : "bg-slate-200"}`}
                   style={t.status ? { background: meta.color } : undefined}
                 />
-                <span className="text-[10px] text-muted-foreground">{t.hour}</span>
+                <span className="text-[10px] text-muted-foreground">{t.label}</span>
               </div>
             ))}
           </div>
           <p className="text-[11px] text-muted-foreground">
-            <span className="font-semibold text-emerald-700">{data.liveHours} hrs live</span> · {HOURS.length - data.liveHours} hrs offline today
+            <span className="font-semibold text-emerald-700">{data.livePeriods} {isSingleDay ? "hrs" : "days"} live</span>
+            {" "}· {data.timeline.length - data.livePeriods} {isSingleDay ? "hrs" : "days"} offline
+            {" "}· {data.rangeTotal.toLocaleString("en-IN")} transactions · {inr(data.rangeComm)} commission
           </p>
           <div className="h-40 mt-3">
             <ResponsiveContainer>
               <BarChart data={data.timeline}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                <XAxis dataKey="hour" tick={{ fontSize: 11 }} />
+                <XAxis dataKey="label" tick={{ fontSize: 10 }} interval={isSingleDay ? 0 : Math.floor(data.timeline.length / 10)} />
                 <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip />
                 <Bar dataKey="txns" radius={[4, 4, 0, 0]} fill={meta.color} />
