@@ -332,7 +332,8 @@ export const PORTAL_CONFIGS: Record<PortalRole, PortalConfig> = {
     tagline: "Manage your retailer network, stock and commissions.",
     accent: "sky",
     icon: Truck,
-    demo: { username: "distributor.demo", password: "Dist@2026", displayName: "Distributor" },
+    demo: { username: "7259809887", password: "Password@66", displayName: "Karthik M" },
+    redirectTo: "/distributor/dashboard",
   },
   "master-distributor": {
     role: "master-distributor",
