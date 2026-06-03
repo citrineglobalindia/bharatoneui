@@ -12,7 +12,7 @@ import { PageHeader } from "@/components/retailer/page-header";
 import { StatCard } from "@/components/retailer/stat-card";
 import {
   type RetailerActivity, SERVICE_META, WEEKLY_SERVICES, inr,
-  serviceTotal, aggregateServices, summarize, topByVolume, taluksSummary, exportRetailersCsv,
+  serviceTotal, aggregateServices, summarize, serviceRevenueModel, topByVolume, taluksSummary, exportRetailersCsv,
 } from "@/components/regional/regional-mock-data";
 
 const accentHex = (cfg: RegionalConfig) => (cfg.accent === "rose" ? "#f43f5e" : "#f59e0b");
@@ -24,6 +24,7 @@ export function ReportDashboard({ cfg, rows, district }: { cfg: RegionalConfig; 
   const mix = useMemo(() => aggregateServices(rows), [rows]);
   const top = useMemo(() => topByVolume(rows), [rows]);
   const taluks = useMemo(() => taluksSummary(rows), [rows]);
+  const txnModel = useMemo(() => serviceRevenueModel(rows), [rows]);
   const hex = accentHex(cfg);
 
   return (
@@ -40,11 +41,105 @@ export function ReportDashboard({ cfg, rows, district }: { cfg: RegionalConfig; 
           }
         />
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <StatCard label={district ? "District Retailers" : "Taluk Retailers"} value={String(s.totalRetailers)} delta={{ value: `${s.activeToday} active`, positive: true }} icon={<Users className="h-5 w-5" />} tone={accentTone(cfg)} />
-          <StatCard label="Active Today" value={String(s.activeToday)} delta={{ value: `${Math.round((s.activeToday / Math.max(s.totalRetailers,1)) * 100)}% live`, positive: true }} icon={<Store className="h-5 w-5" />} tone="green" />
-          <StatCard label="Services Today" value={s.servicesToday.toLocaleString("en-IN")} delta={{ value: "across all services", positive: true }} icon={<Layers className="h-5 w-5" />} tone="violet" />
-          <StatCard label="Revenue Today" value={inr(s.revenueToday)} delta={{ value: "+12.4% vs avg", positive: true }} icon={<IndianRupee className="h-5 w-5" />} tone="sky" />
+        {/* Retailer count section */}
+        <div>
+          <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
+            <Users className="h-3.5 w-3.5" /> Retailer Count
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <StatCard
+              label="Active Retailers"
+              value={String(s.activeToday)}
+              delta={{ value: `${Math.round((s.activeToday / Math.max(s.totalRetailers, 1)) * 100)}% of network live`, positive: true }}
+              icon={<Store className="h-5 w-5" />}
+              tone="green"
+            />
+            <StatCard
+              label="Inactive Retailers"
+              value={String(s.inactiveToday)}
+              delta={{ value: `${Math.round((s.inactiveToday / Math.max(s.totalRetailers, 1)) * 100)}% idle today`, positive: false }}
+              icon={<Store className="h-5 w-5" />}
+              tone="rose"
+            />
+            <StatCard
+              label="Total Retailers"
+              value={String(s.totalRetailers)}
+              delta={{ value: district ? "across the district" : "across the taluk", positive: true }}
+              icon={<Users className="h-5 w-5" />}
+              tone={accentTone(cfg)}
+            />
+          </div>
+        </div>
+
+        {/* Service transaction & revenue section */}
+        <div>
+          <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
+            <Layers className="h-3.5 w-3.5" /> Transactions & Revenue
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <StatCard label="Transactions Today" value={s.servicesToday.toLocaleString("en-IN")} delta={{ value: "across all services", positive: true }} icon={<Layers className="h-5 w-5" />} tone="violet" />
+            <StatCard label="Revenue Today" value={inr(txnModel.totalRevenue)} delta={{ value: "commission earned", positive: true }} icon={<IndianRupee className="h-5 w-5" />} tone="sky" />
+          </div>
+        </div>
+
+        {/* Transaction model / calculation logic */}
+        <div className="rounded-xl border border-border bg-card shadow-soft overflow-hidden">
+          <div className="flex flex-wrap items-center justify-between gap-2 p-4 pb-3">
+            <div>
+              <h3 className="text-sm font-bold flex items-center gap-2"><CheckCircle2 className="h-4 w-4" style={{ color: hex }} /> Transaction Model & Calculation Logic</h3>
+              <p className="text-[11px] text-muted-foreground mt-0.5">How transaction counts translate into reported revenue, per service.</p>
+            </div>
+            <span className="rounded-lg border border-dashed border-border bg-muted/40 px-3 py-1.5 text-[11px] font-mono font-semibold text-slate-700">
+              Revenue = Σ (Transactions × Commission rate)
+            </span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/50 text-[11px] uppercase tracking-wider text-muted-foreground">
+                <tr>
+                  <th className="text-left px-4 py-2.5 font-bold">Service</th>
+                  <th className="text-right px-3 py-2.5 font-bold">Transactions</th>
+                  <th className="text-right px-3 py-2.5 font-bold">Rate / Txn</th>
+                  <th className="text-right px-3 py-2.5 font-bold">Calculation</th>
+                  <th className="text-right px-4 py-2.5 font-bold">Revenue</th>
+                  <th className="text-right px-4 py-2.5 font-bold">% Share</th>
+                </tr>
+              </thead>
+              <tbody>
+                {txnModel.model.map((m) => (
+                  <tr key={m.key} className="border-t border-border hover:bg-muted/30">
+                    <td className="px-4 py-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2.5 w-2.5 rounded-sm" style={{ background: m.color }} />
+                        <div className="leading-tight">
+                          <p className="font-semibold">{m.key}</p>
+                          <p className="text-[11px] text-muted-foreground">{m.label}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-3 py-2.5 text-right tabular-nums font-semibold">{m.count.toLocaleString("en-IN")}</td>
+                    <td className="px-3 py-2.5 text-right tabular-nums">{inr(m.rate)}</td>
+                    <td className="px-3 py-2.5 text-right tabular-nums font-mono text-[11px] text-muted-foreground">{m.count.toLocaleString("en-IN")} × {m.rate}</td>
+                    <td className="px-4 py-2.5 text-right font-bold tabular-nums">{inr(m.revenue)}</td>
+                    <td className="px-4 py-2.5 text-right tabular-nums">{txnModel.totalRevenue ? Math.round((m.revenue / txnModel.totalRevenue) * 100) : 0}%</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t-2 border-border bg-muted/40 font-bold">
+                  <td className="px-4 py-2.5">Total</td>
+                  <td className="px-3 py-2.5 text-right tabular-nums">{txnModel.totalCount.toLocaleString("en-IN")}</td>
+                  <td className="px-3 py-2.5 text-right text-muted-foreground">—</td>
+                  <td className="px-3 py-2.5 text-right text-muted-foreground">—</td>
+                  <td className="px-4 py-2.5 text-right tabular-nums">{inr(txnModel.totalRevenue)}</td>
+                  <td className="px-4 py-2.5 text-right tabular-nums">100%</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          <p className="px-4 py-3 text-[11px] text-muted-foreground border-t border-border">
+            Commission rates are per-transaction averages set per service. Revenue for each service is its transaction count multiplied by its rate; the dashboard total is the sum across all services.
+          </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
