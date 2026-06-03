@@ -191,8 +191,8 @@ export function RegionalShell({ cfg, children }: { cfg: RegionalConfig; children
   const dateStr = now.toLocaleDateString("en-IN", { weekday: "short", day: "2-digit", month: "short" });
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
-      <aside className="hidden lg:flex w-64 shrink-0 flex-col">
+    <div className="h-screen overflow-hidden bg-slate-50 flex">
+      <aside className="hidden lg:flex w-64 shrink-0 flex-col h-screen sticky top-0">
         <SidebarBody cfg={cfg} pathname={pathname} />
       </aside>
 
