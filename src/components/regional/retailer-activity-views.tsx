@@ -194,7 +194,7 @@ export function RetailerActivityList({ cfg, rows, district }: { cfg: RegionalCon
                     <tr key={d.id} className="border-t border-border hover:bg-muted/30">
                       <td className="px-3 py-2.5 text-muted-foreground tabular-nums">{i + 1}</td>
                       <td className="px-3 py-2.5">
-                        <Link to={`${cfg.basePath}/retailers/${d.id}`} className="font-mono font-bold text-sky-600 hover:underline inline-flex items-center gap-1">
+                        <Link to={`${cfg.basePath}/retailers/${d.id}` as string} className="font-mono font-bold text-sky-600 hover:underline inline-flex items-center gap-1">
                           {d.id} <ChevronRight className="h-3 w-3" />
                         </Link>
                       </td>
@@ -227,7 +227,7 @@ export function RetailerActivityList({ cfg, rows, district }: { cfg: RegionalCon
                       </td>
                       <td className="px-3 py-2.5">
                         <div className="flex items-center justify-end gap-1">
-                          <button onClick={() => navigate({ to: `${cfg.basePath}/retailers/${d.id}` })} title="View" className="h-7 w-7 rounded-md border border-border bg-white hover:bg-muted flex items-center justify-center text-slate-600"><Eye className="h-3.5 w-3.5" /></button>
+                          <button onClick={() => navigate({ to: `${cfg.basePath}/retailers/${d.id}` as string })} title="View" className="h-7 w-7 rounded-md border border-border bg-white hover:bg-muted flex items-center justify-center text-slate-600"><Eye className="h-3.5 w-3.5" /></button>
                           <button onClick={() => toast.info(`Edit ${d.id} (demo)`)} title="Edit" className="h-7 w-7 rounded-md border border-border bg-white hover:bg-muted flex items-center justify-center text-slate-600"><Pencil className="h-3.5 w-3.5" /></button>
                           {st === "Active" ? (
                             <button onClick={() => setRetailerStatus(d.id, "Suspended")} title="Suspend" className="h-7 w-7 rounded-md border border-rose-200 bg-rose-50 hover:bg-rose-100 flex items-center justify-center text-rose-600"><Ban className="h-3.5 w-3.5" /></button>
@@ -279,7 +279,7 @@ export function RetailerActivityDetail({ cfg }: { cfg: RegionalConfig }) {
       <RegionalShell cfg={cfg}>
         <div className="rounded-xl border border-border bg-card p-10 text-center">
           <p className="text-sm text-muted-foreground">Retailer <span className="font-mono font-bold">{id}</span> not found.</p>
-          <Link to={`${cfg.basePath}/retailers`} className="inline-flex items-center gap-1.5 mt-3 text-sm font-semibold text-sky-600 hover:underline"><ArrowLeft className="h-4 w-4" /> Back to list</Link>
+          <Link to={`${cfg.basePath}/retailers` as string} className="inline-flex items-center gap-1.5 mt-3 text-sm font-semibold text-sky-600 hover:underline"><ArrowLeft className="h-4 w-4" /> Back to list</Link>
         </div>
       </RegionalShell>
     );
@@ -292,7 +292,7 @@ export function RetailerActivityDetail({ cfg }: { cfg: RegionalConfig }) {
   return (
     <RegionalShell cfg={cfg}>
       <div className="space-y-5">
-        <button onClick={() => navigate({ to: `${cfg.basePath}/retailers` })} className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-slate-900">
+        <button onClick={() => navigate({ to: `${cfg.basePath}/retailers` as string })} className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-slate-900">
           <ArrowLeft className="h-4 w-4" /> Back to Retailer Activity
         </button>
 
