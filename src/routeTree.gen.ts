@@ -50,9 +50,11 @@ import { Route as TroServicesRouteImport } from './routes/tro.services'
 import { Route as TroRetailersRouteImport } from './routes/tro.retailers'
 import { Route as TroProfileRouteImport } from './routes/tro.profile'
 import { Route as TroNotificationsRouteImport } from './routes/tro.notifications'
+import { Route as TroFeedbackDeskRouteImport } from './routes/tro.feedback-desk'
 import { Route as TroFeedbackRouteImport } from './routes/tro.feedback'
 import { Route as TroDashboardRouteImport } from './routes/tro.dashboard'
 import { Route as TroCatalogRouteImport } from './routes/tro.catalog'
+import { Route as TroAttendanceRouteImport } from './routes/tro.attendance'
 import { Route as QcSupportRouteImport } from './routes/qc.support'
 import { Route as QcSettingsRouteImport } from './routes/qc.settings'
 import { Route as QcReviewersRouteImport } from './routes/qc.reviewers'
@@ -70,9 +72,11 @@ import { Route as DroServicesRouteImport } from './routes/dro.services'
 import { Route as DroRetailersRouteImport } from './routes/dro.retailers'
 import { Route as DroProfileRouteImport } from './routes/dro.profile'
 import { Route as DroNotificationsRouteImport } from './routes/dro.notifications'
+import { Route as DroFeedbackDeskRouteImport } from './routes/dro.feedback-desk'
 import { Route as DroFeedbackRouteImport } from './routes/dro.feedback'
 import { Route as DroDashboardRouteImport } from './routes/dro.dashboard'
 import { Route as DroCatalogRouteImport } from './routes/dro.catalog'
+import { Route as DroAttendanceRouteImport } from './routes/dro.attendance'
 import { Route as DistributorSupportRouteImport } from './routes/distributor.support'
 import { Route as DistributorSettingsRouteImport } from './routes/distributor.settings'
 import { Route as DistributorServicesRouteImport } from './routes/distributor.services'
@@ -306,6 +310,11 @@ const TroNotificationsRoute = TroNotificationsRouteImport.update({
   path: '/tro/notifications',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TroFeedbackDeskRoute = TroFeedbackDeskRouteImport.update({
+  id: '/tro/feedback-desk',
+  path: '/tro/feedback-desk',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TroFeedbackRoute = TroFeedbackRouteImport.update({
   id: '/tro/feedback',
   path: '/tro/feedback',
@@ -319,6 +328,11 @@ const TroDashboardRoute = TroDashboardRouteImport.update({
 const TroCatalogRoute = TroCatalogRouteImport.update({
   id: '/tro/catalog',
   path: '/tro/catalog',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TroAttendanceRoute = TroAttendanceRouteImport.update({
+  id: '/tro/attendance',
+  path: '/tro/attendance',
   getParentRoute: () => rootRouteImport,
 } as any)
 const QcSupportRoute = QcSupportRouteImport.update({
@@ -406,6 +420,11 @@ const DroNotificationsRoute = DroNotificationsRouteImport.update({
   path: '/dro/notifications',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DroFeedbackDeskRoute = DroFeedbackDeskRouteImport.update({
+  id: '/dro/feedback-desk',
+  path: '/dro/feedback-desk',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DroFeedbackRoute = DroFeedbackRouteImport.update({
   id: '/dro/feedback',
   path: '/dro/feedback',
@@ -419,6 +438,11 @@ const DroDashboardRoute = DroDashboardRouteImport.update({
 const DroCatalogRoute = DroCatalogRouteImport.update({
   id: '/dro/catalog',
   path: '/dro/catalog',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DroAttendanceRoute = DroAttendanceRouteImport.update({
+  id: '/dro/attendance',
+  path: '/dro/attendance',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DistributorSupportRoute = DistributorSupportRouteImport.update({
@@ -617,9 +641,11 @@ export interface FileRoutesByFullPath {
   '/distributor/services': typeof DistributorServicesRouteWithChildren
   '/distributor/settings': typeof DistributorSettingsRoute
   '/distributor/support': typeof DistributorSupportRoute
+  '/dro/attendance': typeof DroAttendanceRoute
   '/dro/catalog': typeof DroCatalogRoute
   '/dro/dashboard': typeof DroDashboardRoute
   '/dro/feedback': typeof DroFeedbackRoute
+  '/dro/feedback-desk': typeof DroFeedbackDeskRoute
   '/dro/notifications': typeof DroNotificationsRoute
   '/dro/profile': typeof DroProfileRoute
   '/dro/retailers': typeof DroRetailersRouteWithChildren
@@ -637,9 +663,11 @@ export interface FileRoutesByFullPath {
   '/qc/reviewers': typeof QcReviewersRoute
   '/qc/settings': typeof QcSettingsRoute
   '/qc/support': typeof QcSupportRoute
+  '/tro/attendance': typeof TroAttendanceRoute
   '/tro/catalog': typeof TroCatalogRoute
   '/tro/dashboard': typeof TroDashboardRoute
   '/tro/feedback': typeof TroFeedbackRoute
+  '/tro/feedback-desk': typeof TroFeedbackDeskRoute
   '/tro/notifications': typeof TroNotificationsRoute
   '/tro/profile': typeof TroProfileRoute
   '/tro/retailers': typeof TroRetailersRouteWithChildren
@@ -710,9 +738,11 @@ export interface FileRoutesByTo {
   '/distributor/services': typeof DistributorServicesRouteWithChildren
   '/distributor/settings': typeof DistributorSettingsRoute
   '/distributor/support': typeof DistributorSupportRoute
+  '/dro/attendance': typeof DroAttendanceRoute
   '/dro/catalog': typeof DroCatalogRoute
   '/dro/dashboard': typeof DroDashboardRoute
   '/dro/feedback': typeof DroFeedbackRoute
+  '/dro/feedback-desk': typeof DroFeedbackDeskRoute
   '/dro/notifications': typeof DroNotificationsRoute
   '/dro/profile': typeof DroProfileRoute
   '/dro/retailers': typeof DroRetailersRouteWithChildren
@@ -730,9 +760,11 @@ export interface FileRoutesByTo {
   '/qc/reviewers': typeof QcReviewersRoute
   '/qc/settings': typeof QcSettingsRoute
   '/qc/support': typeof QcSupportRoute
+  '/tro/attendance': typeof TroAttendanceRoute
   '/tro/catalog': typeof TroCatalogRoute
   '/tro/dashboard': typeof TroDashboardRoute
   '/tro/feedback': typeof TroFeedbackRoute
+  '/tro/feedback-desk': typeof TroFeedbackDeskRoute
   '/tro/notifications': typeof TroNotificationsRoute
   '/tro/profile': typeof TroProfileRoute
   '/tro/retailers': typeof TroRetailersRouteWithChildren
@@ -804,9 +836,11 @@ export interface FileRoutesById {
   '/distributor/services': typeof DistributorServicesRouteWithChildren
   '/distributor/settings': typeof DistributorSettingsRoute
   '/distributor/support': typeof DistributorSupportRoute
+  '/dro/attendance': typeof DroAttendanceRoute
   '/dro/catalog': typeof DroCatalogRoute
   '/dro/dashboard': typeof DroDashboardRoute
   '/dro/feedback': typeof DroFeedbackRoute
+  '/dro/feedback-desk': typeof DroFeedbackDeskRoute
   '/dro/notifications': typeof DroNotificationsRoute
   '/dro/profile': typeof DroProfileRoute
   '/dro/retailers': typeof DroRetailersRouteWithChildren
@@ -824,9 +858,11 @@ export interface FileRoutesById {
   '/qc/reviewers': typeof QcReviewersRoute
   '/qc/settings': typeof QcSettingsRoute
   '/qc/support': typeof QcSupportRoute
+  '/tro/attendance': typeof TroAttendanceRoute
   '/tro/catalog': typeof TroCatalogRoute
   '/tro/dashboard': typeof TroDashboardRoute
   '/tro/feedback': typeof TroFeedbackRoute
+  '/tro/feedback-desk': typeof TroFeedbackDeskRoute
   '/tro/notifications': typeof TroNotificationsRoute
   '/tro/profile': typeof TroProfileRoute
   '/tro/retailers': typeof TroRetailersRouteWithChildren
@@ -899,9 +935,11 @@ export interface FileRouteTypes {
     | '/distributor/services'
     | '/distributor/settings'
     | '/distributor/support'
+    | '/dro/attendance'
     | '/dro/catalog'
     | '/dro/dashboard'
     | '/dro/feedback'
+    | '/dro/feedback-desk'
     | '/dro/notifications'
     | '/dro/profile'
     | '/dro/retailers'
@@ -919,9 +957,11 @@ export interface FileRouteTypes {
     | '/qc/reviewers'
     | '/qc/settings'
     | '/qc/support'
+    | '/tro/attendance'
     | '/tro/catalog'
     | '/tro/dashboard'
     | '/tro/feedback'
+    | '/tro/feedback-desk'
     | '/tro/notifications'
     | '/tro/profile'
     | '/tro/retailers'
@@ -992,9 +1032,11 @@ export interface FileRouteTypes {
     | '/distributor/services'
     | '/distributor/settings'
     | '/distributor/support'
+    | '/dro/attendance'
     | '/dro/catalog'
     | '/dro/dashboard'
     | '/dro/feedback'
+    | '/dro/feedback-desk'
     | '/dro/notifications'
     | '/dro/profile'
     | '/dro/retailers'
@@ -1012,9 +1054,11 @@ export interface FileRouteTypes {
     | '/qc/reviewers'
     | '/qc/settings'
     | '/qc/support'
+    | '/tro/attendance'
     | '/tro/catalog'
     | '/tro/dashboard'
     | '/tro/feedback'
+    | '/tro/feedback-desk'
     | '/tro/notifications'
     | '/tro/profile'
     | '/tro/retailers'
@@ -1085,9 +1129,11 @@ export interface FileRouteTypes {
     | '/distributor/services'
     | '/distributor/settings'
     | '/distributor/support'
+    | '/dro/attendance'
     | '/dro/catalog'
     | '/dro/dashboard'
     | '/dro/feedback'
+    | '/dro/feedback-desk'
     | '/dro/notifications'
     | '/dro/profile'
     | '/dro/retailers'
@@ -1105,9 +1151,11 @@ export interface FileRouteTypes {
     | '/qc/reviewers'
     | '/qc/settings'
     | '/qc/support'
+    | '/tro/attendance'
     | '/tro/catalog'
     | '/tro/dashboard'
     | '/tro/feedback'
+    | '/tro/feedback-desk'
     | '/tro/notifications'
     | '/tro/profile'
     | '/tro/retailers'
@@ -1179,9 +1227,11 @@ export interface RootRouteChildren {
   DistributorServicesRoute: typeof DistributorServicesRouteWithChildren
   DistributorSettingsRoute: typeof DistributorSettingsRoute
   DistributorSupportRoute: typeof DistributorSupportRoute
+  DroAttendanceRoute: typeof DroAttendanceRoute
   DroCatalogRoute: typeof DroCatalogRoute
   DroDashboardRoute: typeof DroDashboardRoute
   DroFeedbackRoute: typeof DroFeedbackRoute
+  DroFeedbackDeskRoute: typeof DroFeedbackDeskRoute
   DroNotificationsRoute: typeof DroNotificationsRoute
   DroProfileRoute: typeof DroProfileRoute
   DroRetailersRoute: typeof DroRetailersRouteWithChildren
@@ -1199,9 +1249,11 @@ export interface RootRouteChildren {
   QcReviewersRoute: typeof QcReviewersRoute
   QcSettingsRoute: typeof QcSettingsRoute
   QcSupportRoute: typeof QcSupportRoute
+  TroAttendanceRoute: typeof TroAttendanceRoute
   TroCatalogRoute: typeof TroCatalogRoute
   TroDashboardRoute: typeof TroDashboardRoute
   TroFeedbackRoute: typeof TroFeedbackRoute
+  TroFeedbackDeskRoute: typeof TroFeedbackDeskRoute
   TroNotificationsRoute: typeof TroNotificationsRoute
   TroProfileRoute: typeof TroProfileRoute
   TroRetailersRoute: typeof TroRetailersRouteWithChildren
@@ -1499,6 +1551,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TroNotificationsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tro/feedback-desk': {
+      id: '/tro/feedback-desk'
+      path: '/tro/feedback-desk'
+      fullPath: '/tro/feedback-desk'
+      preLoaderRoute: typeof TroFeedbackDeskRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/tro/feedback': {
       id: '/tro/feedback'
       path: '/tro/feedback'
@@ -1518,6 +1577,13 @@ declare module '@tanstack/react-router' {
       path: '/tro/catalog'
       fullPath: '/tro/catalog'
       preLoaderRoute: typeof TroCatalogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tro/attendance': {
+      id: '/tro/attendance'
+      path: '/tro/attendance'
+      fullPath: '/tro/attendance'
+      preLoaderRoute: typeof TroAttendanceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/qc/support': {
@@ -1639,6 +1705,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DroNotificationsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dro/feedback-desk': {
+      id: '/dro/feedback-desk'
+      path: '/dro/feedback-desk'
+      fullPath: '/dro/feedback-desk'
+      preLoaderRoute: typeof DroFeedbackDeskRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dro/feedback': {
       id: '/dro/feedback'
       path: '/dro/feedback'
@@ -1658,6 +1731,13 @@ declare module '@tanstack/react-router' {
       path: '/dro/catalog'
       fullPath: '/dro/catalog'
       preLoaderRoute: typeof DroCatalogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dro/attendance': {
+      id: '/dro/attendance'
+      path: '/dro/attendance'
+      fullPath: '/dro/attendance'
+      preLoaderRoute: typeof DroAttendanceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/distributor/support': {
@@ -1967,9 +2047,11 @@ const rootRouteChildren: RootRouteChildren = {
   DistributorServicesRoute: DistributorServicesRouteWithChildren,
   DistributorSettingsRoute: DistributorSettingsRoute,
   DistributorSupportRoute: DistributorSupportRoute,
+  DroAttendanceRoute: DroAttendanceRoute,
   DroCatalogRoute: DroCatalogRoute,
   DroDashboardRoute: DroDashboardRoute,
   DroFeedbackRoute: DroFeedbackRoute,
+  DroFeedbackDeskRoute: DroFeedbackDeskRoute,
   DroNotificationsRoute: DroNotificationsRoute,
   DroProfileRoute: DroProfileRoute,
   DroRetailersRoute: DroRetailersRouteWithChildren,
@@ -1987,9 +2069,11 @@ const rootRouteChildren: RootRouteChildren = {
   QcReviewersRoute: QcReviewersRoute,
   QcSettingsRoute: QcSettingsRoute,
   QcSupportRoute: QcSupportRoute,
+  TroAttendanceRoute: TroAttendanceRoute,
   TroCatalogRoute: TroCatalogRoute,
   TroDashboardRoute: TroDashboardRoute,
   TroFeedbackRoute: TroFeedbackRoute,
+  TroFeedbackDeskRoute: TroFeedbackDeskRoute,
   TroNotificationsRoute: TroNotificationsRoute,
   TroProfileRoute: TroProfileRoute,
   TroRetailersRoute: TroRetailersRouteWithChildren,
