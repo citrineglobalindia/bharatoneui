@@ -250,8 +250,9 @@ export function RetailerActivityList({ cfg, rows, district }: { cfg: RegionalCon
               <tbody>
                 {filtered.map((d, i) => {
                   const st = effStatus(d.id, d.status);
+                  const av = avatarFor(d.name);
                   return (
-                    <tr key={d.id} className="border-t border-border hover:bg-muted/30">
+                    <tr key={d.id} className={`border-t border-border transition-colors hover:bg-sky-50/60 ${i % 2 ? "bg-muted/20" : ""}`}>
                       <td className="px-3 py-2.5 text-muted-foreground tabular-nums">{i + 1}</td>
                       <td className="px-3 py-2.5">
                         <Link to={`${cfg.basePath}/retailers/${d.id}` as string} className="font-mono font-bold text-sky-600 hover:underline inline-flex items-center gap-1">
@@ -259,8 +260,13 @@ export function RetailerActivityList({ cfg, rows, district }: { cfg: RegionalCon
                         </Link>
                       </td>
                       <td className="px-3 py-2.5">
-                        <p className="font-semibold">{d.name}</p>
-                        <p className="text-[11px] text-muted-foreground">{d.shop}</p>
+                        <div className="flex items-center gap-2.5">
+                          <div className={`h-8 w-8 shrink-0 rounded-full ${av.tone} text-white text-[11px] font-bold flex items-center justify-center shadow-soft`}>{av.init}</div>
+                          <div>
+                            <p className="font-semibold">{d.name}</p>
+                            <p className="text-[11px] text-muted-foreground">{d.shop}</p>
+                          </div>
+                        </div>
                       </td>
                       <td className="px-3 py-2.5 tabular-nums">{d.phone}</td>
                       {district && <td className="px-3 py-2.5 text-xs">{d.district}</td>}
