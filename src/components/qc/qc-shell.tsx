@@ -181,8 +181,8 @@ export function QcShell({ children }: { children: React.ReactNode }) {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
-      <aside className="hidden lg:flex w-64 shrink-0 flex-col">
+    <div className="h-screen overflow-hidden bg-slate-50 flex">
+      <aside className="hidden lg:flex w-64 shrink-0 flex-col h-screen sticky top-0">
         <SidebarBody pathname={pathname} />
       </aside>
 
