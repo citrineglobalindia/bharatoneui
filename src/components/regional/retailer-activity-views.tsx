@@ -15,7 +15,6 @@ import {
 } from "@/components/regional/regional-mock-data";
 
 const accentTone = (cfg: RegionalConfig): "rose" | "saffron" => (cfg.accent === "rose" ? "rose" : "saffron");
-const accentBtn = (cfg: RegionalConfig) => (cfg.accent === "rose" ? "bg-rose-600 hover:bg-rose-700" : "bg-amber-600 hover:bg-amber-700");
 
 const STATUS_STYLE: Record<RetailerStatus, string> = {
   Active: "bg-emerald-50 text-emerald-700 border-emerald-200",
