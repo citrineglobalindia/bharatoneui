@@ -418,7 +418,7 @@ export function RetailerActivityDetail({ cfg }: { cfg: RegionalConfig }) {
       <RegionalShell cfg={cfg}>
         <div className="rounded-xl border border-border bg-card p-10 text-center">
           <p className="text-sm text-muted-foreground">Retailer <span className="font-mono font-bold">{id}</span> not found.</p>
-          <Link to={`${cfg.basePath}/retailers` as string} className="inline-flex items-center gap-1.5 mt-3 text-sm font-semibold text-sky-600 hover:underline"><ArrowLeft className="h-4 w-4" /> Back to list</Link>
+          <Link to={retailerListRoute(cfg)} className="inline-flex items-center gap-1.5 mt-3 text-sm font-semibold text-sky-600 hover:underline"><ArrowLeft className="h-4 w-4" /> Back to list</Link>
         </div>
       </RegionalShell>
     );
@@ -431,7 +431,7 @@ export function RetailerActivityDetail({ cfg }: { cfg: RegionalConfig }) {
   return (
     <RegionalShell cfg={cfg}>
       <div className="space-y-5">
-        <button onClick={() => navigate({ to: `${cfg.basePath}/retailers` as string })} className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-slate-900">
+        <button onClick={() => navigate({ to: retailerListRoute(cfg) })} className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-slate-900">
           <ArrowLeft className="h-4 w-4" /> Back to Retailer Activity
         </button>
 
@@ -581,6 +581,15 @@ export function RetailerActivityDetail({ cfg }: { cfg: RegionalConfig }) {
         </div>
       </div>
     </RegionalShell>
+  );
+}
+
+function Field({ label, name, defaultValue }: { label: string; name: string; defaultValue: string }) {
+  return (
+    <label className="block space-y-1.5">
+      <span className="text-xs font-bold text-slate-600">{label}</span>
+      <input name={name} defaultValue={defaultValue} className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm font-semibold outline-none focus-visible:ring-4 focus-visible:ring-slate-300/40" />
+    </label>
   );
 }
 
