@@ -359,6 +359,32 @@ export function RetailerActivityList({ cfg, rows, district }: { cfg: RegionalCon
             </table>
           </div>
         </div>
+
+        {editing && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4 backdrop-blur-sm" role="dialog" aria-modal="true">
+            <form onSubmit={saveRetailerProfile} className="w-full max-w-2xl rounded-2xl border border-border bg-white p-5 shadow-2xl">
+              <div className="flex items-start justify-between gap-3 border-b border-border pb-3">
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Edit retailer profile</p>
+                  <h3 className="mt-0.5 text-lg font-extrabold">{editing.id}</h3>
+                </div>
+                <button type="button" onClick={() => setEditing(null)} className="rounded-lg border border-border px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-muted">Close</button>
+              </div>
+              <div className="grid gap-3 py-4 sm:grid-cols-2">
+                <Field label="Retailer Name" name="name" defaultValue={editing.name} />
+                <Field label="Shop Name" name="shop" defaultValue={editing.shop} />
+                <Field label="Mobile Number" name="phone" defaultValue={editing.phone} />
+                <Field label="Email" name="email" defaultValue={editing.email} />
+                <div className="sm:col-span-2"><Field label="Address" name="address" defaultValue={editing.address} /></div>
+              </div>
+              <div className="flex flex-wrap justify-end gap-2 border-t border-border pt-3">
+                <button type="button" onClick={() => setRetailerStatus(editing.id, "Active")} className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700 hover:bg-emerald-100">Activate</button>
+                <button type="button" onClick={() => setRetailerStatus(editing.id, "Suspended")} className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-bold text-rose-700 hover:bg-rose-100">Suspend</button>
+                <button type="submit" className="rounded-lg bg-slate-900 px-5 py-2 text-sm font-bold text-white shadow-elev hover:bg-slate-800">Save Profile</button>
+              </div>
+            </form>
+          </div>
+        )}
       </div>
     </RegionalShell>
   );
