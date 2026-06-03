@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {
@@ -11,10 +11,13 @@ import { PageHeader } from "@/components/retailer/page-header";
 import { StatCard } from "@/components/retailer/stat-card";
 import {
   type RetailerActivity, type RetailerStatus, type WalletTxn,
-  inr, fmtDate, fmtDateTime, enrichRetailer, activitySummary, findRetailer, walletHistory,
+  type RetailerDetail, inr, fmtDate, fmtDateTime, enrichRetailer, findRetailer, walletHistory,
 } from "@/components/regional/regional-mock-data";
 
 const accentTone = (cfg: RegionalConfig): "rose" | "saffron" => (cfg.accent === "rose" ? "rose" : "saffron");
+const retailerListRoute = (cfg: RegionalConfig) => (cfg.basePath === "/tro" ? "/tro/retailers" : "/dro/retailers");
+const retailerDetailRoute = (cfg: RegionalConfig) => (cfg.basePath === "/tro" ? "/tro/retailers/$id" : "/dro/retailers/$id");
+type EditableRetailerProfile = Pick<RetailerDetail, "name" | "shop" | "phone" | "email" | "address">;
 
 function HeroStat({ label, value, accent }: { label: string; value: string; accent: string }) {
   return (
@@ -55,8 +58,30 @@ const TXN_STATUS_STYLE: Record<WalletTxn["status"], string> = {
 /* ===================== Listing Screen ===================== */
 export function RetailerActivityList({ cfg, rows, district }: { cfg: RegionalConfig; rows: RetailerActivity[]; district: boolean }) {
   const navigate = useNavigate();
-  const data = useMemo(() => rows.map(enrichRetailer), [rows]);
-  const summary = useMemo(() => activitySummary(rows), [rows]);
+  const [localStatus, setLocalStatus] = useState<Record<string, RetailerStatus>>({});
+  const [profileDrafts, setProfileDrafts] = useState<Record<string, EditableRetailerProfile>>({});
+  const [editing, setEditing] = useState<RetailerDetail | null>(null);
+  const baseData = useMemo(() => rows.map(enrichRetailer), [rows]);
+  const data = useMemo(
+    () => baseData.map((d) => ({ ...d, ...(profileDrafts[d.id] ?? {}), status: localStatus[d.id] ?? d.status })),
+    [baseData, profileDrafts, localStatus],
+  );
+  const summary = useMemo(() => {
+    const acc = (f: (d: RetailerDetail) => number) => data.reduce((a, d) => a + f(d), 0);
+    return {
+      totalRetailers: data.length,
+      activeRetailers: data.filter((d) => d.status === "Active").length,
+      inactiveRetailers: data.filter((d) => d.status !== "Active").length,
+      totalTxns: acc((d) => d.totalTxns),
+      successTxns: acc((d) => d.successTxns),
+      pendingTxns: acc((d) => d.pendingTxns),
+      failedTxns: acc((d) => d.failedTxns),
+      walletBalance: acc((d) => d.walletBalance),
+      walletCredit: acc((d) => d.walletCredit),
+      walletDebit: acc((d) => d.walletDebit),
+      commission: acc((d) => d.commissionEarned),
+    };
+  }, [data]);
 
   const [query, setQuery] = useState("");
   const [taluk, setTaluk] = useState("all");
@@ -65,7 +90,6 @@ export function RetailerActivityList({ cfg, rows, district }: { cfg: RegionalCon
   const [txnStatus, setTxnStatus] = useState("all");
   const [minBal, setMinBal] = useState("");
   const [maxBal, setMaxBal] = useState("");
-  const [localStatus, setLocalStatus] = useState<Record<string, RetailerStatus>>({});
 
   const taluks = useMemo(() => ["all", ...Array.from(new Set(rows.map((r) => r.taluk)))], [rows]);
   const services = useMemo(() => ["all", ...Array.from(new Set(data.flatMap((d) => d.serviceCategories)))].filter((s) => s !== "—"), [data]);
@@ -92,6 +116,26 @@ export function RetailerActivityList({ cfg, rows, district }: { cfg: RegionalCon
   const setRetailerStatus = (id: string, next: RetailerStatus) => {
     setLocalStatus((m) => ({ ...m, [id]: next }));
     toast.success(`Retailer ${id} marked ${next}`);
+  };
+
+  const saveRetailerProfile = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!editing) return;
+    const form = new FormData(event.currentTarget);
+    const next: EditableRetailerProfile = {
+      name: String(form.get("name") ?? "").trim(),
+      shop: String(form.get("shop") ?? "").trim(),
+      phone: String(form.get("phone") ?? "").trim(),
+      email: String(form.get("email") ?? "").trim(),
+      address: String(form.get("address") ?? "").trim(),
+    };
+    if (!next.name || !next.shop || !next.phone) {
+      toast.error("Name, shop and phone are required");
+      return;
+    }
+    setProfileDrafts((m) => ({ ...m, [editing.id]: next }));
+    setEditing(null);
+    toast.success("Retailer profile updated", { description: editing.id });
   };
 
   const resetFilters = () => {
