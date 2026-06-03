@@ -106,20 +106,56 @@ export function RetailerActivityList({ cfg, rows, district }: { cfg: RegionalCon
           }
         />
 
-        {/* Summary cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <StatCard label="Total Retailers" value={String(summary.totalRetailers)} icon={<Users className="h-5 w-5" />} tone={accentTone(cfg)} />
-          <StatCard label="Active Retailers" value={String(summary.activeRetailers)} icon={<Store className="h-5 w-5" />} tone="green" />
-          <StatCard label="Inactive Retailers" value={String(summary.inactiveRetailers)} icon={<Ban className="h-5 w-5" />} tone="rose" />
-          <StatCard label="Total Transactions" value={summary.totalTxns.toLocaleString("en-IN")} icon={<Activity className="h-5 w-5" />} tone="violet" />
-          <StatCard label="Successful Txns" value={summary.successTxns.toLocaleString("en-IN")} icon={<CheckCircle2 className="h-5 w-5" />} tone="green" />
-          <StatCard label="Pending Txns" value={summary.pendingTxns.toLocaleString("en-IN")} icon={<Clock className="h-5 w-5" />} tone="saffron" />
-          <StatCard label="Failed Txns" value={summary.failedTxns.toLocaleString("en-IN")} icon={<XCircle className="h-5 w-5" />} tone="rose" />
-          <StatCard label="Total Wallet Balance" value={inr(summary.walletBalance)} icon={<Wallet className="h-5 w-5" />} tone="sky" />
-          <StatCard label="Total Wallet Credits" value={inr(summary.walletCredit)} icon={<ArrowDownLeft className="h-5 w-5" />} tone="green" />
-          <StatCard label="Total Wallet Debits" value={inr(summary.walletDebit)} icon={<ArrowUpRight className="h-5 w-5" />} tone="rose" />
-          <StatCard label="Commission Generated" value={inr(summary.commission)} icon={<IndianRupee className="h-5 w-5" />} tone="violet" />
+        {/* Hero overview banner */}
+        <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-5 text-white shadow-elev">
+          <div className="absolute -right-12 -top-12 h-44 w-44 rounded-full bg-white/5 blur-2xl" />
+          <div className="absolute -bottom-16 -left-10 h-48 w-48 rounded-full bg-orange-500/10 blur-3xl" />
+          <div className="relative flex flex-wrap items-center gap-6">
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-white/60">Network Snapshot</p>
+              <p className="font-display text-3xl font-extrabold mt-1">{summary.totalRetailers} Retailers</p>
+              <p className="text-xs text-white/70 mt-0.5">{summary.totalTxns.toLocaleString("en-IN")} transactions · {inr(summary.commission)} commission</p>
+            </div>
+            <div className="ml-auto flex flex-wrap gap-5">
+              <HeroStat label="Active" value={String(summary.activeRetailers)} accent="text-emerald-300" />
+              <HeroStat label="Inactive" value={String(summary.inactiveRetailers)} accent="text-rose-300" />
+              <HeroStat label="Wallet Balance" value={inr(summary.walletBalance)} accent="text-sky-300" />
+              <HeroStat label="Success Rate" value={`${summary.totalTxns ? Math.round((summary.successTxns / summary.totalTxns) * 100) : 0}%`} accent="text-orange-300" />
+            </div>
+          </div>
         </div>
+
+        {/* Retailers */}
+        <section className="space-y-2.5">
+          <SectionLabel icon={<Users className="h-3.5 w-3.5" />} text="Retailers" />
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+            <StatCard label="Total Retailers" value={String(summary.totalRetailers)} icon={<Users className="h-5 w-5" />} tone={accentTone(cfg)} />
+            <StatCard label="Active Retailers" value={String(summary.activeRetailers)} icon={<Store className="h-5 w-5" />} tone="green" />
+            <StatCard label="Inactive Retailers" value={String(summary.inactiveRetailers)} icon={<Ban className="h-5 w-5" />} tone="rose" />
+          </div>
+        </section>
+
+        {/* Transactions */}
+        <section className="space-y-2.5">
+          <SectionLabel icon={<Activity className="h-3.5 w-3.5" />} text="Transactions" />
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <StatCard label="Total Transactions" value={summary.totalTxns.toLocaleString("en-IN")} icon={<Activity className="h-5 w-5" />} tone="violet" />
+            <StatCard label="Successful Txns" value={summary.successTxns.toLocaleString("en-IN")} icon={<CheckCircle2 className="h-5 w-5" />} tone="green" />
+            <StatCard label="Pending Txns" value={summary.pendingTxns.toLocaleString("en-IN")} icon={<Clock className="h-5 w-5" />} tone="saffron" />
+            <StatCard label="Failed Txns" value={summary.failedTxns.toLocaleString("en-IN")} icon={<XCircle className="h-5 w-5" />} tone="rose" />
+          </div>
+        </section>
+
+        {/* Wallet */}
+        <section className="space-y-2.5">
+          <SectionLabel icon={<Wallet className="h-3.5 w-3.5" />} text="Wallet & Commission" />
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <StatCard label="Total Wallet Balance" value={inr(summary.walletBalance)} icon={<Wallet className="h-5 w-5" />} tone="sky" />
+            <StatCard label="Total Wallet Credits" value={inr(summary.walletCredit)} icon={<ArrowDownLeft className="h-5 w-5" />} tone="green" />
+            <StatCard label="Total Wallet Debits" value={inr(summary.walletDebit)} icon={<ArrowUpRight className="h-5 w-5" />} tone="rose" />
+            <StatCard label="Commission Generated" value={inr(summary.commission)} icon={<IndianRupee className="h-5 w-5" />} tone="violet" />
+          </div>
+        </section>
 
         {/* Advanced filters */}
         <div className="rounded-xl border border-border bg-card p-3 shadow-soft space-y-3">
