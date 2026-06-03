@@ -94,7 +94,9 @@ import { Route as AccountantLedgerRouteImport } from './routes/accountant.ledger
 import { Route as AccountantFeedbackRouteImport } from './routes/accountant.feedback'
 import { Route as AccountantDashboardRouteImport } from './routes/accountant.dashboard'
 import { Route as AccountantChangePasswordRouteImport } from './routes/accountant.change-password'
+import { Route as TroRetailersIdRouteImport } from './routes/tro.retailers.$id'
 import { Route as QcKycReviewIdRouteImport } from './routes/qc.kyc-review.$id'
+import { Route as DroRetailersIdRouteImport } from './routes/dro.retailers.$id'
 import { Route as DistributorServicesKeyRouteImport } from './routes/distributor.services.$key'
 import { Route as DistributorRetailersIdRouteImport } from './routes/distributor.retailers.$id'
 import { Route as DistributorOfficersIdRouteImport } from './routes/distributor.officers.$id'
@@ -526,10 +528,20 @@ const AccountantChangePasswordRoute =
     path: '/accountant/change-password',
     getParentRoute: () => rootRouteImport,
   } as any)
+const TroRetailersIdRoute = TroRetailersIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => TroRetailersRoute,
+} as any)
 const QcKycReviewIdRoute = QcKycReviewIdRouteImport.update({
   id: '/qc/kyc-review/$id',
   path: '/qc/kyc-review/$id',
   getParentRoute: () => rootRouteImport,
+} as any)
+const DroRetailersIdRoute = DroRetailersIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => DroRetailersRoute,
 } as any)
 const DistributorServicesKeyRoute = DistributorServicesKeyRouteImport.update({
   id: '/$key',
@@ -610,7 +622,7 @@ export interface FileRoutesByFullPath {
   '/dro/feedback': typeof DroFeedbackRoute
   '/dro/notifications': typeof DroNotificationsRoute
   '/dro/profile': typeof DroProfileRoute
-  '/dro/retailers': typeof DroRetailersRoute
+  '/dro/retailers': typeof DroRetailersRouteWithChildren
   '/dro/services': typeof DroServicesRoute
   '/dro/support': typeof DroSupportRoute
   '/qc/approved': typeof QcApprovedRoute
@@ -630,13 +642,15 @@ export interface FileRoutesByFullPath {
   '/tro/feedback': typeof TroFeedbackRoute
   '/tro/notifications': typeof TroNotificationsRoute
   '/tro/profile': typeof TroProfileRoute
-  '/tro/retailers': typeof TroRetailersRoute
+  '/tro/retailers': typeof TroRetailersRouteWithChildren
   '/tro/services': typeof TroServicesRoute
   '/tro/support': typeof TroSupportRoute
   '/distributor/officers/$id': typeof DistributorOfficersIdRoute
   '/distributor/retailers/$id': typeof DistributorRetailersIdRoute
   '/distributor/services/$key': typeof DistributorServicesKeyRoute
+  '/dro/retailers/$id': typeof DroRetailersIdRoute
   '/qc/kyc-review/$id': typeof QcKycReviewIdRoute
+  '/tro/retailers/$id': typeof TroRetailersIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -701,7 +715,7 @@ export interface FileRoutesByTo {
   '/dro/feedback': typeof DroFeedbackRoute
   '/dro/notifications': typeof DroNotificationsRoute
   '/dro/profile': typeof DroProfileRoute
-  '/dro/retailers': typeof DroRetailersRoute
+  '/dro/retailers': typeof DroRetailersRouteWithChildren
   '/dro/services': typeof DroServicesRoute
   '/dro/support': typeof DroSupportRoute
   '/qc/approved': typeof QcApprovedRoute
@@ -721,13 +735,15 @@ export interface FileRoutesByTo {
   '/tro/feedback': typeof TroFeedbackRoute
   '/tro/notifications': typeof TroNotificationsRoute
   '/tro/profile': typeof TroProfileRoute
-  '/tro/retailers': typeof TroRetailersRoute
+  '/tro/retailers': typeof TroRetailersRouteWithChildren
   '/tro/services': typeof TroServicesRoute
   '/tro/support': typeof TroSupportRoute
   '/distributor/officers/$id': typeof DistributorOfficersIdRoute
   '/distributor/retailers/$id': typeof DistributorRetailersIdRoute
   '/distributor/services/$key': typeof DistributorServicesKeyRoute
+  '/dro/retailers/$id': typeof DroRetailersIdRoute
   '/qc/kyc-review/$id': typeof QcKycReviewIdRoute
+  '/tro/retailers/$id': typeof TroRetailersIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -793,7 +809,7 @@ export interface FileRoutesById {
   '/dro/feedback': typeof DroFeedbackRoute
   '/dro/notifications': typeof DroNotificationsRoute
   '/dro/profile': typeof DroProfileRoute
-  '/dro/retailers': typeof DroRetailersRoute
+  '/dro/retailers': typeof DroRetailersRouteWithChildren
   '/dro/services': typeof DroServicesRoute
   '/dro/support': typeof DroSupportRoute
   '/qc/approved': typeof QcApprovedRoute
@@ -813,13 +829,15 @@ export interface FileRoutesById {
   '/tro/feedback': typeof TroFeedbackRoute
   '/tro/notifications': typeof TroNotificationsRoute
   '/tro/profile': typeof TroProfileRoute
-  '/tro/retailers': typeof TroRetailersRoute
+  '/tro/retailers': typeof TroRetailersRouteWithChildren
   '/tro/services': typeof TroServicesRoute
   '/tro/support': typeof TroSupportRoute
   '/distributor/officers/$id': typeof DistributorOfficersIdRoute
   '/distributor/retailers/$id': typeof DistributorRetailersIdRoute
   '/distributor/services/$key': typeof DistributorServicesKeyRoute
+  '/dro/retailers/$id': typeof DroRetailersIdRoute
   '/qc/kyc-review/$id': typeof QcKycReviewIdRoute
+  '/tro/retailers/$id': typeof TroRetailersIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -912,7 +930,9 @@ export interface FileRouteTypes {
     | '/distributor/officers/$id'
     | '/distributor/retailers/$id'
     | '/distributor/services/$key'
+    | '/dro/retailers/$id'
     | '/qc/kyc-review/$id'
+    | '/tro/retailers/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -1003,7 +1023,9 @@ export interface FileRouteTypes {
     | '/distributor/officers/$id'
     | '/distributor/retailers/$id'
     | '/distributor/services/$key'
+    | '/dro/retailers/$id'
     | '/qc/kyc-review/$id'
+    | '/tro/retailers/$id'
   id:
     | '__root__'
     | '/'
@@ -1094,7 +1116,9 @@ export interface FileRouteTypes {
     | '/distributor/officers/$id'
     | '/distributor/retailers/$id'
     | '/distributor/services/$key'
+    | '/dro/retailers/$id'
     | '/qc/kyc-review/$id'
+    | '/tro/retailers/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1160,7 +1184,7 @@ export interface RootRouteChildren {
   DroFeedbackRoute: typeof DroFeedbackRoute
   DroNotificationsRoute: typeof DroNotificationsRoute
   DroProfileRoute: typeof DroProfileRoute
-  DroRetailersRoute: typeof DroRetailersRoute
+  DroRetailersRoute: typeof DroRetailersRouteWithChildren
   DroServicesRoute: typeof DroServicesRoute
   DroSupportRoute: typeof DroSupportRoute
   QcApprovedRoute: typeof QcApprovedRoute
@@ -1180,7 +1204,7 @@ export interface RootRouteChildren {
   TroFeedbackRoute: typeof TroFeedbackRoute
   TroNotificationsRoute: typeof TroNotificationsRoute
   TroProfileRoute: typeof TroProfileRoute
-  TroRetailersRoute: typeof TroRetailersRoute
+  TroRetailersRoute: typeof TroRetailersRouteWithChildren
   TroServicesRoute: typeof TroServicesRoute
   TroSupportRoute: typeof TroSupportRoute
   QcKycReviewIdRoute: typeof QcKycReviewIdRoute
@@ -1783,12 +1807,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountantChangePasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tro/retailers/$id': {
+      id: '/tro/retailers/$id'
+      path: '/$id'
+      fullPath: '/tro/retailers/$id'
+      preLoaderRoute: typeof TroRetailersIdRouteImport
+      parentRoute: typeof TroRetailersRoute
+    }
     '/qc/kyc-review/$id': {
       id: '/qc/kyc-review/$id'
       path: '/qc/kyc-review/$id'
       fullPath: '/qc/kyc-review/$id'
       preLoaderRoute: typeof QcKycReviewIdRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/dro/retailers/$id': {
+      id: '/dro/retailers/$id'
+      path: '/$id'
+      fullPath: '/dro/retailers/$id'
+      preLoaderRoute: typeof DroRetailersIdRouteImport
+      parentRoute: typeof DroRetailersRoute
     }
     '/distributor/services/$key': {
       id: '/distributor/services/$key'
@@ -1846,6 +1884,30 @@ const DistributorServicesRouteChildren: DistributorServicesRouteChildren = {
 
 const DistributorServicesRouteWithChildren =
   DistributorServicesRoute._addFileChildren(DistributorServicesRouteChildren)
+
+interface DroRetailersRouteChildren {
+  DroRetailersIdRoute: typeof DroRetailersIdRoute
+}
+
+const DroRetailersRouteChildren: DroRetailersRouteChildren = {
+  DroRetailersIdRoute: DroRetailersIdRoute,
+}
+
+const DroRetailersRouteWithChildren = DroRetailersRoute._addFileChildren(
+  DroRetailersRouteChildren,
+)
+
+interface TroRetailersRouteChildren {
+  TroRetailersIdRoute: typeof TroRetailersIdRoute
+}
+
+const TroRetailersRouteChildren: TroRetailersRouteChildren = {
+  TroRetailersIdRoute: TroRetailersIdRoute,
+}
+
+const TroRetailersRouteWithChildren = TroRetailersRoute._addFileChildren(
+  TroRetailersRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -1910,7 +1972,7 @@ const rootRouteChildren: RootRouteChildren = {
   DroFeedbackRoute: DroFeedbackRoute,
   DroNotificationsRoute: DroNotificationsRoute,
   DroProfileRoute: DroProfileRoute,
-  DroRetailersRoute: DroRetailersRoute,
+  DroRetailersRoute: DroRetailersRouteWithChildren,
   DroServicesRoute: DroServicesRoute,
   DroSupportRoute: DroSupportRoute,
   QcApprovedRoute: QcApprovedRoute,
@@ -1930,7 +1992,7 @@ const rootRouteChildren: RootRouteChildren = {
   TroFeedbackRoute: TroFeedbackRoute,
   TroNotificationsRoute: TroNotificationsRoute,
   TroProfileRoute: TroProfileRoute,
-  TroRetailersRoute: TroRetailersRoute,
+  TroRetailersRoute: TroRetailersRouteWithChildren,
   TroServicesRoute: TroServicesRoute,
   TroSupportRoute: TroSupportRoute,
   QcKycReviewIdRoute: QcKycReviewIdRoute,
