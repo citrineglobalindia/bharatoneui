@@ -1,12 +1,12 @@
 export type ServiceKey = "AEPS" | "DMT" | "Recharge" | "BBPS" | "PAN" | "GST";
 
-export const SERVICE_META: { key: ServiceKey; label: string; color: string }[] = [
-  { key: "AEPS", label: "AEPS Cash Withdrawal", color: "#10b981" },
-  { key: "DMT", label: "Money Transfer", color: "#0ea5e9" },
-  { key: "Recharge", label: "Mobile Recharge", color: "#8b5cf6" },
-  { key: "BBPS", label: "BBPS Bill Payment", color: "#f59e0b" },
-  { key: "PAN", label: "PAN Card", color: "#f43f5e" },
-  { key: "GST", label: "GST Registration", color: "#14b8a6" },
+export const SERVICE_META: { key: ServiceKey; label: string; color: string; rate: number }[] = [
+  { key: "AEPS", label: "AEPS Cash Withdrawal", color: "#10b981", rate: 12 },
+  { key: "DMT", label: "Money Transfer", color: "#0ea5e9", rate: 18 },
+  { key: "Recharge", label: "Mobile Recharge", color: "#8b5cf6", rate: 3 },
+  { key: "BBPS", label: "BBPS Bill Payment", color: "#f59e0b", rate: 6 },
+  { key: "PAN", label: "PAN Card", color: "#f43f5e", rate: 90 },
+  { key: "GST", label: "GST Registration", color: "#14b8a6", rate: 250 },
 ];
 
 export interface RetailerActivity {
@@ -93,9 +93,28 @@ export function aggregateServices(rows: RetailerActivity[]) {
 export function summarize(rows: RetailerActivity[]) {
   const totalRetailers = rows.length;
   const activeToday = rows.filter((r) => r.active).length;
+  const inactiveToday = totalRetailers - activeToday;
   const servicesToday = rows.reduce((sum, r) => sum + serviceTotal(r), 0);
   const revenueToday = rows.reduce((sum, r) => sum + r.revenue, 0);
-  return { totalRetailers, activeToday, servicesToday, revenueToday };
+  return { totalRetailers, activeToday, inactiveToday, servicesToday, revenueToday };
+}
+
+// Transparent revenue model: revenue per service = transactions × avg commission rate.
+export function serviceRevenueModel(rows: RetailerActivity[]) {
+  const model = SERVICE_META.map((s) => {
+    const count = rows.reduce((sum, r) => sum + r.today[s.key], 0);
+    return {
+      key: s.key,
+      label: s.label,
+      color: s.color,
+      rate: s.rate,
+      count,
+      revenue: count * s.rate,
+    };
+  });
+  const totalCount = model.reduce((sum, m) => sum + m.count, 0);
+  const totalRevenue = model.reduce((sum, m) => sum + m.revenue, 0);
+  return { model, totalCount, totalRevenue };
 }
 
 export function topByVolume(rows: RetailerActivity[], n = 6) {
