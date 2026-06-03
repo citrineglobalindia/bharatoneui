@@ -16,6 +16,30 @@ import {
 
 const accentTone = (cfg: RegionalConfig): "rose" | "saffron" => (cfg.accent === "rose" ? "rose" : "saffron");
 
+function HeroStat({ label, value, accent }: { label: string; value: string; accent: string }) {
+  return (
+    <div className="min-w-[88px]">
+      <p className="text-[10px] font-bold uppercase tracking-wider text-white/50">{label}</p>
+      <p className={`font-display text-xl font-extrabold mt-0.5 ${accent}`}>{value}</p>
+    </div>
+  );
+}
+
+function SectionLabel({ icon, text }: { icon: React.ReactNode; text: string }) {
+  return (
+    <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+      {icon} {text}
+    </div>
+  );
+}
+
+const avatarTones = ["bg-orange-500", "bg-emerald-600", "bg-sky-500", "bg-violet-500", "bg-rose-500", "bg-amber-500"];
+const avatarFor = (name: string) => {
+  const init = name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
+  const tone = avatarTones[name.charCodeAt(0) % avatarTones.length];
+  return { init, tone };
+};
+
 const STATUS_STYLE: Record<RetailerStatus, string> = {
   Active: "bg-emerald-50 text-emerald-700 border-emerald-200",
   Inactive: "bg-slate-100 text-slate-600 border-slate-200",
