@@ -58,6 +58,7 @@ const TXN_STATUS_STYLE: Record<WalletTxn["status"], string> = {
 /* ===================== Listing Screen ===================== */
 export function RetailerActivityList({ cfg, rows, district }: { cfg: RegionalConfig; rows: RetailerActivity[]; district: boolean }) {
   const navigate = useNavigate();
+  const routeParams = useParams({ strict: false }) as { id?: string };
   const [localStatus, setLocalStatus] = useState<Record<string, RetailerStatus>>({});
   const [profileDrafts, setProfileDrafts] = useState<Record<string, EditableRetailerProfile>>({});
   const [editing, setEditing] = useState<RetailerDetail | null>(null);
@@ -159,6 +160,8 @@ export function RetailerActivityList({ cfg, rows, district }: { cfg: RegionalCon
   };
 
   const selectCls = "h-9 rounded-lg border border-border bg-white px-3 text-sm font-medium outline-none";
+
+  if (routeParams.id) return <RetailerActivityDetail cfg={cfg} />;
 
   return (
     <RegionalShell cfg={cfg}>
@@ -299,7 +302,7 @@ export function RetailerActivityList({ cfg, rows, district }: { cfg: RegionalCon
                     <tr key={d.id} className={`border-t border-border transition-colors hover:bg-sky-50/60 ${i % 2 ? "bg-muted/20" : ""}`}>
                       <td className="px-3 py-2.5 text-muted-foreground tabular-nums">{i + 1}</td>
                       <td className="px-3 py-2.5">
-                        <Link to={`${cfg.basePath}/retailers/${d.id}` as string} className="font-mono font-bold text-sky-600 hover:underline inline-flex items-center gap-1">
+                        <Link to={retailerDetailRoute(cfg)} params={{ id: d.id }} className="font-mono font-bold text-sky-600 hover:underline inline-flex items-center gap-1">
                           {d.id} <ChevronRight className="h-3 w-3" />
                         </Link>
                       </td>
@@ -337,8 +340,8 @@ export function RetailerActivityList({ cfg, rows, district }: { cfg: RegionalCon
                       </td>
                       <td className="px-3 py-2.5">
                         <div className="flex items-center justify-end gap-1">
-                          <button onClick={() => navigate({ to: `${cfg.basePath}/retailers/${d.id}` as string })} title="View" className="h-7 w-7 rounded-md border border-border bg-white hover:bg-muted flex items-center justify-center text-slate-600"><Eye className="h-3.5 w-3.5" /></button>
-                          <button onClick={() => toast.info(`Edit ${d.id} (demo)`)} title="Edit" className="h-7 w-7 rounded-md border border-border bg-white hover:bg-muted flex items-center justify-center text-slate-600"><Pencil className="h-3.5 w-3.5" /></button>
+                          <button onClick={() => navigate({ to: retailerDetailRoute(cfg), params: { id: d.id } })} title="View" className="h-7 w-7 rounded-md border border-border bg-white hover:bg-muted flex items-center justify-center text-slate-600"><Eye className="h-3.5 w-3.5" /></button>
+                          <button onClick={() => setEditing(d)} title="Edit" className="h-7 w-7 rounded-md border border-border bg-white hover:bg-muted flex items-center justify-center text-slate-600"><Pencil className="h-3.5 w-3.5" /></button>
                           {st === "Active" ? (
                             <button onClick={() => setRetailerStatus(d.id, "Suspended")} title="Suspend" className="h-7 w-7 rounded-md border border-rose-200 bg-rose-50 hover:bg-rose-100 flex items-center justify-center text-rose-600"><Ban className="h-3.5 w-3.5" /></button>
                           ) : (
