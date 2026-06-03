@@ -141,9 +141,9 @@ export function RetailerShell({ children }: { children: React.ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   return (
-    <div className="min-h-screen bg-muted/30 flex">
+    <div className="h-screen overflow-hidden bg-muted/30 flex">
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex w-64 shrink-0 flex-col border-r border-border bg-card">
+      <aside className="hidden lg:flex w-64 shrink-0 flex-col border-r border-border bg-card h-screen sticky top-0">
         <SidebarBody pathname={pathname} />
       </aside>
 
