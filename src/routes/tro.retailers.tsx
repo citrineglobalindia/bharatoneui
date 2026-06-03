@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ReportRetailers } from "@/components/regional/report-views";
+import { RetailerActivityList } from "@/components/regional/retailer-activity-views";
 import { TRO_CONFIG } from "@/components/regional/regional-shell";
 import { TALUK_RETAILERS } from "@/components/regional/regional-mock-data";
 
@@ -10,5 +10,5 @@ export const Route = createFileRoute("/tro/retailers")({
       { name: "description", content: "Taluk retailer daily service activity report." },
     ],
   }),
-  component: () => <ReportRetailers cfg={TRO_CONFIG} rows={TALUK_RETAILERS} district={false} />,
+  component: () => <RetailerActivityList cfg={TRO_CONFIG} rows={TALUK_RETAILERS} district={false} />,
 });
