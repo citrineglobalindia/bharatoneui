@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {
@@ -11,10 +11,13 @@ import { PageHeader } from "@/components/retailer/page-header";
 import { StatCard } from "@/components/retailer/stat-card";
 import {
   type RetailerActivity, type RetailerStatus, type WalletTxn,
-  inr, fmtDate, fmtDateTime, enrichRetailer, activitySummary, findRetailer, walletHistory,
+  type RetailerDetail, inr, fmtDate, fmtDateTime, enrichRetailer, findRetailer, walletHistory,
 } from "@/components/regional/regional-mock-data";
 
 const accentTone = (cfg: RegionalConfig): "rose" | "saffron" => (cfg.accent === "rose" ? "rose" : "saffron");
+const retailerListRoute = (cfg: RegionalConfig) => (cfg.basePath === "/tro" ? "/tro/retailers" : "/dro/retailers");
+const retailerDetailRoute = (cfg: RegionalConfig) => (cfg.basePath === "/tro" ? "/tro/retailers/$id" : "/dro/retailers/$id");
+type EditableRetailerProfile = Pick<RetailerDetail, "name" | "shop" | "phone" | "email" | "address">;
 
 function HeroStat({ label, value, accent }: { label: string; value: string; accent: string }) {
   return (
@@ -55,8 +58,31 @@ const TXN_STATUS_STYLE: Record<WalletTxn["status"], string> = {
 /* ===================== Listing Screen ===================== */
 export function RetailerActivityList({ cfg, rows, district }: { cfg: RegionalConfig; rows: RetailerActivity[]; district: boolean }) {
   const navigate = useNavigate();
-  const data = useMemo(() => rows.map(enrichRetailer), [rows]);
-  const summary = useMemo(() => activitySummary(rows), [rows]);
+  const routeParams = useParams({ strict: false }) as { id?: string };
+  const [localStatus, setLocalStatus] = useState<Record<string, RetailerStatus>>({});
+  const [profileDrafts, setProfileDrafts] = useState<Record<string, EditableRetailerProfile>>({});
+  const [editing, setEditing] = useState<RetailerDetail | null>(null);
+  const baseData = useMemo(() => rows.map(enrichRetailer), [rows]);
+  const data = useMemo(
+    () => baseData.map((d) => ({ ...d, ...(profileDrafts[d.id] ?? {}), status: localStatus[d.id] ?? d.status })),
+    [baseData, profileDrafts, localStatus],
+  );
+  const summary = useMemo(() => {
+    const acc = (f: (d: RetailerDetail) => number) => data.reduce((a, d) => a + f(d), 0);
+    return {
+      totalRetailers: data.length,
+      activeRetailers: data.filter((d) => d.status === "Active").length,
+      inactiveRetailers: data.filter((d) => d.status !== "Active").length,
+      totalTxns: acc((d) => d.totalTxns),
+      successTxns: acc((d) => d.successTxns),
+      pendingTxns: acc((d) => d.pendingTxns),
+      failedTxns: acc((d) => d.failedTxns),
+      walletBalance: acc((d) => d.walletBalance),
+      walletCredit: acc((d) => d.walletCredit),
+      walletDebit: acc((d) => d.walletDebit),
+      commission: acc((d) => d.commissionEarned),
+    };
+  }, [data]);
 
   const [query, setQuery] = useState("");
   const [taluk, setTaluk] = useState("all");
@@ -65,7 +91,6 @@ export function RetailerActivityList({ cfg, rows, district }: { cfg: RegionalCon
   const [txnStatus, setTxnStatus] = useState("all");
   const [minBal, setMinBal] = useState("");
   const [maxBal, setMaxBal] = useState("");
-  const [localStatus, setLocalStatus] = useState<Record<string, RetailerStatus>>({});
 
   const taluks = useMemo(() => ["all", ...Array.from(new Set(rows.map((r) => r.taluk)))], [rows]);
   const services = useMemo(() => ["all", ...Array.from(new Set(data.flatMap((d) => d.serviceCategories)))].filter((s) => s !== "—"), [data]);
@@ -94,6 +119,26 @@ export function RetailerActivityList({ cfg, rows, district }: { cfg: RegionalCon
     toast.success(`Retailer ${id} marked ${next}`);
   };
 
+  const saveRetailerProfile = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!editing) return;
+    const form = new FormData(event.currentTarget);
+    const next: EditableRetailerProfile = {
+      name: String(form.get("name") ?? "").trim(),
+      shop: String(form.get("shop") ?? "").trim(),
+      phone: String(form.get("phone") ?? "").trim(),
+      email: String(form.get("email") ?? "").trim(),
+      address: String(form.get("address") ?? "").trim(),
+    };
+    if (!next.name || !next.shop || !next.phone) {
+      toast.error("Name, shop and phone are required");
+      return;
+    }
+    setProfileDrafts((m) => ({ ...m, [editing.id]: next }));
+    setEditing(null);
+    toast.success("Retailer profile updated", { description: editing.id });
+  };
+
   const resetFilters = () => {
     setQuery(""); setTaluk("all"); setService("all"); setStatus("all"); setTxnStatus("all"); setMinBal(""); setMaxBal("");
   };
@@ -115,6 +160,8 @@ export function RetailerActivityList({ cfg, rows, district }: { cfg: RegionalCon
   };
 
   const selectCls = "h-9 rounded-lg border border-border bg-white px-3 text-sm font-medium outline-none";
+
+  if (routeParams.id) return <RetailerActivityDetail cfg={cfg} />;
 
   return (
     <RegionalShell cfg={cfg}>
@@ -255,7 +302,7 @@ export function RetailerActivityList({ cfg, rows, district }: { cfg: RegionalCon
                     <tr key={d.id} className={`border-t border-border transition-colors hover:bg-sky-50/60 ${i % 2 ? "bg-muted/20" : ""}`}>
                       <td className="px-3 py-2.5 text-muted-foreground tabular-nums">{i + 1}</td>
                       <td className="px-3 py-2.5">
-                        <Link to={`${cfg.basePath}/retailers/${d.id}` as string} className="font-mono font-bold text-sky-600 hover:underline inline-flex items-center gap-1">
+                        <Link to={retailerDetailRoute(cfg)} params={{ id: d.id }} className="font-mono font-bold text-sky-600 hover:underline inline-flex items-center gap-1">
                           {d.id} <ChevronRight className="h-3 w-3" />
                         </Link>
                       </td>
@@ -293,8 +340,8 @@ export function RetailerActivityList({ cfg, rows, district }: { cfg: RegionalCon
                       </td>
                       <td className="px-3 py-2.5">
                         <div className="flex items-center justify-end gap-1">
-                          <button onClick={() => navigate({ to: `${cfg.basePath}/retailers/${d.id}` as string })} title="View" className="h-7 w-7 rounded-md border border-border bg-white hover:bg-muted flex items-center justify-center text-slate-600"><Eye className="h-3.5 w-3.5" /></button>
-                          <button onClick={() => toast.info(`Edit ${d.id} (demo)`)} title="Edit" className="h-7 w-7 rounded-md border border-border bg-white hover:bg-muted flex items-center justify-center text-slate-600"><Pencil className="h-3.5 w-3.5" /></button>
+                          <button onClick={() => navigate({ to: retailerDetailRoute(cfg), params: { id: d.id } })} title="View" className="h-7 w-7 rounded-md border border-border bg-white hover:bg-muted flex items-center justify-center text-slate-600"><Eye className="h-3.5 w-3.5" /></button>
+                          <button onClick={() => setEditing(d)} title="Edit" className="h-7 w-7 rounded-md border border-border bg-white hover:bg-muted flex items-center justify-center text-slate-600"><Pencil className="h-3.5 w-3.5" /></button>
                           {st === "Active" ? (
                             <button onClick={() => setRetailerStatus(d.id, "Suspended")} title="Suspend" className="h-7 w-7 rounded-md border border-rose-200 bg-rose-50 hover:bg-rose-100 flex items-center justify-center text-rose-600"><Ban className="h-3.5 w-3.5" /></button>
                           ) : (
@@ -312,6 +359,32 @@ export function RetailerActivityList({ cfg, rows, district }: { cfg: RegionalCon
             </table>
           </div>
         </div>
+
+        {editing && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4 backdrop-blur-sm" role="dialog" aria-modal="true">
+            <form onSubmit={saveRetailerProfile} className="w-full max-w-2xl rounded-2xl border border-border bg-white p-5 shadow-2xl">
+              <div className="flex items-start justify-between gap-3 border-b border-border pb-3">
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Edit retailer profile</p>
+                  <h3 className="mt-0.5 text-lg font-extrabold">{editing.id}</h3>
+                </div>
+                <button type="button" onClick={() => setEditing(null)} className="rounded-lg border border-border px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-muted">Close</button>
+              </div>
+              <div className="grid gap-3 py-4 sm:grid-cols-2">
+                <Field label="Retailer Name" name="name" defaultValue={editing.name} />
+                <Field label="Shop Name" name="shop" defaultValue={editing.shop} />
+                <Field label="Mobile Number" name="phone" defaultValue={editing.phone} />
+                <Field label="Email" name="email" defaultValue={editing.email} />
+                <div className="sm:col-span-2"><Field label="Address" name="address" defaultValue={editing.address} /></div>
+              </div>
+              <div className="flex flex-wrap justify-end gap-2 border-t border-border pt-3">
+                <button type="button" onClick={() => setRetailerStatus(editing.id, "Active")} className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700 hover:bg-emerald-100">Activate</button>
+                <button type="button" onClick={() => setRetailerStatus(editing.id, "Suspended")} className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-bold text-rose-700 hover:bg-rose-100">Suspend</button>
+                <button type="submit" className="rounded-lg bg-slate-900 px-5 py-2 text-sm font-bold text-white shadow-elev hover:bg-slate-800">Save Profile</button>
+              </div>
+            </form>
+          </div>
+        )}
       </div>
     </RegionalShell>
   );
@@ -345,7 +418,7 @@ export function RetailerActivityDetail({ cfg }: { cfg: RegionalConfig }) {
       <RegionalShell cfg={cfg}>
         <div className="rounded-xl border border-border bg-card p-10 text-center">
           <p className="text-sm text-muted-foreground">Retailer <span className="font-mono font-bold">{id}</span> not found.</p>
-          <Link to={`${cfg.basePath}/retailers` as string} className="inline-flex items-center gap-1.5 mt-3 text-sm font-semibold text-sky-600 hover:underline"><ArrowLeft className="h-4 w-4" /> Back to list</Link>
+          <Link to={retailerListRoute(cfg)} className="inline-flex items-center gap-1.5 mt-3 text-sm font-semibold text-sky-600 hover:underline"><ArrowLeft className="h-4 w-4" /> Back to list</Link>
         </div>
       </RegionalShell>
     );
@@ -358,7 +431,7 @@ export function RetailerActivityDetail({ cfg }: { cfg: RegionalConfig }) {
   return (
     <RegionalShell cfg={cfg}>
       <div className="space-y-5">
-        <button onClick={() => navigate({ to: `${cfg.basePath}/retailers` as string })} className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-slate-900">
+        <button onClick={() => navigate({ to: retailerListRoute(cfg) })} className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-slate-900">
           <ArrowLeft className="h-4 w-4" /> Back to Retailer Activity
         </button>
 
@@ -508,6 +581,15 @@ export function RetailerActivityDetail({ cfg }: { cfg: RegionalConfig }) {
         </div>
       </div>
     </RegionalShell>
+  );
+}
+
+function Field({ label, name, defaultValue }: { label: string; name: string; defaultValue: string }) {
+  return (
+    <label className="block space-y-1.5">
+      <span className="text-xs font-bold text-slate-600">{label}</span>
+      <input name={name} defaultValue={defaultValue} className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm font-semibold outline-none focus-visible:ring-4 focus-visible:ring-slate-300/40" />
+    </label>
   );
 }
 
