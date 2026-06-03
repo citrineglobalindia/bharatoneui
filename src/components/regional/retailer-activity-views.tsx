@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {
@@ -25,7 +25,7 @@ function HeroStat({ label, value, accent }: { label: string; value: string; acce
   );
 }
 
-function SectionLabel({ icon, text }: { icon: React.ReactNode; text: string }) {
+function SectionLabel({ icon, text }: { icon: ReactNode; text: string }) {
   return (
     <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">
       {icon} {text}
