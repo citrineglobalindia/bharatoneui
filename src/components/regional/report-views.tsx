@@ -5,6 +5,7 @@ import {
 } from "recharts";
 import {
   Users, Activity, Layers, IndianRupee, Download, Search, MapPin, TrendingUp, Store, Grid3x3, CheckCircle2,
+  AlertTriangle, Clock, Phone, UserX,
 } from "lucide-react";
 import { toast } from "sonner";
 import { RegionalShell, type RegionalConfig } from "@/components/regional/regional-shell";
@@ -13,6 +14,7 @@ import { StatCard } from "@/components/retailer/stat-card";
 import {
   type RetailerActivity, SERVICE_META, WEEKLY_SERVICES, inr,
   serviceTotal, aggregateServices, summarize, serviceRevenueModel, topByVolume, taluksSummary, exportRetailersCsv,
+  inactiveTros, fmtDate,
 } from "@/components/regional/regional-mock-data";
 
 const accentHex = (cfg: RegionalConfig) => (cfg.accent === "rose" ? "#f43f5e" : "#f59e0b");
@@ -61,18 +63,28 @@ export function ReportDashboard({ cfg, rows, district }: { cfg: RegionalConfig; 
               icon={<Store className="h-5 w-5" />}
               tone="rose"
             />
-            <StatCard
-              label="Total Retailers"
-              value={String(s.totalRetailers)}
-              delta={{ value: district ? "across the district" : "across the taluk", positive: true }}
-              icon={<Users className="h-5 w-5" />}
-              tone={accentTone(cfg)}
-            />
-          </div>
+          <StatCard
+            label="Total Retailers"
+            value={String(s.totalRetailers)}
+            delta={{ value: district ? "across the district" : "across the taluk", positive: true }}
+            icon={<Users className="h-5 w-5" />}
+            tone={accentTone(cfg)}
+          />
         </div>
+      </div>
 
-        {/* Service transaction & revenue section */}
+      {/* Inactive TROs section — only for DRO (district) view */}
+      {district && (
         <div>
+          <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
+            <UserX className="h-3.5 w-3.5" /> Inactive TROs
+          </h3>
+          <InactiveTroPanel cfg={cfg} />
+        </div>
+      )}
+
+      {/* Service transaction & revenue section */}
+      <div>
           <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
             <Layers className="h-3.5 w-3.5" /> Transactions & Revenue
           </h3>
@@ -257,6 +269,79 @@ export function ReportDashboard({ cfg, rows, district }: { cfg: RegionalConfig; 
         </div>
       </div>
     </RegionalShell>
+  );
+}
+
+/* ---------------- Inactive TRO Panel ---------------- */
+function InactiveTroPanel({ cfg }: { cfg: RegionalConfig }) {
+  const list = useMemo(() => inactiveTros(cfg.user.role === "DRO" ? "DRO-01" : "DRO-02"), [cfg]);
+  const totalTros = useMemo(() => {
+    // Count all TROs under this DRO
+    return list.length + (cfg.user.role === "DRO" ? 2 : 0); // rough estimate for demo
+  }, [list, cfg]);
+
+  if (list.length === 0) {
+    return (
+      <div className="rounded-xl border border-border bg-card p-4 shadow-soft flex items-center gap-3">
+        <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+        <p className="text-sm font-semibold text-slate-700">All TROs are currently active.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-xl border border-border bg-card shadow-soft overflow-hidden">
+      <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <AlertTriangle className="h-4 w-4 text-rose-500" />
+          <p className="text-sm font-bold">{list.length} Inactive TRO{list.length > 1 ? "s" : ""} under your district</p>
+        </div>
+        <span className="text-[11px] font-semibold text-muted-foreground bg-muted rounded-full px-2 py-0.5">
+          {list.filter((t) => t.inactiveDays >= 7).length} critical (7+ days)
+        </span>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-muted/50 text-[11px] uppercase tracking-wider text-muted-foreground">
+            <tr>
+              <th className="text-left px-4 py-2.5 font-bold">TRO Officer</th>
+              <th className="text-left px-3 py-2.5 font-bold">Scope</th>
+              <th className="text-left px-3 py-2.5 font-bold">Last Active</th>
+              <th className="text-right px-3 py-2.5 font-bold">Inactive For</th>
+              <th className="text-left px-4 py-2.5 font-bold">Reason / Remark</th>
+            </tr>
+          </thead>
+          <tbody>
+            {list.map((t) => (
+              <tr key={t.id} className="border-t border-border hover:bg-muted/30">
+                <td className="px-4 py-2.5">
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center text-xs font-extrabold">{t.name[0]}</div>
+                    <div className="leading-tight">
+                      <p className="font-semibold text-slate-900">{t.name}</p>
+                      <p className="text-[11px] text-muted-foreground flex items-center gap-1"><Phone className="h-3 w-3" />{t.phone}</p>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-3 py-2.5 text-xs text-slate-700">{t.scope}</td>
+                <td className="px-3 py-2.5 text-xs tabular-nums text-muted-foreground">{fmtDate(t.lastActiveAt)}</td>
+                <td className="px-3 py-2.5 text-right">
+                  <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full border ${
+                    t.inactiveDays >= 14 ? "bg-rose-50 text-rose-700 border-rose-200" :
+                    t.inactiveDays >= 7 ? "bg-orange-50 text-orange-700 border-orange-200" :
+                    "bg-amber-50 text-amber-700 border-amber-200"
+                  }`}>
+                    <Clock className="h-3 w-3" />
+                    {t.inactiveDays} day{t.inactiveDays > 1 ? "s" : ""}
+                  </span>
+                </td>
+                <td className="px-4 py-2.5 text-xs text-slate-600">{t.reason || "—"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 }
 
