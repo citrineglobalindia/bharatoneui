@@ -14,7 +14,7 @@ import { StatCard } from "@/components/retailer/stat-card";
 import {
   type RetailerActivity, SERVICE_META, WEEKLY_SERVICES, inr,
   serviceTotal, aggregateServices, summarize, serviceRevenueModel, topByVolume, taluksSummary, exportRetailersCsv,
-  inactiveTros, fmtDate,
+  inactiveTros, totalCommissionLost, fmtDate,
 } from "@/components/regional/regional-mock-data";
 
 const accentHex = (cfg: RegionalConfig) => (cfg.accent === "rose" ? "#f43f5e" : "#f59e0b");
