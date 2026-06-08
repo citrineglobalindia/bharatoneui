@@ -5,6 +5,7 @@ import {
 } from "recharts";
 import {
   Users, Activity, Layers, IndianRupee, Download, Search, MapPin, TrendingUp, Store, Grid3x3, CheckCircle2,
+  AlertTriangle, Clock, Phone, UserX,
 } from "lucide-react";
 import { toast } from "sonner";
 import { RegionalShell, type RegionalConfig } from "@/components/regional/regional-shell";
@@ -13,6 +14,7 @@ import { StatCard } from "@/components/retailer/stat-card";
 import {
   type RetailerActivity, SERVICE_META, WEEKLY_SERVICES, inr,
   serviceTotal, aggregateServices, summarize, serviceRevenueModel, topByVolume, taluksSummary, exportRetailersCsv,
+  inactiveTros, fmtDate,
 } from "@/components/regional/regional-mock-data";
 
 const accentHex = (cfg: RegionalConfig) => (cfg.accent === "rose" ? "#f43f5e" : "#f59e0b");
