@@ -6,7 +6,8 @@ import {
 } from "recharts";
 import {
   Users, Activity, Layers, IndianRupee, Download, Search, Network, TrendingUp,
-  Store, Coins, ChevronRight, Building2, MapPinned,
+  Store, Coins, ChevronRight, Building2, MapPinned, ArrowUpRight, ArrowDownRight,
+  Receipt, BadgeIndianRupee, CheckCircle2, CalendarDays, Trophy,
 } from "lucide-react";
 import { toast } from "sonner";
 import { DistributorShell } from "@/components/distributor/distributor-shell";
@@ -20,124 +21,287 @@ import {
 
 const HEX = "#0ea5e9";
 
+/* ---------------- Sales Dashboard data ---------------- */
+const KPIS = [
+  { label: "Total Transactions", value: "8,510", delta: "12.6%", up: true, icon: <Users className="h-5 w-5" />, ring: "bg-sky-50 text-sky-600", bar: "from-sky-500 to-sky-400" },
+  { label: "Total Business Volume", value: "\u20B943,16,500", delta: "15.3%", up: true, icon: <BadgeIndianRupee className="h-5 w-5" />, ring: "bg-emerald-50 text-emerald-600", bar: "from-emerald-500 to-emerald-400" },
+  { label: "Total Commission Earned", value: "\u20B996,330", delta: "14.8%", up: true, icon: <Coins className="h-5 w-5" />, ring: "bg-amber-50 text-amber-600", bar: "from-amber-500 to-amber-400" },
+  { label: "Active Retailers", value: "125", delta: "8.7%", up: true, icon: <Store className="h-5 w-5" />, ring: "bg-violet-50 text-violet-600", bar: "from-violet-500 to-violet-400" },
+  { label: "Success Rate", value: "97.45%", delta: "2.1%", up: true, icon: <CheckCircle2 className="h-5 w-5" />, ring: "bg-teal-50 text-teal-600", bar: "from-teal-500 to-teal-400" },
+];
+
+const SERVICE_PERF = [
+  { name: "AEPS Cash Withdrawal", txns: 1250, revenue: 625000, commission: 12500, growth: 10.2, up: true },
+  { name: "Money Transfer (DMT)", txns: 850, revenue: 1700000, commission: 25500, growth: 18.7, up: true },
+  { name: "Mobile Recharge", txns: 3200, revenue: 480000, commission: 9600, growth: 11.3, up: true },
+  { name: "DTH Recharge", txns: 750, revenue: 112500, commission: 2250, growth: -2.7, up: false },
+  { name: "Electricity Bill Payment", txns: 1100, revenue: 550000, commission: 8250, growth: 13.6, up: true },
+  { name: "Water Bill Payment", txns: 420, revenue: 84000, commission: 1680, growth: 7.4, up: true },
+  { name: "Insurance Premium", txns: 180, revenue: 360000, commission: 10800, growth: 16.9, up: true },
+  { name: "PAN Card Services", txns: 95, revenue: 47500, commission: 4750, growth: 5.6, up: true },
+  { name: "Government Services", txns: 540, revenue: 270000, commission: 13500, growth: 12.8, up: true },
+  { name: "Travel Booking", txns: 125, revenue: 187500, commission: 7500, growth: 9.2, up: true },
+];
+
+const VOLUME_TREND = [
+  { d: "01 Jun", v: 8 }, { d: "03 Jun", v: 12 }, { d: "05 Jun", v: 10 }, { d: "07 Jun", v: 18 },
+  { d: "09 Jun", v: 15 }, { d: "11 Jun", v: 22 }, { d: "13 Jun", v: 20 }, { d: "15 Jun", v: 28 },
+  { d: "17 Jun", v: 24 }, { d: "19 Jun", v: 32 }, { d: "21 Jun", v: 30 }, { d: "23 Jun", v: 38 },
+  { d: "25 Jun", v: 35 }, { d: "27 Jun", v: 43 }, { d: "29 Jun", v: 41 }, { d: "30 Jun", v: 47 },
+];
+
+const CONTRIBUTION = [
+  { name: "DMT", value: 39.4, color: "#3b82f6" },
+  { name: "AEPS", value: 14.5, color: "#10b981" },
+  { name: "Bill Payments", value: 14.7, color: "#f59e0b" },
+  { name: "Recharges", value: 13.7, color: "#06b6d4" },
+  { name: "Insurance", value: 8.3, color: "#8b5cf6" },
+  { name: "Government Services", value: 6.3, color: "#ec4899" },
+  { name: "Others", value: 3.1, color: "#94a3b8" },
+];
+
+const TOP5 = [
+  { rank: 1, id: "RET001", name: "Sai Online Center", revenue: 125000 },
+  { rank: 2, id: "RET015", name: "Shree Enterprises", revenue: 110000 },
+  { rank: 3, id: "RET028", name: "Grama One Center", revenue: 98500 },
+  { rank: 4, id: "RET042", name: "Digital Seva Kendra", revenue: 92000 },
+  { rank: 5, id: "RET063", name: "Karnataka Services Hub", revenue: 85500 },
+];
+
+const DISTRICTS = [
+  { name: "Bengaluru Urban", value: 1245000 },
+  { name: "Mysuru", value: 675000 },
+  { name: "Belagavi", value: 485000 },
+  { name: "Dharwad", value: 420000 },
+  { name: "Hubballi", value: 315000 },
+  { name: "Others", value: 1176500 },
+];
+
+const SUMMARY = [
+  { name: "Active Retailers", value: 125, color: "#10b981" },
+  { name: "Inactive Retailers", value: 18, color: "#ef4444" },
+];
+
+const inrFull = (n: number) => "\u20B9" + n.toLocaleString("en-IN");
+
+function Card({ title, action, children, className = "" }: { title?: React.ReactNode; action?: React.ReactNode; children: React.ReactNode; className?: string }) {
+  return (
+    <div className={`rounded-2xl border border-slate-200 bg-white p-4 lg:p-5 shadow-[0_1px_3px_rgba(15,23,42,0.06)] ${className}`}>
+      {(title || action) && (
+        <div className="flex items-center justify-between mb-4">
+          {title && <h3 className="text-sm font-bold text-slate-800">{title}</h3>}
+          {action}
+        </div>
+      )}
+      {children}
+    </div>
+  );
+}
+
 /* ---------------- Dashboard ---------------- */
 export function DistributorDashboard() {
-  const s = useMemo(() => summarize(RETAILERS), []);
-  const mix = useMemo(() => aggregateServices(RETAILERS), []);
-  const top = useMemo(() => topRetailers(RETAILERS), []);
-  const dros = OFFICERS.filter((o) => o.role === "DRO");
-
   return (
     <DistributorShell>
-      <div className="space-y-6">
-        <PageHeader
-          icon={<Network className="h-5 w-5" />}
-          title="Karthik's Distributor Dashboard"
-          subtitle="Live oversight of DRO, TRO and retailer network across the zone."
-          badge={
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-2.5 py-0.5 text-[11px] font-bold text-sky-700">
-              <Activity className="h-3 w-3" /> Live Network
-            </span>
-          }
-        />
-
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <StatCard label="DROs / TROs" value={`${dros.length} / ${OFFICERS.length - dros.length}`} delta={{ value: "officers mapped", positive: true }} icon={<Building2 className="h-5 w-5" />} tone="rose" />
-          <StatCard label="Retailers" value={String(s.totalRetailers)} delta={{ value: `${s.activeToday} active today`, positive: true }} icon={<Users className="h-5 w-5" />} tone="sky" />
-          <StatCard label="Services Today" value={s.servicesToday.toLocaleString("en-IN")} delta={{ value: "across all services", positive: true }} icon={<Layers className="h-5 w-5" />} tone="violet" />
-          <StatCard label="Commission Today" value={inr(s.commissionToday)} delta={{ value: "+9.6% vs avg", positive: true }} icon={<Coins className="h-5 w-5" />} tone="green" />
-        </div>
-
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <StatCard label="Today Revenue" value={inr(s.revenueToday)} icon={<IndianRupee className="h-5 w-5" />} tone="saffron" />
-          <StatCard label="This Week" value={s.weekServices.toLocaleString("en-IN")} delta={{ value: "services", positive: true }} icon={<Activity className="h-5 w-5" />} tone="sky" />
-          <StatCard label="This Month" value={s.monthServices.toLocaleString("en-IN")} delta={{ value: "services", positive: true }} icon={<TrendingUp className="h-5 w-5" />} tone="violet" />
-          <StatCard label="Active Shops" value={`${Math.round((s.activeToday / s.totalRetailers) * 100)}%`} delta={{ value: "live now", positive: true }} icon={<Store className="h-5 w-5" />} tone="green" />
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2 rounded-xl border border-border bg-card p-4 shadow-soft">
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <h3 className="text-sm font-bold">Daily Services & Commission</h3>
-                <p className="text-[11px] text-muted-foreground">Network volume over the last 7 days</p>
-              </div>
-              <span className="text-[11px] font-semibold text-slate-600 bg-slate-100 border border-slate-200 rounded-full px-2 py-0.5">Last 7 days</span>
+      <div className="space-y-5">
+        {/* Hero header */}
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-sky-500 to-cyan-600 text-white flex items-center justify-center shadow-md">
+              <Network className="h-6 w-6" />
             </div>
-            <div className="h-64">
+            <div>
+              <h1 className="font-display text-xl lg:text-2xl font-extrabold tracking-tight text-slate-900">Distributor Sales Dashboard</h1>
+              <p className="text-xs lg:text-sm text-slate-500">Overview of your business performance</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 h-9 text-xs font-semibold text-slate-700 shadow-soft">
+              <CalendarDays className="h-4 w-4 text-slate-500" /> 01 Jun 2026 - 30 Jun 2026
+            </span>
+            <button
+              onClick={() => toast.success("Report download started")}
+              className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-3.5 h-9 text-xs font-semibold text-white shadow-elev hover:bg-slate-800"
+            >
+              <Download className="h-4 w-4" /> Download Report
+            </button>
+          </div>
+        </div>
+
+        {/* KPI cards */}
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
+          {KPIS.map((k) => (
+            <div key={k.label} className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
+              <div className={`absolute left-0 top-0 h-full w-1 bg-gradient-to-b ${k.bar}`} />
+              <div className="flex items-start justify-between">
+                <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">{k.label}</p>
+                <div className={`h-9 w-9 rounded-xl flex items-center justify-center ${k.ring}`}>{k.icon}</div>
+              </div>
+              <p className="mt-2 font-display text-2xl font-extrabold text-slate-900">{k.value}</p>
+              <div className={`mt-1 inline-flex items-center gap-1 text-[11px] font-bold ${k.up ? "text-emerald-600" : "text-rose-600"}`}>
+                {k.up ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownRight className="h-3.5 w-3.5" />}
+                {k.delta} <span className="font-medium text-slate-400">vs May 2026</span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Service performance + Volume trend */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Card title="Service Wise Performance">
+            <div className="overflow-x-auto -mx-1">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-[11px] uppercase tracking-wide text-slate-500 bg-slate-50">
+                    <th className="text-left font-bold px-2 py-2 rounded-l-lg">Service Category</th>
+                    <th className="text-right font-bold px-2 py-2">Transactions</th>
+                    <th className="text-right font-bold px-2 py-2">Revenue (\u20B9)</th>
+                    <th className="text-right font-bold px-2 py-2">Commission (\u20B9)</th>
+                    <th className="text-right font-bold px-2 py-2 rounded-r-lg">Growth</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {SERVICE_PERF.map((r) => (
+                    <tr key={r.name} className="border-b border-slate-100 hover:bg-slate-50/60">
+                      <td className="px-2 py-2 font-semibold text-slate-700">{r.name}</td>
+                      <td className="px-2 py-2 text-right tabular-nums text-slate-700">{r.txns.toLocaleString("en-IN")}</td>
+                      <td className="px-2 py-2 text-right tabular-nums text-slate-700">{r.revenue.toLocaleString("en-IN")}</td>
+                      <td className="px-2 py-2 text-right tabular-nums text-slate-700">{r.commission.toLocaleString("en-IN")}</td>
+                      <td className={`px-2 py-2 text-right font-bold tabular-nums ${r.up ? "text-emerald-600" : "text-rose-600"}`}>
+                        <span className="inline-flex items-center gap-0.5 justify-end">
+                          {r.up ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                          {Math.abs(r.growth)}%
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                  <tr className="bg-slate-50 font-extrabold text-slate-900">
+                    <td className="px-2 py-2.5 rounded-l-lg">Total</td>
+                    <td className="px-2 py-2.5 text-right tabular-nums">8,510</td>
+                    <td className="px-2 py-2.5 text-right tabular-nums">43,16,500</td>
+                    <td className="px-2 py-2.5 text-right tabular-nums">96,330</td>
+                    <td className="px-2 py-2.5 text-right tabular-nums text-emerald-600 rounded-r-lg">15.3%</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </Card>
+
+          <Card title="Business Volume Trend">
+            <div className="h-72">
               <ResponsiveContainer>
-                <AreaChart data={WEEKLY}>
+                <AreaChart data={VOLUME_TREND} margin={{ left: -10, right: 8, top: 4 }}>
                   <defs>
-                    <linearGradient id="dsvc" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={HEX} stopOpacity={0.4} />
+                    <linearGradient id="vol" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={HEX} stopOpacity={0.35} />
                       <stop offset="95%" stopColor={HEX} stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                  <XAxis dataKey="day" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip />
-                  <Area type="monotone" dataKey="services" stroke={HEX} fill="url(#dsvc)" strokeWidth={2} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eef2f7" />
+                  <XAxis dataKey="d" tick={{ fontSize: 10, fill: "#94a3b8" }} interval={2} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 10, fill: "#94a3b8" }} tickFormatter={(v) => `${v}L`} axisLine={false} tickLine={false} />
+                  <Tooltip formatter={(v: number) => [`\u20B9${v}L`, "Volume"]} />
+                  <Area type="monotone" dataKey="v" stroke={HEX} fill="url(#vol)" strokeWidth={2.5} dot={{ r: 2.5, fill: HEX }} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
-          </div>
+            <div className="mt-1 flex items-center justify-center gap-2 text-[11px] font-semibold text-slate-500">
+              <span className="h-2.5 w-2.5 rounded-sm" style={{ background: HEX }} /> Business Volume (\u20B9)
+            </div>
+          </Card>
+        </div>
 
-          <div className="rounded-xl border border-border bg-card p-4 shadow-soft">
-            <h3 className="text-sm font-bold mb-1">Service Mix</h3>
-            <p className="text-[11px] text-muted-foreground mb-2">Today by service type</p>
-            <div className="h-52">
+        {/* Service contribution */}
+        <Card title="Service Contribution (by Revenue)">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+            <div className="relative h-60">
               <ResponsiveContainer>
                 <RePieChart>
-                  <Pie data={mix} dataKey="count" nameKey="key" innerRadius={48} outerRadius={78} paddingAngle={2}>
-                    {mix.map((m) => <Cell key={m.key} fill={m.color} />)}
+                  <Pie data={CONTRIBUTION} dataKey="value" nameKey="name" innerRadius={62} outerRadius={92} paddingAngle={2}>
+                    {CONTRIBUTION.map((c) => <Cell key={c.name} fill={c.color} />)}
+                  </Pie>
+                  <Tooltip formatter={(v: number) => `${v}%`} />
+                </RePieChart>
+              </ResponsiveContainer>
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <p className="font-display text-lg font-extrabold text-slate-900">{inrFull(4316500)}</p>
+                <p className="text-[10px] uppercase tracking-wide text-slate-400">Total</p>
+              </div>
+            </div>
+            <ul className="space-y-2.5">
+              {CONTRIBUTION.map((c) => (
+                <li key={c.name} className="flex items-center gap-2 text-sm">
+                  <span className="h-3 w-3 rounded-sm" style={{ background: c.color }} />
+                  <span className="font-medium text-slate-600 flex-1">{c.name}</span>
+                  <span className="font-bold text-slate-900 tabular-nums">{c.value}%</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </Card>
+
+        {/* Bottom row: top retailers / summary / districts */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <Card title="Top 5 Retailers by Revenue">
+            <ul className="divide-y divide-slate-100">
+              {TOP5.map((r) => (
+                <li key={r.id} className="flex items-center gap-3 py-2.5">
+                  <span className={`h-7 w-7 shrink-0 rounded-full flex items-center justify-center text-xs font-extrabold ${
+                    r.rank === 1 ? "bg-amber-100 text-amber-700" : r.rank === 2 ? "bg-slate-200 text-slate-600" : r.rank === 3 ? "bg-orange-100 text-orange-700" : "bg-slate-100 text-slate-500"
+                  }`}>{r.rank}</span>
+                  <div className="min-w-0 flex-1 leading-tight">
+                    <p className="text-sm font-semibold text-slate-800 truncate">{r.name}</p>
+                    <p className="text-[11px] text-slate-400">{r.id}</p>
+                  </div>
+                  <span className="text-sm font-bold text-slate-900 tabular-nums">{inrFull(r.revenue)}</span>
+                </li>
+              ))}
+            </ul>
+          </Card>
+
+          <Card title="Retailer Summary">
+            <div className="relative h-44">
+              <ResponsiveContainer>
+                <RePieChart>
+                  <Pie data={SUMMARY} dataKey="value" nameKey="name" innerRadius={50} outerRadius={72} paddingAngle={2}>
+                    {SUMMARY.map((c) => <Cell key={c.name} fill={c.color} />)}
                   </Pie>
                   <Tooltip />
                 </RePieChart>
               </ResponsiveContainer>
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <p className="font-display text-2xl font-extrabold text-slate-900">143</p>
+                <p className="text-[10px] uppercase tracking-wide text-slate-400">Total Retailers</p>
+              </div>
             </div>
-            <div className="grid grid-cols-2 gap-1.5 mt-2">
-              {mix.map((m) => (
-                <div key={m.key} className="flex items-center gap-1.5 text-[11px]">
-                  <span className="h-2.5 w-2.5 rounded-sm" style={{ background: m.color }} />
-                  <span className="font-semibold text-slate-700">{m.key}</span>
-                  <span className="ml-auto font-bold">{m.count}</span>
-                </div>
-              ))}
+            <div className="mt-3 space-y-2">
+              <div className="flex items-center gap-2 text-sm">
+                <span className="h-3 w-3 rounded-sm bg-emerald-500" />
+                <span className="text-slate-600 flex-1">Active Retailers</span>
+                <span className="font-bold text-slate-900">125 <span className="text-[11px] font-medium text-slate-400">(87.4%)</span></span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <span className="h-3 w-3 rounded-sm bg-rose-500" />
+                <span className="text-slate-600 flex-1">Inactive Retailers</span>
+                <span className="font-bold text-slate-900">18 <span className="text-[11px] font-medium text-slate-400">(12.6%)</span></span>
+              </div>
             </div>
-          </div>
-        </div>
+          </Card>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="rounded-xl border border-border bg-card p-4 shadow-soft">
-            <h3 className="text-sm font-bold mb-3 flex items-center gap-2"><TrendingUp className="h-4 w-4" style={{ color: HEX }} /> Top Retailers by Volume</h3>
-            <div className="h-64">
+          <Card title="Top Districts by Business Volume" action={<button className="text-[11px] font-semibold text-sky-600 hover:underline">View All</button>}>
+            <div className="h-56">
               <ResponsiveContainer>
-                <BarChart data={top} layout="vertical" margin={{ left: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e5e7eb" />
-                  <XAxis type="number" tick={{ fontSize: 12 }} />
-                  <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={90} />
-                  <Tooltip />
-                  <Bar dataKey="count" fill={HEX} radius={[0, 6, 6, 0]} />
+                <BarChart data={DISTRICTS} layout="vertical" margin={{ left: 8, right: 16 }}>
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#eef2f7" />
+                  <XAxis type="number" tick={{ fontSize: 10, fill: "#94a3b8" }} tickFormatter={(v) => `${v / 100000}L`} axisLine={false} tickLine={false} />
+                  <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: "#475569" }} width={92} axisLine={false} tickLine={false} />
+                  <Tooltip formatter={(v: number) => inrFull(v)} />
+                  <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={14}>
+                    {DISTRICTS.map((d, i) => <Cell key={d.name} fill={i === DISTRICTS.length - 1 ? "#94a3b8" : "#3b82f6"} />)}
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
-          </div>
-
-          <div className="rounded-xl border border-border bg-card p-4 shadow-soft">
-            <h3 className="text-sm font-bold mb-3 flex items-center gap-2"><TrendingUp className="h-4 w-4" style={{ color: HEX }} /> Monthly Commission Trend</h3>
-            <div className="h-64">
-              <ResponsiveContainer>
-                <BarChart data={MONTHLY}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                  <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${v / 1000}k`} />
-                  <Tooltip formatter={(v: number) => inr(v)} />
-                  <Bar dataKey="commission" fill="#10b981" radius={[6, 6, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
+          </Card>
         </div>
       </div>
     </DistributorShell>
