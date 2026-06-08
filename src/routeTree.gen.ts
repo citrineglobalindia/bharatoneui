@@ -80,6 +80,7 @@ import { Route as DroAttendanceRouteImport } from './routes/dro.attendance'
 import { Route as DistributorSupportRouteImport } from './routes/distributor.support'
 import { Route as DistributorSettingsRouteImport } from './routes/distributor.settings'
 import { Route as DistributorServicesRouteImport } from './routes/distributor.services'
+import { Route as DistributorSalesDashboardRouteImport } from './routes/distributor.sales-dashboard'
 import { Route as DistributorRetailersRouteImport } from './routes/distributor.retailers'
 import { Route as DistributorOfficersRouteImport } from './routes/distributor.officers'
 import { Route as DistributorNetworkRouteImport } from './routes/distributor.network'
@@ -460,6 +461,12 @@ const DistributorServicesRoute = DistributorServicesRouteImport.update({
   path: '/distributor/services',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DistributorSalesDashboardRoute =
+  DistributorSalesDashboardRouteImport.update({
+    id: '/distributor/sales-dashboard',
+    path: '/distributor/sales-dashboard',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const DistributorRetailersRoute = DistributorRetailersRouteImport.update({
   id: '/distributor/retailers',
   path: '/distributor/retailers',
@@ -638,6 +645,7 @@ export interface FileRoutesByFullPath {
   '/distributor/network': typeof DistributorNetworkRoute
   '/distributor/officers': typeof DistributorOfficersRouteWithChildren
   '/distributor/retailers': typeof DistributorRetailersRouteWithChildren
+  '/distributor/sales-dashboard': typeof DistributorSalesDashboardRoute
   '/distributor/services': typeof DistributorServicesRouteWithChildren
   '/distributor/settings': typeof DistributorSettingsRoute
   '/distributor/support': typeof DistributorSupportRoute
@@ -735,6 +743,7 @@ export interface FileRoutesByTo {
   '/distributor/network': typeof DistributorNetworkRoute
   '/distributor/officers': typeof DistributorOfficersRouteWithChildren
   '/distributor/retailers': typeof DistributorRetailersRouteWithChildren
+  '/distributor/sales-dashboard': typeof DistributorSalesDashboardRoute
   '/distributor/services': typeof DistributorServicesRouteWithChildren
   '/distributor/settings': typeof DistributorSettingsRoute
   '/distributor/support': typeof DistributorSupportRoute
@@ -833,6 +842,7 @@ export interface FileRoutesById {
   '/distributor/network': typeof DistributorNetworkRoute
   '/distributor/officers': typeof DistributorOfficersRouteWithChildren
   '/distributor/retailers': typeof DistributorRetailersRouteWithChildren
+  '/distributor/sales-dashboard': typeof DistributorSalesDashboardRoute
   '/distributor/services': typeof DistributorServicesRouteWithChildren
   '/distributor/settings': typeof DistributorSettingsRoute
   '/distributor/support': typeof DistributorSupportRoute
@@ -932,6 +942,7 @@ export interface FileRouteTypes {
     | '/distributor/network'
     | '/distributor/officers'
     | '/distributor/retailers'
+    | '/distributor/sales-dashboard'
     | '/distributor/services'
     | '/distributor/settings'
     | '/distributor/support'
@@ -1029,6 +1040,7 @@ export interface FileRouteTypes {
     | '/distributor/network'
     | '/distributor/officers'
     | '/distributor/retailers'
+    | '/distributor/sales-dashboard'
     | '/distributor/services'
     | '/distributor/settings'
     | '/distributor/support'
@@ -1126,6 +1138,7 @@ export interface FileRouteTypes {
     | '/distributor/network'
     | '/distributor/officers'
     | '/distributor/retailers'
+    | '/distributor/sales-dashboard'
     | '/distributor/services'
     | '/distributor/settings'
     | '/distributor/support'
@@ -1224,6 +1237,7 @@ export interface RootRouteChildren {
   DistributorNetworkRoute: typeof DistributorNetworkRoute
   DistributorOfficersRoute: typeof DistributorOfficersRouteWithChildren
   DistributorRetailersRoute: typeof DistributorRetailersRouteWithChildren
+  DistributorSalesDashboardRoute: typeof DistributorSalesDashboardRoute
   DistributorServicesRoute: typeof DistributorServicesRouteWithChildren
   DistributorSettingsRoute: typeof DistributorSettingsRoute
   DistributorSupportRoute: typeof DistributorSupportRoute
@@ -1761,6 +1775,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DistributorServicesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/distributor/sales-dashboard': {
+      id: '/distributor/sales-dashboard'
+      path: '/distributor/sales-dashboard'
+      fullPath: '/distributor/sales-dashboard'
+      preLoaderRoute: typeof DistributorSalesDashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/distributor/retailers': {
       id: '/distributor/retailers'
       path: '/distributor/retailers'
@@ -2044,6 +2065,7 @@ const rootRouteChildren: RootRouteChildren = {
   DistributorNetworkRoute: DistributorNetworkRoute,
   DistributorOfficersRoute: DistributorOfficersRouteWithChildren,
   DistributorRetailersRoute: DistributorRetailersRouteWithChildren,
+  DistributorSalesDashboardRoute: DistributorSalesDashboardRoute,
   DistributorServicesRoute: DistributorServicesRouteWithChildren,
   DistributorSettingsRoute: DistributorSettingsRoute,
   DistributorSupportRoute: DistributorSupportRoute,

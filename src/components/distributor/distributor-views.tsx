@@ -98,8 +98,132 @@ function Card({ title, action, children, className = "" }: { title?: React.React
   );
 }
 
-/* ---------------- Dashboard ---------------- */
+/* ---------------- Original Network Dashboard ---------------- */
 export function DistributorDashboard() {
+  const s = useMemo(() => summarize(RETAILERS), []);
+  const mix = useMemo(() => aggregateServices(RETAILERS), []);
+  const top = useMemo(() => topRetailers(RETAILERS), []);
+  const dros = OFFICERS.filter((o) => o.role === "DRO");
+
+  return (
+    <DistributorShell>
+      <div className="space-y-6">
+        <PageHeader
+          icon={<Network className="h-5 w-5" />}
+          title="Karthik's Distributor Dashboard"
+          subtitle="Live oversight of DRO, TRO and retailer network across the zone."
+          badge={
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-2.5 py-0.5 text-[11px] font-bold text-sky-700">
+              <Activity className="h-3 w-3" /> Live Network
+            </span>
+          }
+        />
+
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <StatCard label="DROs / TROs" value={`${dros.length} / ${OFFICERS.length - dros.length}`} delta={{ value: "officers mapped", positive: true }} icon={<Building2 className="h-5 w-5" />} tone="rose" />
+          <StatCard label="Retailers" value={String(s.totalRetailers)} delta={{ value: `${s.activeToday} active today`, positive: true }} icon={<Users className="h-5 w-5" />} tone="sky" />
+          <StatCard label="Services Today" value={s.servicesToday.toLocaleString("en-IN")} delta={{ value: "across all services", positive: true }} icon={<Layers className="h-5 w-5" />} tone="violet" />
+          <StatCard label="Commission Today" value={inr(s.commissionToday)} delta={{ value: "+9.6% vs avg", positive: true }} icon={<Coins className="h-5 w-5" />} tone="green" />
+        </div>
+
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <StatCard label="Today Revenue" value={inr(s.revenueToday)} icon={<IndianRupee className="h-5 w-5" />} tone="saffron" />
+          <StatCard label="This Week" value={s.weekServices.toLocaleString("en-IN")} delta={{ value: "services", positive: true }} icon={<Activity className="h-5 w-5" />} tone="sky" />
+          <StatCard label="This Month" value={s.monthServices.toLocaleString("en-IN")} delta={{ value: "services", positive: true }} icon={<TrendingUp className="h-5 w-5" />} tone="violet" />
+          <StatCard label="Active Shops" value={`${Math.round((s.activeToday / s.totalRetailers) * 100)}%`} delta={{ value: "live now", positive: true }} icon={<Store className="h-5 w-5" />} tone="green" />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="lg:col-span-2 rounded-xl border border-border bg-card p-4 shadow-soft">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h3 className="text-sm font-bold">Daily Services & Commission</h3>
+                <p className="text-[11px] text-muted-foreground">Network volume over the last 7 days</p>
+              </div>
+              <span className="text-[11px] font-semibold text-slate-600 bg-slate-100 border border-slate-200 rounded-full px-2 py-0.5">Last 7 days</span>
+            </div>
+            <div className="h-64">
+              <ResponsiveContainer>
+                <AreaChart data={WEEKLY}>
+                  <defs>
+                    <linearGradient id="dsvc" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={HEX} stopOpacity={0.4} />
+                      <stop offset="95%" stopColor={HEX} stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                  <XAxis dataKey="day" tick={{ fontSize: 12 }} />
+                  <YAxis tick={{ fontSize: 12 }} />
+                  <Tooltip />
+                  <Area type="monotone" dataKey="services" stroke={HEX} fill="url(#dsvc)" strokeWidth={2} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-border bg-card p-4 shadow-soft">
+            <h3 className="text-sm font-bold mb-1">Service Mix</h3>
+            <p className="text-[11px] text-muted-foreground mb-2">Today by service type</p>
+            <div className="h-52">
+              <ResponsiveContainer>
+                <RePieChart>
+                  <Pie data={mix} dataKey="count" nameKey="key" innerRadius={48} outerRadius={78} paddingAngle={2}>
+                    {mix.map((m) => <Cell key={m.key} fill={m.color} />)}
+                  </Pie>
+                  <Tooltip />
+                </RePieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="grid grid-cols-2 gap-1.5 mt-2">
+              {mix.map((m) => (
+                <div key={m.key} className="flex items-center gap-1.5 text-[11px]">
+                  <span className="h-2.5 w-2.5 rounded-sm" style={{ background: m.color }} />
+                  <span className="font-semibold text-slate-700">{m.key}</span>
+                  <span className="ml-auto font-bold">{m.count}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="rounded-xl border border-border bg-card p-4 shadow-soft">
+            <h3 className="text-sm font-bold mb-3 flex items-center gap-2"><TrendingUp className="h-4 w-4" style={{ color: HEX }} /> Top Retailers by Volume</h3>
+            <div className="h-64">
+              <ResponsiveContainer>
+                <BarChart data={top} layout="vertical" margin={{ left: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e5e7eb" />
+                  <XAxis type="number" tick={{ fontSize: 12 }} />
+                  <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={90} />
+                  <Tooltip />
+                  <Bar dataKey="count" fill={HEX} radius={[0, 6, 6, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-border bg-card p-4 shadow-soft">
+            <h3 className="text-sm font-bold mb-3 flex items-center gap-2"><TrendingUp className="h-4 w-4" style={{ color: HEX }} /> Monthly Commission Trend</h3>
+            <div className="h-64">
+              <ResponsiveContainer>
+                <BarChart data={MONTHLY}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                  <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                  <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${v / 1000}k`} />
+                  <Tooltip formatter={(v: number) => inr(v)} />
+                  <Bar dataKey="commission" fill="#10b981" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      </div>
+    </DistributorShell>
+  );
+}
+
+/* ---------------- Sales Dashboard ---------------- */
+export function DistributorSalesDashboard() {
   return (
     <DistributorShell>
       <div className="space-y-5">
