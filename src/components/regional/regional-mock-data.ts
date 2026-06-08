@@ -354,3 +354,32 @@ export const fmtDateTime = (iso: string) =>
 
 export const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+
+/* ============================================================
+   TRO Activity / Inactivity tracking for DRO oversight
+   ============================================================ */
+
+export interface TroActivity {
+  id: string;
+  name: string;
+  phone: string;
+  scope: string;
+  droId: string;
+  active: boolean;
+  lastActiveAt: string; // ISO
+  inactiveDays: number;
+  reason?: string;
+}
+
+export const TRO_ACTIVITIES: TroActivity[] = [
+  { id: "TRO-01", name: "Navya", phone: "8974532566", scope: "Anekal Taluk", droId: "DRO-01", active: true, lastActiveAt: new Date(Date.now() - 2 * 36e5).toISOString(), inactiveDays: 0, reason: "" },
+  { id: "TRO-02", name: "Praveen", phone: "8974544556", scope: "Hoskote Taluk", droId: "DRO-01", active: true, lastActiveAt: new Date(Date.now() - 6 * 36e5).toISOString(), inactiveDays: 0, reason: "" },
+  { id: "TRO-03", name: "Meghana", phone: "8974566778", scope: "Devanahalli Taluk", droId: "DRO-02", active: false, lastActiveAt: new Date(Date.now() - 5 * 864e5).toISOString(), inactiveDays: 5, reason: "Medical leave" },
+  { id: "TRO-04", name: "Suhas", phone: "8974588990", scope: "Nelamangala Taluk", droId: "DRO-02", active: false, lastActiveAt: new Date(Date.now() - 12 * 864e5).toISOString(), inactiveDays: 12, reason: "Field survey — extended" },
+  { id: "TRO-05", name: "Ramesh", phone: "8974512345", scope: "Yelahanka Taluk", droId: "DRO-01", active: false, lastActiveAt: new Date(Date.now() - 18 * 864e5).toISOString(), inactiveDays: 18, reason: "No response" },
+  { id: "TRO-06", name: "Priya K", phone: "8974567890", scope: "Doddaballapur Taluk", droId: "DRO-02", active: false, lastActiveAt: new Date(Date.now() - 3 * 864e5).toISOString(), inactiveDays: 3, reason: "Training program" },
+];
+
+export function inactiveTros(droId: string) {
+  return TRO_ACTIVITIES.filter((t) => t.droId === droId && !t.active).sort((a, b) => b.inactiveDays - a.inactiveDays);
+}
