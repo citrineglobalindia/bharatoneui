@@ -63,18 +63,28 @@ export function ReportDashboard({ cfg, rows, district }: { cfg: RegionalConfig; 
               icon={<Store className="h-5 w-5" />}
               tone="rose"
             />
-            <StatCard
-              label="Total Retailers"
-              value={String(s.totalRetailers)}
-              delta={{ value: district ? "across the district" : "across the taluk", positive: true }}
-              icon={<Users className="h-5 w-5" />}
-              tone={accentTone(cfg)}
-            />
-          </div>
+          <StatCard
+            label="Total Retailers"
+            value={String(s.totalRetailers)}
+            delta={{ value: district ? "across the district" : "across the taluk", positive: true }}
+            icon={<Users className="h-5 w-5" />}
+            tone={accentTone(cfg)}
+          />
         </div>
+      </div>
 
-        {/* Service transaction & revenue section */}
+      {/* Inactive TROs section — only for DRO (district) view */}
+      {district && (
         <div>
+          <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
+            <UserX className="h-3.5 w-3.5" /> Inactive TROs
+          </h3>
+          <InactiveTroPanel cfg={cfg} />
+        </div>
+      )}
+
+      {/* Service transaction & revenue section */}
+      <div>
           <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
             <Layers className="h-3.5 w-3.5" /> Transactions & Revenue
           </h3>
