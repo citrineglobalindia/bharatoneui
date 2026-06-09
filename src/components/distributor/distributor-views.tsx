@@ -17,7 +17,8 @@ import {
   RETAILERS, OFFICERS, SERVICE_META, WEEKLY, MONTHLY, inr, serviceTotal,
   retailerCommission, aggregateServices, officerSummary, topRetailers,
   exportRetailersCsv, officerCounts, retailerCounts, periodFigures,
-  DISTRIBUTOR_MARGIN, type Retailer, type PeriodKey,
+  DISTRIBUTOR_MARGIN, commissionBreakdown, retailerLocality, servicesUsed,
+  type Retailer, type PeriodKey,
 } from "@/components/distributor/distributor-data";
 
 const HEX = "#0ea5e9";
@@ -786,38 +787,72 @@ export function DistributorRetailers() {
             <table className="w-full text-sm">
               <thead className="bg-muted/50 text-[11px] uppercase tracking-wider text-muted-foreground">
                 <tr>
-                  <th className="text-left px-4 py-2.5 font-bold">Retailer</th>
-                  <th className="text-left px-3 py-2.5 font-bold">DRO / TRO</th>
-                  {SERVICE_META.map((s) => <th key={s.key} className="text-right px-2 py-2.5 font-bold">{s.key}</th>)}
-                  <th className="text-right px-3 py-2.5 font-bold">Total</th>
-                  <th className="text-right px-3 py-2.5 font-bold">Commission</th>
+                  <th rowSpan={2} className="text-left px-3 py-2.5 font-bold">Sl.No</th>
+                  <th rowSpan={2} className="text-left px-3 py-2.5 font-bold">Retailer ID</th>
+                  <th rowSpan={2} className="text-left px-3 py-2.5 font-bold">Name</th>
+                  <th rowSpan={2} className="text-left px-3 py-2.5 font-bold">Mobile No</th>
+                  <th rowSpan={2} className="text-left px-3 py-2.5 font-bold">District</th>
+                  <th rowSpan={2} className="text-left px-3 py-2.5 font-bold">Taluk</th>
+                  <th rowSpan={2} className="text-left px-3 py-2.5 font-bold">GP / Ward / Locality</th>
+                  <th rowSpan={2} className="text-right px-3 py-2.5 font-bold">Services</th>
+                  <th rowSpan={2} className="text-right px-3 py-2.5 font-bold">Total Txns</th>
+                  <th colSpan={4} className="text-center px-3 py-2 font-bold border-l border-border bg-emerald-50/60 text-emerald-800">Total Commission</th>
+                </tr>
+                <tr>
+                  <th className="text-right px-3 py-2 font-bold border-l border-border bg-emerald-50/40">Gross</th>
+                  <th className="text-right px-3 py-2 font-bold bg-emerald-50/40">TDS</th>
+                  <th className="text-right px-3 py-2 font-bold bg-emerald-50/40">GST</th>
+                  <th className="text-right px-3 py-2 font-bold bg-emerald-50/40 text-emerald-800">Payable</th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((r) => (
-                  <tr key={r.id} className="border-t border-border hover:bg-muted/30 cursor-pointer" onClick={() => navigate({ to: "/distributor/retailers/$id", params: { id: r.id } })}>
-                    <td className="px-4 py-2.5">
-                      <div className="flex items-center gap-2">
-                        <span className={`h-2 w-2 rounded-full ${r.active ? "bg-emerald-500" : "bg-slate-300"}`} />
-                        <div className="leading-tight">
-                          <p className="font-semibold">{r.name}</p>
-                          <p className="text-[11px] text-muted-foreground">{r.shop} · {r.phone}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-3 py-2.5 text-[11px] leading-tight">
-                      <p className="font-semibold">{oname(r.droId)}</p>
-                      <p className="text-muted-foreground">{oname(r.troId)} · {r.taluk}</p>
-                    </td>
-                    {SERVICE_META.map((s) => <td key={s.key} className="px-2 py-2.5 text-right tabular-nums">{r.today[s.key] || "—"}</td>)}
-                    <td className="px-3 py-2.5 text-right font-bold tabular-nums">{serviceTotal(r)}</td>
-                    <td className="px-3 py-2.5 text-right font-semibold text-emerald-700">{inr(retailerCommission(r))}</td>
-                  </tr>
-                ))}
+                {filtered.map((r, i) => {
+                  const cb = commissionBreakdown(r);
+                  return (
+                    <tr key={r.id} className="border-t border-border hover:bg-muted/30">
+                      <td className="px-3 py-2.5 tabular-nums text-muted-foreground">{i + 1}</td>
+                      <td className="px-3 py-2.5 font-mono text-[11px]">{r.id}</td>
+                      <td className="px-3 py-2.5">
+                        <button
+                          onClick={() => navigate({ to: "/distributor/retailers/$id", params: { id: r.id } })}
+                          className="flex items-center gap-2 text-left group"
+                        >
+                          <span className={`h-2 w-2 shrink-0 rounded-full ${r.active ? "bg-emerald-500" : "bg-slate-300"}`} />
+                          <span className="leading-tight">
+                            <span className="block font-semibold text-sky-700 group-hover:underline">{r.name}</span>
+                            <span className="block text-[11px] text-muted-foreground">{r.shop}</span>
+                          </span>
+                        </button>
+                      </td>
+                      <td className="px-3 py-2.5 tabular-nums">{r.phone}</td>
+                      <td className="px-3 py-2.5">{r.district}</td>
+                      <td className="px-3 py-2.5">{r.taluk}</td>
+                      <td className="px-3 py-2.5">{retailerLocality(r)}</td>
+                      <td className="px-3 py-2.5 text-right tabular-nums">{servicesUsed(r)}</td>
+                      <td className="px-3 py-2.5 text-right font-bold tabular-nums">{serviceTotal(r)}</td>
+                      <td className="px-3 py-2.5 text-right tabular-nums border-l border-border">{inr(cb.gross)}</td>
+                      <td className="px-3 py-2.5 text-right tabular-nums text-rose-600">-{inr(cb.tds)}</td>
+                      <td className="px-3 py-2.5 text-right tabular-nums text-rose-600">-{inr(cb.gst)}</td>
+                      <td className="px-3 py-2.5 text-right font-bold tabular-nums text-emerald-700">{inr(cb.payable)}</td>
+                    </tr>
+                  );
+                })}
                 {filtered.length === 0 && (
-                  <tr><td colSpan={11} className="px-4 py-8 text-center text-sm text-muted-foreground">No retailers match your filters.</td></tr>
+                  <tr><td colSpan={13} className="px-4 py-8 text-center text-sm text-muted-foreground">No retailers match your filters.</td></tr>
                 )}
               </tbody>
+              {filtered.length > 0 && (
+                <tfoot>
+                  <tr className="border-t-2 border-border bg-muted/40 font-bold">
+                    <td colSpan={8} className="px-3 py-2.5">Total ({filtered.length})</td>
+                    <td className="px-3 py-2.5 text-right tabular-nums">{filtered.reduce((a, r) => a + serviceTotal(r), 0)}</td>
+                    <td className="px-3 py-2.5 text-right tabular-nums border-l border-border">{inr(filtered.reduce((a, r) => a + commissionBreakdown(r).gross, 0))}</td>
+                    <td className="px-3 py-2.5 text-right tabular-nums text-rose-600">-{inr(filtered.reduce((a, r) => a + commissionBreakdown(r).tds, 0))}</td>
+                    <td className="px-3 py-2.5 text-right tabular-nums text-rose-600">-{inr(filtered.reduce((a, r) => a + commissionBreakdown(r).gst, 0))}</td>
+                    <td className="px-3 py-2.5 text-right tabular-nums text-emerald-700">{inr(filtered.reduce((a, r) => a + commissionBreakdown(r).payable, 0))}</td>
+                  </tr>
+                </tfoot>
+              )}
             </table>
           </div>
         </div>

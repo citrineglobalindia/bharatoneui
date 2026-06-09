@@ -17,6 +17,7 @@ import { StatCard } from "@/components/retailer/stat-card";
 import {
   RETAILERS, OFFICERS, SERVICE_META, WEEKLY, inr, serviceTotal,
   retailerCommission, officerSummary, officerCounts, DISTRIBUTOR_MARGIN,
+  commissionBreakdown, retailerLocality,
 } from "@/components/distributor/distributor-data";
 import type { ServiceKey } from "@/components/distributor/distributor-data";
 
@@ -314,7 +315,7 @@ export function DistributorRetailerDetail() {
               <p className="text-sm text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
                 <span className="flex items-center gap-1"><Store className="h-3.5 w-3.5" />{retailer.shop}</span>
                 <span className="flex items-center gap-1"><Phone className="h-3.5 w-3.5" />{retailer.phone}</span>
-                <span className="flex items-center gap-1"><MapPinned className="h-3.5 w-3.5" />{retailer.taluk}, {retailer.district}</span>
+                <span className="flex items-center gap-1"><MapPinned className="h-3.5 w-3.5" />{retailerLocality(retailer)}, {retailer.taluk}, {retailer.district}</span>
                 <span className="flex items-center gap-1"><ShieldCheck className="h-3.5 w-3.5" />{retailer.id}</span>
               </p>
             </div>
@@ -340,6 +341,34 @@ export function DistributorRetailerDetail() {
           <StatCard label="This Month" value={retailer.month.toLocaleString("en-IN")} icon={<Activity className="h-5 w-5" />} tone="saffron" />
           <StatCard label="Commission Today" value={inr(retailerCommission(retailer))} icon={<Coins className="h-5 w-5" />} tone="green" />
         </div>
+
+        {/* Commission breakdown: TDS / GST / Payable */}
+        {(() => {
+          const cb = commissionBreakdown(retailer);
+          return (
+            <div className="rounded-xl border border-border bg-card p-4 shadow-soft">
+              <h3 className="text-sm font-bold mb-3 flex items-center gap-2"><Coins className="h-4 w-4" style={{ color: HEX }} /> Commission Settlement Breakdown</h3>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="rounded-lg border border-border bg-muted/30 p-3">
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Gross Commission</p>
+                  <p className="text-lg font-extrabold mt-1">{inr(cb.gross)}</p>
+                </div>
+                <div className="rounded-lg border border-rose-200 bg-rose-50/50 p-3">
+                  <p className="text-[10px] uppercase tracking-wider text-rose-600 font-bold">TDS (5%)</p>
+                  <p className="text-lg font-extrabold mt-1 text-rose-700">-{inr(cb.tds)}</p>
+                </div>
+                <div className="rounded-lg border border-rose-200 bg-rose-50/50 p-3">
+                  <p className="text-[10px] uppercase tracking-wider text-rose-600 font-bold">GST (18%)</p>
+                  <p className="text-lg font-extrabold mt-1 text-rose-700">-{inr(cb.gst)}</p>
+                </div>
+                <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 p-3">
+                  <p className="text-[10px] uppercase tracking-wider text-emerald-700 font-bold">Payable Amount</p>
+                  <p className="text-lg font-extrabold mt-1 text-emerald-700">{inr(cb.payable)}</p>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="rounded-xl border border-border bg-card p-4 shadow-soft">

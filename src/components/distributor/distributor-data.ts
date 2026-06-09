@@ -103,6 +103,42 @@ export function retailerCommission(r: Retailer) {
   return SERVICE_META.reduce((sum, s) => sum + r.today[s.key] * s.rate, 0);
 }
 
+// Commission tax model: 5% TDS + 18% GST deducted from gross commission.
+export const COMMISSION_TDS = 0.05;
+export const COMMISSION_GST = 0.18;
+
+export function commissionBreakdown(r: Retailer) {
+  const gross = Math.round(retailerCommission(r));
+  const tds = Math.round(gross * COMMISSION_TDS);
+  const gst = Math.round(gross * COMMISSION_GST);
+  const payable = gross - tds - gst;
+  return { gross, tds, gst, payable };
+}
+
+export function servicesUsed(r: Retailer) {
+  return SERVICE_META.filter((s) => r.today[s.key] > 0).length;
+}
+
+// GP / Ward / Locality mapping per retailer.
+export const RETAILER_LOCALITY: Record<string, string> = {
+  "BO-RT-1001": "Attibele GP",
+  "BO-RT-1002": "Sarjapura Ward 4",
+  "BO-RT-1012": "Chandapura Locality",
+  "BO-RT-1004": "Sulibele GP",
+  "BO-RT-1005": "Nandagudi Ward 2",
+  "BO-RT-1006": "Vijayapura GP",
+  "BO-RT-1007": "Channarayapatna Ward 7",
+  "BO-RT-1003": "Bettakote Locality",
+  "BO-RT-1008": "Dabaspete GP",
+  "BO-RT-1010": "Thyamagondlu Ward 3",
+  "BO-RT-1011": "Sompura Locality",
+  "BO-RT-1009": "Solur GP",
+};
+
+export function retailerLocality(r: Retailer) {
+  return RETAILER_LOCALITY[r.id] ?? `${r.taluk} Locality`;
+}
+
 export function aggregateServices(rows: Retailer[]) {
   return SERVICE_META.map((s) => ({
     key: s.key, label: s.label, color: s.color, rate: s.rate,
