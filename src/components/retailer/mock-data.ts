@@ -73,6 +73,44 @@ export const SERVICE_SPLIT = [
   { name: "Business", value: 5, color: "#8b5cf6" },
 ];
 
+/* ---- Advanced reports data ---- */
+export const MONTHLY_VOLUME = [
+  { month: "Jan", txns: 540, value: 712000, commission: 14240 },
+  { month: "Feb", txns: 612, value: 798500, commission: 16110 },
+  { month: "Mar", txns: 688, value: 905200, commission: 18430 },
+  { month: "Apr", txns: 642, value: 851700, commission: 17220 },
+  { month: "May", txns: 731, value: 982400, commission: 19980 },
+  { month: "Jun", txns: 805, value: 1084600, commission: 22310 },
+];
+
+export type ServiceReportRow = {
+  name: string;
+  color: string;
+  txns: number;
+  volume: number;
+  rate: number; // commission % of volume
+};
+
+export const SERVICE_REPORT: ServiceReportRow[] = [
+  { name: "AEPS", color: "#0ea5e9", txns: 338, volume: 452000, rate: 0.6 },
+  { name: "DMT", color: "#f59e0b", txns: 186, volume: 312000, rate: 1.0 },
+  { name: "Recharge", color: "#10b981", txns: 145, volume: 86500, rate: 3.5 },
+  { name: "BBPS", color: "#f97316", txns: 97, volume: 124800, rate: 1.2 },
+  { name: "Business", color: "#8b5cf6", txns: 41, volume: 109300, rate: 2.0 },
+];
+
+export const COMMISSION_SPLIT = [
+  { name: "Earned", value: 18420, color: "#10b981" },
+  { name: "Settled", value: 15780, color: "#0ea5e9" },
+  { name: "Pending", value: 2640, color: "#f59e0b" },
+];
+
+export const PERIOD_MULTIPLIER: Record<string, number> = {
+  Daily: 0.04,
+  Weekly: 0.25,
+  Monthly: 1,
+};
+
 export const OPERATORS = [
   "Jio", "Airtel", "Vi (Vodafone Idea)", "BSNL", "MTNL",
 ];
