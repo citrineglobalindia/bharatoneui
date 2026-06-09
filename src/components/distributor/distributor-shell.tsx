@@ -28,6 +28,7 @@ const NAV = [
   { label: "Retailers", icon: <Users className="h-4 w-4" />, to: "/distributor/retailers" },
   { label: "Services Live", icon: <Grid3x3 className="h-4 w-4" />, to: "/distributor/services" },
   { label: "Commissions", icon: <Coins className="h-4 w-4" />, to: "/distributor/commissions" },
+  { label: "Reports", icon: <FileBarChart className="h-4 w-4" />, to: "/distributor/reports" },
 ];
 
 const HELP_NAV = [
