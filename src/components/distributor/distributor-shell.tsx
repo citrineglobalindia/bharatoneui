@@ -4,6 +4,7 @@ import {
   LayoutDashboard, Network, Users, Grid3x3, Coins, LogOut, Menu, X, BarChart3,
   Search, Activity, ChevronDown, ShieldCheck, Bell, UserCircle2,
   UserCog, LifeBuoy, MessageSquare, Settings as SettingsIcon,
+  FileBarChart,
 } from "lucide-react";
 import { BharatOneLogo } from "@/components/bharatone-logo";
 import {
