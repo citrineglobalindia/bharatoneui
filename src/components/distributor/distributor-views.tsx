@@ -187,7 +187,6 @@ function FilterMetricCard({
 }
 
 export function DistributorDashboard() {
-  const s = useMemo(() => summarize(RETAILERS), []);
   const mix = useMemo(() => aggregateServices(RETAILERS), []);
   const top = useMemo(() => topRetailers(RETAILERS), []);
   const oc = useMemo(() => officerCounts(), []);
