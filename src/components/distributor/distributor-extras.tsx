@@ -214,7 +214,7 @@ export function DistributorOfficerDetail() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 p-4">
             <StatCard label="Retailers" value={String(s.retailers)} delta={{ value: `${s.active} active`, positive: true }} icon={<Users className="h-5 w-5" />} tone="sky" />
             <StatCard label="Services Today" value={s.services.toLocaleString("en-IN")} icon={<Layers className="h-5 w-5" />} tone="violet" />
-            <StatCard label="Commission" value={inr(s.commission)} icon={<Coins className="h-5 w-5" />} tone="green" />
+            <StatCard label="Distributor Commission" value={inr(Math.round(s.commission * DISTRIBUTOR_MARGIN))} icon={<Coins className="h-5 w-5" />} tone="green" />
             <StatCard label="Revenue" value={inr(s.revenue)} icon={<IndianRupee className="h-5 w-5" />} tone="saffron" />
           </div>
         </div>
@@ -232,7 +232,7 @@ export function DistributorOfficerDetail() {
                       <p className="text-sm font-bold truncate">{t.name}</p>
                       <p className="text-[10px] text-muted-foreground truncate">{t.scope} · {ts.retailers} retailers</p>
                     </div>
-                    <span className="text-[11px] font-bold text-emerald-700">{inr(ts.commission)}</span>
+                    <span className="text-[11px] font-bold text-emerald-700">{inr(Math.round(ts.commission * DISTRIBUTOR_MARGIN))}</span>
                   </Link>
                 );
               })}
@@ -249,7 +249,7 @@ export function DistributorOfficerDetail() {
                   <th className="text-left px-4 py-2.5 font-bold">Retailer</th>
                   <th className="text-left px-3 py-2.5 font-bold">Taluk</th>
                   <th className="text-right px-3 py-2.5 font-bold">Services</th>
-                  <th className="text-right px-4 py-2.5 font-bold">Commission</th>
+                  <th className="text-right px-4 py-2.5 font-bold">Dist. Commission</th>
                 </tr>
               </thead>
               <tbody>
@@ -263,7 +263,7 @@ export function DistributorOfficerDetail() {
                     </td>
                     <td className="px-3 py-2.5 text-xs">{r.taluk}</td>
                     <td className="px-3 py-2.5 text-right tabular-nums">{serviceTotal(r)}</td>
-                    <td className="px-4 py-2.5 text-right font-bold text-emerald-700">{inr(retailerCommission(r))}</td>
+                    <td className="px-4 py-2.5 text-right font-bold text-emerald-700">{inr(Math.round(retailerCommission(r) * DISTRIBUTOR_MARGIN))}</td>
                   </tr>
                 ))}
                 {rets.length === 0 && <tr><td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">No retailers mapped.</td></tr>}
