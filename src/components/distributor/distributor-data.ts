@@ -34,18 +34,19 @@ export interface Officer {
   phone: string;
   scope: string;
   parentId?: string;
+  active?: boolean;
 }
 
 export const inr = (n: number) =>
   "\u20B9" + n.toLocaleString("en-IN", { maximumFractionDigits: 0 });
 
 export const OFFICERS: Officer[] = [
-  { id: "DRO-01", role: "DRO", name: "Kavya", phone: "8974532567", scope: "Bengaluru Urban District" },
-  { id: "DRO-02", role: "DRO", name: "Rahul Verma", phone: "8974511223", scope: "Bengaluru Rural District" },
-  { id: "TRO-01", role: "TRO", name: "Navya", phone: "8974532566", scope: "Anekal Taluk", parentId: "DRO-01" },
-  { id: "TRO-02", role: "TRO", name: "Praveen", phone: "8974544556", scope: "Hoskote Taluk", parentId: "DRO-01" },
-  { id: "TRO-03", role: "TRO", name: "Meghana", phone: "8974566778", scope: "Devanahalli Taluk", parentId: "DRO-02" },
-  { id: "TRO-04", role: "TRO", name: "Suhas", phone: "8974588990", scope: "Nelamangala Taluk", parentId: "DRO-02" },
+  { id: "DRO-01", role: "DRO", name: "Kavya", phone: "8974532567", scope: "Bengaluru Urban District", active: true },
+  { id: "DRO-02", role: "DRO", name: "Rahul Verma", phone: "8974511223", scope: "Bengaluru Rural District", active: false },
+  { id: "TRO-01", role: "TRO", name: "Navya", phone: "8974532566", scope: "Anekal Taluk", parentId: "DRO-01", active: true },
+  { id: "TRO-02", role: "TRO", name: "Praveen", phone: "8974544556", scope: "Hoskote Taluk", parentId: "DRO-01", active: true },
+  { id: "TRO-03", role: "TRO", name: "Meghana", phone: "8974566778", scope: "Devanahalli Taluk", parentId: "DRO-02", active: false },
+  { id: "TRO-04", role: "TRO", name: "Suhas", phone: "8974588990", scope: "Nelamangala Taluk", parentId: "DRO-02", active: true },
 ];
 
 const mk = (
