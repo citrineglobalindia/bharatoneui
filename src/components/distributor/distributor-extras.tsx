@@ -8,6 +8,7 @@ import {
   Users, Building2, MapPinned, ArrowLeft, Phone, Store, Activity,
   Layers, Coins, IndianRupee, ChevronRight, ShieldCheck, Settings as SettingsIcon,
   Bell, Globe, Lock, Search, UserCog, CalendarRange,
+  UserCheck, UserX, Trophy, TrendingUp, ArrowUpDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { DistributorShell } from "@/components/distributor/distributor-shell";
@@ -15,7 +16,7 @@ import { PageHeader } from "@/components/retailer/page-header";
 import { StatCard } from "@/components/retailer/stat-card";
 import {
   RETAILERS, OFFICERS, SERVICE_META, WEEKLY, inr, serviceTotal,
-  retailerCommission, officerSummary,
+  retailerCommission, officerSummary, officerCounts, DISTRIBUTOR_MARGIN,
 } from "@/components/distributor/distributor-data";
 import type { ServiceKey } from "@/components/distributor/distributor-data";
 
@@ -25,15 +26,38 @@ const HEX = "#0ea5e9";
 export function DistributorOfficers() {
   const [query, setQuery] = useState("");
   const [role, setRole] = useState<"all" | "DRO" | "TRO">("all");
+  const [status, setStatus] = useState<"all" | "active" | "inactive">("all");
+  const [sort, setSort] = useState<"commission" | "services" | "retailers">("commission");
+
+  const counts = useMemo(() => officerCounts(), []);
+
+  const enriched = useMemo(
+    () =>
+      OFFICERS.map((o) => {
+        const s = officerSummary(o.id);
+        return { officer: o, summary: s, distComm: Math.round(s.commission * DISTRIBUTOR_MARGIN) };
+      }),
+    [],
+  );
+  const maxComm = Math.max(...enriched.map((e) => e.distComm), 1);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return OFFICERS.filter((o) => {
-      if (role !== "all" && o.role !== role) return false;
-      if (!q) return true;
-      return [o.name, o.phone, o.scope, o.id].some((v) => v.toLowerCase().includes(q));
-    });
-  }, [query, role]);
+    return enriched
+      .filter(({ officer: o }) => {
+        if (role !== "all" && o.role !== role) return false;
+        if (status !== "all" && (status === "active") !== (o.active ?? true)) return false;
+        if (!q) return true;
+        return [o.name, o.phone, o.scope, o.id].some((v) => v.toLowerCase().includes(q));
+      })
+      .sort((a, b) =>
+        sort === "commission"
+          ? b.distComm - a.distComm
+          : sort === "services"
+          ? b.summary.services - a.summary.services
+          : b.summary.retailers - a.summary.retailers,
+      );
+  }, [enriched, query, role, status, sort]);
 
   return (
     <DistributorShell>
@@ -43,6 +67,14 @@ export function DistributorOfficers() {
           title="DRO & TRO Officers"
           subtitle="All district and taluk officers mapped under you. Open any officer for full details."
         />
+
+        {/* KPI summary */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <StatCard label="DRO Officers" value={`${counts.droActive}/${counts.droTotal}`} delta={{ value: `${counts.droInactive} inactive`, positive: counts.droInactive === 0 }} icon={<ShieldCheck className="h-5 w-5" />} tone="rose" />
+          <StatCard label="TRO Officers" value={`${counts.troActive}/${counts.troTotal}`} delta={{ value: `${counts.troInactive} inactive`, positive: counts.troInactive === 0 }} icon={<UserCog className="h-5 w-5" />} tone="saffron" />
+          <StatCard label="Active Officers" value={String(counts.droActive + counts.troActive)} icon={<UserCheck className="h-5 w-5" />} tone="green" />
+          <StatCard label="Inactive Officers" value={String(counts.droInactive + counts.troInactive)} icon={<UserX className="h-5 w-5" />} tone="violet" />
+        </div>
 
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-2 rounded-lg border border-border bg-white px-3 h-9 flex-1 min-w-[220px]">
@@ -58,20 +90,40 @@ export function DistributorOfficers() {
               {r === "all" ? "All" : r}
             </button>
           ))}
+          {(["all", "active", "inactive"] as const).map((st) => (
+            <button
+              key={st}
+              onClick={() => setStatus(st)}
+              className={`h-9 rounded-lg border px-3 text-sm font-semibold capitalize ${status === st ? "bg-sky-600 text-white border-sky-600" : "bg-white border-border text-slate-700"}`}
+            >
+              {st}
+            </button>
+          ))}
+          <button
+            onClick={() => setSort(sort === "commission" ? "services" : sort === "services" ? "retailers" : "commission")}
+            className="h-9 rounded-lg border border-border bg-white px-3 text-sm font-semibold text-slate-700 inline-flex items-center gap-1.5"
+          >
+            <ArrowUpDown className="h-3.5 w-3.5" /> {sort}
+          </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-          {filtered.map((o) => {
-            const s = officerSummary(o.id);
+          {filtered.map(({ officer: o, summary: s, distComm }, idx) => {
             const isDro = o.role === "DRO";
             const parent = o.parentId ? OFFICERS.find((p) => p.id === o.parentId) : undefined;
+            const active = o.active ?? true;
             return (
               <Link
                 key={o.id}
                 to="/distributor/officers/$id"
                 params={{ id: o.id }}
-                className="rounded-xl border border-border bg-card p-4 shadow-soft hover:shadow-elev transition group"
+                className="relative rounded-xl border border-border bg-card p-4 shadow-soft hover:shadow-elev transition group"
               >
+                {idx === 0 && sort === "commission" && (
+                  <span className="absolute -top-2 -right-2 inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-700 px-2 py-0.5 text-[10px] font-bold shadow-soft">
+                    <Trophy className="h-3 w-3" /> Top earner
+                  </span>
+                )}
                 <div className="flex items-center gap-3">
                   <div className={`h-11 w-11 rounded-xl text-white flex items-center justify-center font-extrabold ${isDro ? "bg-gradient-to-br from-rose-500 to-pink-600" : "bg-gradient-to-br from-amber-500 to-orange-600"}`}>{o.name[0]}</div>
                   <div className="min-w-0 flex-1">
@@ -80,17 +132,33 @@ export function DistributorOfficers() {
                     </p>
                     <p className="text-[11px] text-muted-foreground flex items-center gap-1 truncate"><MapPinned className="h-3 w-3 shrink-0" />{o.scope}</p>
                   </div>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-slate-700" />
+                  <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${active ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-600"}`}>
+                    <span className={`h-1.5 w-1.5 rounded-full ${active ? "bg-emerald-500" : "bg-slate-400"}`} />
+                    {active ? "Active" : "Inactive"}
+                  </span>
                 </div>
                 {parent && <p className="text-[10px] text-muted-foreground mt-2">Reports to <span className="font-semibold text-slate-700">{parent.name}</span> (DRO)</p>}
                 <div className="grid grid-cols-3 gap-2 mt-3 text-center">
                   <div className="rounded-lg bg-muted/40 py-1.5"><p className="text-sm font-extrabold">{s.retailers}</p><p className="text-[9px] uppercase text-muted-foreground">Retailers</p></div>
                   <div className="rounded-lg bg-muted/40 py-1.5"><p className="text-sm font-extrabold">{s.services}</p><p className="text-[9px] uppercase text-muted-foreground">Services</p></div>
-                  <div className="rounded-lg bg-muted/40 py-1.5"><p className="text-sm font-extrabold text-emerald-600">{inr(s.commission)}</p><p className="text-[9px] uppercase text-muted-foreground">Comm.</p></div>
+                  <div className="rounded-lg bg-muted/40 py-1.5"><p className="text-sm font-extrabold text-emerald-600">{inr(distComm)}</p><p className="text-[9px] uppercase text-muted-foreground">Dist. Comm.</p></div>
+                </div>
+                {/* performance bar */}
+                <div className="mt-3">
+                  <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
+                    <span className="inline-flex items-center gap-1"><TrendingUp className="h-3 w-3" /> Performance</span>
+                    <span className="font-semibold text-slate-700">{Math.round((distComm / maxComm) * 100)}%</span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                    <div className="h-full rounded-full bg-gradient-to-r from-sky-500 to-emerald-500" style={{ width: `${Math.round((distComm / maxComm) * 100)}%` }} />
+                  </div>
                 </div>
               </Link>
             );
           })}
+          {filtered.length === 0 && (
+            <div className="col-span-full rounded-xl border border-dashed border-border bg-card p-8 text-center text-muted-foreground">No officers match your filters.</div>
+          )}
         </div>
       </div>
     </DistributorShell>
