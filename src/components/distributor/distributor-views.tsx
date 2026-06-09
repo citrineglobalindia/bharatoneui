@@ -17,7 +17,8 @@ import {
   RETAILERS, OFFICERS, SERVICE_META, WEEKLY, MONTHLY, inr, serviceTotal,
   retailerCommission, aggregateServices, officerSummary, topRetailers,
   exportRetailersCsv, officerCounts, retailerCounts, periodFigures,
-  DISTRIBUTOR_MARGIN, type Retailer, type PeriodKey,
+  DISTRIBUTOR_MARGIN, commissionBreakdown, retailerLocality, servicesUsed,
+  type Retailer, type PeriodKey,
 } from "@/components/distributor/distributor-data";
 
 const HEX = "#0ea5e9";
