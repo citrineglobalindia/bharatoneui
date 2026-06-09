@@ -17,6 +17,7 @@ import { StatCard } from "@/components/retailer/stat-card";
 import {
   RETAILERS, OFFICERS, SERVICE_META, WEEKLY, inr, serviceTotal,
   retailerCommission, officerSummary, officerCounts, DISTRIBUTOR_MARGIN,
+  commissionBreakdown, retailerLocality,
 } from "@/components/distributor/distributor-data";
 import type { ServiceKey } from "@/components/distributor/distributor-data";
 
