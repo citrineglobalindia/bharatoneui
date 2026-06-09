@@ -15,7 +15,7 @@ import { PageHeader } from "@/components/retailer/page-header";
 import { StatCard } from "@/components/retailer/stat-card";
 import {
   RETAILERS, OFFICERS, SERVICE_META, WEEKLY, MONTHLY, inr, serviceTotal,
-  retailerCommission, aggregateServices, summarize, officerSummary, topRetailers,
+  retailerCommission, aggregateServices, officerSummary, topRetailers,
   exportRetailersCsv, officerCounts, retailerCounts, periodFigures,
   type Retailer, type PeriodKey,
 } from "@/components/distributor/distributor-data";
