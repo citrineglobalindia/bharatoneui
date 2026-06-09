@@ -104,7 +104,43 @@ export function DistributorDashboard() {
   const s = useMemo(() => summarize(RETAILERS), []);
   const mix = useMemo(() => aggregateServices(RETAILERS), []);
   const top = useMemo(() => topRetailers(RETAILERS), []);
-  const dros = OFFICERS.filter((o) => o.role === "DRO");
+  const oc = useMemo(() => officerCounts(), []);
+  const rc = useMemo(() => retailerCounts(RETAILERS), []);
+  const periods = useMemo(() => periodFigures(RETAILERS), []);
+
+  const [svcPeriod, setSvcPeriod] = useState<PeriodKey>("Daily");
+  const [commPeriod, setCommPeriod] = useState<PeriodKey>("Daily");
+  const [svcRange, setSvcRange] = useState({ from: "2026-06-01", to: "2026-06-30" });
+  const [commRange, setCommRange] = useState({ from: "2026-06-01", to: "2026-06-30" });
+
+  const daysBetween = (a: string, b: string) =>
+    Math.max(1, Math.round((new Date(b).getTime() - new Date(a).getTime()) / 86400000) + 1);
+
+  const svcFig = useMemo(() => {
+    if (svcPeriod === "Custom") {
+      const d = daysBetween(svcRange.from, svcRange.to);
+      return {
+        services: periods.Daily.services * d,
+        commission: periods.Daily.commission * d,
+        retailerRevenue: periods.Daily.retailerRevenue * d,
+        distributorRevenue: periods.Daily.distributorRevenue * d,
+      };
+    }
+    return periods[svcPeriod];
+  }, [svcPeriod, svcRange, periods]);
+
+  const commFig = useMemo(() => {
+    if (commPeriod === "Custom") {
+      const d = daysBetween(commRange.from, commRange.to);
+      return {
+        services: periods.Daily.services * d,
+        commission: periods.Daily.commission * d,
+        retailerRevenue: periods.Daily.retailerRevenue * d,
+        distributorRevenue: periods.Daily.distributorRevenue * d,
+      };
+    }
+    return periods[commPeriod];
+  }, [commPeriod, commRange, periods]);
 
   return (
     <DistributorShell>
@@ -120,18 +156,92 @@ export function DistributorDashboard() {
           }
         />
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <StatCard label="DROs / TROs" value={`${dros.length} / ${OFFICERS.length - dros.length}`} delta={{ value: "officers mapped", positive: true }} icon={<Building2 className="h-5 w-5" />} tone="rose" />
-          <StatCard label="Retailers" value={String(s.totalRetailers)} delta={{ value: `${s.activeToday} active today`, positive: true }} icon={<Users className="h-5 w-5" />} tone="sky" />
-          <StatCard label="Services Today" value={s.servicesToday.toLocaleString("en-IN")} delta={{ value: "across all services", positive: true }} icon={<Layers className="h-5 w-5" />} tone="violet" />
-          <StatCard label="Commission Today" value={inr(s.commissionToday)} delta={{ value: "+9.6% vs avg", positive: true }} icon={<Coins className="h-5 w-5" />} tone="green" />
+        {/* Officer + Retailer counts (active / inactive) */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <CountCard
+            title="DRO Officers"
+            icon={<Building2 className="h-5 w-5" />}
+            tone="rose"
+            total={oc.droTotal}
+            active={oc.droActive}
+            inactive={oc.droInactive}
+          />
+          <CountCard
+            title="TRO Officers"
+            icon={<MapPinned className="h-5 w-5" />}
+            tone="violet"
+            total={oc.troTotal}
+            active={oc.troActive}
+            inactive={oc.troInactive}
+          />
+          <CountCard
+            title="Retailers"
+            icon={<Users className="h-5 w-5" />}
+            tone="sky"
+            total={rc.total}
+            active={rc.active}
+            inactive={rc.inactive}
+          />
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <StatCard label="Today Revenue" value={inr(s.revenueToday)} icon={<IndianRupee className="h-5 w-5" />} tone="saffron" />
-          <StatCard label="This Week" value={s.weekServices.toLocaleString("en-IN")} delta={{ value: "services", positive: true }} icon={<Activity className="h-5 w-5" />} tone="sky" />
-          <StatCard label="This Month" value={s.monthServices.toLocaleString("en-IN")} delta={{ value: "services", positive: true }} icon={<TrendingUp className="h-5 w-5" />} tone="violet" />
-          <StatCard label="Active Shops" value={`${Math.round((s.activeToday / s.totalRetailers) * 100)}%`} delta={{ value: "live now", positive: true }} icon={<Store className="h-5 w-5" />} tone="green" />
+        {/* Service, Commission, Revenue + Active shops */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <FilterMetricCard
+            title="Services"
+            icon={<Layers className="h-5 w-5" />}
+            tone="violet"
+            period={svcPeriod}
+            onPeriod={setSvcPeriod}
+            range={svcRange}
+            onRange={setSvcRange}
+            value={svcFig.services.toLocaleString("en-IN")}
+            caption="transactions processed"
+          />
+          <FilterMetricCard
+            title="Commission"
+            icon={<Coins className="h-5 w-5" />}
+            tone="green"
+            period={commPeriod}
+            onPeriod={setCommPeriod}
+            range={commRange}
+            onRange={setCommRange}
+            value={inr(commFig.commission)}
+            caption="commission earned"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="rounded-2xl border border-border bg-card p-4 shadow-soft">
+            <div className="flex items-center justify-between">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Retailer Revenue</p>
+              <div className="h-9 w-9 rounded-xl bg-orange-500 text-white flex items-center justify-center"><IndianRupee className="h-5 w-5" /></div>
+            </div>
+            <p className="font-display text-2xl font-extrabold mt-2">{inr(periods.Monthly.retailerRevenue)}</p>
+            <p className="text-[11px] text-muted-foreground mt-1">Total this month across shops</p>
+          </div>
+          <div className="rounded-2xl border border-border bg-card p-4 shadow-soft">
+            <div className="flex items-center justify-between">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Distributor Revenue</p>
+              <div className="h-9 w-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center"><BadgeIndianRupee className="h-5 w-5" /></div>
+            </div>
+            <p className="font-display text-2xl font-extrabold mt-2">{inr(periods.Monthly.distributorRevenue)}</p>
+            <p className="text-[11px] text-muted-foreground mt-1">Your margin this month</p>
+          </div>
+          <div className="rounded-2xl border border-border bg-card p-4 shadow-soft">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">Active vs Inactive Shops</p>
+            <div className="flex items-center justify-between text-sm font-bold">
+              <span className="text-emerald-600">{rc.active} Active</span>
+              <span className="text-rose-500">{rc.inactive} Inactive</span>
+            </div>
+            <div className="mt-2 h-3 w-full rounded-full bg-rose-100 overflow-hidden flex">
+              <div className="h-full bg-emerald-500" style={{ width: `${rc.activePct}%` }} />
+              <div className="h-full bg-rose-400" style={{ width: `${rc.inactivePct}%` }} />
+            </div>
+            <div className="mt-1.5 flex items-center justify-between text-[11px] font-semibold">
+              <span className="text-emerald-600">{rc.activePct}%</span>
+              <span className="text-rose-500">{rc.inactivePct}%</span>
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
