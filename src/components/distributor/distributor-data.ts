@@ -142,6 +142,54 @@ export function topRetailers(rows: Retailer[], n = 6) {
     .slice(0, n);
 }
 
+export function officerCounts() {
+  const dros = OFFICERS.filter((o) => o.role === "DRO");
+  const tros = OFFICERS.filter((o) => o.role === "TRO");
+  return {
+    droTotal: dros.length,
+    droActive: dros.filter((o) => o.active).length,
+    droInactive: dros.filter((o) => !o.active).length,
+    troTotal: tros.length,
+    troActive: tros.filter((o) => o.active).length,
+    troInactive: tros.filter((o) => !o.active).length,
+  };
+}
+
+export function retailerCounts(rows: Retailer[]) {
+  const active = rows.filter((r) => r.active).length;
+  const inactive = rows.length - active;
+  const pct = rows.length ? Math.round((active / rows.length) * 100) : 0;
+  return { total: rows.length, active, inactive, activePct: pct, inactivePct: 100 - pct };
+}
+
+export type PeriodKey = "Daily" | "Weekly" | "Monthly" | "Custom";
+
+// Distributor keeps a margin (~22%) of retailer commission as its own revenue.
+export const DISTRIBUTOR_MARGIN = 0.22;
+
+export function periodFigures(rows: Retailer[]) {
+  const daily = {
+    services: rows.reduce((sum, r) => sum + serviceTotal(r), 0),
+    commission: rows.reduce((sum, r) => sum + retailerCommission(r), 0),
+    revenue: rows.reduce((sum, r) => sum + r.revenue, 0),
+  };
+  const weeklyServices = rows.reduce((sum, r) => sum + r.week, 0);
+  const monthlyServices = rows.reduce((sum, r) => sum + r.month, 0);
+  const commPerService = daily.services ? daily.commission / daily.services : 0;
+  const revPerService = daily.services ? daily.revenue / daily.services : 0;
+  const build = (services: number) => ({
+    services,
+    commission: Math.round(services * commPerService),
+    retailerRevenue: Math.round(services * revPerService),
+    distributorRevenue: Math.round(services * commPerService * DISTRIBUTOR_MARGIN),
+  });
+  return {
+    Daily: build(daily.services),
+    Weekly: build(weeklyServices),
+    Monthly: build(monthlyServices),
+  };
+}
+
 export function exportRetailersCsv(rows: Retailer[], filename: string) {
   const headers = ["Retailer ID", "Name", "Shop", "Phone", "Taluk", "DRO", "TRO", "Status", ...SERVICE_META.map((s) => s.key), "Total", "Week", "Month", "Revenue", "Commission"];
   const lines = rows.map((r) =>
