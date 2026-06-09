@@ -630,70 +630,95 @@ export function DistributorSalesDashboard() {
 
 /* ---------------- Network Map ---------------- */
 export function DistributorNetwork() {
-  const dros = OFFICERS.filter((o) => o.role === "DRO");
+export function DistributorNetwork() {
+  const dro = OFFICERS.find((o) => o.role === "DRO") ?? OFFICERS[0];
+  const ds = officerSummary(dro.id);
+  const tros = OFFICERS.filter((o) => o.parentId === dro.id);
+  const distCommission = Math.round(ds.commission * DISTRIBUTOR_MARGIN);
+
   return (
     <DistributorShell>
       <div className="space-y-6">
         <PageHeader
           icon={<Network className="h-5 w-5" />}
           title="Network Map"
-          subtitle="DRO → TRO → Retailer hierarchy mapped under you."
+          subtitle="Your DRO → TRO → Retailer hierarchy with distributor commission."
         />
-        <div className="space-y-5">
-          {dros.map((dro) => {
-            const ds = officerSummary(dro.id);
-            const tros = OFFICERS.filter((o) => o.parentId === dro.id);
+
+        {/* Hero DRO card */}
+        <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-slate-900 via-slate-800 to-rose-900 text-white shadow-elev">
+          <div className="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-rose-500/20 blur-3xl" />
+          <div className="absolute -bottom-20 -left-10 h-56 w-56 rounded-full bg-sky-500/20 blur-3xl" />
+          <div className="relative p-6">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-rose-400 to-pink-600 flex items-center justify-center text-2xl font-black shadow-lg ring-2 ring-white/20">
+                  {dro.name[0]}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-xl font-extrabold">{dro.name}</p>
+                    <span className="text-[10px] font-bold bg-white/15 px-2 py-0.5 rounded-full uppercase tracking-wide">DRO</span>
+                  </div>
+                  <p className="text-sm text-white/70 flex items-center gap-1.5 mt-0.5"><Building2 className="h-3.5 w-3.5" />{dro.scope}</p>
+                  <p className="text-xs text-white/50 mt-0.5">{dro.phone}</p>
+                </div>
+              </div>
+              <div className="rounded-2xl bg-white/10 backdrop-blur px-5 py-3 text-right ring-1 ring-white/15">
+                <p className="text-[11px] uppercase tracking-wider text-white/60 flex items-center gap-1 justify-end"><Coins className="h-3.5 w-3.5" /> Distributor Commission</p>
+                <p className="text-3xl font-black text-emerald-300 mt-1">{inr(distCommission)}</p>
+              </div>
+            </div>
+            <div className="mt-5 grid grid-cols-3 gap-3">
+              <div className="rounded-xl bg-white/10 px-4 py-3 text-center ring-1 ring-white/10">
+                <p className="text-2xl font-extrabold">{tros.length}</p>
+                <p className="text-[10px] uppercase tracking-wider text-white/60">TROs</p>
+              </div>
+              <div className="rounded-xl bg-white/10 px-4 py-3 text-center ring-1 ring-white/10">
+                <p className="text-2xl font-extrabold">{ds.retailers}</p>
+                <p className="text-[10px] uppercase tracking-wider text-white/60">Retailers</p>
+              </div>
+              <div className="rounded-xl bg-white/10 px-4 py-3 text-center ring-1 ring-white/10">
+                <p className="text-2xl font-extrabold">{ds.services}</p>
+                <p className="text-[10px] uppercase tracking-wider text-white/60">Services</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* TRO cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {tros.map((tro) => {
+            const ts = officerSummary(tro.id);
+            const rets = RETAILERS.filter((r) => r.troId === tro.id);
+            const troDistComm = Math.round(ts.commission * DISTRIBUTOR_MARGIN);
             return (
-              <div key={dro.id} className="rounded-xl border border-border bg-card shadow-soft overflow-hidden">
-                <div className="flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-rose-50 to-white px-4 py-3 border-b border-border">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-rose-500 to-pink-600 text-white flex items-center justify-center font-extrabold">{dro.name[0]}</div>
+              <div key={tro.id} className="rounded-xl border border-border bg-card shadow-soft overflow-hidden hover:shadow-elev transition-shadow">
+                <div className="flex items-center justify-between gap-2 bg-gradient-to-r from-amber-50 to-white px-4 py-3 border-b border-border">
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center text-sm font-extrabold">{tro.name[0]}</div>
                     <div>
-                      <p className="font-bold flex items-center gap-2">{dro.name}
-                        <span className="text-[10px] font-bold bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded uppercase">DRO</span>
+                      <p className="text-sm font-bold flex items-center gap-1.5">{tro.name}
+                        <span className="text-[9px] font-bold bg-amber-100 text-amber-800 px-1 py-0.5 rounded uppercase">TRO</span>
                       </p>
-                      <p className="text-[11px] text-muted-foreground flex items-center gap-1"><Building2 className="h-3 w-3" />{dro.scope} · {dro.phone}</p>
+                      <p className="text-[10px] text-muted-foreground flex items-center gap-1"><MapPinned className="h-2.5 w-2.5" />{tro.scope}</p>
                     </div>
                   </div>
-                  <div className="flex gap-4 text-center">
-                    <div><p className="text-lg font-extrabold">{tros.length}</p><p className="text-[10px] uppercase text-muted-foreground">TROs</p></div>
-                    <div><p className="text-lg font-extrabold">{ds.retailers}</p><p className="text-[10px] uppercase text-muted-foreground">Retailers</p></div>
-                    <div><p className="text-lg font-extrabold">{ds.services}</p><p className="text-[10px] uppercase text-muted-foreground">Services</p></div>
-                    <div><p className="text-lg font-extrabold text-emerald-600">{inr(ds.commission)}</p><p className="text-[10px] uppercase text-muted-foreground">Commission</p></div>
+                  <div className="text-right">
+                    <p className="text-[9px] uppercase tracking-wider text-muted-foreground">Dist. Commission</p>
+                    <p className="text-sm font-extrabold text-emerald-700">{inr(troDistComm)}</p>
                   </div>
                 </div>
-                <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {tros.map((tro) => {
-                    const ts = officerSummary(tro.id);
-                    const rets = RETAILERS.filter((r) => r.troId === tro.id);
-                    return (
-                      <div key={tro.id} className="rounded-lg border border-border bg-muted/20 p-3">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center text-xs font-extrabold">{tro.name[0]}</div>
-                            <div>
-                              <p className="text-sm font-bold flex items-center gap-1.5">{tro.name}
-                                <span className="text-[9px] font-bold bg-amber-100 text-amber-800 px-1 py-0.5 rounded uppercase">TRO</span>
-                              </p>
-                              <p className="text-[10px] text-muted-foreground flex items-center gap-1"><MapPinned className="h-2.5 w-2.5" />{tro.scope}</p>
-                            </div>
-                          </div>
-                          <span className="text-[11px] font-bold text-sky-700">{inr(ts.commission)}</span>
-                        </div>
-                        <ul className="space-y-1">
-                          {rets.map((r) => (
-                            <li key={r.id} className="flex items-center gap-2 text-[11px] rounded-md bg-white px-2 py-1 border border-border">
-                              <span className={`h-1.5 w-1.5 rounded-full ${r.active ? "bg-emerald-500" : "bg-slate-300"}`} />
-                              <ChevronRight className="h-3 w-3 text-muted-foreground" />
-                              <span className="font-semibold truncate flex-1">{r.name}</span>
-                              <span className="text-muted-foreground">{serviceTotal(r)} svc</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    );
-                  })}
-                </div>
+                <ul className="p-3 space-y-1.5">
+                  {rets.map((r) => (
+                    <li key={r.id} className="flex items-center gap-2 text-[11px] rounded-lg bg-muted/30 px-2.5 py-1.5 border border-border">
+                      <span className={`h-1.5 w-1.5 rounded-full ${r.active ? "bg-emerald-500" : "bg-slate-300"}`} />
+                      <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                      <span className="font-semibold truncate flex-1">{r.name}</span>
+                      <span className="text-emerald-700 font-semibold">{inr(Math.round(retailerCommission(r) * DISTRIBUTOR_MARGIN))}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             );
           })}
