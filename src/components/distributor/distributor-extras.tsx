@@ -315,7 +315,7 @@ export function DistributorRetailerDetail() {
               <p className="text-sm text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
                 <span className="flex items-center gap-1"><Store className="h-3.5 w-3.5" />{retailer.shop}</span>
                 <span className="flex items-center gap-1"><Phone className="h-3.5 w-3.5" />{retailer.phone}</span>
-                <span className="flex items-center gap-1"><MapPinned className="h-3.5 w-3.5" />{retailer.taluk}, {retailer.district}</span>
+                <span className="flex items-center gap-1"><MapPinned className="h-3.5 w-3.5" />{retailerLocality(retailer)}, {retailer.taluk}, {retailer.district}</span>
                 <span className="flex items-center gap-1"><ShieldCheck className="h-3.5 w-3.5" />{retailer.id}</span>
               </p>
             </div>
