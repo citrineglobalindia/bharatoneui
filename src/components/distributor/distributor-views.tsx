@@ -630,7 +630,6 @@ export function DistributorSalesDashboard() {
 
 /* ---------------- Network Map ---------------- */
 export function DistributorNetwork() {
-export function DistributorNetwork() {
   const dro = OFFICERS.find((o) => o.role === "DRO") ?? OFFICERS[0];
   const ds = officerSummary(dro.id);
   const tros = OFFICERS.filter((o) => o.parentId === dro.id);
