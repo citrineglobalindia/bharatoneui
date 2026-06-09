@@ -100,6 +100,92 @@ function Card({ title, action, children, className = "" }: { title?: React.React
 }
 
 /* ---------------- Original Network Dashboard ---------------- */
+const TONE_BG: Record<string, string> = {
+  rose: "bg-rose-500",
+  violet: "bg-violet-500",
+  sky: "bg-sky-500",
+  green: "bg-emerald-600",
+};
+
+function CountCard({
+  title, icon, tone, total, active, inactive,
+}: {
+  title: string; icon: React.ReactNode; tone: string;
+  total: number; active: number; inactive: number;
+}) {
+  return (
+    <div className="rounded-2xl border border-border bg-card p-4 shadow-soft">
+      <div className="flex items-center justify-between">
+        <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{title}</p>
+        <div className={`h-9 w-9 rounded-xl ${TONE_BG[tone]} text-white flex items-center justify-center`}>{icon}</div>
+      </div>
+      <p className="font-display text-3xl font-extrabold mt-2">{total}</p>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <div className="rounded-lg bg-emerald-50 border border-emerald-100 px-2.5 py-1.5">
+          <p className="text-[10px] font-bold uppercase text-emerald-600">Active</p>
+          <p className="text-base font-extrabold text-emerald-700">{active}</p>
+        </div>
+        <div className="rounded-lg bg-rose-50 border border-rose-100 px-2.5 py-1.5">
+          <p className="text-[10px] font-bold uppercase text-rose-500">Inactive</p>
+          <p className="text-base font-extrabold text-rose-600">{inactive}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const PERIODS: PeriodKey[] = ["Daily", "Weekly", "Monthly", "Custom"];
+
+function FilterMetricCard({
+  title, icon, tone, period, onPeriod, range, onRange, value, caption,
+}: {
+  title: string; icon: React.ReactNode; tone: string;
+  period: PeriodKey; onPeriod: (p: PeriodKey) => void;
+  range: { from: string; to: string }; onRange: (r: { from: string; to: string }) => void;
+  value: string; caption: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-border bg-card p-4 shadow-soft">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <div className={`h-9 w-9 rounded-xl ${TONE_BG[tone]} text-white flex items-center justify-center`}>{icon}</div>
+          <h3 className="text-sm font-bold text-slate-800">{title}</h3>
+        </div>
+        <div className="flex rounded-lg border border-slate-200 bg-slate-50 p-0.5">
+          {PERIODS.map((p) => (
+            <button
+              key={p}
+              onClick={() => onPeriod(p)}
+              className={`px-2.5 py-1 text-[11px] font-bold rounded-md transition ${
+                period === p ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              {p}
+            </button>
+          ))}
+        </div>
+      </div>
+      <p className="font-display text-3xl font-extrabold text-slate-900">{value}</p>
+      <p className="text-[11px] text-muted-foreground mt-1">{caption} · {period === "Custom" ? "custom range" : period.toLowerCase()}</p>
+      {period === "Custom" && (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <input
+            type="date" value={range.from}
+            onChange={(e) => onRange({ ...range, from: e.target.value })}
+            className="rounded-lg border border-slate-200 bg-white px-2.5 h-8 text-xs font-semibold text-slate-700"
+          />
+          <span className="text-xs text-slate-400">to</span>
+          <input
+            type="date" value={range.to}
+            onChange={(e) => onRange({ ...range, to: e.target.value })}
+            className="rounded-lg border border-slate-200 bg-white px-2.5 h-8 text-xs font-semibold text-slate-700"
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function DistributorDashboard() {
   const s = useMemo(() => summarize(RETAILERS), []);
   const mix = useMemo(() => aggregateServices(RETAILERS), []);
