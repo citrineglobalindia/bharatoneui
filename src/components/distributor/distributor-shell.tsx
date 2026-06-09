@@ -4,6 +4,7 @@ import {
   LayoutDashboard, Network, Users, Grid3x3, Coins, LogOut, Menu, X, BarChart3,
   Search, Activity, ChevronDown, ShieldCheck, Bell, UserCircle2,
   UserCog, LifeBuoy, MessageSquare, Settings as SettingsIcon,
+  FileBarChart,
 } from "lucide-react";
 import { BharatOneLogo } from "@/components/bharatone-logo";
 import {
@@ -28,6 +29,7 @@ const NAV = [
   { label: "Retailers", icon: <Users className="h-4 w-4" />, to: "/distributor/retailers" },
   { label: "Services Live", icon: <Grid3x3 className="h-4 w-4" />, to: "/distributor/services" },
   { label: "Commissions", icon: <Coins className="h-4 w-4" />, to: "/distributor/commissions" },
+  { label: "Reports", icon: <FileBarChart className="h-4 w-4" />, to: "/distributor/reports" },
 ];
 
 const HELP_NAV = [
