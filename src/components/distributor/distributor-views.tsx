@@ -16,7 +16,8 @@ import { StatCard } from "@/components/retailer/stat-card";
 import {
   RETAILERS, OFFICERS, SERVICE_META, WEEKLY, MONTHLY, inr, serviceTotal,
   retailerCommission, aggregateServices, summarize, officerSummary, topRetailers,
-  exportRetailersCsv, type Retailer,
+  exportRetailersCsv, officerCounts, retailerCounts, periodFigures,
+  type Retailer, type PeriodKey,
 } from "@/components/distributor/distributor-data";
 
 const HEX = "#0ea5e9";
