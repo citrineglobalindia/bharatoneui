@@ -100,6 +100,7 @@ import { Route as AccountantLedgerRouteImport } from './routes/accountant.ledger
 import { Route as AccountantFeedbackRouteImport } from './routes/accountant.feedback'
 import { Route as AccountantDashboardRouteImport } from './routes/accountant.dashboard'
 import { Route as AccountantChangePasswordRouteImport } from './routes/accountant.change-password'
+import { Route as DistributorRetailersIndexRouteImport } from './routes/distributor.retailers.index'
 import { Route as TroRetailersIdRouteImport } from './routes/tro.retailers.$id'
 import { Route as QcKycReviewIdRouteImport } from './routes/qc.kyc-review.$id'
 import { Route as DroRetailersIdRouteImport } from './routes/dro.retailers.$id'
@@ -565,6 +566,12 @@ const AccountantChangePasswordRoute =
     path: '/accountant/change-password',
     getParentRoute: () => rootRouteImport,
   } as any)
+const DistributorRetailersIndexRoute =
+  DistributorRetailersIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => DistributorRetailersRoute,
+  } as any)
 const TroRetailersIdRoute = TroRetailersIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -694,6 +701,7 @@ export interface FileRoutesByFullPath {
   '/dro/retailers/$id': typeof DroRetailersIdRoute
   '/qc/kyc-review/$id': typeof QcKycReviewIdRoute
   '/tro/retailers/$id': typeof TroRetailersIdRoute
+  '/distributor/retailers/': typeof DistributorRetailersIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -750,7 +758,6 @@ export interface FileRoutesByTo {
   '/distributor/network': typeof DistributorNetworkRoute
   '/distributor/officers': typeof DistributorOfficersRouteWithChildren
   '/distributor/reports': typeof DistributorReportsRoute
-  '/distributor/retailers': typeof DistributorRetailersRouteWithChildren
   '/distributor/sales-dashboard': typeof DistributorSalesDashboardRoute
   '/distributor/services': typeof DistributorServicesRouteWithChildren
   '/distributor/settings': typeof DistributorSettingsRoute
@@ -793,6 +800,7 @@ export interface FileRoutesByTo {
   '/dro/retailers/$id': typeof DroRetailersIdRoute
   '/qc/kyc-review/$id': typeof QcKycReviewIdRoute
   '/tro/retailers/$id': typeof TroRetailersIdRoute
+  '/distributor/retailers': typeof DistributorRetailersIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -893,6 +901,7 @@ export interface FileRoutesById {
   '/dro/retailers/$id': typeof DroRetailersIdRoute
   '/qc/kyc-review/$id': typeof QcKycReviewIdRoute
   '/tro/retailers/$id': typeof TroRetailersIdRoute
+  '/distributor/retailers/': typeof DistributorRetailersIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -994,6 +1003,7 @@ export interface FileRouteTypes {
     | '/dro/retailers/$id'
     | '/qc/kyc-review/$id'
     | '/tro/retailers/$id'
+    | '/distributor/retailers/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -1050,7 +1060,6 @@ export interface FileRouteTypes {
     | '/distributor/network'
     | '/distributor/officers'
     | '/distributor/reports'
-    | '/distributor/retailers'
     | '/distributor/sales-dashboard'
     | '/distributor/services'
     | '/distributor/settings'
@@ -1093,6 +1102,7 @@ export interface FileRouteTypes {
     | '/dro/retailers/$id'
     | '/qc/kyc-review/$id'
     | '/tro/retailers/$id'
+    | '/distributor/retailers'
   id:
     | '__root__'
     | '/'
@@ -1192,6 +1202,7 @@ export interface FileRouteTypes {
     | '/dro/retailers/$id'
     | '/qc/kyc-review/$id'
     | '/tro/retailers/$id'
+    | '/distributor/retailers/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1928,6 +1939,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountantChangePasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/distributor/retailers/': {
+      id: '/distributor/retailers/'
+      path: '/'
+      fullPath: '/distributor/retailers/'
+      preLoaderRoute: typeof DistributorRetailersIndexRouteImport
+      parentRoute: typeof DistributorRetailersRoute
+    }
     '/tro/retailers/$id': {
       id: '/tro/retailers/$id'
       path: '/$id'
@@ -1986,10 +2004,12 @@ const DistributorOfficersRouteWithChildren =
 
 interface DistributorRetailersRouteChildren {
   DistributorRetailersIdRoute: typeof DistributorRetailersIdRoute
+  DistributorRetailersIndexRoute: typeof DistributorRetailersIndexRoute
 }
 
 const DistributorRetailersRouteChildren: DistributorRetailersRouteChildren = {
   DistributorRetailersIdRoute: DistributorRetailersIdRoute,
+  DistributorRetailersIndexRoute: DistributorRetailersIndexRoute,
 }
 
 const DistributorRetailersRouteWithChildren =

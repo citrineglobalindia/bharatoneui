@@ -1,5 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { DistributorRetailers } from "@/components/distributor/distributor-views";
+import { createFileRoute, Outlet } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/distributor/retailers")({
   head: () => ({
@@ -8,5 +7,5 @@ export const Route = createFileRoute("/distributor/retailers")({
       { name: "description", content: "All retailers mapped under your officers with daily service activity." },
     ],
   }),
-  component: DistributorRetailers,
+  component: () => <Outlet />,
 });
