@@ -280,20 +280,109 @@ export function DistributorOfficerDetail() {
 }
 
 /* ---------------- Retailer detail ---------------- */
+function RetailerSkeleton() {
+  return (
+    <DistributorShell>
+      <div className="space-y-5">
+        <Skeleton className="h-5 w-32" />
+        <div className="rounded-xl border border-border bg-card shadow-soft overflow-hidden">
+          <div className="px-5 py-5 border-b border-border flex flex-wrap items-center gap-4">
+            <Skeleton className="h-16 w-16 rounded-2xl shrink-0" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <Skeleton className="h-6 w-48" />
+              <Skeleton className="h-4 w-72" />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-4">
+            <Skeleton className="h-16 w-full rounded-lg" />
+            <Skeleton className="h-16 w-full rounded-lg" />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <Skeleton className="h-24 w-full rounded-xl" />
+          <Skeleton className="h-24 w-full rounded-xl" />
+          <Skeleton className="h-24 w-full rounded-xl" />
+          <Skeleton className="h-24 w-full rounded-xl" />
+        </div>
+        <Skeleton className="h-40 w-full rounded-xl" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Skeleton className="h-80 w-full rounded-xl" />
+          <Skeleton className="h-80 w-full rounded-xl" />
+        </div>
+        <Skeleton className="h-64 w-full rounded-xl" />
+      </div>
+    </DistributorShell>
+  );
+}
+
+function RetailerError({ onRetry }: { onRetry: () => void }) {
+  return (
+    <DistributorShell>
+      <div className="flex min-h-[60vh] items-center justify-center px-4">
+        <div className="max-w-sm w-full text-center space-y-4">
+          <div className="mx-auto h-14 w-14 rounded-full bg-rose-50 flex items-center justify-center">
+            <AlertCircle className="h-7 w-7 text-rose-500" />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-foreground">Failed to load retailer</h3>
+            <p className="text-sm text-muted-foreground mt-1">We couldn&apos;t fetch the retailer details. Please check your connection and try again.</p>
+          </div>
+          <div className="flex items-center justify-center gap-3">
+            <button
+              onClick={onRetry}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 text-white px-5 h-10 text-sm font-semibold shadow-elev hover:bg-slate-800"
+            >
+              <RefreshCw className="h-4 w-4" /> Retry
+            </button>
+            <Link
+              to="/distributor/retailers"
+              className="inline-flex items-center justify-center rounded-lg border border-input bg-background px-5 h-10 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+            >
+              Back to retailers
+            </Link>
+          </div>
+        </div>
+      </div>
+    </DistributorShell>
+  );
+}
+
 export function DistributorRetailerDetail() {
   const { id } = useParams({ from: "/distributor/retailers/$id" });
   const navigate = useNavigate();
-  const retailer = RETAILERS.find((r) => r.id === id);
 
-  if (!retailer) {
-    return (
-      <DistributorShell>
-        <div className="rounded-xl border border-border bg-card p-8 text-center">
-          <p className="font-bold">Retailer not found</p>
-          <Link to="/distributor/retailers" className="text-sky-600 text-sm font-semibold">Back to retailers</Link>
-        </div>
-      </DistributorShell>
-    );
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [retailer, setRetailer] = useState<(typeof RETAILERS)[number] | null>(null);
+
+  const load = () => {
+    setLoading(true);
+    setError(false);
+    setRetailer(null);
+
+    // Simulate async fetch
+    setTimeout(() => {
+      const found = RETAILERS.find((r) => r.id === id) ?? null;
+      if (!found) {
+        setError(true);
+      } else {
+        setRetailer(found);
+      }
+      setLoading(false);
+    }, 700);
+  };
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  if (loading) {
+    return <RetailerSkeleton />;
+  }
+
+  if (error || !retailer) {
+    return <RetailerError onRetry={load} />;
   }
 
   const dro = OFFICERS.find((o) => o.id === retailer.droId);
