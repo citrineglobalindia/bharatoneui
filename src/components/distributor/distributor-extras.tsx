@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useNavigate } from "@tanstack/react-router";
 import { format, subDays, isAfter, isBefore, isSameDay, parseISO } from "date-fns";
 import {
@@ -9,11 +9,13 @@ import {
   Layers, Coins, IndianRupee, ChevronRight, ShieldCheck, Settings as SettingsIcon,
   Bell, Globe, Lock, Search, UserCog, CalendarRange,
   UserCheck, UserX, Trophy, TrendingUp, ArrowUpDown,
+  AlertCircle, RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { DistributorShell } from "@/components/distributor/distributor-shell";
 import { PageHeader } from "@/components/retailer/page-header";
 import { StatCard } from "@/components/retailer/stat-card";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   RETAILERS, OFFICERS, SERVICE_META, WEEKLY, inr, serviceTotal,
   retailerCommission, officerSummary, officerCounts, DISTRIBUTOR_MARGIN,
