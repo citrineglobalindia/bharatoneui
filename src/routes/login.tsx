@@ -24,6 +24,7 @@ import {
 import { BharatOneLogo } from "@/components/bharatone-logo";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { PORTAL_CONFIGS } from "@/components/portal-login";
 
 const DEMO_RETAILER = {
   phone: "9876789876",
@@ -33,6 +34,16 @@ const DEMO_RETAILER = {
   dob: "28/02/2001",
   role: "retailer" as const,
 };
+
+// All role logins handled by this single page.
+const ROLE_ACCOUNTS = Object.values(PORTAL_CONFIGS).map((c) => ({
+  username: c.demo.username.toLowerCase(),
+  password: c.demo.password,
+  name: c.demo.displayName,
+  role: c.role,
+  portal: c.portalName,
+  redirectTo: c.redirectTo ?? "/dashboard",
+}));
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -120,9 +131,13 @@ function LoginPage() {
               onSubmit={(e) => {
                 e.preventDefault();
                 const id = identifier.trim().toLowerCase();
-                const matchesId =
-                  id === DEMO_RETAILER.phone || id === DEMO_RETAILER.email;
-                if (!matchesId || password !== DEMO_RETAILER.password) {
+                const matchesRetailer =
+                  (id === DEMO_RETAILER.phone || id === DEMO_RETAILER.email) &&
+                  password === DEMO_RETAILER.password;
+                const roleAccount = ROLE_ACCOUNTS.find(
+                  (a) => a.username === id && a.password === password,
+                );
+                if (!matchesRetailer && !roleAccount) {
                   toast.error("Invalid credentials", {
                     description: "Check your username/email and password.",
                   });
@@ -130,6 +145,25 @@ function LoginPage() {
                 }
                 if (captchaInput.trim() !== captcha) {
                   toast.error("Captcha does not match");
+                  return;
+                }
+                if (roleAccount) {
+                  try {
+                    localStorage.setItem(
+                      "bharatone:auth",
+                      JSON.stringify({
+                        name: roleAccount.name,
+                        username: roleAccount.username,
+                        role: roleAccount.role,
+                        portal: roleAccount.portal,
+                        loggedInAt: new Date().toISOString(),
+                      }),
+                    );
+                  } catch {}
+                  toast.success(`Welcome, ${roleAccount.name}`, {
+                    description: `Signed in to ${roleAccount.portal}.`,
+                  });
+                  navigate({ to: roleAccount.redirectTo });
                   return;
                 }
                 try {
@@ -222,8 +256,11 @@ function LoginPage() {
             </form>
 
             <div className="mt-2 rounded-md border border-dashed border-india-green/30 bg-india-green/5 px-3 py-2 text-[11px] text-muted-foreground">
+              <span className="font-semibold text-india-green">One login for every role.</span>{" "}
+              Retailer, Distributor, QC, Accountant, DRO, TRO &amp; Admin can sign in here.
+              <br />
               <span className="font-semibold text-india-green">Demo Retailer:</span>{" "}
-              9876789876 / harshitha@bharatone.in · <span className="font-mono">Password@55</span>
+              9876789876 · <span className="font-mono">Password@55</span>
             </div>
 
             <div className="relative my-2.5 flex items-center">
