@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowRight,
   Building2,
+  BriefcaseBusiness,
   Calculator,
   ClipboardCheck,
   Crown,
@@ -18,7 +19,7 @@ export const Route = createFileRoute("/portals")({
   head: () => ({
     meta: [
       { title: "Choose your Portal — BharatOne" },
-      { name: "description", content: "Sign in to your BharatOne portal: Retailer, Distributor, QC, Accountant, Admin, DRO or TRO." },
+      { name: "description", content: "Sign in to your BharatOne role portal for retail, operations, growth, quality, accounts or regional reporting." },
     ],
   }),
   component: PortalsPage,
@@ -33,8 +34,10 @@ const PORTALS = [
   { to: "/admin-login", name: "Administrator", desc: "Master network control", icon: Crown, accent: "text-saffron", ring: "ring-saffron/30" },
   { to: "/hr-login", name: "Human Resources", desc: "People, payroll & recruitment", icon: UsersRound, accent: "text-sky-600", ring: "ring-sky-500/30" },
   { to: "/telecaller-login", name: "Telecaller CRM", desc: "Leads, calls & activations", icon: PhoneCall, accent: "text-sky-600", ring: "ring-sky-500/30" },
+  { to: "/bde-login", name: "Business Development", desc: "Partner acquisition & growth", icon: BriefcaseBusiness, accent: "text-sky-600", ring: "ring-sky-500/30" },
   { to: "/dro-login", name: "District Officer (DRO)", desc: "District-level oversight", icon: Map, accent: "text-rose-600", ring: "ring-rose-500/30" },
   { to: "/tro-login", name: "Taluk Officer (TRO)", desc: "Taluk field operations", icon: MapPin, accent: "text-amber-700", ring: "ring-amber-500/30" },
+  { to: "/bde-login", name: "Business Development", desc: "Leads, sales } merchants", icon: UsersRound, accent: "text-indigo-600", ring: "ring-indigo-500/30" },
 ] as const;
 
 function PortalsPage() {

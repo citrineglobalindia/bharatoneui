@@ -27,6 +27,9 @@
   --color-hr: var(--hr);
   --color-hr-foreground: var(--hr-foreground);
   --color-hr-soft: var(--hr-soft);
+  --color-bd: var(--bd);
+  --color-bd-foreground: var(--bd-foreground);
+  --color-bd-soft: var(--bd-soft);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -78,6 +81,9 @@
   --hr: oklch(0.5 0.12 250);
   --hr-foreground: oklch(0.99 0 0);
   --hr-soft: oklch(0.95 0.025 250);
+  --bd: oklch(0.58 0.16 205);
+  --bd-foreground: oklch(0.99 0 0);
+  --bd-soft: oklch(0.95 0.035 205);
 
   --background: oklch(0.98 0.006 250);
   --foreground: oklch(0.18 0.02 260);
@@ -124,6 +130,9 @@
 }
 
 .dark {
+  --bd: oklch(0.72 0.14 205);
+  --bd-foreground: oklch(0.16 0.03 220);
+  --bd-soft: oklch(0.27 0.055 215);
   --background: oklch(0.129 0.042 264.695);
   --foreground: oklch(0.984 0.003 247.858);
   --card: oklch(0.208 0.042 265.755);

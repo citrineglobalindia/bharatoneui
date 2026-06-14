@@ -17,6 +17,7 @@ import {
   Crown,
   Truck,
   Building2,
+  BriefcaseBusiness,
   Map,
   MapPin,
 } from "lucide-react";
@@ -32,8 +33,9 @@ export type PortalRole =
   | "master-distributor"
   | "hr"
   | "telecaller"
+  | "bde"
   | "dro"
-  | "tro";
+  | "tro" | "bde";
 
 export interface PortalConfig {
   role: PortalRole;
@@ -370,6 +372,16 @@ export const PORTAL_CONFIGS: Record<PortalRole, PortalConfig> = {
     icon: Users,
     demo: { username: "telecaller.executive", password: "Call@2026", displayName: "Arjun Kumar" },
     redirectTo: "/telecaller",
+  },
+  bde: {
+    role: "bde",
+    portalName: "Business Development Executive Portal",
+    shortName: "BDE",
+    tagline: "Partner acquisition, onboarding, territory growth and performance.",
+    accent: "sky",
+    icon: BriefcaseBusiness,
+    demo: { username: "bde.executive", password: "Growth@2026", displayName: "Rahul Kumar" },
+    redirectTo: "/bde",
   },
   dro: {
     role: "dro",
