@@ -7,6 +7,7 @@ import {
   Crown,
   Map,
   MapPin,
+  PhoneCall,
   UsersRound,
   Store,
   Truck,
@@ -31,6 +32,7 @@ const PORTALS = [
   { to: "/accountant-login", name: "Accountant", desc: "Settlements & ledgers", icon: Calculator, accent: "text-india-green", ring: "ring-india-green/30" },
   { to: "/admin-login", name: "Administrator", desc: "Master network control", icon: Crown, accent: "text-saffron", ring: "ring-saffron/30" },
   { to: "/hr-login", name: "Human Resources", desc: "People, payroll & recruitment", icon: UsersRound, accent: "text-sky-600", ring: "ring-sky-500/30" },
+  { to: "/telecaller-login", name: "Telecaller CRM", desc: "Leads, calls & activations", icon: PhoneCall, accent: "text-sky-600", ring: "ring-sky-500/30" },
   { to: "/dro-login", name: "District Officer (DRO)", desc: "District-level oversight", icon: Map, accent: "text-rose-600", ring: "ring-rose-500/30" },
   { to: "/tro-login", name: "Taluk Officer (TRO)", desc: "Taluk field operations", icon: MapPin, accent: "text-amber-700", ring: "ring-amber-500/30" },
 ] as const;

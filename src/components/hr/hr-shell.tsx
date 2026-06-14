@@ -3,7 +3,7 @@ import { useState } from "react";
 import {
   Bell, BriefcaseBusiness, CalendarCheck, ChartNoAxesCombined, ChevronDown,
   ClipboardList, FileChartColumn, GraduationCap, Headphones, LayoutDashboard, LogOut,
-  Menu, MessageSquareText, Search, Settings, UserPlus, UserRound, UsersRound, WalletCards, X,
+  Menu, MessageSquareText, PhoneCall, Search, Settings, UserPlus, UserRound, UsersRound, WalletCards, X,
 } from "lucide-react";
 import { BharatOneLogo } from "@/components/bharatone-logo";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ const NAV = [
   { label: "Attendance", icon: CalendarCheck, to: "/hr/attendance" },
   { label: "Leave Management", icon: ClipboardList, to: "/hr/leave" },
   { label: "Recruitment", icon: BriefcaseBusiness, to: "/hr/recruitment" },
+  { label: "Telecaller CRM", icon: PhoneCall, to: "/hr/telecaller" },
   { label: "Onboarding", icon: UserPlus, to: "/hr/onboarding" },
   { label: "Payroll", icon: WalletCards, to: "/hr/payroll" },
   { label: "Performance", icon: ChartNoAxesCombined, to: "/hr/performance" },

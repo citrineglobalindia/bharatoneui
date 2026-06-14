@@ -31,6 +31,7 @@ export type PortalRole =
   | "distributor"
   | "master-distributor"
   | "hr"
+  | "telecaller"
   | "dro"
   | "tro";
 
@@ -359,6 +360,16 @@ export const PORTAL_CONFIGS: Record<PortalRole, PortalConfig> = {
     icon: Users,
     demo: { username: "hr.manager", password: "HR@2026", displayName: "Ananya Rao" },
     redirectTo: "/hr/dashboard",
+  },
+  telecaller: {
+    role: "telecaller",
+    portalName: "Telecaller CRM Portal",
+    shortName: "Telecaller",
+    tagline: "Lead assignment, call outcomes, follow-ups and activation tracking.",
+    accent: "sky",
+    icon: Users,
+    demo: { username: "telecaller.executive", password: "Call@2026", displayName: "Arjun Kumar" },
+    redirectTo: "/hr/telecaller",
   },
   dro: {
     role: "dro",
