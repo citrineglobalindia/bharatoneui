@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { TelecallerModule } from "@/components/telecaller/telecaller-module";
+import { ServiceApplicationWorkspace } from "@/components/telecaller/service-application-workspace";
 
 export const Route = createFileRoute("/telecaller")({
   head: () => ({
@@ -10,5 +10,5 @@ export const Route = createFileRoute("/telecaller")({
       { property: "og:description", content: "A dedicated workspace for lead assignment, call outcomes, reminders and performance." },
     ],
   }),
-  component: TelecallerModule,
+  component: ServiceApplicationWorkspace,
 });

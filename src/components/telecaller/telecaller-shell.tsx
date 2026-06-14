@@ -12,8 +12,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const NAV = [
-  { id: "command", label: "Command Center", icon: Gauge },
-  { id: "leads", label: "Lead Workspace", icon: ClipboardList },
+  { id: "command", label: "Work Overview", icon: Gauge },
+  { id: "leads", label: "Assigned Applications", icon: ClipboardList },
   { id: "calls", label: "Call Queue", icon: PhoneCall },
   { id: "followups", label: "Follow-ups", icon: MessageCircle },
   { id: "performance", label: "Performance", icon: BarChart3 },
@@ -30,11 +30,11 @@ function Sidebar({ activeSection, onSelect, onNavigate }: { activeSection: strin
       <div className="border-b border-hr-foreground/10 p-5">
         <div className="flex items-center gap-3">
           <div className="rounded-xl bg-card p-1.5 shadow-elev"><BharatOneLogo size="sm" /></div>
-          <div><p className="text-sm font-extrabold">BharatOne Calls</p><p className="text-[10px] text-hr-foreground/60">Telecaller CRM</p></div>
+          <div><p className="text-sm font-extrabold">BharatOne Calls</p><p className="text-[10px] text-hr-foreground/60">Service application desk</p></div>
         </div>
       </div>
       <nav className="flex-1 overflow-y-auto p-3">
-        <p className="px-3 pb-2 pt-1 text-[10px] font-bold uppercase tracking-widest text-hr-foreground/40">Sales workspace</p>
+        <p className="px-3 pb-2 pt-1 text-[10px] font-bold uppercase tracking-widest text-hr-foreground/40">Service operations</p>
         <ul className="space-y-1">
           {NAV.map((item) => {
             const Icon = item.icon;
@@ -59,7 +59,7 @@ export function TelecallerShell({ children, activeSection, onSectionChange }: { 
       {open && <div className="fixed inset-0 z-50 flex lg:hidden"><div className="absolute inset-0 bg-navy/60" onClick={() => setOpen(false)} /><aside className="relative w-72"><Button variant="ghost" size="icon" aria-label="Close menu" className="absolute right-2 top-2 z-10 text-hr-foreground" onClick={() => setOpen(false)}><X /></Button><Sidebar activeSection={activeSection} onSelect={onSectionChange} onNavigate={() => setOpen(false)} /></aside></div>}
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-20 shrink-0 items-center justify-between gap-3 border-b border-border bg-card/90 px-4 backdrop-blur lg:px-8">
-          <div className="flex min-w-0 flex-1 items-center gap-3"><Button variant="ghost" size="icon" className="lg:hidden" aria-label="Open menu" onClick={() => setOpen(true)}><Menu /></Button><div className="hidden h-11 max-w-2xl flex-1 items-center gap-2 rounded-2xl bg-muted px-4 md:flex"><Search className="h-4 w-4 text-muted-foreground" /><input className="w-full bg-transparent text-sm outline-none" placeholder="Search leads, phone numbers or services…" /></div></div>
+          <div className="flex min-w-0 flex-1 items-center gap-3"><Button variant="ghost" size="icon" className="lg:hidden" aria-label="Open menu" onClick={() => setOpen(true)}><Menu /></Button><div className="hidden h-11 max-w-2xl flex-1 items-center gap-2 rounded-2xl bg-muted px-4 md:flex"><Search className="h-4 w-4 text-muted-foreground" /><input className="w-full bg-transparent text-sm outline-none" placeholder="Search application ID, retailer or customer…" /></div></div>
           <Button variant="outline" size="icon" className="relative"><Bell /><span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-destructive-foreground">9</span></Button>
           <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" className="h-10 gap-2 px-2"><span className="flex h-7 w-7 items-center justify-center rounded-lg bg-hr text-xs font-bold text-hr-foreground">AK</span><span className="hidden text-left md:block"><span className="block text-xs font-bold">Arjun Kumar</span><span className="block text-[9px] text-muted-foreground">Telecaller Executive</span></span><ChevronDown /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onClick={() => onSectionChange("performance")}><Target /> My targets</DropdownMenuItem><DropdownMenuItem onClick={() => onSectionChange("profile")}><UserRound /> My profile</DropdownMenuItem><DropdownMenuItem onClick={() => onSectionChange("settings")}><Settings /> Settings</DropdownMenuItem><DropdownMenuSeparator /><DropdownMenuItem onClick={() => { localStorage.removeItem("bharatone:auth"); navigate({ to: "/telecaller-login", replace: true }); }}>Sign out</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
         </header>
