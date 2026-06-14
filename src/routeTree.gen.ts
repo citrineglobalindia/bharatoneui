@@ -68,12 +68,16 @@ import { Route as QcDashboardRouteImport } from './routes/qc.dashboard'
 import { Route as QcChangePasswordRouteImport } from './routes/qc.change-password'
 import { Route as QcApprovedRouteImport } from './routes/qc.approved'
 import { Route as HrTrainingRouteImport } from './routes/hr.training'
+import { Route as HrSupportRouteImport } from './routes/hr.support'
+import { Route as HrSettingsRouteImport } from './routes/hr.settings'
 import { Route as HrReportsRouteImport } from './routes/hr.reports'
 import { Route as HrRecruitmentRouteImport } from './routes/hr.recruitment'
+import { Route as HrProfileRouteImport } from './routes/hr.profile'
 import { Route as HrPerformanceRouteImport } from './routes/hr.performance'
 import { Route as HrPayrollRouteImport } from './routes/hr.payroll'
 import { Route as HrOnboardingRouteImport } from './routes/hr.onboarding'
 import { Route as HrLeaveRouteImport } from './routes/hr.leave'
+import { Route as HrFeedbackRouteImport } from './routes/hr.feedback'
 import { Route as HrEmployeesRouteImport } from './routes/hr.employees'
 import { Route as HrDashboardRouteImport } from './routes/hr.dashboard'
 import { Route as HrAttendanceRouteImport } from './routes/hr.attendance'
@@ -413,6 +417,16 @@ const HrTrainingRoute = HrTrainingRouteImport.update({
   path: '/hr/training',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HrSupportRoute = HrSupportRouteImport.update({
+  id: '/hr/support',
+  path: '/hr/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HrSettingsRoute = HrSettingsRouteImport.update({
+  id: '/hr/settings',
+  path: '/hr/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HrReportsRoute = HrReportsRouteImport.update({
   id: '/hr/reports',
   path: '/hr/reports',
@@ -421,6 +435,11 @@ const HrReportsRoute = HrReportsRouteImport.update({
 const HrRecruitmentRoute = HrRecruitmentRouteImport.update({
   id: '/hr/recruitment',
   path: '/hr/recruitment',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HrProfileRoute = HrProfileRouteImport.update({
+  id: '/hr/profile',
+  path: '/hr/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HrPerformanceRoute = HrPerformanceRouteImport.update({
@@ -441,6 +460,11 @@ const HrOnboardingRoute = HrOnboardingRouteImport.update({
 const HrLeaveRoute = HrLeaveRouteImport.update({
   id: '/hr/leave',
   path: '/hr/leave',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HrFeedbackRoute = HrFeedbackRouteImport.update({
+  id: '/hr/feedback',
+  path: '/hr/feedback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HrEmployeesRoute = HrEmployeesRouteImport.update({
@@ -736,12 +760,16 @@ export interface FileRoutesByFullPath {
   '/hr/attendance': typeof HrAttendanceRoute
   '/hr/dashboard': typeof HrDashboardRoute
   '/hr/employees': typeof HrEmployeesRoute
+  '/hr/feedback': typeof HrFeedbackRoute
   '/hr/leave': typeof HrLeaveRoute
   '/hr/onboarding': typeof HrOnboardingRoute
   '/hr/payroll': typeof HrPayrollRoute
   '/hr/performance': typeof HrPerformanceRoute
+  '/hr/profile': typeof HrProfileRoute
   '/hr/recruitment': typeof HrRecruitmentRoute
   '/hr/reports': typeof HrReportsRoute
+  '/hr/settings': typeof HrSettingsRoute
+  '/hr/support': typeof HrSupportRoute
   '/hr/training': typeof HrTrainingRoute
   '/qc/approved': typeof QcApprovedRoute
   '/qc/change-password': typeof QcChangePasswordRoute
@@ -845,12 +873,16 @@ export interface FileRoutesByTo {
   '/hr/attendance': typeof HrAttendanceRoute
   '/hr/dashboard': typeof HrDashboardRoute
   '/hr/employees': typeof HrEmployeesRoute
+  '/hr/feedback': typeof HrFeedbackRoute
   '/hr/leave': typeof HrLeaveRoute
   '/hr/onboarding': typeof HrOnboardingRoute
   '/hr/payroll': typeof HrPayrollRoute
   '/hr/performance': typeof HrPerformanceRoute
+  '/hr/profile': typeof HrProfileRoute
   '/hr/recruitment': typeof HrRecruitmentRoute
   '/hr/reports': typeof HrReportsRoute
+  '/hr/settings': typeof HrSettingsRoute
+  '/hr/support': typeof HrSupportRoute
   '/hr/training': typeof HrTrainingRoute
   '/qc/approved': typeof QcApprovedRoute
   '/qc/change-password': typeof QcChangePasswordRoute
@@ -956,12 +988,16 @@ export interface FileRoutesById {
   '/hr/attendance': typeof HrAttendanceRoute
   '/hr/dashboard': typeof HrDashboardRoute
   '/hr/employees': typeof HrEmployeesRoute
+  '/hr/feedback': typeof HrFeedbackRoute
   '/hr/leave': typeof HrLeaveRoute
   '/hr/onboarding': typeof HrOnboardingRoute
   '/hr/payroll': typeof HrPayrollRoute
   '/hr/performance': typeof HrPerformanceRoute
+  '/hr/profile': typeof HrProfileRoute
   '/hr/recruitment': typeof HrRecruitmentRoute
   '/hr/reports': typeof HrReportsRoute
+  '/hr/settings': typeof HrSettingsRoute
+  '/hr/support': typeof HrSupportRoute
   '/hr/training': typeof HrTrainingRoute
   '/qc/approved': typeof QcApprovedRoute
   '/qc/change-password': typeof QcChangePasswordRoute
@@ -1068,12 +1104,16 @@ export interface FileRouteTypes {
     | '/hr/attendance'
     | '/hr/dashboard'
     | '/hr/employees'
+    | '/hr/feedback'
     | '/hr/leave'
     | '/hr/onboarding'
     | '/hr/payroll'
     | '/hr/performance'
+    | '/hr/profile'
     | '/hr/recruitment'
     | '/hr/reports'
+    | '/hr/settings'
+    | '/hr/support'
     | '/hr/training'
     | '/qc/approved'
     | '/qc/change-password'
@@ -1177,12 +1217,16 @@ export interface FileRouteTypes {
     | '/hr/attendance'
     | '/hr/dashboard'
     | '/hr/employees'
+    | '/hr/feedback'
     | '/hr/leave'
     | '/hr/onboarding'
     | '/hr/payroll'
     | '/hr/performance'
+    | '/hr/profile'
     | '/hr/recruitment'
     | '/hr/reports'
+    | '/hr/settings'
+    | '/hr/support'
     | '/hr/training'
     | '/qc/approved'
     | '/qc/change-password'
@@ -1287,12 +1331,16 @@ export interface FileRouteTypes {
     | '/hr/attendance'
     | '/hr/dashboard'
     | '/hr/employees'
+    | '/hr/feedback'
     | '/hr/leave'
     | '/hr/onboarding'
     | '/hr/payroll'
     | '/hr/performance'
+    | '/hr/profile'
     | '/hr/recruitment'
     | '/hr/reports'
+    | '/hr/settings'
+    | '/hr/support'
     | '/hr/training'
     | '/qc/approved'
     | '/qc/change-password'
@@ -1398,12 +1446,16 @@ export interface RootRouteChildren {
   HrAttendanceRoute: typeof HrAttendanceRoute
   HrDashboardRoute: typeof HrDashboardRoute
   HrEmployeesRoute: typeof HrEmployeesRoute
+  HrFeedbackRoute: typeof HrFeedbackRoute
   HrLeaveRoute: typeof HrLeaveRoute
   HrOnboardingRoute: typeof HrOnboardingRoute
   HrPayrollRoute: typeof HrPayrollRoute
   HrPerformanceRoute: typeof HrPerformanceRoute
+  HrProfileRoute: typeof HrProfileRoute
   HrRecruitmentRoute: typeof HrRecruitmentRoute
   HrReportsRoute: typeof HrReportsRoute
+  HrSettingsRoute: typeof HrSettingsRoute
+  HrSupportRoute: typeof HrSupportRoute
   HrTrainingRoute: typeof HrTrainingRoute
   QcApprovedRoute: typeof QcApprovedRoute
   QcChangePasswordRoute: typeof QcChangePasswordRoute
@@ -1845,6 +1897,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HrTrainingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/hr/support': {
+      id: '/hr/support'
+      path: '/hr/support'
+      fullPath: '/hr/support'
+      preLoaderRoute: typeof HrSupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hr/settings': {
+      id: '/hr/settings'
+      path: '/hr/settings'
+      fullPath: '/hr/settings'
+      preLoaderRoute: typeof HrSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/hr/reports': {
       id: '/hr/reports'
       path: '/hr/reports'
@@ -1857,6 +1923,13 @@ declare module '@tanstack/react-router' {
       path: '/hr/recruitment'
       fullPath: '/hr/recruitment'
       preLoaderRoute: typeof HrRecruitmentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hr/profile': {
+      id: '/hr/profile'
+      path: '/hr/profile'
+      fullPath: '/hr/profile'
+      preLoaderRoute: typeof HrProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/hr/performance': {
@@ -1885,6 +1958,13 @@ declare module '@tanstack/react-router' {
       path: '/hr/leave'
       fullPath: '/hr/leave'
       preLoaderRoute: typeof HrLeaveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hr/feedback': {
+      id: '/hr/feedback'
+      path: '/hr/feedback'
+      fullPath: '/hr/feedback'
+      preLoaderRoute: typeof HrFeedbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/hr/employees': {
@@ -2323,12 +2403,16 @@ const rootRouteChildren: RootRouteChildren = {
   HrAttendanceRoute: HrAttendanceRoute,
   HrDashboardRoute: HrDashboardRoute,
   HrEmployeesRoute: HrEmployeesRoute,
+  HrFeedbackRoute: HrFeedbackRoute,
   HrLeaveRoute: HrLeaveRoute,
   HrOnboardingRoute: HrOnboardingRoute,
   HrPayrollRoute: HrPayrollRoute,
   HrPerformanceRoute: HrPerformanceRoute,
+  HrProfileRoute: HrProfileRoute,
   HrRecruitmentRoute: HrRecruitmentRoute,
   HrReportsRoute: HrReportsRoute,
+  HrSettingsRoute: HrSettingsRoute,
+  HrSupportRoute: HrSupportRoute,
   HrTrainingRoute: HrTrainingRoute,
   QcApprovedRoute: QcApprovedRoute,
   QcChangePasswordRoute: QcChangePasswordRoute,
