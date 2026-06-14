@@ -403,14 +403,4 @@ export const PORTAL_CONFIGS: Record<PortalRole, PortalConfig> = {
     demo: { username: "8974532566", password: "Password@66", displayName: "Navya" },
     redirectTo: "/tro/dashboard",
   },
-  bde: {
-    role: "bde",
-    portalName: "Business Development Executive Portal",
-    shortName: "BDE",
-    tagline: "Merchant acquisition, lead pipeline, and sales performance dashboard.",
-    accent: "indigo",
-    icon: Users,
-    demo: { username: "bde.executive", password: "Sales@2026", displayName: "Vikram Singh" },
-    redirectTo: "/bde/dashboard",
-  },
 };
