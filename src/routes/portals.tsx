@@ -35,6 +35,7 @@ const PORTALS = [
   { to: "/telecaller-login", name: "Telecaller CRM", desc: "Leads, calls & activations", icon: PhoneCall, accent: "text-sky-600", ring: "ring-sky-500/30" },
   { to: "/dro-login", name: "District Officer (DRO)", desc: "District-level oversight", icon: Map, accent: "text-rose-600", ring: "ring-rose-500/30" },
   { to: "/tro-login", name: "Taluk Officer (TRO)", desc: "Taluk field operations", icon: MapPin, accent: "text-amber-700", ring: "ring-amber-500/30" },
+  { to: "/bde-login", name: "Business Development", desc: "Leads, sales } merchants", icon: UsersRound, accent: "text-indigo-600", ring: "ring-indigo-500/30" },
 ] as const;
 
 function PortalsPage() {
