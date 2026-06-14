@@ -9,6 +9,9 @@ import { TelecallerShell } from "@/components/telecaller/telecaller-shell";
 import { ProfileSettings, ServiceFollowups, ServiceReports } from "@/components/telecaller/telecaller-extras";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -74,6 +77,9 @@ const AGENTS = [
   { name: "Farah Khan", calls: 96, connected: 52, interested: 14, activated: 3, score: 78 },
 ];
 
+const SERVICES = ["B2B Center", "Banking Services", "Insurance", "PAN Card", "Aadhaar Services", "Government Schemes", "B2C Services"];
+const SOURCES = ["Website", "Social Media", "Campaign", "Referral"];
+
 function MetricCard({ item }: { item: (typeof KPI)[number] }) {
   const Icon = item.icon;
   const percent = Math.min(100, Math.round((item.value / item.target) * 100));
@@ -89,10 +95,13 @@ export function TelecallerModule() {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All statuses");
   const [activeSection, setActiveSection] = useState("command");
+  const [addLeadOpen, setAddLeadOpen] = useState(false);
+  const [newLead, setNewLead] = useState({ name: "", phone: "", source: "Website", service: "B2B Center" });
   const filtered = useMemo(() => leads.filter((lead) => {
     const matchesQuery = `${lead.name} ${lead.phone} ${lead.service} ${lead.id}`.toLowerCase().includes(query.toLowerCase());
-    return matchesQuery && (statusFilter === "All statuses" || lead.status === statusFilter);
-  }), [leads, query, statusFilter]);
+    const matchesQueue = activeSection !== "calls" || !["Activated", "Rejected", "Closed"].includes(lead.status);
+    return matchesQuery && matchesQueue && (statusFilter === "All statuses" || lead.status === statusFilter);
+  }), [activeSection, leads, query, statusFilter]);
 
   const updateStatus = (id: string, status: LeadStatus) => {
     setLeads((current) => current.map((lead) => lead.id === id ? { ...lead, status } : lead));
@@ -104,6 +113,19 @@ export function TelecallerModule() {
     toast.success(`Calling ${lead.name}`, { description: `${lead.phone} · call logging started.` });
   };
 
+  const addLead = () => {
+    if (!newLead.name.trim() || !newLead.phone.trim()) {
+      toast.error("Name and phone number are required");
+      return;
+    }
+    const lead: Lead = { id: `LD-${2842 + leads.length}`, name: newLead.name.trim(), phone: newLead.phone.trim(), source: newLead.source, service: newLead.service, owner: "Arjun K.", status: "New Lead", nextAction: "Call today", priority: "Medium" };
+    setLeads((current) => [lead, ...current]);
+    setNewLead({ name: "", phone: "", source: "Website", service: "B2B Center" });
+    setAddLeadOpen(false);
+    setActiveSection("leads");
+    toast.success("Lead added", { description: `${lead.name} is ready for the first call.` });
+  };
+
   if (activeSection === "profile" || activeSection === "settings") return <TelecallerShell activeSection={activeSection} onSectionChange={setActiveSection}><div className="mx-auto max-w-[1600px]"><ProfileSettings mode={activeSection} /></div></TelecallerShell>;
 
   const activeTab = activeSection === "command" || activeSection === "calls" ? "leads" : activeSection === "reports" ? "reporting" : activeSection;
@@ -112,7 +134,7 @@ export function TelecallerModule() {
     <section className="relative overflow-hidden rounded-3xl bg-navy p-6 text-hr-foreground shadow-elev lg:p-8">
       <div className="absolute -right-20 -top-24 h-64 w-64 rounded-full bg-hr/40 blur-3xl" />
       <div className="relative flex flex-col justify-between gap-6 xl:flex-row xl:items-center">
-        <div><span className="inline-flex items-center gap-2 rounded-full border border-hr-foreground/10 bg-hr-foreground/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em]"><span className="h-2 w-2 rounded-full bg-india-green" /> Live sales floor · 8 agents online</span><h1 className="mt-4 font-display text-3xl font-extrabold sm:text-4xl">Telecaller Command Center</h1><p className="mt-2 max-w-2xl text-sm text-hr-foreground/65">Assign verified leads, log every conversation, schedule next actions, and move prospects toward BharatOne activation.</p><div className="mt-5 flex flex-wrap gap-2"><Button className="bg-hr text-hr-foreground hover:bg-hr/90" onClick={() => toast.success("Lead form opened", { description: "Demo mode: lead entry is ready for integration later." })}><UserPlus /> Add lead</Button><Button variant="outline" className="border-hr-foreground/20 bg-hr-foreground/5 text-hr-foreground hover:bg-hr-foreground/10 hover:text-hr-foreground" onClick={() => toast.success("Assignment complete", { description: "12 new leads distributed using round-robin assignment." })}><UsersRound /> Auto-assign 12 leads</Button></div></div>
+        <div><span className="inline-flex items-center gap-2 rounded-full border border-hr-foreground/10 bg-hr-foreground/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em]"><span className="h-2 w-2 rounded-full bg-india-green" /> Live sales floor · 8 agents online</span><h1 className="mt-4 font-display text-3xl font-extrabold sm:text-4xl">Telecaller Command Center</h1><p className="mt-2 max-w-2xl text-sm text-hr-foreground/65">Assign verified leads, log every conversation, schedule next actions, and move prospects toward BharatOne activation.</p><div className="mt-5 flex flex-wrap gap-2"><Button className="bg-hr text-hr-foreground hover:bg-hr/90" onClick={() => setAddLeadOpen(true)}><UserPlus /> Add lead</Button><Button variant="outline" className="border-hr-foreground/20 bg-hr-foreground/5 text-hr-foreground hover:bg-hr-foreground/10 hover:text-hr-foreground" onClick={() => toast.success("Assignment complete", { description: "12 new leads distributed using round-robin assignment." })}><UsersRound /> Auto-assign 12 leads</Button></div></div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:w-[560px]">{[["Unassigned","12",UserPlus],["Due now","9",AlarmClock],["Callbacks","24",Phone],["Activations","5",CheckCircle2]].map(([label,value,Icon]) => <div key={label as string} className="rounded-2xl border border-hr-foreground/10 bg-hr-foreground/10 p-4 backdrop-blur"><Icon className="h-4 w-4 text-hr"/><p className="mt-3 text-2xl font-extrabold">{value as string}</p><p className="text-[10px] uppercase tracking-wider text-hr-foreground/55">{label as string}</p></div>)}</div>
       </div>
     </section>
@@ -123,7 +145,7 @@ export function TelecallerModule() {
       <TabsList className="h-auto w-full justify-start overflow-x-auto rounded-xl border border-border bg-card p-1 shadow-soft"><TabsTrigger value="leads">Lead workspace</TabsTrigger><TabsTrigger value="followups">Follow-ups</TabsTrigger><TabsTrigger value="reporting">Daily report</TabsTrigger><TabsTrigger value="performance">Agent performance</TabsTrigger><TabsTrigger value="script">Call script</TabsTrigger></TabsList>
 
       <TabsContent value="leads" className="space-y-4">
-        <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-soft"><div className="flex flex-col gap-3 border-b border-border p-4 lg:flex-row lg:items-center lg:justify-between"><div><h2 className="font-display text-lg font-extrabold">Lead assignment & outcomes</h2><p className="text-xs text-muted-foreground">{filtered.length} visible · {leads.length} active sample leads</p></div><div className="flex flex-col gap-2 sm:flex-row"><div className="flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3 sm:w-72"><Search className="h-4 w-4 text-muted-foreground"/><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search lead, phone or service" className="w-full bg-transparent text-sm outline-none"/></div><Select value={statusFilter} onValueChange={setStatusFilter}><SelectTrigger className="sm:w-48"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="All statuses">All statuses</SelectItem>{STATUSES.map((status) => <SelectItem key={status} value={status}>{status}</SelectItem>)}</SelectContent></Select></div></div>
+        <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-soft"><div className="flex flex-col gap-3 border-b border-border p-4 lg:flex-row lg:items-center lg:justify-between"><div><h2 className="font-display text-lg font-extrabold">{activeSection === "calls" ? "Active call queue" : "Lead assignment & outcomes"}</h2><p className="text-xs text-muted-foreground">{filtered.length} visible · {leads.length} total leads</p></div><div className="flex flex-col gap-2 sm:flex-row"><div className="flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3 sm:w-72"><Search className="h-4 w-4 text-muted-foreground"/><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search lead, phone or service" className="w-full bg-transparent text-sm outline-none"/></div><Select value={statusFilter} onValueChange={setStatusFilter}><SelectTrigger className="sm:w-48"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="All statuses">All statuses</SelectItem>{STATUSES.map((status) => <SelectItem key={status} value={status}>{status}</SelectItem>)}</SelectContent></Select></div></div>
           <div className="overflow-x-auto"><table className="w-full min-w-[1050px] text-sm"><thead className="bg-muted/50"><tr>{["Lead","Source / Service","Owner","Status","Next action","Priority","Action"].map((header) => <th key={header} className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{header}</th>)}</tr></thead><tbody className="divide-y divide-border">{filtered.map((lead) => <tr key={lead.id} className="hover:bg-muted/30"><td className="px-4 py-3"><p className="font-bold">{lead.name}</p><p className="text-[11px] text-muted-foreground">{lead.id} · {lead.phone}</p></td><td className="px-4 py-3"><p className="font-semibold">{lead.service}</p><p className="text-[11px] text-muted-foreground">{lead.source}</p></td><td className="px-4 py-3 font-medium">{lead.owner}</td><td className="px-4 py-3"><Select value={lead.status} onValueChange={(value) => updateStatus(lead.id, value as LeadStatus)}><SelectTrigger className={`h-8 w-48 border ${statusTone[lead.status]}`}><SelectValue/></SelectTrigger><SelectContent>{STATUSES.map((status) => <SelectItem key={status} value={status}>{status}</SelectItem>)}</SelectContent></Select></td><td className="px-4 py-3"><span className="inline-flex items-center gap-1.5 text-xs"><CalendarClock className="h-3.5 w-3.5 text-hr"/>{lead.nextAction}</span></td><td className="px-4 py-3"><Badge variant="outline" className={lead.priority === "High" ? "border-destructive/20 bg-destructive/10 text-destructive" : lead.priority === "Medium" ? "border-saffron/20 bg-saffron/10 text-saffron" : "bg-muted text-muted-foreground"}>{lead.priority}</Badge></td><td className="px-4 py-3"><Button size="sm" onClick={() => callLead(lead)}><PhoneCall/> Call now</Button></td></tr>)}</tbody></table></div>
         </section>
       </TabsContent>
@@ -136,5 +158,6 @@ export function TelecallerModule() {
 
       <TabsContent value="script"><div className="grid gap-4 xl:grid-cols-5"><section className="rounded-2xl border border-border bg-card p-6 shadow-soft xl:col-span-3"><div className="flex items-start gap-4"><span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-hr-soft text-hr"><PhoneCall className="h-6 w-6"/></span><div><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-hr">Approved opening</p><h2 className="font-display text-xl font-extrabold">Telecaller script</h2></div></div><blockquote className="mt-6 border-l-4 border-hr bg-hr-soft p-5 text-base font-semibold leading-7 text-foreground">“Good morning, I am calling from BharatOne Services. We provide Government, Banking, Insurance and Digital Services through our authorized centers. May I explain how our services can benefit you?”</blockquote><div className="mt-5 flex flex-wrap gap-2"><Button onClick={() => { navigator.clipboard?.writeText("Good morning, I am calling from BharatOne Services. We provide Government, Banking, Insurance and Digital Services through our authorized centers. May I explain how our services can benefit you?"); toast.success("Script copied"); }}><Send/> Copy script</Button><Button variant="outline" onClick={() => toast.info("Coaching mode started")}><Headphones/> Practice call</Button></div></section><aside className="rounded-2xl border border-border bg-card p-5 shadow-soft xl:col-span-2"><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-hr">Service talking points</p><h2 className="font-display text-lg font-extrabold">Interest categories</h2><div className="mt-4 grid grid-cols-2 gap-2">{["All B2B Center","Banking Services","Insurance","PAN Card","Aadhaar Services","Government Schemes","B2C Services"].map((service) => <div key={service} className="rounded-xl border border-border bg-background p-3 text-xs font-semibold"><Target className="mb-2 h-4 w-4 text-hr"/>{service}</div>)}</div></aside></div></TabsContent>
     </Tabs>
+    <Dialog open={addLeadOpen} onOpenChange={setAddLeadOpen}><DialogContent><DialogHeader><DialogTitle>Add a verified lead</DialogTitle><DialogDescription>Capture the customer and requested service, then place the lead in your workspace.</DialogDescription></DialogHeader><div className="grid gap-4 py-2 sm:grid-cols-2"><div className="sm:col-span-2"><Label htmlFor="lead-name">Customer or business name</Label><Input id="lead-name" className="mt-2" value={newLead.name} onChange={(event) => setNewLead((current) => ({ ...current, name: event.target.value }))} /></div><div className="sm:col-span-2"><Label htmlFor="lead-phone">Phone number</Label><Input id="lead-phone" className="mt-2" value={newLead.phone} onChange={(event) => setNewLead((current) => ({ ...current, phone: event.target.value }))} /></div><div><Label>Lead source</Label><Select value={newLead.source} onValueChange={(source) => setNewLead((current) => ({ ...current, source }))}><SelectTrigger className="mt-2"><SelectValue /></SelectTrigger><SelectContent>{SOURCES.map((source) => <SelectItem key={source} value={source}>{source}</SelectItem>)}</SelectContent></Select></div><div><Label>Interested service</Label><Select value={newLead.service} onValueChange={(service) => setNewLead((current) => ({ ...current, service }))}><SelectTrigger className="mt-2"><SelectValue /></SelectTrigger><SelectContent>{SERVICES.map((service) => <SelectItem key={service} value={service}>{service}</SelectItem>)}</SelectContent></Select></div></div><DialogFooter><Button variant="outline" onClick={() => setAddLeadOpen(false)}>Cancel</Button><Button onClick={addLead}><UserPlus /> Add lead</Button></DialogFooter></DialogContent></Dialog>
   </div></TelecallerShell>;
 }

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { BarChart3, BellRing, CalendarClock, Download, Mail, MapPin, MessageCircle, Phone, Save, Settings2, UserRound } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -47,6 +47,16 @@ export function ServiceReports({ leads }: { leads: TelecallerLead[] }) {
 export function ProfileSettings({ mode }: { mode: "profile" | "settings" }) {
   const [profile, setProfile] = useState({ name: "Arjun Kumar", email: "arjun.kumar@bharatone.in", phone: "+91 98765 43210", city: "Bengaluru", employeeId: "TC-1042" });
   const [preferences, setPreferences] = useState({ callLogging: true, whatsapp: true, sms: false, reminders: true });
+  useEffect(() => {
+    try {
+      const savedProfile = localStorage.getItem("bharatone:telecaller-profile");
+      const savedSettings = localStorage.getItem("bharatone:telecaller-settings");
+      if (savedProfile) setProfile((current) => ({ ...current, ...JSON.parse(savedProfile) }));
+      if (savedSettings) setPreferences((current) => ({ ...current, ...JSON.parse(savedSettings) }));
+    } catch {
+      toast.error("Saved preferences could not be loaded");
+    }
+  }, []);
   const saveProfile = () => { localStorage.setItem("bharatone:telecaller-profile", JSON.stringify(profile)); toast.success("Profile updated"); };
   const saveSettings = () => { localStorage.setItem("bharatone:telecaller-settings", JSON.stringify(preferences)); toast.success("Settings saved"); };
   if (mode === "profile") return <section className="grid gap-4 xl:grid-cols-[280px_1fr]"><aside className="rounded-2xl border border-border bg-card p-6 text-center shadow-soft"><span className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-hr text-2xl font-extrabold text-hr-foreground">AK</span><h2 className="mt-4 font-display text-xl font-extrabold">{profile.name}</h2><p className="text-sm text-muted-foreground">Telecaller Executive</p><Badge className="mt-3 bg-india-green text-primary-foreground">Active</Badge><div className="mt-6 space-y-3 border-t border-border pt-5 text-left text-xs text-muted-foreground"><p className="flex gap-2"><UserRound className="h-4 w-4 text-hr" /> {profile.employeeId}</p><p className="flex gap-2"><Mail className="h-4 w-4 text-hr" /> {profile.email}</p><p className="flex gap-2"><MapPin className="h-4 w-4 text-hr" /> {profile.city}</p></div></aside><div className="rounded-2xl border border-border bg-card p-6 shadow-soft"><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-hr">Personal information</p><h2 className="font-display text-xl font-extrabold">My profile</h2><div className="mt-6 grid gap-5 sm:grid-cols-2">{Object.entries(profile).map(([key, value]) => <div key={key}><Label htmlFor={key} className="capitalize">{key.replace(/([A-Z])/g, " $1")}</Label><Input id={key} value={value} disabled={key === "employeeId"} className="mt-2" onChange={(event) => setProfile((current) => ({ ...current, [key]: event.target.value }))} /></div>)}</div><Button className="mt-6" onClick={saveProfile}><Save /> Save profile</Button></div></section>;
