@@ -67,6 +67,7 @@ import { Route as QcDocumentSearchRouteImport } from './routes/qc.document-searc
 import { Route as QcDashboardRouteImport } from './routes/qc.dashboard'
 import { Route as QcChangePasswordRouteImport } from './routes/qc.change-password'
 import { Route as QcApprovedRouteImport } from './routes/qc.approved'
+import { Route as HrDashboardRouteImport } from './routes/hr.dashboard'
 import { Route as DroSupportRouteImport } from './routes/dro.support'
 import { Route as DroServicesRouteImport } from './routes/dro.services'
 import { Route as DroRetailersRouteImport } from './routes/dro.retailers'
@@ -398,6 +399,11 @@ const QcApprovedRoute = QcApprovedRouteImport.update({
   path: '/qc/approved',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HrDashboardRoute = HrDashboardRouteImport.update({
+  id: '/hr/dashboard',
+  path: '/hr/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DroSupportRoute = DroSupportRouteImport.update({
   id: '/dro/support',
   path: '/dro/support',
@@ -673,6 +679,7 @@ export interface FileRoutesByFullPath {
   '/dro/retailers': typeof DroRetailersRouteWithChildren
   '/dro/services': typeof DroServicesRoute
   '/dro/support': typeof DroSupportRoute
+  '/hr/dashboard': typeof HrDashboardRoute
   '/qc/approved': typeof QcApprovedRoute
   '/qc/change-password': typeof QcChangePasswordRoute
   '/qc/dashboard': typeof QcDashboardRoute
@@ -772,6 +779,7 @@ export interface FileRoutesByTo {
   '/dro/retailers': typeof DroRetailersRouteWithChildren
   '/dro/services': typeof DroServicesRoute
   '/dro/support': typeof DroSupportRoute
+  '/hr/dashboard': typeof HrDashboardRoute
   '/qc/approved': typeof QcApprovedRoute
   '/qc/change-password': typeof QcChangePasswordRoute
   '/qc/dashboard': typeof QcDashboardRoute
@@ -873,6 +881,7 @@ export interface FileRoutesById {
   '/dro/retailers': typeof DroRetailersRouteWithChildren
   '/dro/services': typeof DroServicesRoute
   '/dro/support': typeof DroSupportRoute
+  '/hr/dashboard': typeof HrDashboardRoute
   '/qc/approved': typeof QcApprovedRoute
   '/qc/change-password': typeof QcChangePasswordRoute
   '/qc/dashboard': typeof QcDashboardRoute
@@ -975,6 +984,7 @@ export interface FileRouteTypes {
     | '/dro/retailers'
     | '/dro/services'
     | '/dro/support'
+    | '/hr/dashboard'
     | '/qc/approved'
     | '/qc/change-password'
     | '/qc/dashboard'
@@ -1074,6 +1084,7 @@ export interface FileRouteTypes {
     | '/dro/retailers'
     | '/dro/services'
     | '/dro/support'
+    | '/hr/dashboard'
     | '/qc/approved'
     | '/qc/change-password'
     | '/qc/dashboard'
@@ -1174,6 +1185,7 @@ export interface FileRouteTypes {
     | '/dro/retailers'
     | '/dro/services'
     | '/dro/support'
+    | '/hr/dashboard'
     | '/qc/approved'
     | '/qc/change-password'
     | '/qc/dashboard'
@@ -1275,6 +1287,7 @@ export interface RootRouteChildren {
   DroRetailersRoute: typeof DroRetailersRouteWithChildren
   DroServicesRoute: typeof DroServicesRoute
   DroSupportRoute: typeof DroSupportRoute
+  HrDashboardRoute: typeof HrDashboardRoute
   QcApprovedRoute: typeof QcApprovedRoute
   QcChangePasswordRoute: typeof QcChangePasswordRoute
   QcDashboardRoute: typeof QcDashboardRoute
@@ -1708,6 +1721,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof QcApprovedRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/hr/dashboard': {
+      id: '/hr/dashboard'
+      path: '/hr/dashboard'
+      fullPath: '/hr/dashboard'
+      preLoaderRoute: typeof HrDashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dro/support': {
       id: '/dro/support'
       path: '/dro/support'
@@ -2120,6 +2140,7 @@ const rootRouteChildren: RootRouteChildren = {
   DroRetailersRoute: DroRetailersRouteWithChildren,
   DroServicesRoute: DroServicesRoute,
   DroSupportRoute: DroSupportRoute,
+  HrDashboardRoute: HrDashboardRoute,
   QcApprovedRoute: QcApprovedRoute,
   QcChangePasswordRoute: QcChangePasswordRoute,
   QcDashboardRoute: QcDashboardRoute,
