@@ -1,4 +1,4 @@
-import { useMemo, useState, type ChangeEvent } from "react";
+import { useMemo, useState, type ChangeEvent, type ReactNode } from "react";
 import { toast } from "sonner";
 import { ArrowLeft, ArrowRight, BriefcaseBusiness, Building2, Check, FileText, GraduationCap, Landmark, LockKeyhole, MapPinned, Upload, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ const steps = [
   { title: "Assignment", icon: MapPinned },
 ];
 
-function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
+function Field({ label, required, children }: { label: string; required?: boolean; children: ReactNode }) {
   return <label className="space-y-1.5 text-xs font-bold text-foreground">{label}{required && <span className="text-destructive"> *</span>}{children}</label>;
 }
 
