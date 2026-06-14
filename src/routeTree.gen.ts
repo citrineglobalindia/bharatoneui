@@ -42,6 +42,7 @@ import { Route as DistributorLoginRouteImport } from './routes/distributor-login
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as BusinessRegRouteImport } from './routes/business-reg'
 import { Route as BdeLoginRouteImport } from './routes/bde-login'
+import { Route as BdeRouteImport } from './routes/bde'
 import { Route as BbpsRouteImport } from './routes/bbps'
 import { Route as ApplicationsRouteImport } from './routes/applications'
 import { Route as AepsActivationRouteImport } from './routes/aeps-activation'
@@ -300,6 +301,11 @@ const BusinessRegRoute = BusinessRegRouteImport.update({
 const BdeLoginRoute = BdeLoginRouteImport.update({
   id: '/bde-login',
   path: '/bde-login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BdeRoute = BdeRouteImport.update({
+  id: '/bde',
+  path: '/bde',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BbpsRoute = BbpsRouteImport.update({
@@ -624,59 +630,59 @@ const DistributorCommissionsRoute = DistributorCommissionsRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const BdeSupportRoute = BdeSupportRouteImport.update({
-  id: '/bde/support',
-  path: '/bde/support',
-  getParentRoute: () => rootRouteImport,
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => BdeRoute,
 } as any)
 const BdeSettingsRoute = BdeSettingsRouteImport.update({
-  id: '/bde/settings',
-  path: '/bde/settings',
-  getParentRoute: () => rootRouteImport,
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => BdeRoute,
 } as any)
 const BdeReportsRoute = BdeReportsRouteImport.update({
-  id: '/bde/reports',
-  path: '/bde/reports',
-  getParentRoute: () => rootRouteImport,
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => BdeRoute,
 } as any)
 const BdeProfileRoute = BdeProfileRouteImport.update({
-  id: '/bde/profile',
-  path: '/bde/profile',
-  getParentRoute: () => rootRouteImport,
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => BdeRoute,
 } as any)
 const BdePerformanceRoute = BdePerformanceRouteImport.update({
-  id: '/bde/performance',
-  path: '/bde/performance',
-  getParentRoute: () => rootRouteImport,
+  id: '/performance',
+  path: '/performance',
+  getParentRoute: () => BdeRoute,
 } as any)
 const BdeOpportunitiesRoute = BdeOpportunitiesRouteImport.update({
-  id: '/bde/opportunities',
-  path: '/bde/opportunities',
-  getParentRoute: () => rootRouteImport,
+  id: '/opportunities',
+  path: '/opportunities',
+  getParentRoute: () => BdeRoute,
 } as any)
 const BdeNetworkRoute = BdeNetworkRouteImport.update({
-  id: '/bde/network',
-  path: '/bde/network',
-  getParentRoute: () => rootRouteImport,
+  id: '/network',
+  path: '/network',
+  getParentRoute: () => BdeRoute,
 } as any)
 const BdeMerchantsRoute = BdeMerchantsRouteImport.update({
-  id: '/bde/merchants',
-  path: '/bde/merchants',
-  getParentRoute: () => rootRouteImport,
+  id: '/merchants',
+  path: '/merchants',
+  getParentRoute: () => BdeRoute,
 } as any)
 const BdeLeadsRoute = BdeLeadsRouteImport.update({
-  id: '/bde/leads',
-  path: '/bde/leads',
-  getParentRoute: () => rootRouteImport,
+  id: '/leads',
+  path: '/leads',
+  getParentRoute: () => BdeRoute,
 } as any)
 const BdeFeedbackRoute = BdeFeedbackRouteImport.update({
-  id: '/bde/feedback',
-  path: '/bde/feedback',
-  getParentRoute: () => rootRouteImport,
+  id: '/feedback',
+  path: '/feedback',
+  getParentRoute: () => BdeRoute,
 } as any)
 const BdeDashboardRoute = BdeDashboardRouteImport.update({
-  id: '/bde/dashboard',
-  path: '/bde/dashboard',
-  getParentRoute: () => rootRouteImport,
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => BdeRoute,
 } as any)
 const AccountantWithdrawalsRoute = AccountantWithdrawalsRouteImport.update({
   id: '/accountant/withdrawals',
@@ -785,6 +791,7 @@ export interface FileRoutesByFullPath {
   '/aeps-activation': typeof AepsActivationRoute
   '/applications': typeof ApplicationsRoute
   '/bbps': typeof BbpsRoute
+  '/bde': typeof BdeRouteWithChildren
   '/bde-login': typeof BdeLoginRoute
   '/business-reg': typeof BusinessRegRoute
   '/dashboard': typeof DashboardRoute
@@ -914,6 +921,7 @@ export interface FileRoutesByTo {
   '/aeps-activation': typeof AepsActivationRoute
   '/applications': typeof ApplicationsRoute
   '/bbps': typeof BbpsRoute
+  '/bde': typeof BdeRouteWithChildren
   '/bde-login': typeof BdeLoginRoute
   '/business-reg': typeof BusinessRegRoute
   '/dashboard': typeof DashboardRoute
@@ -1043,6 +1051,7 @@ export interface FileRoutesById {
   '/aeps-activation': typeof AepsActivationRoute
   '/applications': typeof ApplicationsRoute
   '/bbps': typeof BbpsRoute
+  '/bde': typeof BdeRouteWithChildren
   '/bde-login': typeof BdeLoginRoute
   '/business-reg': typeof BusinessRegRoute
   '/dashboard': typeof DashboardRoute
@@ -1174,6 +1183,7 @@ export interface FileRouteTypes {
     | '/aeps-activation'
     | '/applications'
     | '/bbps'
+    | '/bde'
     | '/bde-login'
     | '/business-reg'
     | '/dashboard'
@@ -1303,6 +1313,7 @@ export interface FileRouteTypes {
     | '/aeps-activation'
     | '/applications'
     | '/bbps'
+    | '/bde'
     | '/bde-login'
     | '/business-reg'
     | '/dashboard'
@@ -1431,6 +1442,7 @@ export interface FileRouteTypes {
     | '/aeps-activation'
     | '/applications'
     | '/bbps'
+    | '/bde'
     | '/bde-login'
     | '/business-reg'
     | '/dashboard'
@@ -1561,6 +1573,7 @@ export interface RootRouteChildren {
   AepsActivationRoute: typeof AepsActivationRoute
   ApplicationsRoute: typeof ApplicationsRoute
   BbpsRoute: typeof BbpsRoute
+  BdeRoute: typeof BdeRouteWithChildren
   BdeLoginRoute: typeof BdeLoginRoute
   BusinessRegRoute: typeof BusinessRegRoute
   DashboardRoute: typeof DashboardRoute
@@ -1606,17 +1619,6 @@ export interface RootRouteChildren {
   AccountantSupportRoute: typeof AccountantSupportRoute
   AccountantWalletRequestsRoute: typeof AccountantWalletRequestsRoute
   AccountantWithdrawalsRoute: typeof AccountantWithdrawalsRoute
-  BdeDashboardRoute: typeof BdeDashboardRoute
-  BdeFeedbackRoute: typeof BdeFeedbackRoute
-  BdeLeadsRoute: typeof BdeLeadsRoute
-  BdeMerchantsRoute: typeof BdeMerchantsRoute
-  BdeNetworkRoute: typeof BdeNetworkRoute
-  BdeOpportunitiesRoute: typeof BdeOpportunitiesRoute
-  BdePerformanceRoute: typeof BdePerformanceRoute
-  BdeProfileRoute: typeof BdeProfileRoute
-  BdeReportsRoute: typeof BdeReportsRoute
-  BdeSettingsRoute: typeof BdeSettingsRoute
-  BdeSupportRoute: typeof BdeSupportRoute
   DistributorCommissionsRoute: typeof DistributorCommissionsRoute
   DistributorDashboardRoute: typeof DistributorDashboardRoute
   DistributorFeedbackRoute: typeof DistributorFeedbackRoute
@@ -1908,6 +1910,13 @@ declare module '@tanstack/react-router' {
       path: '/bde-login'
       fullPath: '/bde-login'
       preLoaderRoute: typeof BdeLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bde': {
+      id: '/bde'
+      path: '/bde'
+      fullPath: '/bde'
+      preLoaderRoute: typeof BdeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/bbps': {
@@ -2360,80 +2369,80 @@ declare module '@tanstack/react-router' {
     }
     '/bde/support': {
       id: '/bde/support'
-      path: '/bde/support'
+      path: '/support'
       fullPath: '/bde/support'
       preLoaderRoute: typeof BdeSupportRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof BdeRoute
     }
     '/bde/settings': {
       id: '/bde/settings'
-      path: '/bde/settings'
+      path: '/settings'
       fullPath: '/bde/settings'
       preLoaderRoute: typeof BdeSettingsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof BdeRoute
     }
     '/bde/reports': {
       id: '/bde/reports'
-      path: '/bde/reports'
+      path: '/reports'
       fullPath: '/bde/reports'
       preLoaderRoute: typeof BdeReportsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof BdeRoute
     }
     '/bde/profile': {
       id: '/bde/profile'
-      path: '/bde/profile'
+      path: '/profile'
       fullPath: '/bde/profile'
       preLoaderRoute: typeof BdeProfileRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof BdeRoute
     }
     '/bde/performance': {
       id: '/bde/performance'
-      path: '/bde/performance'
+      path: '/performance'
       fullPath: '/bde/performance'
       preLoaderRoute: typeof BdePerformanceRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof BdeRoute
     }
     '/bde/opportunities': {
       id: '/bde/opportunities'
-      path: '/bde/opportunities'
+      path: '/opportunities'
       fullPath: '/bde/opportunities'
       preLoaderRoute: typeof BdeOpportunitiesRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof BdeRoute
     }
     '/bde/network': {
       id: '/bde/network'
-      path: '/bde/network'
+      path: '/network'
       fullPath: '/bde/network'
       preLoaderRoute: typeof BdeNetworkRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof BdeRoute
     }
     '/bde/merchants': {
       id: '/bde/merchants'
-      path: '/bde/merchants'
+      path: '/merchants'
       fullPath: '/bde/merchants'
       preLoaderRoute: typeof BdeMerchantsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof BdeRoute
     }
     '/bde/leads': {
       id: '/bde/leads'
-      path: '/bde/leads'
+      path: '/leads'
       fullPath: '/bde/leads'
       preLoaderRoute: typeof BdeLeadsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof BdeRoute
     }
     '/bde/feedback': {
       id: '/bde/feedback'
-      path: '/bde/feedback'
+      path: '/feedback'
       fullPath: '/bde/feedback'
       preLoaderRoute: typeof BdeFeedbackRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof BdeRoute
     }
     '/bde/dashboard': {
       id: '/bde/dashboard'
-      path: '/bde/dashboard'
+      path: '/dashboard'
       fullPath: '/bde/dashboard'
       preLoaderRoute: typeof BdeDashboardRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof BdeRoute
     }
     '/accountant/withdrawals': {
       id: '/accountant/withdrawals'
@@ -2571,6 +2580,36 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface BdeRouteChildren {
+  BdeDashboardRoute: typeof BdeDashboardRoute
+  BdeFeedbackRoute: typeof BdeFeedbackRoute
+  BdeLeadsRoute: typeof BdeLeadsRoute
+  BdeMerchantsRoute: typeof BdeMerchantsRoute
+  BdeNetworkRoute: typeof BdeNetworkRoute
+  BdeOpportunitiesRoute: typeof BdeOpportunitiesRoute
+  BdePerformanceRoute: typeof BdePerformanceRoute
+  BdeProfileRoute: typeof BdeProfileRoute
+  BdeReportsRoute: typeof BdeReportsRoute
+  BdeSettingsRoute: typeof BdeSettingsRoute
+  BdeSupportRoute: typeof BdeSupportRoute
+}
+
+const BdeRouteChildren: BdeRouteChildren = {
+  BdeDashboardRoute: BdeDashboardRoute,
+  BdeFeedbackRoute: BdeFeedbackRoute,
+  BdeLeadsRoute: BdeLeadsRoute,
+  BdeMerchantsRoute: BdeMerchantsRoute,
+  BdeNetworkRoute: BdeNetworkRoute,
+  BdeOpportunitiesRoute: BdeOpportunitiesRoute,
+  BdePerformanceRoute: BdePerformanceRoute,
+  BdeProfileRoute: BdeProfileRoute,
+  BdeReportsRoute: BdeReportsRoute,
+  BdeSettingsRoute: BdeSettingsRoute,
+  BdeSupportRoute: BdeSupportRoute,
+}
+
+const BdeRouteWithChildren = BdeRoute._addFileChildren(BdeRouteChildren)
+
 interface DistributorOfficersRouteChildren {
   DistributorOfficersIdRoute: typeof DistributorOfficersIdRoute
 }
@@ -2638,6 +2677,7 @@ const rootRouteChildren: RootRouteChildren = {
   AepsActivationRoute: AepsActivationRoute,
   ApplicationsRoute: ApplicationsRoute,
   BbpsRoute: BbpsRoute,
+  BdeRoute: BdeRouteWithChildren,
   BdeLoginRoute: BdeLoginRoute,
   BusinessRegRoute: BusinessRegRoute,
   DashboardRoute: DashboardRoute,
@@ -2683,17 +2723,6 @@ const rootRouteChildren: RootRouteChildren = {
   AccountantSupportRoute: AccountantSupportRoute,
   AccountantWalletRequestsRoute: AccountantWalletRequestsRoute,
   AccountantWithdrawalsRoute: AccountantWithdrawalsRoute,
-  BdeDashboardRoute: BdeDashboardRoute,
-  BdeFeedbackRoute: BdeFeedbackRoute,
-  BdeLeadsRoute: BdeLeadsRoute,
-  BdeMerchantsRoute: BdeMerchantsRoute,
-  BdeNetworkRoute: BdeNetworkRoute,
-  BdeOpportunitiesRoute: BdeOpportunitiesRoute,
-  BdePerformanceRoute: BdePerformanceRoute,
-  BdeProfileRoute: BdeProfileRoute,
-  BdeReportsRoute: BdeReportsRoute,
-  BdeSettingsRoute: BdeSettingsRoute,
-  BdeSupportRoute: BdeSupportRoute,
   DistributorCommissionsRoute: DistributorCommissionsRoute,
   DistributorDashboardRoute: DistributorDashboardRoute,
   DistributorFeedbackRoute: DistributorFeedbackRoute,
@@ -2756,13 +2785,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

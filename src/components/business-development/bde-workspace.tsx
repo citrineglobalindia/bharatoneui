@@ -1,10 +1,10 @@
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, XAxis, YAxis } from "recharts";
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import {
   BadgeIndianRupee, BriefcaseBusiness, CalendarCheck2, CalendarPlus, CheckCircle2, ChevronRight,
   CircleDollarSign, ClipboardCheck, Download, FileCheck2, FileSpreadsheet, Gift, MapPin, Phone,
-  Plus, Search, Send, Store, Target, TrendingUp, Upload, UserPlus, UsersRound,
+  Plus, Search, Send, Store, TrendingUp, Upload, UserPlus, UsersRound,
 } from "lucide-react";
 import { BdeShell } from "@/components/business-development/bde-shell";
 import { Badge } from "@/components/ui/badge";
@@ -50,7 +50,7 @@ export function BdeWorkspace() {
   const fileRef = useRef<HTMLInputElement>(null);
   const filtered = useMemo(() => leads.filter((lead) => `${lead.id} ${lead.business} ${lead.contact} ${lead.phone} ${lead.district}`.toLowerCase().includes(query.toLowerCase()) && (stage === "All stages" || lead.stage === stage)), [leads, query, stage]);
   const addLead = () => { if (!name.trim() || !business.trim() || !phone.trim()) { toast.error("Enter contact, business and phone"); return; } const duplicate = leads.some((item) => item.phone.replace(/\D/g, "") === phone.replace(/\D/g, "")); if (duplicate) { toast.error("Duplicate lead detected", { description: "A lead with this phone number already exists." }); return; } setLeads((items) => [{ id: `BD-260614-${150 + items.length}`, business: business.trim(), contact: name.trim(), phone: phone.trim(), district: "Bengaluru Urban", taluk: "Unassigned", source: "Manual", stage: "Lead Generated", score: 60, value: 0, nextAction: "Make initial contact", owner: "Rahul K.", updated: "Just now" }, ...items]); setLeadDialog(false); setName(""); setBusiness(""); setPhone(""); toast.success("Lead added and assigned to you"); };
-  const moveStage = (lead: Lead) => { const index = STAGES.indexOf(lead.stage); if (index === STAGES.length - 1) return; const next = STAGES[index + 1]; setLeads((items) => items.map((item) => item.id === lead.id ? { ...item, stage: next, updated: "Just now", nextAction: `Complete ${STAGES[Math.min(index + 2, STAGES.length - 1)]}` } : item)); setSelected(null); toast.success(`Moved to ${next}`); };
+  const moveStage = (lead: Lead) => { const index = STAGES.indexOf(lead.stage); const next = STAGES[index + 1]; if (!next) return; const following = STAGES[Math.min(index + 2, STAGES.length - 1)] ?? next; setLeads((items) => items.map((item) => item.id === lead.id ? { ...item, stage: next, updated: "Just now", nextAction: `Complete ${following}` } : item)); setSelected(null); toast.success(`Moved to ${next}`); };
   const exportCsv = (title = "bde-leads") => { const rows = [["ID", "Business", "Contact", "Phone", "District", "Taluk", "Stage", "Potential Value"], ...filtered.map((item) => [item.id, item.business, item.contact, item.phone, item.district, item.taluk, item.stage, item.value])]; const blob = new Blob([rows.map((row) => row.map((value) => `"${String(value).replaceAll('"', '""')}"`).join(",")).join("\n")], { type: "text/csv" }); const url = URL.createObjectURL(blob); const anchor = document.createElement("a"); anchor.href = url; anchor.download = `${title}.csv`; anchor.click(); URL.revokeObjectURL(url); toast.success("Report exported"); };
   return <BdeShell active={section} onSelect={setSection}><div className="mx-auto max-w-[1600px] space-y-5">
     {section === "dashboard" && <Dashboard leads={leads} go={setSection} />}
