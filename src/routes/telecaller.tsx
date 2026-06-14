@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { TelecallerModule } from "@/components/hr/telecaller-module";
+import { TelecallerModule } from "@/components/telecaller/telecaller-module";
 
 export const Route = createFileRoute("/telecaller")({
   head: () => ({
