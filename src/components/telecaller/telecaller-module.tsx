@@ -6,6 +6,7 @@ import {
   PhoneCall, Search, Send, Target, UserCheck, UserPlus, UsersRound,
 } from "lucide-react";
 import { TelecallerShell } from "@/components/telecaller/telecaller-shell";
+import { ProfileSettings, ServiceFollowups, ServiceReports } from "@/components/telecaller/telecaller-extras";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -87,6 +88,7 @@ export function TelecallerModule() {
   const [leads, setLeads] = useState(INITIAL_LEADS);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All statuses");
+  const [activeSection, setActiveSection] = useState("command");
   const filtered = useMemo(() => leads.filter((lead) => {
     const matchesQuery = `${lead.name} ${lead.phone} ${lead.service} ${lead.id}`.toLowerCase().includes(query.toLowerCase());
     return matchesQuery && (statusFilter === "All statuses" || lead.status === statusFilter);
@@ -102,7 +104,11 @@ export function TelecallerModule() {
     toast.success(`Calling ${lead.name}`, { description: `${lead.phone} · call logging started.` });
   };
 
-  return <TelecallerShell><div className="mx-auto max-w-[1600px] space-y-6">
+  if (activeSection === "profile" || activeSection === "settings") return <TelecallerShell activeSection={activeSection} onSectionChange={setActiveSection}><div className="mx-auto max-w-[1600px]"><ProfileSettings mode={activeSection} /></div></TelecallerShell>;
+
+  const activeTab = activeSection === "command" || activeSection === "calls" ? "leads" : activeSection === "reports" ? "reporting" : activeSection;
+
+  return <TelecallerShell activeSection={activeSection} onSectionChange={setActiveSection}><div className="mx-auto max-w-[1600px] space-y-6">
     <section className="relative overflow-hidden rounded-3xl bg-navy p-6 text-hr-foreground shadow-elev lg:p-8">
       <div className="absolute -right-20 -top-24 h-64 w-64 rounded-full bg-hr/40 blur-3xl" />
       <div className="relative flex flex-col justify-between gap-6 xl:flex-row xl:items-center">
@@ -113,7 +119,7 @@ export function TelecallerModule() {
 
     <section><div className="mb-3 flex items-end justify-between"><div><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-hr">Daily operating pulse</p><h2 className="font-display text-xl font-extrabold">Your KPI progress</h2></div><Badge variant="outline" className="hidden gap-1 sm:flex"><Clock3 className="h-3 w-3"/> Updated 10:30 AM</Badge></div><div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">{KPI.map((item) => <MetricCard key={item.label} item={item}/>)}</div></section>
 
-    <Tabs defaultValue="leads" className="space-y-4">
+    <Tabs value={activeTab} onValueChange={setActiveSection} className="space-y-4">
       <TabsList className="h-auto w-full justify-start overflow-x-auto rounded-xl border border-border bg-card p-1 shadow-soft"><TabsTrigger value="leads">Lead workspace</TabsTrigger><TabsTrigger value="followups">Follow-ups</TabsTrigger><TabsTrigger value="reporting">Daily report</TabsTrigger><TabsTrigger value="performance">Agent performance</TabsTrigger><TabsTrigger value="script">Call script</TabsTrigger></TabsList>
 
       <TabsContent value="leads" className="space-y-4">
