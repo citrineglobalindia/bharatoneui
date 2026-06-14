@@ -26,7 +26,7 @@ const DISPOSITION_STATUS: Record<string, Status> = {
   "No Answer": "Customer Unreachable", Busy: "Customer Unreachable", "Switched Off": "Customer Unreachable",
   "Invalid Number": "Customer Unreachable", "Call Later": "Follow-up Scheduled",
 };
-type Application = { id: string; retailer: string; retailerId: string; customer: string; phone: string; service: string; submitted: string; assigned: string; status: Status; priority: "High" | "Medium" | "Low"; nextAction: string; documents: string; notes: string; callOutcome?: CallOutcome; disposition?: string };
+type Application = { id: string; retailer: string; retailerId: string; customer: string; phone: string; service: string; submitted: string; assigned: string; status: Status; priority: "High" | "Medium" | "Low"; nextAction: string; documents: string; notes: string; extraNotes: string; recordingLink: string; callOutcome?: CallOutcome; disposition?: string };
 
 const INITIAL_APPLICATIONS: Application[] = [
   { id: "GST-240614-184", retailer: "Sri Balaji Digital", retailerId: "RT-10482", customer: "Rakesh Kumar", phone: "+91 98451 27420", service: "GST Registration", submitted: "14 Jun, 9:12 AM", assigned: "Today, 9:30 AM", status: "Call Pending", priority: "High", nextAction: "Call before 11:30 AM", documents: "PAN, Aadhaar, address proof", notes: "Retailer requested a Hindi callback." },
