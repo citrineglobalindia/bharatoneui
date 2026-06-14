@@ -30,6 +30,7 @@ import { Route as NewServiceRequestRouteImport } from './routes/new-service-requ
 import { Route as MoneyTransferRouteImport } from './routes/money-transfer'
 import { Route as MasterDistributorLoginRouteImport } from './routes/master-distributor-login'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as HrLoginRouteImport } from './routes/hr-login'
 import { Route as GstRouteImport } from './routes/gst'
 import { Route as GovServicesRouteImport } from './routes/gov-services'
 import { Route as GetStartedRouteImport } from './routes/get-started'
@@ -225,6 +226,11 @@ const MasterDistributorLoginRoute = MasterDistributorLoginRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HrLoginRoute = HrLoginRouteImport.update({
+  id: '/hr-login',
+  path: '/hr-login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GstRoute = GstRouteImport.update({
@@ -703,6 +709,7 @@ export interface FileRoutesByFullPath {
   '/get-started': typeof GetStartedRoute
   '/gov-services': typeof GovServicesRoute
   '/gst': typeof GstRoute
+  '/hr-login': typeof HrLoginRoute
   '/login': typeof LoginRoute
   '/master-distributor-login': typeof MasterDistributorLoginRoute
   '/money-transfer': typeof MoneyTransferRoute
@@ -817,6 +824,7 @@ export interface FileRoutesByTo {
   '/get-started': typeof GetStartedRoute
   '/gov-services': typeof GovServicesRoute
   '/gst': typeof GstRoute
+  '/hr-login': typeof HrLoginRoute
   '/login': typeof LoginRoute
   '/master-distributor-login': typeof MasterDistributorLoginRoute
   '/money-transfer': typeof MoneyTransferRoute
@@ -931,6 +939,7 @@ export interface FileRoutesById {
   '/get-started': typeof GetStartedRoute
   '/gov-services': typeof GovServicesRoute
   '/gst': typeof GstRoute
+  '/hr-login': typeof HrLoginRoute
   '/login': typeof LoginRoute
   '/master-distributor-login': typeof MasterDistributorLoginRoute
   '/money-transfer': typeof MoneyTransferRoute
@@ -1047,6 +1056,7 @@ export interface FileRouteTypes {
     | '/get-started'
     | '/gov-services'
     | '/gst'
+    | '/hr-login'
     | '/login'
     | '/master-distributor-login'
     | '/money-transfer'
@@ -1161,6 +1171,7 @@ export interface FileRouteTypes {
     | '/get-started'
     | '/gov-services'
     | '/gst'
+    | '/hr-login'
     | '/login'
     | '/master-distributor-login'
     | '/money-transfer'
@@ -1274,6 +1285,7 @@ export interface FileRouteTypes {
     | '/get-started'
     | '/gov-services'
     | '/gst'
+    | '/hr-login'
     | '/login'
     | '/master-distributor-login'
     | '/money-transfer'
@@ -1389,6 +1401,7 @@ export interface RootRouteChildren {
   GetStartedRoute: typeof GetStartedRoute
   GovServicesRoute: typeof GovServicesRoute
   GstRoute: typeof GstRoute
+  HrLoginRoute: typeof HrLoginRoute
   LoginRoute: typeof LoginRoute
   MasterDistributorLoginRoute: typeof MasterDistributorLoginRoute
   MoneyTransferRoute: typeof MoneyTransferRoute
@@ -1629,6 +1642,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hr-login': {
+      id: '/hr-login'
+      path: '/hr-login'
+      fullPath: '/hr-login'
+      preLoaderRoute: typeof HrLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/gst': {
@@ -2346,6 +2366,7 @@ const rootRouteChildren: RootRouteChildren = {
   GetStartedRoute: GetStartedRoute,
   GovServicesRoute: GovServicesRoute,
   GstRoute: GstRoute,
+  HrLoginRoute: HrLoginRoute,
   LoginRoute: LoginRoute,
   MasterDistributorLoginRoute: MasterDistributorLoginRoute,
   MoneyTransferRoute: MoneyTransferRoute,
@@ -2441,13 +2462,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

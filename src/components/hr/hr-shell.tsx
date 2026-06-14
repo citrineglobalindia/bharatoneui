@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { BharatOneLogo } from "@/components/bharatone-logo";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -61,7 +62,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         <ul className="space-y-1">{ACCOUNT_NAV.map((item) => { const Icon = item.icon; const active = pathname === item.to; return <li key={item.label}><Link to={item.to} onClick={onNavigate} className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition ${active ? "bg-hr text-hr-foreground shadow-lg shadow-navy" : "text-hr-foreground/65 hover:bg-hr-foreground/10 hover:text-hr-foreground"}`}><Icon className="h-4 w-4"/><span>{item.label}</span></Link></li>; })}</ul>
       </nav>
       <div className="border-t border-hr-foreground/10 p-3">
-        <Button variant="ghost" className="w-full justify-start text-hr-foreground/70 hover:bg-hr-foreground/10 hover:text-hr-foreground" onClick={() => { try { localStorage.removeItem("bharatone:auth"); } catch { void 0; } navigate({ to: "/login" }); }}>
+        <Button variant="ghost" className="w-full justify-start text-hr-foreground/70 hover:bg-hr-foreground/10 hover:text-hr-foreground" onClick={async () => { await supabase.auth.signOut(); navigate({ to: "/hr-login", replace: true }); }}>
           <LogOut /> Sign out
         </Button>
       </div>
@@ -85,7 +86,7 @@ export function HrShell({ children }: { children: React.ReactNode }) {
           <Button variant="outline" size="icon" className="relative"><Bell /><span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-destructive-foreground">6</span></Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild><Button variant="outline" className="h-10 gap-2 px-2"><span className="flex h-7 w-7 items-center justify-center rounded-lg bg-hr text-xs font-bold text-hr-foreground">AR</span><span className="hidden text-left md:block"><span className="block text-xs font-bold">Ananya Rao</span><span className="block text-[9px] text-muted-foreground">HR Manager</span></span><ChevronDown /></Button></DropdownMenuTrigger>
-             <DropdownMenuContent align="end"><DropdownMenuItem asChild><Link to="/hr/profile">My profile</Link></DropdownMenuItem><DropdownMenuItem asChild><Link to="/hr/settings">Settings</Link></DropdownMenuItem><DropdownMenuItem asChild><Link to="/hr/support">Help & support</Link></DropdownMenuItem><DropdownMenuSeparator /><DropdownMenuItem onClick={() => { try { localStorage.removeItem("bharatone:auth"); } catch { void 0; } navigate({ to: "/login" }); }}>Sign out</DropdownMenuItem></DropdownMenuContent>
+              <DropdownMenuContent align="end"><DropdownMenuItem asChild><Link to="/hr/profile">My profile</Link></DropdownMenuItem><DropdownMenuItem asChild><Link to="/hr/settings">Settings</Link></DropdownMenuItem><DropdownMenuItem asChild><Link to="/hr/support">Help & support</Link></DropdownMenuItem><DropdownMenuSeparator /><DropdownMenuItem onClick={async () => { await supabase.auth.signOut(); navigate({ to: "/hr-login", replace: true }); }}>Sign out</DropdownMenuItem></DropdownMenuContent>
           </DropdownMenu>
         </header>
         <main className="flex-1 overflow-y-auto p-4 lg:p-8">{children}</main>
