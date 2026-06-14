@@ -16,6 +16,7 @@ import { Route as TransactionsRouteImport } from './routes/transactions'
 import { Route as TrackApplicationRouteImport } from './routes/track-application'
 import { Route as TermsAndConditionsRouteImport } from './routes/terms-and-conditions'
 import { Route as TelecallerLoginRouteImport } from './routes/telecaller-login'
+import { Route as TelecallerRouteImport } from './routes/telecaller'
 import { Route as SupportRouteImport } from './routes/support'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ServicesRouteImport } from './routes/services'
@@ -70,7 +71,6 @@ import { Route as QcDashboardRouteImport } from './routes/qc.dashboard'
 import { Route as QcChangePasswordRouteImport } from './routes/qc.change-password'
 import { Route as QcApprovedRouteImport } from './routes/qc.approved'
 import { Route as HrTrainingRouteImport } from './routes/hr.training'
-import { Route as HrTelecallerRouteImport } from './routes/hr.telecaller'
 import { Route as HrSupportRouteImport } from './routes/hr.support'
 import { Route as HrSettingsRouteImport } from './routes/hr.settings'
 import { Route as HrReportsRouteImport } from './routes/hr.reports'
@@ -158,6 +158,11 @@ const TermsAndConditionsRoute = TermsAndConditionsRouteImport.update({
 const TelecallerLoginRoute = TelecallerLoginRouteImport.update({
   id: '/telecaller-login',
   path: '/telecaller-login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TelecallerRoute = TelecallerRouteImport.update({
+  id: '/telecaller',
+  path: '/telecaller',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SupportRoute = SupportRouteImport.update({
@@ -428,11 +433,6 @@ const QcApprovedRoute = QcApprovedRouteImport.update({
 const HrTrainingRoute = HrTrainingRouteImport.update({
   id: '/hr/training',
   path: '/hr/training',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const HrTelecallerRoute = HrTelecallerRouteImport.update({
-  id: '/hr/telecaller',
-  path: '/hr/telecaller',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HrSupportRoute = HrSupportRouteImport.update({
@@ -737,6 +737,7 @@ export interface FileRoutesByFullPath {
   '/services': typeof ServicesRoute
   '/settings': typeof SettingsRoute
   '/support': typeof SupportRoute
+  '/telecaller': typeof TelecallerRoute
   '/telecaller-login': typeof TelecallerLoginRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/track-application': typeof TrackApplicationRoute
@@ -790,7 +791,6 @@ export interface FileRoutesByFullPath {
   '/hr/reports': typeof HrReportsRoute
   '/hr/settings': typeof HrSettingsRoute
   '/hr/support': typeof HrSupportRoute
-  '/hr/telecaller': typeof HrTelecallerRoute
   '/hr/training': typeof HrTrainingRoute
   '/qc/approved': typeof QcApprovedRoute
   '/qc/change-password': typeof QcChangePasswordRoute
@@ -854,6 +854,7 @@ export interface FileRoutesByTo {
   '/services': typeof ServicesRoute
   '/settings': typeof SettingsRoute
   '/support': typeof SupportRoute
+  '/telecaller': typeof TelecallerRoute
   '/telecaller-login': typeof TelecallerLoginRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/track-application': typeof TrackApplicationRoute
@@ -906,7 +907,6 @@ export interface FileRoutesByTo {
   '/hr/reports': typeof HrReportsRoute
   '/hr/settings': typeof HrSettingsRoute
   '/hr/support': typeof HrSupportRoute
-  '/hr/telecaller': typeof HrTelecallerRoute
   '/hr/training': typeof HrTrainingRoute
   '/qc/approved': typeof QcApprovedRoute
   '/qc/change-password': typeof QcChangePasswordRoute
@@ -971,6 +971,7 @@ export interface FileRoutesById {
   '/services': typeof ServicesRoute
   '/settings': typeof SettingsRoute
   '/support': typeof SupportRoute
+  '/telecaller': typeof TelecallerRoute
   '/telecaller-login': typeof TelecallerLoginRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/track-application': typeof TrackApplicationRoute
@@ -1024,7 +1025,6 @@ export interface FileRoutesById {
   '/hr/reports': typeof HrReportsRoute
   '/hr/settings': typeof HrSettingsRoute
   '/hr/support': typeof HrSupportRoute
-  '/hr/telecaller': typeof HrTelecallerRoute
   '/hr/training': typeof HrTrainingRoute
   '/qc/approved': typeof QcApprovedRoute
   '/qc/change-password': typeof QcChangePasswordRoute
@@ -1090,6 +1090,7 @@ export interface FileRouteTypes {
     | '/services'
     | '/settings'
     | '/support'
+    | '/telecaller'
     | '/telecaller-login'
     | '/terms-and-conditions'
     | '/track-application'
@@ -1143,7 +1144,6 @@ export interface FileRouteTypes {
     | '/hr/reports'
     | '/hr/settings'
     | '/hr/support'
-    | '/hr/telecaller'
     | '/hr/training'
     | '/qc/approved'
     | '/qc/change-password'
@@ -1207,6 +1207,7 @@ export interface FileRouteTypes {
     | '/services'
     | '/settings'
     | '/support'
+    | '/telecaller'
     | '/telecaller-login'
     | '/terms-and-conditions'
     | '/track-application'
@@ -1259,7 +1260,6 @@ export interface FileRouteTypes {
     | '/hr/reports'
     | '/hr/settings'
     | '/hr/support'
-    | '/hr/telecaller'
     | '/hr/training'
     | '/qc/approved'
     | '/qc/change-password'
@@ -1323,6 +1323,7 @@ export interface FileRouteTypes {
     | '/services'
     | '/settings'
     | '/support'
+    | '/telecaller'
     | '/telecaller-login'
     | '/terms-and-conditions'
     | '/track-application'
@@ -1376,7 +1377,6 @@ export interface FileRouteTypes {
     | '/hr/reports'
     | '/hr/settings'
     | '/hr/support'
-    | '/hr/telecaller'
     | '/hr/training'
     | '/qc/approved'
     | '/qc/change-password'
@@ -1441,6 +1441,7 @@ export interface RootRouteChildren {
   ServicesRoute: typeof ServicesRoute
   SettingsRoute: typeof SettingsRoute
   SupportRoute: typeof SupportRoute
+  TelecallerRoute: typeof TelecallerRoute
   TelecallerLoginRoute: typeof TelecallerLoginRoute
   TermsAndConditionsRoute: typeof TermsAndConditionsRoute
   TrackApplicationRoute: typeof TrackApplicationRoute
@@ -1494,7 +1495,6 @@ export interface RootRouteChildren {
   HrReportsRoute: typeof HrReportsRoute
   HrSettingsRoute: typeof HrSettingsRoute
   HrSupportRoute: typeof HrSupportRoute
-  HrTelecallerRoute: typeof HrTelecallerRoute
   HrTrainingRoute: typeof HrTrainingRoute
   QcApprovedRoute: typeof QcApprovedRoute
   QcChangePasswordRoute: typeof QcChangePasswordRoute
@@ -1570,6 +1570,13 @@ declare module '@tanstack/react-router' {
       path: '/telecaller-login'
       fullPath: '/telecaller-login'
       preLoaderRoute: typeof TelecallerLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/telecaller': {
+      id: '/telecaller'
+      path: '/telecaller'
+      fullPath: '/telecaller'
+      preLoaderRoute: typeof TelecallerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/support': {
@@ -1948,13 +1955,6 @@ declare module '@tanstack/react-router' {
       path: '/hr/training'
       fullPath: '/hr/training'
       preLoaderRoute: typeof HrTrainingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/hr/telecaller': {
-      id: '/hr/telecaller'
-      path: '/hr/telecaller'
-      fullPath: '/hr/telecaller'
-      preLoaderRoute: typeof HrTelecallerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/hr/support': {
@@ -2422,6 +2422,7 @@ const rootRouteChildren: RootRouteChildren = {
   ServicesRoute: ServicesRoute,
   SettingsRoute: SettingsRoute,
   SupportRoute: SupportRoute,
+  TelecallerRoute: TelecallerRoute,
   TelecallerLoginRoute: TelecallerLoginRoute,
   TermsAndConditionsRoute: TermsAndConditionsRoute,
   TrackApplicationRoute: TrackApplicationRoute,
@@ -2475,7 +2476,6 @@ const rootRouteChildren: RootRouteChildren = {
   HrReportsRoute: HrReportsRoute,
   HrSettingsRoute: HrSettingsRoute,
   HrSupportRoute: HrSupportRoute,
-  HrTelecallerRoute: HrTelecallerRoute,
   HrTrainingRoute: HrTrainingRoute,
   QcApprovedRoute: QcApprovedRoute,
   QcChangePasswordRoute: QcChangePasswordRoute,

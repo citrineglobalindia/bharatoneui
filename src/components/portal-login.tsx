@@ -369,7 +369,7 @@ export const PORTAL_CONFIGS: Record<PortalRole, PortalConfig> = {
     accent: "sky",
     icon: Users,
     demo: { username: "telecaller.executive", password: "Call@2026", displayName: "Arjun Kumar" },
-    redirectTo: "/hr/telecaller",
+    redirectTo: "/telecaller",
   },
   dro: {
     role: "dro",
