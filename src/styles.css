@@ -74,12 +74,12 @@
   /* India Tricolor palette */
   --saffron: oklch(0.72 0.18 45);
   --india-green: oklch(0.55 0.15 150);
-  --navy: oklch(0.22 0.05 260);
-  --hr: oklch(0.48 0.14 238);
+  --navy: oklch(0.22 0.08 260);
+  --hr: oklch(0.5 0.12 250);
   --hr-foreground: oklch(0.99 0 0);
-  --hr-soft: oklch(0.96 0.025 230);
+  --hr-soft: oklch(0.95 0.025 250);
 
-  --background: oklch(0.99 0.003 80);
+  --background: oklch(0.98 0.006 250);
   --foreground: oklch(0.18 0.02 260);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.18 0.02 260);
@@ -95,9 +95,9 @@
   --accent-foreground: oklch(0.55 0.18 45);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.99 0 0);
-  --border: oklch(0.92 0.008 80);
-  --input: oklch(0.92 0.008 80);
-  --ring: oklch(0.68 0.19 45);
+  --border: oklch(0.91 0.015 250);
+  --input: oklch(0.91 0.015 250);
+  --ring: oklch(0.5 0.12 250);
 
   --gradient-tricolor: linear-gradient(
     135deg,
@@ -106,8 +106,8 @@
     oklch(0.96 0.05 150) 100%
   );
   --gradient-saffron: linear-gradient(135deg, oklch(0.74 0.19 50), oklch(0.65 0.2 35));
-  --shadow-soft: 0 1px 2px oklch(0.2 0.02 60 / 0.06), 0 8px 24px -8px oklch(0.2 0.02 60 / 0.08);
-  --shadow-elev: 0 4px 12px -2px oklch(0.68 0.19 45 / 0.18), 0 10px 30px -8px oklch(0.2 0.02 60 / 0.12);
+  --shadow-soft: 0 1px 2px oklch(0.2 0.05 260 / 0.05), 0 12px 28px -14px oklch(0.2 0.05 260 / 0.18);
+  --shadow-elev: 0 10px 40px -14px oklch(0.2 0.08 260 / 0.38);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
