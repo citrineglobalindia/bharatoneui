@@ -5,7 +5,7 @@ import {
   CircleDollarSign, Clock3, FileCheck2, Headphones, MessageCircle, Phone,
   PhoneCall, Search, Send, Target, UserCheck, UserPlus, UsersRound,
 } from "lucide-react";
-import { HrShell } from "@/components/hr/hr-shell";
+import { TelecallerShell } from "@/components/telecaller/telecaller-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -102,7 +102,7 @@ export function TelecallerModule() {
     toast.success(`Calling ${lead.name}`, { description: `${lead.phone} · call logging started.` });
   };
 
-  return <HrShell><div className="mx-auto max-w-[1600px] space-y-6">
+  return <TelecallerShell><div className="mx-auto max-w-[1600px] space-y-6">
     <section className="relative overflow-hidden rounded-3xl bg-navy p-6 text-hr-foreground shadow-elev lg:p-8">
       <div className="absolute -right-20 -top-24 h-64 w-64 rounded-full bg-hr/40 blur-3xl" />
       <div className="relative flex flex-col justify-between gap-6 xl:flex-row xl:items-center">
@@ -130,5 +130,5 @@ export function TelecallerModule() {
 
       <TabsContent value="script"><div className="grid gap-4 xl:grid-cols-5"><section className="rounded-2xl border border-border bg-card p-6 shadow-soft xl:col-span-3"><div className="flex items-start gap-4"><span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-hr-soft text-hr"><PhoneCall className="h-6 w-6"/></span><div><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-hr">Approved opening</p><h2 className="font-display text-xl font-extrabold">Telecaller script</h2></div></div><blockquote className="mt-6 border-l-4 border-hr bg-hr-soft p-5 text-base font-semibold leading-7 text-foreground">“Good morning, I am calling from BharatOne Services. We provide Government, Banking, Insurance and Digital Services through our authorized centers. May I explain how our services can benefit you?”</blockquote><div className="mt-5 flex flex-wrap gap-2"><Button onClick={() => { navigator.clipboard?.writeText("Good morning, I am calling from BharatOne Services. We provide Government, Banking, Insurance and Digital Services through our authorized centers. May I explain how our services can benefit you?"); toast.success("Script copied"); }}><Send/> Copy script</Button><Button variant="outline" onClick={() => toast.info("Coaching mode started")}><Headphones/> Practice call</Button></div></section><aside className="rounded-2xl border border-border bg-card p-5 shadow-soft xl:col-span-2"><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-hr">Service talking points</p><h2 className="font-display text-lg font-extrabold">Interest categories</h2><div className="mt-4 grid grid-cols-2 gap-2">{["All B2B Center","Banking Services","Insurance","PAN Card","Aadhaar Services","Government Schemes","B2C Services"].map((service) => <div key={service} className="rounded-xl border border-border bg-background p-3 text-xs font-semibold"><Target className="mb-2 h-4 w-4 text-hr"/>{service}</div>)}</div></aside></div></TabsContent>
     </Tabs>
-  </div></HrShell>;
+  </div></TelecallerShell>;
 }
