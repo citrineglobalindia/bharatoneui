@@ -10,10 +10,17 @@ import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import type { HrAccess } from "@/lib/hr-access.functions";
 
 type Module = "performance" | "training" | "reports";
 type Metric = { label: string; value: string; note: string; icon: LucideIcon };
+type HrAccess = { role: "hr_staff"; scopeLabel: string; canManage: boolean; canViewRestrictedReports: boolean };
+
+const localAccess: HrAccess = {
+  role: "hr_staff",
+  scopeLabel: "All departments",
+  canManage: true,
+  canViewRestrictedReports: true,
+};
 
 const performanceMetrics: Metric[] = [
   { label: "Review coverage", value: "87%", note: "218 of 250 complete", icon: FileCheck2 },
@@ -106,8 +113,9 @@ function WorkflowDialog({ module, open, onOpenChange }: { module: Module; open: 
   return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="max-w-2xl"><DialogHeader><DialogTitle>{title}</DialogTitle><DialogDescription>Configure scope, ownership, timing and governance for this workflow.</DialogDescription></DialogHeader><div className="grid gap-4 sm:grid-cols-2"><label className="text-xs font-bold">Name<Input className="mt-1" placeholder="Enter workflow name"/></label><label className="text-xs font-bold">Owner<Select defaultValue="ananya"><SelectTrigger className="mt-1"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="ananya">Ananya Rao</SelectItem><SelectItem value="priya">Priya Shah</SelectItem></SelectContent></Select></label><label className="text-xs font-bold">Audience<Select defaultValue="all"><SelectTrigger className="mt-1"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="all">All employees</SelectItem><SelectItem value="managers">Managers</SelectItem><SelectItem value="department">Selected departments</SelectItem></SelectContent></Select></label><label className="text-xs font-bold">Due / delivery date<Input className="mt-1" type="date"/></label><label className="text-xs font-bold sm:col-span-2">Instructions<Textarea className="mt-1 min-h-24" placeholder="Add goals, learning outcomes, report fields or approval notes…"/></label></div><DialogFooter><Button variant="outline" onClick={()=>onOpenChange(false)}>Save draft</Button><Button className="bg-hr text-hr-foreground hover:bg-hr/90" onClick={()=>{onOpenChange(false);toast.success(`${title} created`);}}><Send/>Create & assign</Button></DialogFooter></DialogContent></Dialog>;
 }
 
-export function HrInsightModule({ module, access }: { module: Module; access: HrAccess }) {
+export function HrInsightModule({ module }: { module: Module }) {
   const [open,setOpen]=useState(false);
+  const access = localAccess;
   const metrics=module==="performance"?performanceMetrics:module==="training"?trainingMetrics:reportMetrics;
   return <HrShell><div className="mx-auto max-w-[1600px] space-y-6"><Hero module={module} access={access} onAction={()=>setOpen(true)}/><Metrics items={metrics}/>{module==="performance"?<Performance access={access}/>:module==="training"?<Training access={access}/>:<Reports access={access}/>}<WorkflowDialog module={module} open={access.canManage&&open} onOpenChange={setOpen}/></div></HrShell>;
 }
