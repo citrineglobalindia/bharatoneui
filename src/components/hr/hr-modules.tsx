@@ -1,0 +1,90 @@
+import { useMemo, useState, type ReactNode } from "react";
+import { toast } from "sonner";
+import {
+  BadgeIndianRupee, BriefcaseBusiness, CalendarCheck, CheckCircle2, Clock3,
+  Download, Eye, FileChartColumn, FileCheck2, FileClock, Filter, Goal,
+  GraduationCap, IndianRupee, Laptop2, Mail, MoreHorizontal, Plus, Search,
+  Send, ShieldCheck, Star, UserCheck, UserPlus, UsersRound, WalletCards,
+  XCircle, type LucideIcon,
+} from "lucide-react";
+import { HrShell } from "@/components/hr/hr-shell";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "@/components/ui/table";
+
+export type HrModuleKey = "employees" | "attendance" | "leave" | "recruitment" | "onboarding" | "payroll" | "performance" | "training" | "reports";
+type Row = { id: string; primary: string; secondary: string; values: string[]; status: string; progress?: number };
+type Metric = { label: string; value: string; icon: LucideIcon; note: string };
+type ModuleConfig = { title: string; subtitle: string; icon: LucideIcon; action: string; columns: string[]; metrics: Metric[]; rows: Row[] };
+
+const people = [
+  ["BO-E1001", "Aarav Sharma", "aarav@bharatone.in", "Technology", "Product Engineer", "Bengaluru", "Active"],
+  ["BO-E1002", "Meera Nair", "meera@bharatone.in", "Operations", "Regional Lead", "Kochi", "Active"],
+  ["BO-E1003", "Rohan Desai", "rohan@bharatone.in", "Finance", "Senior Analyst", "Mumbai", "On Leave"],
+  ["BO-E1004", "Fatima Khan", "fatima@bharatone.in", "Quality", "QC Reviewer", "Hyderabad", "Probation"],
+  ["BO-E1005", "Vikram Gowda", "vikram@bharatone.in", "Sales", "Territory Manager", "Mysuru", "Inactive"],
+];
+
+const CONFIG: Record<HrModuleKey, ModuleConfig> = {
+  employees: { title: "Employee Directory", subtitle: "Manage employee profiles, lifecycle, documents and organization assignment.", icon: UsersRound, action: "Add Employee", columns: ["Employee", "Department", "Designation", "Location", "Status"], metrics: [
+    { label: "Total Employees", value: "250", icon: UsersRound, note: "+12 this quarter" }, { label: "Active", value: "242", icon: UserCheck, note: "96.8% workforce" }, { label: "New Joiners", value: "12", icon: UserPlus, note: "Last 30 days" }, { label: "Verified", value: "238", icon: ShieldCheck, note: "95.2% complete" },
+  ], rows: people.map((p) => ({ id:p[0],primary:p[1],secondary:p[2],values:[p[3],p[4],p[5]],status:p[6] })) },
+  attendance: { title: "Attendance Operations", subtitle: "Monitor daily presence, shifts, late arrivals and remote work exceptions.", icon: CalendarCheck, action: "Regularize Attendance", columns: ["Employee", "Check in", "Check out", "Work mode", "Status"], metrics: [
+    { label:"Present Today",value:"231",icon:UserCheck,note:"92.4% attendance" }, { label:"Late Login",value:"6",icon:Clock3,note:"3 need review" }, { label:"Work From Home",value:"11",icon:Laptop2,note:"All approved" }, { label:"Absent",value:"8",icon:XCircle,note:"2 unplanned" },
+  ], rows: people.map((p,i) => ({ id:p[0],primary:p[1],secondary:p[3],values:[i===2?"—":`09:${String(3+i*4).padStart(2,"0")}`,i===2?"—":`18:${20+i*3}`,i===1?"Remote":"Office"],status:i===2?"On Leave":i===4?"Late":"Present" })) },
+  leave: { title: "Leave Management", subtitle: "Review requests, balances, calendars and policy compliance.", icon: FileClock, action: "New Leave Request", columns: ["Employee", "Leave type", "Period", "Days", "Status"], metrics: [
+    { label:"Pending Requests",value:"14",icon:FileClock,note:"5 urgent" }, { label:"Approved",value:"37",icon:CheckCircle2,note:"This month" }, { label:"Rejected",value:"3",icon:XCircle,note:"This month" }, { label:"Avg. Balance",value:"12.5",icon:CalendarCheck,note:"Days per employee" },
+  ], rows: people.map((p,i) => ({ id:`LV-20${31+i}`,primary:p[1],secondary:p[0],values:[["Earned Leave","Sick Leave","Casual Leave"][i%3],`${16+i} Jun – ${17+i} Jun`,String(i%3+1)],status:i<2?"Pending":i===4?"Rejected":"Approved" })) },
+  recruitment: { title: "Recruitment Pipeline", subtitle: "Track open positions, applicants, interviews, offers and conversions.", icon: BriefcaseBusiness, action: "Create Position", columns: ["Candidate", "Position", "Stage", "Owner", "Status"], metrics: [
+    { label:"Open Positions",value:"18",icon:BriefcaseBusiness,note:"Across 7 teams" }, { label:"Applications",value:"426",icon:FileCheck2,note:"+38 this week" }, { label:"Interviews",value:"24",icon:CalendarCheck,note:"Next 7 days" }, { label:"Offers",value:"9",icon:Send,note:"66% accepted" },
+  ], rows: [["CAN-301","Nisha Verma","Product Designer","Interview","Priya S","Scheduled"],["CAN-302","Karan Patel","Backend Engineer","Technical","Arjun K","In Review"],["CAN-303","Sneha Iyer","HR Executive","Offer","Ananya R","Offered"],["CAN-304","Aditya Rao","Sales Lead","Screening","Neha M","New"],["CAN-305","Pooja Das","Finance Analyst","HR Round","Ananya R","Scheduled"]].map(r=>({id:r[0],primary:r[1],secondary:r[0],values:r.slice(2,5),status:r[5]})) },
+  onboarding: { title: "Employee Onboarding", subtitle: "Coordinate documentation, verification, induction and joining readiness.", icon: UserPlus, action: "Start Onboarding", columns: ["New joiner", "Joining date", "Documents", "Buddy", "Status"], metrics: [
+    { label:"Joining This Month",value:"12",icon:UserPlus,note:"7 already joined" }, { label:"Pending Documents",value:"12",icon:FileClock,note:"4 overdue" }, { label:"Verified",value:"95%",icon:ShieldCheck,note:"Background checks" }, { label:"Induction Complete",value:"88%",icon:GraduationCap,note:"22 in progress" },
+  ], rows: people.map((p,i)=>({id:`ONB-10${i+1}`,primary:p[1],secondary:p[4],values:[`${18+i} Jun 2026`,`${6-i}/6`,["Riya","Manoj","Sahil","Leena","Kabir"][i]],status:i<2?"In Progress":i===2?"Blocked":"Ready",progress:(6-i)*16})) },
+  payroll: { title: "Payroll Control Center", subtitle: "Process salary cycles, statutory contributions and reimbursement claims.", icon: WalletCards, action: "Process Payroll", columns: ["Employee", "Gross salary", "Deductions", "Net payable", "Status"], metrics: [
+    { label:"Salary Processed",value:"₹1.42 Cr",icon:IndianRupee,note:"226 employees" }, { label:"Pending Salary",value:"₹8.6 L",icon:WalletCards,note:"24 employees" }, { label:"PF / ESI",value:"96%",icon:BadgeIndianRupee,note:"10 pending" }, { label:"Claims",value:"₹3.8 L",icon:FileCheck2,note:"31 open" },
+  ], rows: people.map((p,i)=>({id:`PAY-${620+i}`,primary:p[1],secondary:p[0],values:[`₹${(78+i*9)},000`,`₹${8+i},400`,`₹${69+i*8},600`],status:i<3?"Processed":"Pending"})) },
+  performance: { title: "Performance & Goals", subtitle: "Run appraisal cycles, monitor goals and calibrate employee ratings.", icon: Goal, action: "Launch Appraisal", columns: ["Employee", "Cycle", "Goals", "Rating", "Status"], metrics: [
+    { label:"Pending Appraisals",value:"32",icon:FileClock,note:"Due by 30 Jun" }, { label:"Goal Completion",value:"78%",icon:Goal,note:"+6% this cycle" }, { label:"Avg. Rating",value:"4.2",icon:Star,note:"Out of 5.0" }, { label:"Top Performers",value:"28",icon:UserCheck,note:"11.2% workforce" },
+  ], rows: people.map((p,i)=>({id:`APR-${700+i}`,primary:p[1],secondary:p[4],values:["H1 2026",`${72+i*5}%`,i===4?"—":`${(3.8+i*.2).toFixed(1)} / 5`],status:i<2?"Manager Review":i===4?"Pending":"Completed",progress:72+i*5})) },
+  training: { title: "Learning & Development", subtitle: "Assign training, track compliance and measure capability development.", icon: GraduationCap, action: "Assign Training", columns: ["Employee", "Program", "Due date", "Completion", "Status"], metrics: [
+    { label:"Active Programs",value:"16",icon:GraduationCap,note:"6 mandatory" }, { label:"Completion Rate",value:"88%",icon:CheckCircle2,note:"+4% this month" }, { label:"Overdue",value:"9",icon:Clock3,note:"Needs follow-up" }, { label:"Certificates",value:"184",icon:FileCheck2,note:"Issued this year" },
+  ], rows: people.map((p,i)=>({id:`TRN-${810+i}`,primary:p[1],secondary:p[3],values:[["Data Privacy","POSH Awareness","Leadership Essentials","AML Compliance","Customer Excellence"][i],`${20+i} Jun 2026`,`${55+i*10}%`],status:i===4?"Overdue":i>2?"Completed":"In Progress",progress:55+i*10})) },
+  reports: { title: "HR Reports & Analytics", subtitle: "Generate governed workforce reports with period and department filters.", icon: FileChartColumn, action: "Build Custom Report", columns: ["Report", "Category", "Last generated", "Format", "Status"], metrics: [
+    { label:"Saved Reports",value:"24",icon:FileChartColumn,note:"8 scheduled" }, { label:"Generated This Month",value:"68",icon:Download,note:"Across all teams" }, { label:"Scheduled",value:"8",icon:Clock3,note:"Next run tomorrow" }, { label:"Data Freshness",value:"99.8%",icon:ShieldCheck,note:"Updated 08:30 IST" },
+  ], rows: [["RPT-01","Employee Master Report","Workforce","Today, 08:30","XLSX","Ready"],["RPT-02","Attendance Summary","Attendance","Today, 07:00","PDF","Ready"],["RPT-03","Leave Utilization","Leave","13 Jun, 18:00","XLSX","Scheduled"],["RPT-04","Payroll Register","Payroll","31 May, 20:15","PDF","Restricted"],["RPT-05","Recruitment Funnel","Talent","12 Jun, 09:45","CSV","Ready"],["RPT-06","Attrition Analysis","Workforce","01 Jun, 08:00","PDF","Ready"]].map(r=>({id:r[0],primary:r[1],secondary:r[0],values:r.slice(2,5),status:r[5]})) },
+};
+
+function statusClass(status: string) {
+  if (["Active","Present","Approved","Processed","Completed","Ready","Offered"].includes(status)) return "border-india-green/20 bg-india-green/10 text-india-green";
+  if (["Pending","Late","Scheduled","In Progress","Manager Review","Probation","Scheduled"].includes(status)) return "border-saffron/20 bg-saffron/10 text-saffron";
+  if (["Rejected","Inactive","Blocked","Overdue","Restricted"].includes(status)) return "border-destructive/20 bg-destructive/10 text-destructive";
+  return "border-hr/20 bg-hr-soft text-hr";
+}
+
+export function HrModulePage({ module }: { module: HrModuleKey }) {
+  const config = CONFIG[module];
+  const Icon = config.icon;
+  const [query,setQuery]=useState(""); const [status,setStatus]=useState("all"); const [selected,setSelected]=useState<Row|null>(null); const [actionOpen,setActionOpen]=useState(false);
+  const statuses=Array.from(new Set(config.rows.map(r=>r.status)));
+  const rows=useMemo(()=>config.rows.filter(r=>(status==="all"||r.status===status)&&`${r.primary} ${r.secondary} ${r.values.join(" ")}`.toLowerCase().includes(query.toLowerCase())),[config.rows,query,status]);
+  const runAction=()=>{ setActionOpen(false); toast.success(`${config.action} workflow started`,{description:"Demo workflow created successfully."}); };
+  return <HrShell><div className="mx-auto max-w-[1600px] space-y-6">
+    <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><div className="mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-hr-soft text-hr"><Icon className="h-5 w-5"/></div><h1 className="font-display text-2xl font-extrabold">{config.title}</h1><p className="mt-1 text-sm text-muted-foreground">{config.subtitle}</p></div><Button className="bg-hr text-hr-foreground hover:bg-hr/90" onClick={()=>setActionOpen(true)}><Plus/>{config.action}</Button></header>
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">{config.metrics.map(m=><div key={m.label} className="rounded-xl border border-border bg-card p-4 shadow-soft"><div className="flex items-start justify-between"><div><p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{m.label}</p><p className="mt-1 font-display text-2xl font-extrabold">{m.value}</p></div><span className="flex h-9 w-9 items-center justify-center rounded-lg bg-hr-soft text-hr"><m.icon className="h-4 w-4"/></span></div><p className="mt-2 text-[11px] text-muted-foreground">{m.note}</p></div>)}</div>
+    <section className="overflow-hidden rounded-xl border border-border bg-card shadow-soft"><div className="flex flex-col gap-3 border-b border-border p-4 md:flex-row md:items-center md:justify-between"><div><h2 className="text-sm font-bold">{config.title} Register</h2><p className="text-[11px] text-muted-foreground">Showing {rows.length} of {config.rows.length} records</p></div><div className="flex flex-col gap-2 sm:flex-row"><div className="flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3"><Search className="h-4 w-4 text-muted-foreground"/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search records…" className="w-full bg-transparent text-sm outline-none sm:w-52"/></div><Select value={status} onValueChange={setStatus}><SelectTrigger className="w-full sm:w-40"><Filter className="h-3.5 w-3.5"/><SelectValue/></SelectTrigger><SelectContent><SelectItem value="all">All statuses</SelectItem>{statuses.map(s=><SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select><Button variant="outline" onClick={()=>toast.success("Export prepared",{description:`${rows.length} filtered records exported.`})}><Download/>Export</Button></div></div>
+      <Table><TableHeader><TableRow><TableHead className="pl-4">{config.columns[0]}</TableHead>{config.columns.slice(1).map(c=><TableHead key={c}>{c}</TableHead>)}<TableHead className="text-right">Action</TableHead></TableRow></TableHeader><TableBody>{rows.map(row=><TableRow key={row.id}><TableCell className="pl-4"><button className="text-left" onClick={()=>setSelected(row)}><span className="block font-bold text-foreground hover:text-hr">{row.primary}</span><span className="text-[10px] text-muted-foreground">{row.secondary}</span></button></TableCell>{row.values.map((v,i)=><TableCell key={`${row.id}-${i}`} className="text-xs">{v}{row.progress!==undefined&&i===row.values.length-1?<Progress value={row.progress} className="mt-1 h-1.5"/>:null}</TableCell>)}<TableCell><Badge variant="outline" className={statusClass(row.status)}>{row.status}</Badge></TableCell><TableCell className="text-right"><Button variant="ghost" size="icon" onClick={()=>setSelected(row)} aria-label={`View ${row.primary}`}><MoreHorizontal/></Button></TableCell></TableRow>)}{rows.length===0&&<TableRow><TableCell colSpan={config.columns.length+1} className="h-32 text-center text-muted-foreground">No records match your filters.</TableCell></TableRow>}</TableBody></Table>
+    </section>
+    <Dialog open={actionOpen} onOpenChange={setActionOpen}><DialogContent><DialogHeader><DialogTitle>{config.action}</DialogTitle><DialogDescription>Start a new {config.title.toLowerCase()} workflow. This demonstration validates the complete interaction.</DialogDescription></DialogHeader><div className="grid gap-3"><label className="text-xs font-bold">Title / Employee / Reference<input className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm font-normal outline-none focus:ring-1 focus:ring-hr" placeholder="Enter details"/></label><label className="text-xs font-bold">Notes<textarea className="mt-1 min-h-24 w-full rounded-md border border-input bg-background p-3 text-sm font-normal outline-none focus:ring-1 focus:ring-hr" placeholder="Add workflow notes"/></label></div><DialogFooter><Button variant="outline" onClick={()=>setActionOpen(false)}>Cancel</Button><Button className="bg-hr text-hr-foreground hover:bg-hr/90" onClick={runAction}>Create workflow</Button></DialogFooter></DialogContent></Dialog>
+    <Dialog open={Boolean(selected)} onOpenChange={open=>{if(!open)setSelected(null)}}><DialogContent>{selected&&<><DialogHeader><DialogTitle>{selected.primary}</DialogTitle><DialogDescription>{selected.id} · Complete record overview</DialogDescription></DialogHeader><div className="rounded-xl bg-muted/50 p-4"><div className="grid grid-cols-2 gap-4">{config.columns.slice(1).map((c,i)=><div key={c}><p className="text-[10px] font-bold uppercase text-muted-foreground">{c}</p><p className="mt-1 text-sm font-semibold">{i<selected.values.length?selected.values[i]:selected.status}</p></div>)}</div></div><DialogFooter><Button variant="outline" onClick={()=>toast.info("Email notification sent")}><Mail/>Notify</Button><Button className="bg-hr text-hr-foreground hover:bg-hr/90" onClick={()=>{toast.success("Record updated");setSelected(null)}}><Eye/>Review record</Button></DialogFooter></>}</DialogContent></Dialog>
+  </div></HrShell>;
+}

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {
   AlertTriangle, ArrowRight, BadgeIndianRupee, BellRing, BriefcaseBusiness,
@@ -80,14 +80,15 @@ function MetricCard({ metric }: { metric: Metric }) {
   </div>;
 }
 
-function ModuleSection({ id, eyebrow, title, metrics, columns = 4 }: { id: string; eyebrow: string; title: string; metrics: Metric[]; columns?: number }) {
+function ModuleSection({ id, eyebrow, title, metrics, columns = 4, onOpen }: { id: string; eyebrow: string; title: string; metrics: Metric[]; columns?: number; onOpen: () => void }) {
   return <section id={id} className="scroll-mt-20">
-    <div className="mb-3 flex items-end justify-between"><div><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-hr">{eyebrow}</p><h2 className="font-display text-lg font-extrabold">{title}</h2></div><Button variant="ghost" size="sm" className="text-hr" onClick={() => toast.info(`${title} module opened`)}>View details <ArrowRight /></Button></div>
+    <div className="mb-3 flex items-end justify-between"><div><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-hr">{eyebrow}</p><h2 className="font-display text-lg font-extrabold">{title}</h2></div><Button variant="ghost" size="sm" className="text-hr" onClick={onOpen}>View details <ArrowRight /></Button></div>
     <div className={`grid grid-cols-1 gap-3 sm:grid-cols-2 ${columns === 5 ? "xl:grid-cols-5" : columns === 3 ? "lg:grid-cols-3" : "lg:grid-cols-4"}`}>{metrics.map((metric) => <MetricCard key={metric.label} metric={metric} />)}</div>
   </section>;
 }
 
 function HrDashboard() {
+  const navigate = useNavigate();
   const action = (label: string) => toast.success(`${label} started`, { description: "The HR workflow is ready for your input." });
   return <HrShell><div id="overview" className="mx-auto max-w-[1600px] space-y-7">
     <section className="relative overflow-hidden rounded-2xl bg-navy p-5 text-hr-foreground shadow-elev lg:p-6">
@@ -97,13 +98,13 @@ function HrDashboard() {
 
     <section aria-label="Quick actions"><div className="mb-3"><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-hr">Command Center</p><h2 className="font-display text-lg font-extrabold">Quick Actions</h2></div><div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">{[
       ["Add Employee",UserPlus],["Approve Leave",ClipboardCheck],["Process Payroll",CircleDollarSign],["Generate Reports",FileChartColumn],["Send Announcement",Mail],
-    ].map(([label, Icon]) => <Button key={label as string} variant="outline" className="h-14 justify-start rounded-xl bg-card px-4 shadow-soft hover:border-hr hover:bg-hr-soft" onClick={() => action(label as string)}><span className="flex h-8 w-8 items-center justify-center rounded-lg bg-hr-soft text-hr"><Icon className="h-4 w-4" /></span><span className="text-xs font-bold">{label as string}</span></Button>)}</div></section>
+    ].map(([label, Icon], index) => <Button key={label as string} variant="outline" className="h-14 justify-start rounded-xl bg-card px-4 shadow-soft hover:border-hr hover:bg-hr-soft" onClick={() => navigate({ to: ["/hr/employees","/hr/leave","/hr/payroll","/hr/reports","/hr/employees"][index] })}><span className="flex h-8 w-8 items-center justify-center rounded-lg bg-hr-soft text-hr"><Icon className="h-4 w-4" /></span><span className="text-xs font-bold">{label as string}</span></Button>)}</div></section>
 
-    <ModuleSection id="attendance" eyebrow="Daily workforce" title="Attendance" metrics={attendance} columns={5} />
-    <ModuleSection id="leave" eyebrow="Time off" title="Leave Management" metrics={leave} />
-    <ModuleSection id="recruitment" eyebrow="Talent pipeline" title="Recruitment" metrics={recruitment} columns={5} />
-    <div className="grid grid-cols-1 gap-7 xl:grid-cols-2"><ModuleSection id="onboarding" eyebrow="Employee readiness" title="Onboarding" metrics={onboarding} columns={3} /><ModuleSection id="performance" eyebrow="Growth & outcomes" title="Performance" metrics={performance} columns={3} /></div>
-    <ModuleSection id="payroll" eyebrow="Compensation" title="Payroll" metrics={payroll} />
+    <ModuleSection id="attendance" eyebrow="Daily workforce" title="Attendance" metrics={attendance} columns={5} onOpen={() => navigate({ to: "/hr/attendance" })} />
+    <ModuleSection id="leave" eyebrow="Time off" title="Leave Management" metrics={leave} onOpen={() => navigate({ to: "/hr/leave" })} />
+    <ModuleSection id="recruitment" eyebrow="Talent pipeline" title="Recruitment" metrics={recruitment} columns={5} onOpen={() => navigate({ to: "/hr/recruitment" })} />
+    <div className="grid grid-cols-1 gap-7 xl:grid-cols-2"><ModuleSection id="onboarding" eyebrow="Employee readiness" title="Onboarding" metrics={onboarding} columns={3} onOpen={() => navigate({ to: "/hr/onboarding" })} /><ModuleSection id="performance" eyebrow="Growth & outcomes" title="Performance" metrics={performance} columns={3} onOpen={() => navigate({ to: "/hr/performance" })} /></div>
+    <ModuleSection id="payroll" eyebrow="Compensation" title="Payroll" metrics={payroll} onOpen={() => navigate({ to: "/hr/payroll" })} />
 
     <div className="grid grid-cols-1 gap-4 xl:grid-cols-5">
       <section className="rounded-xl border border-border bg-card shadow-soft xl:col-span-3"><div className="flex items-center justify-between border-b border-border p-4"><div><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-destructive">Attention needed</p><h2 className="font-display text-lg font-extrabold">Alerts & Notifications</h2></div><BellRing className="h-5 w-5 text-destructive" /></div><div className="divide-y divide-border">{[
