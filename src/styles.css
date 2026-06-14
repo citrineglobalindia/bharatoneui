@@ -24,6 +24,9 @@
   --color-saffron: var(--saffron);
   --color-india-green: var(--india-green);
   --color-navy: var(--navy);
+  --color-hr: var(--hr);
+  --color-hr-foreground: var(--hr-foreground);
+  --color-hr-soft: var(--hr-soft);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -72,6 +75,9 @@
   --saffron: oklch(0.72 0.18 45);
   --india-green: oklch(0.55 0.15 150);
   --navy: oklch(0.22 0.05 260);
+  --hr: oklch(0.48 0.14 238);
+  --hr-foreground: oklch(0.99 0 0);
+  --hr-soft: oklch(0.96 0.025 230);
 
   --background: oklch(0.99 0.003 80);
   --foreground: oklch(0.18 0.02 260);

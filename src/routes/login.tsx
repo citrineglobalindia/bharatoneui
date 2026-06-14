@@ -257,7 +257,7 @@ function LoginPage() {
 
             <div className="mt-2 rounded-md border border-dashed border-india-green/30 bg-india-green/5 px-3 py-2 text-[11px] text-muted-foreground">
               <span className="font-semibold text-india-green">One login for every role.</span>{" "}
-              Retailer, Distributor, QC, Accountant, DRO, TRO &amp; Admin can sign in here.
+              Retailer, Distributor, QC, Accountant, HR, DRO, TRO &amp; Admin can sign in here.
               <br />
               <span className="font-semibold text-india-green">Demo Retailer:</span>{" "}
               9876789876 · <span className="font-mono">Password@55</span>

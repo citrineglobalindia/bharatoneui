@@ -8,6 +8,7 @@ import {
   RefreshCw,
   ShieldCheck,
   User,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -29,6 +30,7 @@ export type PortalRole =
   | "admin"
   | "distributor"
   | "master-distributor"
+  | "hr"
   | "dro"
   | "tro";
 
@@ -347,6 +349,16 @@ export const PORTAL_CONFIGS: Record<PortalRole, PortalConfig> = {
       password: "Master@2026",
       displayName: "Master Distributor",
     },
+  },
+  hr: {
+    role: "hr",
+    portalName: "Human Resources Portal",
+    shortName: "HR",
+    tagline: "People operations, attendance, payroll and talent management.",
+    accent: "sky",
+    icon: Users,
+    demo: { username: "hr.manager", password: "HR@2026", displayName: "Ananya Rao" },
+    redirectTo: "/hr/dashboard",
   },
   dro: {
     role: "dro",
