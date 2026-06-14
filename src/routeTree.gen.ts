@@ -15,6 +15,7 @@ import { Route as TroLoginRouteImport } from './routes/tro-login'
 import { Route as TransactionsRouteImport } from './routes/transactions'
 import { Route as TrackApplicationRouteImport } from './routes/track-application'
 import { Route as TermsAndConditionsRouteImport } from './routes/terms-and-conditions'
+import { Route as TelecallerLoginRouteImport } from './routes/telecaller-login'
 import { Route as SupportRouteImport } from './routes/support'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ServicesRouteImport } from './routes/services'
@@ -152,6 +153,11 @@ const TrackApplicationRoute = TrackApplicationRouteImport.update({
 const TermsAndConditionsRoute = TermsAndConditionsRouteImport.update({
   id: '/terms-and-conditions',
   path: '/terms-and-conditions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TelecallerLoginRoute = TelecallerLoginRouteImport.update({
+  id: '/telecaller-login',
+  path: '/telecaller-login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SupportRoute = SupportRouteImport.update({
@@ -731,6 +737,7 @@ export interface FileRoutesByFullPath {
   '/services': typeof ServicesRoute
   '/settings': typeof SettingsRoute
   '/support': typeof SupportRoute
+  '/telecaller-login': typeof TelecallerLoginRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/track-application': typeof TrackApplicationRoute
   '/transactions': typeof TransactionsRoute
@@ -847,6 +854,7 @@ export interface FileRoutesByTo {
   '/services': typeof ServicesRoute
   '/settings': typeof SettingsRoute
   '/support': typeof SupportRoute
+  '/telecaller-login': typeof TelecallerLoginRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/track-application': typeof TrackApplicationRoute
   '/transactions': typeof TransactionsRoute
@@ -963,6 +971,7 @@ export interface FileRoutesById {
   '/services': typeof ServicesRoute
   '/settings': typeof SettingsRoute
   '/support': typeof SupportRoute
+  '/telecaller-login': typeof TelecallerLoginRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/track-application': typeof TrackApplicationRoute
   '/transactions': typeof TransactionsRoute
@@ -1081,6 +1090,7 @@ export interface FileRouteTypes {
     | '/services'
     | '/settings'
     | '/support'
+    | '/telecaller-login'
     | '/terms-and-conditions'
     | '/track-application'
     | '/transactions'
@@ -1197,6 +1207,7 @@ export interface FileRouteTypes {
     | '/services'
     | '/settings'
     | '/support'
+    | '/telecaller-login'
     | '/terms-and-conditions'
     | '/track-application'
     | '/transactions'
@@ -1312,6 +1323,7 @@ export interface FileRouteTypes {
     | '/services'
     | '/settings'
     | '/support'
+    | '/telecaller-login'
     | '/terms-and-conditions'
     | '/track-application'
     | '/transactions'
@@ -1429,6 +1441,7 @@ export interface RootRouteChildren {
   ServicesRoute: typeof ServicesRoute
   SettingsRoute: typeof SettingsRoute
   SupportRoute: typeof SupportRoute
+  TelecallerLoginRoute: typeof TelecallerLoginRoute
   TermsAndConditionsRoute: typeof TermsAndConditionsRoute
   TrackApplicationRoute: typeof TrackApplicationRoute
   TransactionsRoute: typeof TransactionsRoute
@@ -1550,6 +1563,13 @@ declare module '@tanstack/react-router' {
       path: '/terms-and-conditions'
       fullPath: '/terms-and-conditions'
       preLoaderRoute: typeof TermsAndConditionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/telecaller-login': {
+      id: '/telecaller-login'
+      path: '/telecaller-login'
+      fullPath: '/telecaller-login'
+      preLoaderRoute: typeof TelecallerLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/support': {
@@ -2402,6 +2422,7 @@ const rootRouteChildren: RootRouteChildren = {
   ServicesRoute: ServicesRoute,
   SettingsRoute: SettingsRoute,
   SupportRoute: SupportRoute,
+  TelecallerLoginRoute: TelecallerLoginRoute,
   TermsAndConditionsRoute: TermsAndConditionsRoute,
   TrackApplicationRoute: TrackApplicationRoute,
   TransactionsRoute: TransactionsRoute,
@@ -2483,3 +2504,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
