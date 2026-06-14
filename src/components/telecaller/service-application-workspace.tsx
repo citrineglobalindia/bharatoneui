@@ -60,14 +60,14 @@ export function ServiceApplicationWorkspace() {
     const followupMatch = activeSection !== "followups" || ["Documents Required", "Follow-up Scheduled"].includes(item.status);
     return text.includes(query.toLowerCase()) && queueMatch && followupMatch && (statusFilter === "All statuses" || item.status === statusFilter);
   }), [activeSection, applications, query, statusFilter]);
-  const openWork = (item: Application) => { setSelected(item); setDraftStatus(item.status === "Assigned" || item.status === "Call Pending" ? "Contacted" : item.status); setCallOutcome(item.callOutcome ?? ""); setDisposition(item.disposition ?? ""); setNotes(item.notes); setNextAction(item.nextAction); };
+  const openWork = (item: Application) => { setSelected(item); setDraftStatus(item.status === "Assigned" || item.status === "Call Pending" ? "Contacted" : item.status); setCallOutcome(item.callOutcome ?? ""); setDisposition(item.disposition ?? ""); setNotes(item.notes); setExtraNotes(item.extraNotes); setRecordingLink(item.recordingLink); setNextAction(item.nextAction); };
   const startCall = (item: Application) => { openWork(item); toast.success(`Calling ${item.customer}`, { description: `${item.phone} · ${item.service}` }); };
   const selectOutcome = (value: CallOutcome) => { setCallOutcome(value); setDisposition(""); };
   const selectDisposition = (value: string) => { setDisposition(value); setDraftStatus(DISPOSITION_STATUS[value] ?? "Contacted"); };
   const saveOutcome = () => {
     if (!selected) return;
     if (!callOutcome || !disposition) { toast.error("Select a call outcome and disposition"); return; }
-    setApplications((current) => current.map((item) => item.id === selected.id ? { ...item, status: draftStatus, callOutcome, disposition, notes: notes.trim(), nextAction: nextAction.trim() || "No next action" } : item));
+    setApplications((current) => current.map((item) => item.id === selected.id ? { ...item, status: draftStatus, callOutcome, disposition, notes: notes.trim(), extraNotes: extraNotes.trim(), recordingLink: recordingLink.trim(), nextAction: nextAction.trim() || "No next action" } : item));
     toast.success("Call disposition saved", { description: `${selected.id} moved to ${draftStatus}.` });
     setSelected(null);
   };
