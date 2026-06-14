@@ -13,16 +13,16 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const NAV = [
-  { label: "HR Dashboard", icon: LayoutDashboard, anchor: "overview" },
-  { label: "Employees", icon: UsersRound, anchor: "employees" },
-  { label: "Attendance", icon: CalendarCheck, anchor: "attendance" },
-  { label: "Leave Management", icon: ClipboardList, anchor: "leave" },
-  { label: "Recruitment", icon: BriefcaseBusiness, anchor: "recruitment" },
-  { label: "Onboarding", icon: UserPlus, anchor: "onboarding" },
-  { label: "Payroll", icon: WalletCards, anchor: "payroll" },
-  { label: "Performance", icon: ChartNoAxesCombined, anchor: "performance" },
-  { label: "Training", icon: GraduationCap, anchor: "onboarding" },
-  { label: "Reports", icon: FileChartColumn, anchor: "reports" },
+  { label: "HR Dashboard", icon: LayoutDashboard, to: "/hr/dashboard" },
+  { label: "Employees", icon: UsersRound, to: "/hr/employees" },
+  { label: "Attendance", icon: CalendarCheck, to: "/hr/attendance" },
+  { label: "Leave Management", icon: ClipboardList, to: "/hr/leave" },
+  { label: "Recruitment", icon: BriefcaseBusiness, to: "/hr/recruitment" },
+  { label: "Onboarding", icon: UserPlus, to: "/hr/onboarding" },
+  { label: "Payroll", icon: WalletCards, to: "/hr/payroll" },
+  { label: "Performance", icon: ChartNoAxesCombined, to: "/hr/performance" },
+  { label: "Training", icon: GraduationCap, to: "/hr/training" },
+  { label: "Reports", icon: FileChartColumn, to: "/hr/reports" },
 ];
 
 function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
@@ -39,14 +39,14 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       <nav className="flex-1 overflow-y-auto p-2">
         <p className="px-3 pb-2 pt-1 text-[10px] font-bold uppercase tracking-widest text-hr-foreground/40">Workspace</p>
         <ul className="space-y-1">
-          {NAV.map((item, index) => {
+          {NAV.map((item) => {
             const Icon = item.icon;
-            const active = index === 0 && pathname === "/hr/dashboard";
+            const active = pathname === item.to;
             return (
               <li key={item.label}>
-                <a href={`#${item.anchor}`} onClick={onNavigate} className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition ${active ? "bg-hr text-hr-foreground" : "text-hr-foreground/70 hover:bg-hr-foreground/10 hover:text-hr-foreground"}`}>
+                <Link to={item.to} onClick={onNavigate} className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition ${active ? "bg-hr text-hr-foreground" : "text-hr-foreground/70 hover:bg-hr-foreground/10 hover:text-hr-foreground"}`}>
                   <Icon className="h-4 w-4" /><span>{item.label}</span>
-                </a>
+                </Link>
               </li>
             );
           })}
