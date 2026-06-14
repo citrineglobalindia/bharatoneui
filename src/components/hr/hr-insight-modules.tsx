@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Activity, Award, BarChart3, BookOpenCheck, CalendarCheck, CheckCircle2, ChevronRight, Clock3, Download, FileChartColumn, FileCheck2, Filter, Goal, GraduationCap, Medal, MoreHorizontal, Plus, Search, Send, ShieldCheck, Sparkles, Star, Target, TrendingUp, UserCheck, UsersRound, type LucideIcon } from "lucide-react";
+import { Activity, Award, BarChart3, BookOpenCheck, CheckCircle2, ChevronRight, Clock3, Download, FileChartColumn, FileCheck2, Filter, Goal, GraduationCap, Medal, MoreHorizontal, Plus, Search, Send, ShieldCheck, Sparkles, Star, Target, UserCheck, type LucideIcon } from "lucide-react";
 import { HrShell } from "@/components/hr/hr-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
