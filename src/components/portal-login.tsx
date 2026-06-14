@@ -23,6 +23,7 @@ import {
 import { toast } from "sonner";
 import { BharatOneLogo } from "@/components/bharatone-logo";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 
 export type PortalRole =
   | "qc"
@@ -182,9 +183,23 @@ export function PortalLogin({ config }: { config: PortalConfig }) {
         <div className="p-6">
           <form
             className="space-y-3"
-            onSubmit={(e) => {
+            onSubmit={async (e) => {
               e.preventDefault();
               const id = identifier.trim().toLowerCase();
+              if (captchaInput.trim() !== captcha) {
+                toast.error("Captcha does not match");
+                return;
+              }
+              if (config.role === "hr") {
+                const { error } = await supabase.auth.signInWithPassword({ email: id, password });
+                if (error) {
+                  toast.error("Unable to sign in", { description: "Check your work email and password." });
+                  return;
+                }
+                toast.success("Secure HR access verified");
+                navigate({ to: config.redirectTo ?? "/hr/dashboard" });
+                return;
+              }
               if (
                 id !== config.demo.username.toLowerCase() ||
                 password !== config.demo.password
@@ -192,10 +207,6 @@ export function PortalLogin({ config }: { config: PortalConfig }) {
                 toast.error("Invalid credentials", {
                   description: "Check your username and password.",
                 });
-                return;
-              }
-              if (captchaInput.trim() !== captcha) {
-                toast.error("Captcha does not match");
                 return;
               }
               try {
@@ -224,7 +235,7 @@ export function PortalLogin({ config }: { config: PortalConfig }) {
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
                   className="h-10 w-full rounded-lg border border-input bg-background pl-10 pr-3 text-sm shadow-soft transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-india-green/15 focus-visible:border-india-green"
-                  placeholder="Enter your username"
+                   placeholder={config.role === "hr" ? "Enter your work email" : "Enter your username"}
                 />
               </div>
             </div>
