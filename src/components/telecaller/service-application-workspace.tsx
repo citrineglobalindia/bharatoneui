@@ -51,6 +51,8 @@ export function ServiceApplicationWorkspace() {
   const [callOutcome, setCallOutcome] = useState<CallOutcome | "">("");
   const [disposition, setDisposition] = useState("");
   const [notes, setNotes] = useState("");
+  const [extraNotes, setExtraNotes] = useState("");
+  const [recordingLink, setRecordingLink] = useState("");
   const [nextAction, setNextAction] = useState("");
   const filtered = useMemo(() => applications.filter((item) => {
     const text = `${item.id} ${item.retailer} ${item.customer} ${item.phone} ${item.service}`.toLowerCase();
