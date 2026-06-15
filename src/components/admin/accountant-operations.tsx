@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import {
-  ArrowDownToLine, ArrowUpFromLine, BadgeIndianRupee, Banknote, CheckCircle2,
-  Clock3, Download, Landmark, ReceiptText, Search, Wallet, XCircle, type LucideIcon,
+  ArrowUpFromLine, CheckCircle2, Download, Landmark, ReceiptText,
+  Search, Wallet, XCircle, type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
