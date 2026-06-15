@@ -15,6 +15,7 @@ import { BharatOneLogo } from "@/components/bharatone-logo";
 import { AdminAuditLog } from "@/components/admin/admin-audit-log";
 import { AdminModuleView } from "@/components/admin/admin-module-view";
 import { UserManagementWorkflow } from "@/components/admin/user-management-workflow";
+import { ServiceCatalogBuilder } from "@/components/admin/service-catalog-builder";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { downloadCsv } from "@/lib/admin-actions";
