@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_audit_logs: {
+        Row: {
+          action: string
+          actor_name: string
+          actor_user_id: string | null
+          after_changes: Json | null
+          before_changes: Json | null
+          created_at: string
+          id: string
+          metadata: Json
+          module: string
+          outcome: string
+          target_id: string | null
+          target_type: string | null
+        }
+        Insert: {
+          action: string
+          actor_name: string
+          actor_user_id?: string | null
+          after_changes?: Json | null
+          before_changes?: Json | null
+          created_at?: string
+          id?: string
+          metadata?: Json
+          module: string
+          outcome?: string
+          target_id?: string | null
+          target_type?: string | null
+        }
+        Update: {
+          action?: string
+          actor_name?: string
+          actor_user_id?: string | null
+          after_changes?: Json | null
+          before_changes?: Json | null
+          created_at?: string
+          id?: string
+          metadata?: Json
+          module?: string
+          outcome?: string
+          target_id?: string | null
+          target_type?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -79,7 +124,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      app_role: "hr_staff" | "manager" | "employee"
+      app_role: "hr_staff" | "manager" | "employee" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -207,7 +252,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["hr_staff", "manager", "employee"],
+      app_role: ["hr_staff", "manager", "employee", "admin"],
     },
   },
 } as const
