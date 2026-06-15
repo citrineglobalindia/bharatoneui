@@ -48,6 +48,7 @@ import { Route as ApplicationsRouteImport } from './routes/applications'
 import { Route as AepsActivationRouteImport } from './routes/aeps-activation'
 import { Route as AepsRouteImport } from './routes/aeps'
 import { Route as AdminLoginRouteImport } from './routes/admin-login'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AccountantLoginRouteImport } from './routes/accountant-login'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TroSupportRouteImport } from './routes/tro.support'
@@ -331,6 +332,11 @@ const AepsRoute = AepsRouteImport.update({
 const AdminLoginRoute = AdminLoginRouteImport.update({
   id: '/admin-login',
   path: '/admin-login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AccountantLoginRoute = AccountantLoginRouteImport.update({
@@ -786,6 +792,7 @@ const DistributorOfficersIdRoute = DistributorOfficersIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/accountant-login': typeof AccountantLoginRoute
+  '/admin': typeof AdminRoute
   '/admin-login': typeof AdminLoginRoute
   '/aeps': typeof AepsRoute
   '/aeps-activation': typeof AepsActivationRoute
@@ -916,6 +923,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/accountant-login': typeof AccountantLoginRoute
+  '/admin': typeof AdminRoute
   '/admin-login': typeof AdminLoginRoute
   '/aeps': typeof AepsRoute
   '/aeps-activation': typeof AepsActivationRoute
@@ -1046,6 +1054,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/accountant-login': typeof AccountantLoginRoute
+  '/admin': typeof AdminRoute
   '/admin-login': typeof AdminLoginRoute
   '/aeps': typeof AepsRoute
   '/aeps-activation': typeof AepsActivationRoute
@@ -1178,6 +1187,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/accountant-login'
+    | '/admin'
     | '/admin-login'
     | '/aeps'
     | '/aeps-activation'
@@ -1308,6 +1318,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/accountant-login'
+    | '/admin'
     | '/admin-login'
     | '/aeps'
     | '/aeps-activation'
@@ -1437,6 +1448,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/accountant-login'
+    | '/admin'
     | '/admin-login'
     | '/aeps'
     | '/aeps-activation'
@@ -1568,6 +1580,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccountantLoginRoute: typeof AccountantLoginRoute
+  AdminRoute: typeof AdminRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AepsRoute: typeof AepsRoute
   AepsActivationRoute: typeof AepsActivationRoute
@@ -1952,6 +1965,13 @@ declare module '@tanstack/react-router' {
       path: '/admin-login'
       fullPath: '/admin-login'
       preLoaderRoute: typeof AdminLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/accountant-login': {
@@ -2672,6 +2692,7 @@ const TroRetailersRouteWithChildren = TroRetailersRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccountantLoginRoute: AccountantLoginRoute,
+  AdminRoute: AdminRoute,
   AdminLoginRoute: AdminLoginRoute,
   AepsRoute: AepsRoute,
   AepsActivationRoute: AepsActivationRoute,
