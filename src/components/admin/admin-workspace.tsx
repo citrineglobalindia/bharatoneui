@@ -21,6 +21,7 @@ import { AccountantOperations } from "@/components/admin/accountant-operations";
 import { QcOperations } from "@/components/admin/qc-operations";
 import { RegionalOperations } from "@/components/admin/regional-operations";
 import { RetailerNetworkCenter } from "@/components/admin/retailer-network-center";
+import { KycWorkflow } from "@/components/admin/kyc-workflow";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { downloadCsv } from "@/lib/admin-actions";
