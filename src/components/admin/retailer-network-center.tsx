@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import {
   Activity, BadgeIndianRupee, Ban, CheckCircle2, Download, MapPin, Power,
-  Search, Store, TrendingUp, Wallet, type LucideIcon,
+  Search, Store, TrendingUp, Wallet, Eye, type LucideIcon,
 } from "lucide-react";
 import {
   Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
@@ -12,6 +12,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { downloadCsv } from "@/lib/admin-actions";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { RetailerDetailSheet } from "./retailer-detail-sheet";
 
 type KycStatus = "Verified" | "Pending" | "Rejected";
 type RState = "Active" | "Suspended";
@@ -62,6 +63,9 @@ export function RetailerNetworkCenter() {
   const [tab, setTab] = useState("All");
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Retailer | null>(SEED[0]);
+  const [detailOpen, setDetailOpen] = useState(false);
+
+  const openDetail = (r: Retailer) => { setSelected(r); setDetailOpen(true); };
 
   const filtered = useMemo(() => {
     const t = query.trim().toLowerCase();
@@ -123,6 +127,7 @@ export function RetailerNetworkCenter() {
                 {selected.kyc !== "Verified" && <Button size="sm" variant="outline" className="h-8 flex-1 gap-1 text-[10px] text-admin-success" onClick={() => approveKyc(selected.id)}><CheckCircle2 className="h-3 w-3" /> Verify KYC</Button>}
                 <Button size="sm" variant="outline" className={cn("h-8 flex-1 gap-1 text-[10px]", selected.state === "Active" ? "text-admin-danger" : "text-admin-success")} onClick={() => toggleState(selected.id)}>{selected.state === "Active" ? <><Ban className="h-3 w-3" /> Suspend</> : <><Power className="h-3 w-3" /> Activate</>}</Button>
               </div>
+              <Button size="sm" className="h-8 w-full gap-1 bg-admin text-[10px] text-admin-foreground hover:bg-admin/90" onClick={() => openDetail(selected)}><Eye className="h-3 w-3" /> Open full detail</Button>
             </div>
           ) : <p className="mt-3 text-[11px] text-muted-foreground">Select a retailer from the table.</p>}
         </div>
@@ -143,7 +148,7 @@ export function RetailerNetworkCenter() {
           <thead className="bg-muted/40 text-[9px] font-extrabold uppercase tracking-wider text-muted-foreground"><tr>{["Retailer", "Location", "KYC", "Tier", "Wallet", "Txn", "Revenue", "State", "Action"].map((h) => <th key={h} className="px-4 py-2.5">{h}</th>)}</tr></thead>
           <tbody className="divide-y divide-border">
             {filtered.map((r) => (
-              <tr key={r.id} className={cn("cursor-pointer text-[11px] transition hover:bg-muted/30", selected?.id === r.id && "bg-admin-soft/40")} onClick={() => setSelected(r)}>
+              <tr key={r.id} className={cn("cursor-pointer text-[11px] transition hover:bg-muted/30", selected?.id === r.id && "bg-admin-soft/40")} onClick={() => setSelected(r)} onDoubleClick={() => openDetail(r)}>
                 <td className="px-4 py-3"><p className="font-bold">{r.name}</p><p className="font-mono text-[9px] text-muted-foreground">{r.shop} · {r.id}</p></td>
                 <td className="px-4 py-3"><span className="inline-flex items-center gap-1 font-semibold"><MapPin className="h-3 w-3 text-muted-foreground" />{r.taluk}</span></td>
                 <td className="px-4 py-3"><span className={cn("rounded-full px-2 py-1 text-[9px] font-extrabold", KYC_TONE[r.kyc])}>{r.kyc}</span></td>
@@ -154,6 +159,7 @@ export function RetailerNetworkCenter() {
                 <td className="px-4 py-3"><span className={cn("rounded-full px-2 py-1 text-[9px] font-extrabold", r.state === "Active" ? "bg-admin-success-soft text-admin-success" : "bg-admin-danger-soft text-admin-danger")}>{r.state}</span></td>
                 <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                   <div className="flex gap-1.5">
+                    <Button size="sm" variant="outline" className="h-7 gap-1 px-2 text-[10px] text-admin" onClick={() => openDetail(r)}><Eye className="h-3 w-3" /> View</Button>
                     {r.kyc !== "Verified" && <Button size="sm" variant="outline" className="h-7 gap-1 px-2 text-[10px] text-admin-success" onClick={() => approveKyc(r.id)}><CheckCircle2 className="h-3 w-3" /> Verify</Button>}
                     <Button size="sm" variant="outline" className={cn("h-7 gap-1 px-2 text-[10px]", r.state === "Active" ? "text-admin-danger" : "text-admin-success")} onClick={() => toggleState(r.id)}>{r.state === "Active" ? <><Ban className="h-3 w-3" /> Suspend</> : <><Power className="h-3 w-3" /> Activate</>}</Button>
                   </div>
@@ -164,6 +170,14 @@ export function RetailerNetworkCenter() {
           </tbody>
         </table></div>
       </section>
+
+      <RetailerDetailSheet
+        retailer={selected}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        onApproveKyc={approveKyc}
+        onToggleState={toggleState}
+      />
     </div>
   );
 }
