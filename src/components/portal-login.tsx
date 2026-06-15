@@ -35,7 +35,7 @@ export type PortalRole =
   | "telecaller"
   | "bde"
   | "dro"
-  | "tro" | "bde";
+  | "tro";
 
 export interface PortalConfig {
   role: PortalRole;
@@ -328,7 +328,8 @@ export const PORTAL_CONFIGS: Record<PortalRole, PortalConfig> = {
     tagline: "Master control for BharatOne network operations.",
     accent: "saffron",
     icon: Crown,
-    demo: { username: "super.admin", password: "Admin@2026", displayName: "Super Admin" },
+    demo: { username: "Admin", password: "Password@55", displayName: "Super Admin" },
+    redirectTo: "/admin",
   },
   distributor: {
     role: "distributor",
