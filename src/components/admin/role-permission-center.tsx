@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import {
-  BadgeIndianRupee, Building2, CheckCircle2, ClipboardCheck, Headphones,
+  Building2, CheckCircle2, ClipboardCheck, Headphones,
   Landmark, LayoutGrid, Lock, Network, Search, ShieldCheck, Store, Truck,
-  UserCog, Users, Wallet, XCircle, type LucideIcon,
+  UserCog, Users, XCircle, type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
