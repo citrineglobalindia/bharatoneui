@@ -1,7 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestIP } from "@tanstack/react-start/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import type { Json } from "@/integrations/supabase/types";
+import type { Database, Json } from "@/integrations/supabase/types";
 
 type AuditInput = {
   module: string;
@@ -23,7 +24,7 @@ function validateAuditInput(input: AuditInput): AuditInput {
   return input;
 }
 
-async function assertAdmin(supabase: Parameters<Parameters<typeof requireSupabaseAuth.server>[0]>[0]["next"] extends never ? never : any, userId: string) {
+async function assertAdmin(supabase: SupabaseClient<Database>, userId: string) {
   const { data, error } = await supabase
     .from("user_roles")
     .select("role")
