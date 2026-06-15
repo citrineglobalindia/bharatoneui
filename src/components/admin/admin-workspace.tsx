@@ -19,6 +19,8 @@ import { ServiceCatalogBuilder } from "@/components/admin/service-catalog-builde
 import { RolePermissionCenter } from "@/components/admin/role-permission-center";
 import { AccountantOperations } from "@/components/admin/accountant-operations";
 import { QcOperations } from "@/components/admin/qc-operations";
+import { RegionalOperations } from "@/components/admin/regional-operations";
+import { RetailerNetworkCenter } from "@/components/admin/retailer-network-center";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { downloadCsv } from "@/lib/admin-actions";
@@ -30,7 +32,7 @@ type NavGroup = { label: string; items: NavItem[] };
 
 const NAVIGATION: NavGroup[] = [
   { label: "Command", items: [{ label: "Executive Overview", icon: Gauge }, { label: "Live Operations", icon: Activity, badge: "LIVE" }] },
-  { label: "Network", items: [{ label: "User Management", icon: Users }, { label: "KYC Approvals", icon: ClipboardCheck, badge: "116" }, { label: "QC Operations", icon: ClipboardCheck }, { label: "Applications", icon: FileSearch }, { label: "Retailer Network", icon: Store }, { label: "Roles & Permissions", icon: LockKeyhole }] },
+  { label: "Network", items: [{ label: "User Management", icon: Users }, { label: "KYC Approvals", icon: ClipboardCheck, badge: "116" }, { label: "QC Operations", icon: ClipboardCheck }, { label: "DRO Operations", icon: MapPin }, { label: "TRO Operations", icon: MapPin }, { label: "Applications", icon: FileSearch }, { label: "Retailer Network", icon: Store }, { label: "Roles & Permissions", icon: LockKeyhole }] },
   { label: "Finance", items: [{ label: "Accountant Operations", icon: Landmark }, { label: "Wallet Control", icon: WalletCards }, { label: "Revenue Analytics", icon: BarChart3 }, { label: "Settlements", icon: Landmark }, { label: "Risk & Fraud", icon: ShieldCheck, badge: "8" }] },
   { label: "Platform", items: [{ label: "Service Catalog", icon: Zap }, { label: "Support Center", icon: Headphones }, { label: "System Settings", icon: Settings }, { label: "Audit Log", icon: FileClock }] },
 ];
