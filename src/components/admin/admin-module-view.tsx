@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Activity, AlertTriangle, ArrowDownRight, ArrowUpRight, BadgeCheck, Ban,
   Building2, CheckCircle2, CircleDollarSign, Clock3, Download, Eye, Filter,
@@ -110,6 +110,13 @@ export function AdminModuleView({ module }: { module: string }) {
   const pageSize = 3;
   const pageCount = Math.max(1, Math.ceil(filteredRows.length / pageSize));
   const pageRows = filteredRows.slice(page * pageSize, page * pageSize + pageSize);
+
+  useEffect(() => {
+    setQuery("");
+    setStatusFilter("All");
+    setPage(0);
+    setVisibleColumns(config.columns.map(() => true));
+  }, [config.columns, module]);
 
   const openDetails = (title: string, detail: string) => setSelected({ title, detail });
   const performPrimaryAction = () => {
