@@ -252,5 +252,3 @@ export function RolePermissionCenter() {
     </div>
   );
 }
-
-export const ROLE_PORTAL_ICONS = { BadgeIndianRupee, Wallet };
