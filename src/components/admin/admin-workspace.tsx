@@ -14,6 +14,7 @@ import {
 import { BharatOneLogo } from "@/components/bharatone-logo";
 import { AdminAuditLog } from "@/components/admin/admin-audit-log";
 import { AdminModuleView } from "@/components/admin/admin-module-view";
+import { UserManagementWorkflow } from "@/components/admin/user-management-workflow";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { downloadCsv } from "@/lib/admin-actions";
@@ -170,7 +171,7 @@ export function AdminWorkspace() {
               <div className="rounded-2xl border border-border bg-card p-4 shadow-soft"><div className="flex items-center justify-between"><div><h2 className="text-sm font-extrabold">Regional performance</h2><p className="text-[10px] text-muted-foreground">Activation target achievement by state</p></div><Button variant="ghost" size="sm" onClick={() => setActive("Retailer Network")}>Details <ArrowUpRight /></Button></div><div className="mt-3 h-52"><ResponsiveContainer width="100%" height="100%"><BarChart data={REGIONS} layout="vertical" margin={{ left: 4, right: 20 }}><CartesianGrid stroke="var(--border)" horizontal={false} /><XAxis type="number" hide domain={[0, 100]} /><YAxis type="category" dataKey="name" axisLine={false} tickLine={false} width={85} fontSize={10} /><Tooltip cursor={{ fill: "var(--muted)" }} contentStyle={{ borderRadius: 12, border: "1px solid var(--border)", fontSize: 11 }} /><Bar dataKey="value" fill="var(--admin)" radius={[0, 6, 6, 0]} barSize={14} /></BarChart></ResponsiveContainer></div></div>
               <div className="rounded-2xl border border-border bg-admin-panel p-5 text-admin-panel-foreground shadow-elev"><div className="flex items-start justify-between"><div><p className="text-[9px] font-extrabold uppercase tracking-[0.18em] text-admin-panel-foreground/45">Network pulse</p><h2 className="mt-1 font-display text-xl font-extrabold">Business is operating at peak efficiency.</h2></div><span className="grid h-11 w-11 place-items-center rounded-xl bg-admin-success/15 text-admin-success"><Activity /></span></div><div className="mt-6 grid grid-cols-3 gap-3"><div><p className="font-display text-2xl font-extrabold">99.98%</p><p className="text-[9px] text-admin-panel-foreground/45">Uptime</p></div><div><p className="font-display text-2xl font-extrabold">42ms</p><p className="text-[9px] text-admin-panel-foreground/45">API latency</p></div><div><p className="font-display text-2xl font-extrabold">0.03%</p><p className="text-[9px] text-admin-panel-foreground/45">Error rate</p></div></div><div className="mt-5 flex items-center gap-2 rounded-xl bg-admin-panel-foreground/5 p-3"><ShieldCheck className="h-4 w-4 text-admin-success" /><p className="text-[10px] text-admin-panel-foreground/65">Security controls active · Last integrity scan passed 4 minutes ago</p></div></div>
             </section>
-            </> : active === "Audit Log" ? <AdminAuditLog /> : <AdminModuleView module={active} />}
+            </> : active === "Audit Log" ? <AdminAuditLog /> : active === "User Management" ? <UserManagementWorkflow /> : <AdminModuleView module={active} />}
           </div>
         </main>
       </div>
