@@ -1,13 +1,35 @@
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { CheckCircle2, Clock3, FileClock, Filter, Search, ShieldCheck, UserRound } from "lucide-react";
-import { getAdminAuditLogs } from "@/lib/admin-audit.functions";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 type ChangeSet = Record<string, unknown> | null;
+
+type AuditLog = {
+  id: string;
+  actor_name: string;
+  module: string;
+  action: string;
+  target_type: string | null;
+  target_id: string | null;
+  before_changes: ChangeSet;
+  after_changes: ChangeSet;
+  outcome: string;
+  created_at: string;
+};
+
+const now = Date.now();
+const ago = (mins: number) => new Date(now - mins * 60000).toISOString();
+const MOCK_LOGS: AuditLog[] = [
+  { id: "AL-1042", actor_name: "Super Admin", module: "Roles & Permissions", action: "Updated role permissions", target_type: "Role", target_id: "Distributor", before_changes: { approve: false }, after_changes: { approve: true }, outcome: "success", created_at: ago(3) },
+  { id: "AL-1041", actor_name: "Super Admin", module: "User Management", action: "Suspended user access", target_type: "User", target_id: "RT-2041", before_changes: { status: "active" }, after_changes: { status: "suspended" }, outcome: "success", created_at: ago(18) },
+  { id: "AL-1040", actor_name: "Priya Nair", module: "KYC Approvals", action: "Approved KYC application", target_type: "Application", target_id: "KYC-8841", before_changes: { state: "pending" }, after_changes: { state: "approved" }, outcome: "success", created_at: ago(42) },
+  { id: "AL-1039", actor_name: "Super Admin", module: "Service Catalog", action: "Created service", target_type: "Service", target_id: "AEPS-Payout", before_changes: null, after_changes: { type: "api", status: "draft" }, outcome: "success", created_at: ago(70) },
+  { id: "AL-1038", actor_name: "Rahul Verma", module: "Wallet Control", action: "Adjusted wallet limit", target_type: "Wallet", target_id: "WL-5521", before_changes: { limit: "₹50,000" }, after_changes: { limit: "₹1,00,000" }, outcome: "success", created_at: ago(96) },
+  { id: "AL-1037", actor_name: "Super Admin", module: "Risk & Fraud", action: "Blocked transaction", target_type: "Transaction", target_id: "BO-92838", before_changes: { state: "review" }, after_changes: { state: "blocked" }, outcome: "success", created_at: ago(130) },
+  { id: "AL-1036", actor_name: "Priya Nair", module: "Settlements", action: "Released settlement batch", target_type: "Batch", target_id: "STL-Karnataka-04", before_changes: { state: "held" }, after_changes: { state: "released" }, outcome: "success", created_at: ago(180) },
+];
 
 function formatValue(value: unknown) {
   if (value === null || value === undefined || value === "") return "—";
@@ -22,11 +44,9 @@ function Changes({ before, after }: { before: ChangeSet; after: ChangeSet }) {
 }
 
 export function AdminAuditLog() {
-  const loadLogs = useServerFn(getAdminAuditLogs);
   const [query, setQuery] = useState("");
   const [module, setModule] = useState("All modules");
-  const { data, isLoading, error, refetch } = useQuery({ queryKey: ["admin-audit-logs"], queryFn: () => loadLogs() });
-  const logs = data?.logs ?? [];
+  const logs = MOCK_LOGS;
   const modules = useMemo(() => ["All modules", ...Array.from(new Set(logs.map((log) => log.module)))], [logs]);
   const filtered = useMemo(() => logs.filter((log) => {
     const matchesModule = module === "All modules" || log.module === module;
@@ -41,8 +61,8 @@ export function AdminAuditLog() {
     </section>
 
     <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-soft">
-      <div className="grid gap-3 border-b border-border p-4 md:grid-cols-[minmax(0,1fr)_220px_auto]"><div className="relative"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search actor, action, target or module…" className="pl-9" /></div><select value={module} onChange={(event) => setModule(event.target.value)} className="h-10 rounded-md border border-input bg-background px-3 text-xs outline-none">{modules.map((item) => <option key={item}>{item}</option>)}</select><Button variant="outline" onClick={() => refetch()}><Clock3 /> Refresh ledger</Button></div>
-      {isLoading ? <div className="grid min-h-64 place-items-center text-xs text-muted-foreground">Loading protected audit history…</div> : error ? <div className="grid min-h-64 place-items-center p-8 text-center"><div><ShieldCheck className="mx-auto h-8 w-8 text-admin-warning" /><p className="mt-3 text-sm font-bold">Secure administrator session required</p><p className="mt-1 max-w-md text-xs text-muted-foreground">Audit history is available only to authenticated accounts assigned the administrator role.</p></div></div> : <div className="overflow-x-auto"><table className="w-full min-w-[1100px] text-left"><thead className="bg-muted/45 text-[9px] font-extrabold uppercase tracking-wider text-muted-foreground"><tr>{["Timestamp", "Administrator", "Module", "Action / target", "Before → after", "Outcome"].map((head) => <th key={head} className="px-4 py-3">{head}</th>)}</tr></thead><tbody className="divide-y divide-border">{filtered.map((log) => <tr key={log.id} className="align-top text-[11px] transition hover:bg-muted/30"><td className="whitespace-nowrap px-4 py-4 font-mono text-[10px]"><p>{new Intl.DateTimeFormat("en-IN", { dateStyle: "medium" }).format(new Date(log.created_at))}</p><p className="mt-1 text-muted-foreground">{new Intl.DateTimeFormat("en-IN", { timeStyle: "medium" }).format(new Date(log.created_at))}</p></td><td className="px-4 py-4 font-bold">{log.actor_name}</td><td className="px-4 py-4"><span className="rounded-full bg-admin-soft px-2 py-1 text-[9px] font-extrabold text-admin">{log.module}</span></td><td className="px-4 py-4"><p className="font-extrabold">{log.action}</p><p className="mt-1 font-mono text-[9px] text-muted-foreground">{log.target_type ?? "System"}{log.target_id ? ` · ${log.target_id}` : ""}</p></td><td className="max-w-md px-4 py-4"><Changes before={log.before_changes as ChangeSet} after={log.after_changes as ChangeSet} /></td><td className="px-4 py-4"><span className={cn("rounded-full px-2 py-1 text-[9px] font-extrabold", log.outcome === "success" ? "bg-admin-success-soft text-admin-success" : "bg-admin-danger-soft text-admin-danger")}>{log.outcome}</span></td></tr>)}{!filtered.length && <tr><td colSpan={6} className="px-4 py-16 text-center text-xs text-muted-foreground">No audit events match the selected filters.</td></tr>}</tbody></table></div>}
+      <div className="grid gap-3 border-b border-border p-4 md:grid-cols-[minmax(0,1fr)_220px_auto]"><div className="relative"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search actor, action, target or module…" className="pl-9" /></div><select value={module} onChange={(event) => setModule(event.target.value)} className="h-10 rounded-md border border-input bg-background px-3 text-xs outline-none">{modules.map((item) => <option key={item}>{item}</option>)}</select><Button variant="outline" onClick={() => setQuery("")}><Clock3 /> Refresh ledger</Button></div>
+      <div className="overflow-x-auto"><table className="w-full min-w-[1100px] text-left"><thead className="bg-muted/45 text-[9px] font-extrabold uppercase tracking-wider text-muted-foreground"><tr>{["Timestamp", "Administrator", "Module", "Action / target", "Before → after", "Outcome"].map((head) => <th key={head} className="px-4 py-3">{head}</th>)}</tr></thead><tbody className="divide-y divide-border">{filtered.map((log) => <tr key={log.id} className="align-top text-[11px] transition hover:bg-muted/30"><td className="whitespace-nowrap px-4 py-4 font-mono text-[10px]"><p>{new Intl.DateTimeFormat("en-IN", { dateStyle: "medium" }).format(new Date(log.created_at))}</p><p className="mt-1 text-muted-foreground">{new Intl.DateTimeFormat("en-IN", { timeStyle: "medium" }).format(new Date(log.created_at))}</p></td><td className="px-4 py-4 font-bold">{log.actor_name}</td><td className="px-4 py-4"><span className="rounded-full bg-admin-soft px-2 py-1 text-[9px] font-extrabold text-admin">{log.module}</span></td><td className="px-4 py-4"><p className="font-extrabold">{log.action}</p><p className="mt-1 font-mono text-[9px] text-muted-foreground">{log.target_type ?? "System"}{log.target_id ? ` · ${log.target_id}` : ""}</p></td><td className="max-w-md px-4 py-4"><Changes before={log.before_changes as ChangeSet} after={log.after_changes as ChangeSet} /></td><td className="px-4 py-4"><span className={cn("rounded-full px-2 py-1 text-[9px] font-extrabold", log.outcome === "success" ? "bg-admin-success-soft text-admin-success" : "bg-admin-danger-soft text-admin-danger")}>{log.outcome}</span></td></tr>)}{!filtered.length && <tr><td colSpan={6} className="px-4 py-16 text-center text-xs text-muted-foreground">No audit events match the selected filters.</td></tr>}</tbody></table></div>
     </section>
   </div>;
 }
