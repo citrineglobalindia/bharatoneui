@@ -16,7 +16,9 @@ import { AdminAuditLog } from "@/components/admin/admin-audit-log";
 import { AdminModuleView } from "@/components/admin/admin-module-view";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { downloadCsv } from "@/lib/admin-actions";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 type NavItem = { label: string; icon: LucideIcon; badge?: string };
 type NavGroup = { label: string; items: NavItem[] };
@@ -109,10 +111,22 @@ export function AdminWorkspace() {
   const [active, setActive] = useState("Executive Overview");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [lastUpdated, setLastUpdated] = useState("Just now");
+  const [globalQuery, setGlobalQuery] = useState("");
   const navigate = useNavigate();
   const date = useMemo(() => new Intl.DateTimeFormat("en-IN", { weekday: "long", day: "numeric", month: "long" }).format(new Date()), []);
 
   const signOut = () => { localStorage.removeItem("bharatone:auth"); navigate({ to: "/admin-login", replace: true }); };
+  const runGlobalSearch = () => {
+    const term = globalQuery.trim().toLowerCase();
+    if (!term) return;
+    const match = NAVIGATION.flatMap((group) => group.items).find((item) => item.label.toLowerCase().includes(term));
+    if (match) { setActive(match.label); toast.success(`Opened ${match.label}`); }
+    else toast.info("No matching admin module found");
+  };
+  const exportOverview = () => {
+    downloadCsv("executive-overview.csv", ["Metric", "Value", "Detail"], KPI.map((item) => [item.label, item.value, item.detail]));
+    toast.success("Executive report downloaded");
+  };
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
