@@ -3,7 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import {
   Activity, AlertTriangle, ArrowUpRight, BadgeIndianRupee, BarChart3, Bell,
   Building2, ChevronDown, CircleCheckBig, ClipboardCheck, FileClock, FileSearch, Gauge,
-  Headphones, Landmark, LockKeyhole, LogOut, Menu, RefreshCw, Search, Settings,
+  Headphones, Landmark, LockKeyhole, LogOut, MapPin, Menu, RefreshCw, Search, Settings,
   ShieldCheck, Store, Users, WalletCards, X, Zap,
   type LucideIcon,
 } from "lucide-react";
