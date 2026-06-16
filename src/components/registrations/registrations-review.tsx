@@ -14,6 +14,7 @@ import { useAuth } from "@/hooks/use-auth";
 export type RegRow = {
   id: string;
   application_id: string;
+  registration_type: string;
   first_name: string;
   surname: string;
   shop_name: string;
@@ -40,6 +41,16 @@ const PRIMARY_TAB: Record<string, string> = {
   accountant: "accountant_review", qc: "qc_review", telecaller: "telecaller", admin: "accountant_review",
 };
 
+function typeLabel(t?: string) {
+  if (t === "old") return "Old JSKO";
+  if (t === "distributor") return "Distributor";
+  return "Retailer";
+}
+function typeBadge(t?: string) {
+  if (t === "old") return "bg-amber-100 text-amber-700";
+  if (t === "distributor") return "bg-violet-100 text-violet-700";
+  return "bg-emerald-100 text-emerald-700";
+}
 function statusPill(s: string) {
   const map: Record<string, string> = {
     accountant_review: "bg-amber-100 text-amber-700",
@@ -57,6 +68,7 @@ export function RegistrationsReview() {
   const [rows, setRows] = useState<RegRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<string>("accountant_review");
+  const [typeFilter, setTypeFilter] = useState<"all" | "new" | "old" | "distributor">("all");
   const [query, setQuery] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [creds, setCreds] = useState<{ username: string; email: string; password: string } | null>(null);
@@ -96,7 +108,7 @@ export function RegistrationsReview() {
       const { data, error } = await withTimeout(
         supabase
           .from("retailer_registrations")
-          .select("id, application_id, first_name, surname, shop_name, email, mobile, status, payment_verified, qc_verified, payment_amount, payment_utr, pan_doc_path, aadhaar_doc_path, shop_photo_path, selfie_path, payment_screenshot_path, created_at")
+          .select("id, application_id, registration_type, first_name, surname, shop_name, email, mobile, status, payment_verified, qc_verified, payment_amount, payment_utr, pan_doc_path, aadhaar_doc_path, shop_photo_path, selfie_path, payment_screenshot_path, created_at")
           .order("created_at", { ascending: false }),
       );
       if (error) {
@@ -122,6 +134,7 @@ export function RegistrationsReview() {
   const filtered = useMemo(() => {
     return rows
       .filter((r) => r.status === tab)
+      .filter((r) => typeFilter === "all" ? true : (r.registration_type || "new") === typeFilter)
       .filter((r) => {
         if (!query.trim()) return true;
         const q = query.toLowerCase();
@@ -133,7 +146,7 @@ export function RegistrationsReview() {
           (r.email ?? "").toLowerCase().includes(q)
         );
       });
-  }, [rows, tab, query]);
+  }, [rows, tab, query, typeFilter]);
 
   async function run(id: string, fn: () => Promise<{ error: { message: string } | null; data?: unknown }>, okMsg: string) {
     setBusy(id);
@@ -199,6 +212,16 @@ export function RegistrationsReview() {
         </Button>
       </div>
 
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Type:</span>
+        {([["all","All"],["new","Retailer"],["old","Old JSKO"],["distributor","Distributor"]] as [string,string][]).map(([k,label]) => (
+          <button key={k} onClick={() => setTypeFilter(k as any)}
+            className={`rounded-full px-3 h-7 text-xs font-semibold transition ${typeFilter === k ? "bg-saffron-gradient text-white" : "border border-border bg-card text-foreground hover:bg-muted"}`}>
+            {label} {k !== "all" && rows.filter((r) => (r.registration_type || "new") === k).length ? `(${rows.filter((r) => (r.registration_type || "new") === k).length})` : ""}
+          </button>
+        ))}
+      </div>
+
       <div className="flex items-center gap-2 rounded-lg bg-slate-100 px-3 h-9">
         <Search className="h-4 w-4 text-muted-foreground" />
         <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search by ID, name, shop, mobile, email…"
@@ -226,7 +249,8 @@ export function RegistrationsReview() {
               <tr key={r.id} className="border-t border-border align-top">
                 <td className="px-3 py-3">
                   <div className="font-mono text-xs font-semibold">{r.application_id}</div>
-                  <div className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString("en-IN")}</div>
+                  <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${typeBadge(r.registration_type)}`}>{typeLabel(r.registration_type)}</span>
+                  <div className="mt-1 text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString("en-IN")}</div>
                 </td>
                 <td className="px-3 py-3">
                   <div className="font-semibold">{r.first_name} {r.surname}</div>
@@ -302,7 +326,10 @@ export function RegistrationsReview() {
                     <h2 className="font-display text-xl font-extrabold leading-tight">{detail.first_name} {detail.middle_name || ""} {detail.surname}</h2>
                     <p className="font-mono text-xs text-muted-foreground">{detail.application_id}{detail.username ? " · " + detail.username : ""} · {detail.shop_name}</p>
                   </div>
-                  <span className={`rounded-full px-3 py-1 text-xs font-bold ${statusPill(detail.status)}`}>{detail.status.replace("_", " ")}</span>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className={`rounded-full px-3 py-1 text-xs font-bold ${typeBadge(detail.registration_type)}`}>{typeLabel(detail.registration_type)}</span>
+                    <span className={`rounded-full px-3 py-1 text-xs font-bold ${statusPill(detail.status)}`}>{detail.status.replace("_", " ")}</span>
+                  </div>
                 </div>
                 <div className="mt-4 grid grid-cols-3 gap-3">
                   <div className="rounded-xl border border-border bg-white/70 px-3 py-2">

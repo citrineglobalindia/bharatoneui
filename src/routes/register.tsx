@@ -82,7 +82,6 @@ const oldSteps: Step[] = [
   { key: "business", label: "Business", icon: Building2 },
   { key: "kyc", label: "KYC Docs", icon: Upload },
   { key: "video", label: "Video KYC", icon: Video },
-  { key: "payment", label: "Payment", icon: CreditCard },
   { key: "selfie", label: "Selfie & Submit", icon: Camera },
 ];
 
@@ -122,7 +121,7 @@ function RegisterFlow() {
       : type === "distributor"
         ? "Distributor"
         : "New JSKO Retailer Registration";
-  const amount = type === "distributor" ? 2500000 : 4999;
+  const amount: number | null = type === "distributor" ? 2500000 : type === "old" ? null : 4999;
   const subheading =
     type === "old"
       ? "Complete the steps below to migrate your existing JSKO account to the BharatOne portal."
@@ -136,7 +135,7 @@ function RegisterFlow() {
   const submit = async () => {
     // Distributor flow is not persisted yet — keep the local receipt.
     if (type === "distributor") {
-      setSubmission(buildSubmission(data.payment.utr, heading, amount));
+      setSubmission(buildSubmission(data.payment.utr, heading, amount ?? 0));
       setDone(true);
       return;
     }
@@ -224,7 +223,7 @@ function RegisterFlow() {
         applicationId: r.application_id,
         transactionId: r.transaction_id,
         utr: data.payment.utr || "—",
-        amount: `₹${amount.toLocaleString("en-IN")}`,
+        amount: amount != null ? `₹${amount.toLocaleString("en-IN")}` : "—",
         submittedAt: new Date().toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }),
         plan: heading,
       });
@@ -257,7 +256,7 @@ function RegisterFlow() {
             value={data.payment}
             onChange={(v) => set({ payment: v })}
             planLabel={heading}
-            amount={amount}
+            amount={amount ?? 0}
           />
         );
       case "selfie":
