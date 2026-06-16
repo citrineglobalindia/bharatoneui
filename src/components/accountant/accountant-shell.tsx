@@ -1,5 +1,6 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import {
   LayoutDashboard,
   FileCheck2,
@@ -155,6 +156,20 @@ function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: 
   );
 }
 
+function notifTone(t: string): string {
+  if (t === "approved") return "emerald";
+  if (t === "rejected" || t.endsWith("_flagged") || t.includes("flagged")) return "rose";
+  if (t === "ready_for_approval") return "amber";
+  return "indigo";
+}
+function relTime(iso: string): string {
+  const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  if (s < 60) return "just now";
+  if (s < 3600) return Math.floor(s / 60) + "m";
+  if (s < 86400) return Math.floor(s / 3600) + "h";
+  return new Date(iso).toLocaleDateString("en-IN");
+}
+
 export function AccountantShell({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -174,11 +189,32 @@ export function AccountantShell({ children }: { children: React.ReactNode }) {
   const totalPending =
     pendingCount(REGISTRATION_PAYMENTS) + pendingCount(WALLET_REQUESTS) + pendingCount(WITHDRAWALS);
 
-  const notifications = [
-    { id: 1, tone: "emerald", icon: <Wallet className="h-3.5 w-3.5" />, title: "New wallet recharge request", body: "Meera Pillai \u00B7 \u20B91,50,000 \u00B7 RTGS", time: "4m" },
-    { id: 2, tone: "amber", icon: <ArrowDownToLine className="h-3.5 w-3.5" />, title: "Withdrawal awaiting approval", body: "BO-WDL-3311 \u00B7 \u20B995,000", time: "12m" },
-    { id: 3, tone: "indigo", icon: <FileCheck2 className="h-3.5 w-3.5" />, title: "Registration payment to verify", body: "Harshitha N \u00B7 \u20B92,999", time: "20m" },
-  ];
+  const [notifications, setNotifications] = useState<any[]>([]);
+  useEffect(() => {
+    let on = true;
+    (async () => {
+      const { data: sess } = await supabase.auth.getSession();
+      if (!sess.session) return;
+      const { data } = await supabase
+        .from("notifications")
+        .select("id,type,title,body,created_at,read")
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (!on) return;
+      setNotifications(
+        (data ?? []).map((n: any) => ({
+          id: String(n.id),
+          tone: notifTone(n.type),
+          icon: <FileCheck2 className="h-3.5 w-3.5" />,
+          title: n.title,
+          body: n.body ?? "",
+          time: relTime(n.created_at),
+          read: n.read,
+        })),
+      );
+    })();
+    return () => { on = false; };
+  }, []);
 
   return (
     <div className="h-screen overflow-hidden bg-slate-50 flex">

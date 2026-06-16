@@ -1,5 +1,6 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import {
   LayoutDashboard,
   ClipboardCheck,
@@ -155,6 +156,20 @@ function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: 
   );
 }
 
+function notifTone(t: string): string {
+  if (t === "approved") return "emerald";
+  if (t === "rejected" || t.endsWith("_flagged") || t.includes("flagged")) return "rose";
+  if (t === "ready_for_approval") return "amber";
+  return "indigo";
+}
+function relTime(iso: string): string {
+  const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  if (s < 60) return "just now";
+  if (s < 3600) return Math.floor(s / 60) + "m";
+  if (s < 86400) return Math.floor(s / 3600) + "h";
+  return new Date(iso).toLocaleDateString("en-IN");
+}
+
 export function QcShell({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -173,12 +188,32 @@ export function QcShell({ children }: { children: React.ReactNode }) {
   const timeStr = now.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
   const dateStr = now.toLocaleDateString("en-IN", { weekday: "short", day: "2-digit", month: "short" });
 
-  const notifications = [
-    { id: 1, tone: "rose", icon: <ShieldAlert className="h-3.5 w-3.5" />, title: "High-risk case flagged", body: "BO-KYC-24087 · face match 62%", time: "2m" },
-    { id: 2, tone: "amber", icon: <Timer className="h-3.5 w-3.5" />, title: "SLA breach in 8 min", body: "BO-KYC-24073 awaiting reviewer", time: "8m" },
-    { id: 3, tone: "indigo", icon: <ClipboardCheck className="h-3.5 w-3.5" />, title: "5 new submissions", body: "Auto-assigned to your queue", time: "14m" },
-    { id: 4, tone: "emerald", icon: <CheckCircle2 className="h-3.5 w-3.5" />, title: "Approval acknowledged", body: "BO-KYC-24061 · synced to core", time: "1h" },
-  ];
+  const [notifications, setNotifications] = useState<any[]>([]);
+  useEffect(() => {
+    let on = true;
+    (async () => {
+      const { data: sess } = await supabase.auth.getSession();
+      if (!sess.session) return;
+      const { data } = await supabase
+        .from("notifications")
+        .select("id,type,title,body,created_at,read")
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (!on) return;
+      setNotifications(
+        (data ?? []).map((n: any) => ({
+          id: String(n.id),
+          tone: notifTone(n.type),
+          icon: <ClipboardCheck className="h-3.5 w-3.5" />,
+          title: n.title,
+          body: n.body ?? "",
+          time: relTime(n.created_at),
+          read: n.read,
+        })),
+      );
+    })();
+    return () => { on = false; };
+  }, []);
 
   return (
     <div className="h-screen overflow-hidden bg-slate-50 flex">

@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   BookOpenCheck,
@@ -15,6 +15,7 @@ import { AccountantShell } from "@/components/accountant/accountant-shell";
 import { PageHeader, StatusBadge } from "@/components/retailer/page-header";
 import { StatCard } from "@/components/retailer/stat-card";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 import {
   REGISTRATION_PAYMENTS,
   WALLET_REQUESTS,
@@ -115,10 +116,38 @@ function LedgerPage() {
   const [category, setCategory] = useState<Category | "All">("All");
   const [direction, setDirection] = useState<Direction | "all">("all");
   const [status, setStatus] = useState("All");
+  const [realRows, setRealRows] = useState<LedgerEntry[]>([]);
+
+  useEffect(() => {
+    let on = true;
+    (async () => {
+      const { data: sess } = await supabase.auth.getSession();
+      if (!sess.session) return;
+      const { data } = await supabase.from("ledger_entries").select("*").order("created_at", { ascending: false });
+      if (!on) return;
+      setRealRows(
+        (data ?? []).map((e: any) => ({
+          id: e.application_id || e.id,
+          date: new Date(e.created_at).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }),
+          category: "Registration" as Category,
+          direction: (e.direction || "credit") as Direction,
+          party: e.retailer_name || "—",
+          role: "Retailer",
+          method: e.payment_method || "—",
+          reference: e.utr || "—",
+          amount: e.amount || 0,
+          status: "Credited",
+        })),
+      );
+    })();
+    return () => { on = false; };
+  }, []);
+
+  const entries = useMemo(() => [...realRows, ...ALL_ENTRIES], [realRows]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return ALL_ENTRIES.filter((e) => {
+    return entries.filter((e) => {
       if (category !== "All" && e.category !== category) return false;
       if (direction !== "all" && e.direction !== direction) return false;
       if (status !== "All" && e.status !== status) return false;
@@ -126,7 +155,7 @@ function LedgerPage() {
         return false;
       return true;
     });
-  }, [query, category, direction, status]);
+  }, [entries, query, category, direction, status]);
 
   const totals = useMemo(() => {
     let credit = 0;

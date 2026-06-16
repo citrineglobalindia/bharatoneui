@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
-  ShieldCheck, CreditCard, CheckCircle2, XCircle, Search, FileText, Copy, Loader2, RefreshCw,
+  ShieldCheck, CreditCard, CheckCircle2, XCircle, Search, FileText, Copy, Loader2, RefreshCw, Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -55,6 +55,34 @@ export function RegistrationsReview() {
   const [query, setQuery] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [creds, setCreds] = useState<{ username: string; email: string; password: string } | null>(null);
+  const [detail, setDetail] = useState<any | null>(null);
+  const [detailUrls, setDetailUrls] = useState<Record<string, string>>({});
+  const [detailLoading, setDetailLoading] = useState(false);
+
+  const openDetail = async (r: RegRow) => {
+    setDetailLoading(true);
+    setDetail({ id: r.id });
+    try {
+      const { data, error } = await supabase.from("retailer_registrations").select("*").eq("id", r.id).maybeSingle();
+      if (error || !data) { toast.error("Could not load application"); setDetail(null); return; }
+      setDetail(data);
+      const fileCols: Record<string, string | null> = {
+        pan: data.pan_doc_path, aadhaar: data.aadhaar_doc_path, shop: data.shop_photo_path,
+        police: data.police_verification_path, selfie: data.selfie_path,
+        video: data.video_kyc_path, payment: data.payment_screenshot_path,
+      };
+      const urls: Record<string, string> = {};
+      for (const [k, path] of Object.entries(fileCols)) {
+        if (path) {
+          const { data: su } = await supabase.storage.from("retailer-kyc").createSignedUrl(path, 3600);
+          if (su?.signedUrl) urls[k] = su.signedUrl;
+        }
+      }
+      setDetailUrls(urls);
+    } finally {
+      setDetailLoading(false);
+    }
+  };
 
   async function load() {
     setLoading(true);
@@ -207,8 +235,8 @@ export function RegistrationsReview() {
                 </td>
                 <td className="px-3 py-3">
                   <div className="flex flex-wrap justify-end gap-1.5">
-                    <Button size="sm" variant="outline" className="h-8" onClick={() => viewDocs(r)}>
-                      <FileText className="h-3.5 w-3.5" /> Docs
+                    <Button size="sm" variant="outline" className="h-8" onClick={() => openDetail(r)}>
+                      <Eye className="h-3.5 w-3.5" /> View
                     </Button>
                     {canPay && !r.payment_verified && r.status !== "approved" && r.status !== "rejected" && (
                       <Button size="sm" className="h-8 bg-india-green text-white" disabled={busy === r.id} onClick={() => verifyPayment(r, true)}>
@@ -238,6 +266,120 @@ export function RegistrationsReview() {
         </table>
       </div>
 
+      <Dialog open={!!detail} onOpenChange={(o) => !o && setDetail(null)}>
+        <DialogContent className="max-h-[88vh] w-[min(900px,95vw)] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-india-green" /> Application details
+            </DialogTitle>
+            <DialogDescription>Full information submitted by the applicant.</DialogDescription>
+          </DialogHeader>
+          {detailLoading || !detail || !detail.application_id ? (
+            <div className="py-12 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></div>
+          ) : (
+            <div className="space-y-5 text-sm">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <div className="font-display text-lg font-bold">{detail.first_name} {detail.middle_name || ""} {detail.surname}</div>
+                  <div className="font-mono text-xs text-muted-foreground">{detail.application_id}{detail.username ? " · " + detail.username : ""}</div>
+                </div>
+                <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusPill(detail.status)}`}>{detail.status}</span>
+              </div>
+
+              <DSection title="Account">
+                <DField label="Email" value={detail.email} />
+                <DField label="Mobile" value={detail.mobile} />
+                <DField label="Email verified" value={detail.email_verified ? "Yes" : "No"} />
+                <DField label="Mobile verified" value={detail.mobile_verified ? "Yes" : "No"} />
+              </DSection>
+
+              <DSection title="Personal">
+                <DField label="First name" value={detail.first_name} />
+                <DField label="Middle name" value={detail.middle_name} />
+                <DField label="Surname" value={detail.surname} />
+                <DField label="Date of birth" value={detail.dob} />
+              </DSection>
+
+              <DSection title="Business & Address">
+                <DField label="Shop / Business" value={detail.shop_name} />
+                <DField label="Address type" value={detail.address_type} />
+                <DField label="Building / Shop No" value={detail.building_shop_no} />
+                <DField label="Street / Area" value={detail.street_area} />
+                <DField label="Ward" value={detail.ward_number} />
+                <DField label="Landmark" value={detail.landmark} />
+                <DField label="Village" value={detail.village_name} />
+                <DField label="Gram Panchayat" value={detail.gram_panchayat} />
+                <DField label="Hobli" value={detail.hobli_name} />
+                <DField label="Post Office" value={detail.post_office} />
+                <DField label="Taluk" value={detail.taluk} />
+                <DField label="City" value={detail.city} />
+                <DField label="District" value={detail.district} />
+                <DField label="State" value={detail.state} />
+                <DField label="Pincode" value={detail.pincode} />
+                <DField label="Location" value={detail.latitude && detail.longitude ? `${detail.latitude}, ${detail.longitude}` : null} />
+              </DSection>
+
+              <DSection title="Bank">
+                <DField label="Account holder" value={detail.bank_holder_name} />
+                <DField label="Bank" value={detail.bank_name} />
+                <DField label="Account number" value={detail.account_number} />
+                <DField label="IFSC" value={detail.ifsc} />
+                <DField label="Account type" value={detail.account_type} />
+              </DSection>
+
+              <DSection title="KYC">
+                <DField label="PAN number" value={detail.pan_number} />
+                <DField label="Aadhaar number" value={detail.aadhaar_number} />
+              </DSection>
+
+              <DSection title="Payment">
+                <DField label="Amount" value={detail.payment_amount ? `₹${Number(detail.payment_amount).toLocaleString("en-IN")}` : null} />
+                <DField label="UTR" value={detail.payment_utr} />
+                <DField label="Method" value={detail.payment_method} />
+                <DField label="Paid on" value={detail.payment_paid_on} />
+                <DField label="Payer name" value={detail.payer_name} />
+                <DField label="Payer bank" value={detail.payer_bank} />
+              </DSection>
+
+              <DSection title="Verification">
+                <DField label="Payment verified" value={detail.payment_verified ? "Yes" : "No"} />
+                <DField label="Payment notes" value={detail.payment_verification_notes} />
+                <DField label="QC verified" value={detail.qc_verified ? "Yes" : "No"} />
+                <DField label="QC notes" value={detail.qc_notes} />
+                <DField label="Declaration agreed" value={detail.declaration_agreed ? "Yes" : "No"} />
+              </DSection>
+
+              <div>
+                <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Documents</p>
+                <div className="flex flex-wrap gap-2">
+                  {[["PAN","pan"],["Aadhaar","aadhaar"],["Shop photo","shop"],["Police verification","police"],["Selfie","selfie"],["Video KYC","video"],["Payment receipt","payment"]].map(([label,key]) => (
+                    detailUrls[key as string] ? (
+                      <a key={key as string} href={detailUrls[key as string]} target="_blank" rel="noreferrer"
+                        className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-semibold text-india-green hover:bg-muted">
+                        <FileText className="h-3.5 w-3.5" /> {label}
+                      </a>
+                    ) : (
+                      <span key={key as string} className="inline-flex items-center gap-1 rounded-lg border border-dashed border-border px-3 py-1.5 text-xs text-muted-foreground">{label}: —</span>
+                    )
+                  ))}
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {["selfie","shop","payment"].map((k) => detailUrls[k] ? (
+                    <img key={k} src={detailUrls[k]} alt={k} className="h-32 w-full rounded-lg border border-border object-cover" />
+                  ) : null)}
+                  {detailUrls.video ? (
+                    <video key="v" src={detailUrls.video} controls className="h-32 w-full rounded-lg border border-border bg-black object-cover" />
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDetail(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={!!creds} onOpenChange={(o) => !o && setCreds(null)}>
         <DialogContent>
           <DialogHeader>
@@ -262,6 +404,24 @@ export function RegistrationsReview() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+function DSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">{title}</p>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">{children}</div>
+    </div>
+  );
+}
+function DField({ label, value }: { label: string; value: unknown }) {
+  const v = value === null || value === undefined || value === "" ? "—" : String(value);
+  return (
+    <div className="min-w-0">
+      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="truncate font-medium text-foreground" title={v}>{v}</p>
     </div>
   );
 }
