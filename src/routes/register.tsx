@@ -262,6 +262,10 @@ function RegisterFlow() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current, type, data.payment]);
 
+  const currentKey = steps[current].key;
+  const accountVerified = data.emailVerified && data.mobileVerified;
+  const blockNext = currentKey === "account" && !accountVerified;
+
   return (
     <div className="min-h-screen bg-tricolor">
       <header className="sticky top-0 z-30 border-b border-border bg-card/80 backdrop-blur-md">
@@ -341,12 +345,20 @@ function RegisterFlow() {
                     )}
                   </Button>
                 ) : (
-                  <Button
-                    onClick={next}
-                    className="h-12 rounded-xl bg-saffron-gradient text-[15px] font-semibold shadow-elev hover:opacity-95 sm:h-10 sm:text-sm sm:w-auto"
-                  >
-                    Next <ChevronRight className="h-4 w-4" />
-                  </Button>
+                  <div className="flex flex-col items-end gap-1 sm:flex-row sm:items-center">
+                    {blockNext && (
+                      <span className="text-[11px] font-medium text-amber-700">
+                        Verify email &amp; mobile OTP to continue
+                      </span>
+                    )}
+                    <Button
+                      onClick={next}
+                      disabled={blockNext}
+                      className="h-12 rounded-xl bg-saffron-gradient text-[15px] font-semibold shadow-elev hover:opacity-95 disabled:opacity-50 disabled:cursor-not-allowed sm:h-10 sm:text-sm sm:w-auto"
+                    >
+                      Next <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
                 )}
               </div>
             </>
