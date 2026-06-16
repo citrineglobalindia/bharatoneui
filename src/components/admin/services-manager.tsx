@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { Plus, Trash2, Pencil, Upload, ExternalLink, Loader2, X, Check, Link2, Server, Plug } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { FormBuilder, type FormField } from "@/components/admin/form-builder";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 
 type ServiceType = "inlink" | "api" | "backend";
@@ -14,7 +15,7 @@ type Service = {
 
 const emptyForm = {
   id: "", name: "", logo_url: "", redirect_url: "", backend_route: "", service_type: "inlink" as ServiceType,
-  category: "", is_active: true, sort_order: 0,
+  category: "", is_active: true, sort_order: 0, form_schema: [] as FormField[],
   api_endpoint: "", api_method: "POST", api_auth_type: "apikey", api_auth_header: "Authorization", api_secret_ref: "", api_notes: "",
 };
 
@@ -63,7 +64,6 @@ export function ServicesManager() {
       if (!redirect) { toast.error("Redirect URL is required for an Inlink service"); return; }
       if (!/^https?:\/\//i.test(redirect)) redirect = "https://" + redirect;
     }
-    if (form.service_type === "backend" && !form.backend_route.trim()) { toast.error("Internal route is required for a Backend service (e.g. /aeps)"); return; }
     if (form.service_type === "api" && !form.api_endpoint.trim()) { toast.error("API endpoint is required for an API service"); return; }
     setSaving(true);
     try {
@@ -72,7 +72,8 @@ export function ServicesManager() {
         logo_url: form.logo_url || null,
         service_type: form.service_type,
         redirect_url: form.service_type === "inlink" ? redirect : (redirect || null),
-        backend_route: form.service_type === "backend" ? form.backend_route.trim() : null,
+        backend_route: null,
+        form_schema: form.service_type === "backend" ? form.form_schema : [],
         category: form.category || null,
         is_active: form.is_active,
         sort_order: Number(form.sort_order) || 0,
@@ -102,7 +103,7 @@ export function ServicesManager() {
 
   const edit = async (s: Service) => {
     const base = { ...emptyForm, id: s.id, name: s.name, logo_url: s.logo_url ?? "", redirect_url: s.redirect_url ?? "",
-      backend_route: s.backend_route ?? "", service_type: s.service_type, category: s.category ?? "", is_active: s.is_active, sort_order: s.sort_order };
+      backend_route: s.backend_route ?? "", service_type: s.service_type, category: s.category ?? "", is_active: s.is_active, sort_order: s.sort_order, form_schema: (s as any).form_schema ?? [] };
     if (s.service_type === "api") {
       const { data } = await supabase.from("service_api_config").select("*").eq("service_id", s.id).maybeSingle();
       if (data) Object.assign(base, { api_endpoint: data.endpoint ?? "", api_method: data.method ?? "POST", api_auth_type: data.auth_type ?? "apikey", api_auth_header: data.auth_header ?? "Authorization", api_secret_ref: data.secret_ref ?? "", api_notes: data.notes ?? "" });
@@ -140,8 +141,10 @@ export function ServicesManager() {
               <input className={input} value={form.redirect_url} onChange={(e) => set({ redirect_url: e.target.value })} placeholder="https://partner.example.com" /></div>
           )}
           {form.service_type === "backend" && (
-            <div className="sm:col-span-2"><label className="text-xs font-semibold text-muted-foreground">Internal route * (in-app page)</label>
-              <input className={input} value={form.backend_route} onChange={(e) => set({ backend_route: e.target.value })} placeholder="/aeps, /bbps, /money-transfer …" /></div>
+            <div className="sm:col-span-2 rounded-xl border border-border bg-background/40 p-3">
+              <p className="mb-2 text-xs font-semibold text-foreground">Form builder — design the form retailers will fill</p>
+              <FormBuilder value={form.form_schema} onChange={(v) => set({ form_schema: v })} />
+            </div>
           )}
           {form.service_type === "api" && (
             <>
