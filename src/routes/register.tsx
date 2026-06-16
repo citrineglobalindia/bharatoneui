@@ -100,7 +100,7 @@ async function uploadFile(folder: string, label: string, file: File | undefined)
   const path = `${folder}/${label}.${ext}`;
   const { error } = await supabase.storage
     .from("retailer-kyc")
-    .upload(path, file, { upsert: true, contentType: file.type || undefined });
+    .upload(path, file, { upsert: false, contentType: file.type || undefined });
   if (error) throw new Error(`Upload failed (${label}): ${error.message}`);
   return path;
 }
