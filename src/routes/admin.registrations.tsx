@@ -3,6 +3,7 @@ import { ArrowLeft, ShieldCheck } from "lucide-react";
 import { BharatOneLogo } from "@/components/bharatone-logo";
 import { PageHeader } from "@/components/retailer/page-header";
 import { RegistrationsReview } from "@/components/registrations/registrations-review";
+import { NotificationsBell } from "@/components/retailer/notifications-bell";
 
 export const Route = createFileRoute("/admin/registrations")({
   head: () => ({ meta: [{ title: "Retailer Approvals — BharatOne Admin" }] }),
@@ -18,6 +19,9 @@ function AdminRegistrationsPage() {
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <BharatOneLogo size="lg" />
+          <div className="absolute right-4 flex items-center gap-2">
+            <NotificationsBell />
+          </div>
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-4 py-6">
