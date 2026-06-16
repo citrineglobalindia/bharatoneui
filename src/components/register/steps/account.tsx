@@ -35,6 +35,7 @@ export function AccountStep() {
   const [verifyingEmail, setVerifyingEmail] = useState(false);
   const [verifyingMobile, setVerifyingMobile] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
+  const [emailNote, setEmailNote] = useState<string | null>(null);
   const [mobileError, setMobileError] = useState<string | null>(null);
   const [emailCooldown, setEmailCooldown] = useState(0);
   const [mobileCooldown, setMobileCooldown] = useState(0);
@@ -66,7 +67,8 @@ export function AccountStep() {
         return;
       }
       setEmailError(null);
-      const { error } = await supabase.functions.invoke("send-otp", {
+      setEmailNote(null);
+      const { data, error } = await supabase.functions.invoke("send-otp", {
         body: { channel: "email", target: email },
       });
       if (error) {
@@ -83,7 +85,13 @@ export function AccountStep() {
         setEmailError(msg);
         return;
       }
-      setEmailOtp(Array(6).fill(""));
+      const devCode = (data as { dev_code?: string } | null)?.dev_code;
+      if (devCode && /^[0-9]{6}$/.test(devCode)) {
+        setEmailOtp(devCode.split(""));
+        setEmailNote(`Test mode: code auto-filled (${devCode}). Verify a domain in Resend to email real users.`);
+      } else {
+        setEmailOtp(Array(6).fill(""));
+      }
       setEmailSent(true);
       setEmailCooldown(RESEND_COOLDOWN);
       setTimeout(() => emailInputsRef.current[0]?.focus(), 50);
@@ -214,6 +222,9 @@ export function AccountStep() {
 
         {emailError && !emailSent && !emailVerified && (
           <p className="mt-2 text-[12px] font-medium text-red-600">{emailError}</p>
+        )}
+        {emailNote && !emailVerified && (
+          <p className="mt-2 rounded-md border border-amber-300 bg-amber-50 px-2.5 py-1.5 text-[12px] font-medium text-amber-800">{emailNote}</p>
         )}
         {!emailSent && !emailVerified && (
           <p className="text-[12px] leading-relaxed text-muted-foreground">
