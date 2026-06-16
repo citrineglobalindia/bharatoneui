@@ -264,7 +264,13 @@ function RegisterFlow() {
 
   const currentKey = steps[current].key;
   const accountVerified = data.emailVerified && data.mobileVerified;
-  const blockNext = currentKey === "account" && !accountVerified;
+  const blockNext =
+    (currentKey === "account" && !accountVerified) ||
+    (currentKey === "personal" && !data.personalValid);
+  const blockMsg =
+    currentKey === "account"
+      ? "Verify email & mobile OTP to continue"
+      : "Complete the required fields to continue";
 
   return (
     <div className="min-h-screen bg-tricolor">
@@ -348,7 +354,7 @@ function RegisterFlow() {
                   <div className="flex flex-col items-end gap-1 sm:flex-row sm:items-center">
                     {blockNext && (
                       <span className="text-[11px] font-medium text-amber-700">
-                        Verify email &amp; mobile OTP to continue
+                        {blockMsg}
                       </span>
                     )}
                     <Button

@@ -24,6 +24,7 @@ export type RegData = {
   middleName: string;
   surname: string;
   password: string;
+  personalValid: boolean;
   // business
   shopName: string;
   addressType: "urban" | "rural";
@@ -64,6 +65,7 @@ const defaultData: RegData = {
   middleName: "",
   surname: "",
   password: "",
+  personalValid: false,
   shopName: "",
   addressType: "urban",
   buildingShopNo: "",

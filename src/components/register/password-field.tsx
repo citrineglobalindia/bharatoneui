@@ -5,6 +5,8 @@ import { cn } from "@/lib/utils";
 
 export type PasswordCriteria = {
   length: boolean;
+  upper: boolean;
+  lower: boolean;
   number: boolean;
   special: boolean;
 };
@@ -12,6 +14,8 @@ export type PasswordCriteria = {
 export function evaluatePassword(value: string): PasswordCriteria {
   return {
     length: value.length >= 8,
+    upper: /[A-Z]/.test(value),
+    lower: /[a-z]/.test(value),
     number: /[0-9]/.test(value),
     special: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/.test(value),
   };
@@ -19,7 +23,7 @@ export function evaluatePassword(value: string): PasswordCriteria {
 
 export function isPasswordValid(value: string) {
   const c = evaluatePassword(value);
-  return c.length && c.number && c.special;
+  return c.length && c.upper && c.lower && c.number && c.special;
 }
 
 export function PasswordField({
@@ -81,6 +85,8 @@ export function PasswordField({
           </p>
           <ul className="mt-2 space-y-1.5">
             <Rule ok={c.length} label="At least 8 characters" />
+            <Rule ok={c.upper} label="At least one uppercase letter (A-Z)" />
+            <Rule ok={c.lower} label="At least one lowercase letter (a-z)" />
             <Rule ok={c.number} label="At least one number (0-9)" />
             <Rule ok={c.special} label="At least one special character (!@#$…)" />
           </ul>
