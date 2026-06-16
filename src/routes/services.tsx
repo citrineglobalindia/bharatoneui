@@ -20,14 +20,14 @@ const CORE = [
   { label: "Business Reg.", to: "/business-reg", icon: <Building2 className="h-5 w-5" />, tone: "bg-violet-500", active: false },
 ];
 
-type Service = { id: string; name: string; logo_url: string | null; redirect_url: string; category: string | null };
+type Service = { id: string; name: string; logo_url: string | null; redirect_url: string | null; backend_route: string | null; service_type: "inlink" | "api" | "backend"; category: string | null };
 
 function ServicesPage() {
   const [services, setServices] = useState<Service[]>([]);
   useEffect(() => {
     let on = true;
     (async () => {
-      const { data } = await supabase.from("services").select("id,name,logo_url,redirect_url,category")
+      const { data } = await supabase.from("services").select("id,name,logo_url,redirect_url,backend_route,service_type,category")
         .eq("is_active", true).order("sort_order").order("name");
       if (on) setServices((data as Service[]) ?? []);
     })();
@@ -55,16 +55,24 @@ function ServicesPage() {
           <div className="space-y-3">
             <h2 className="font-display text-base font-bold text-foreground">Partner Services</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-              {services.map((s) => (
-                <a key={s.id} href={s.redirect_url} target="_blank" rel="noreferrer"
-                  className="group relative flex flex-col items-center gap-2 rounded-xl border border-border bg-card p-4 text-center transition hover:shadow-elev hover:-translate-y-0.5">
-                  {s.logo_url
-                    ? <img src={s.logo_url} alt={s.name} className="h-12 w-12 object-contain" />
-                    : <div className="grid h-12 w-12 place-items-center rounded-lg bg-india-green/10 text-india-green font-bold">{s.name[0]}</div>}
-                  <p className="text-xs font-semibold leading-tight">{s.name}</p>
-                  <ExternalLink className="absolute right-2 top-2 h-3.5 w-3.5 text-muted-foreground opacity-0 transition group-hover:opacity-100" />
-                </a>
-              ))}
+              {services.map((s) => {
+                const inner = (
+                  <>
+                    {s.logo_url
+                      ? <img src={s.logo_url} alt={s.name} className="h-12 w-12 object-contain" />
+                      : <div className="grid h-12 w-12 place-items-center rounded-lg bg-india-green/10 text-india-green font-bold">{s.name[0]}</div>}
+                    <p className="text-xs font-semibold leading-tight">{s.name}</p>
+                  </>
+                );
+                const cls = "group relative flex flex-col items-center gap-2 rounded-xl border border-border bg-card p-4 text-center transition hover:shadow-elev hover:-translate-y-0.5";
+                if (s.service_type === "inlink" && s.redirect_url) {
+                  return (<a key={s.id} href={s.redirect_url} target="_blank" rel="noreferrer" className={cls}>{inner}<ExternalLink className="absolute right-2 top-2 h-3.5 w-3.5 text-muted-foreground opacity-0 transition group-hover:opacity-100" /></a>);
+                }
+                if (s.service_type === "backend" && s.backend_route) {
+                  return (<Link key={s.id} to={s.backend_route as never} className={cls}>{inner}</Link>);
+                }
+                return (<Link key={s.id} to="/service/$id" params={{ id: s.id }} className={cls}>{inner}</Link>);
+              })}
             </div>
           </div>
         )}
