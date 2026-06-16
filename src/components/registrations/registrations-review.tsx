@@ -87,20 +87,22 @@ export function RegistrationsReview() {
   async function load() {
     setLoading(true);
     try {
-      const { data: sess } = await supabase.auth.getSession();
-      if (!sess.session) {
-        toast.error("Please sign in with your staff account to view registrations.");
-        setRows([]);
-        return;
-      }
       const { data, error } = await supabase
         .from("retailer_registrations")
         .select("id, application_id, first_name, surname, shop_name, email, mobile, status, payment_verified, qc_verified, payment_amount, payment_utr, pan_doc_path, aadhaar_doc_path, shop_photo_path, selfie_path, payment_screenshot_path, created_at")
         .order("created_at", { ascending: false });
-      if (error) toast.error("Failed to load", { description: error.message });
-      setRows((data as RegRow[]) ?? []);
+      if (error) {
+        toast.error("Couldn't load registrations", {
+          description: error.message.includes("JWT") || error.message.includes("auth")
+            ? "Your session expired — please sign in again."
+            : error.message,
+        });
+        setRows([]);
+      } else {
+        setRows((data as RegRow[]) ?? []);
+      }
     } catch (e) {
-      toast.error("Failed to load registrations", { description: e instanceof Error ? e.message : String(e) });
+      toast.error("Couldn't load registrations", { description: e instanceof Error ? e.message : String(e) });
       setRows([]);
     } finally {
       setLoading(false);

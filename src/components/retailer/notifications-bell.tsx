@@ -120,13 +120,15 @@ export function NotificationsBell() {
   const unread = items.filter((n) => !n.read).length;
 
   async function load() {
-    const { data: sess } = await supabase.auth.getSession();
-    if (!sess.session) { setItems([]); return; }
-    const { data } = await supabase
-      .from("notifications")
-      .select("id, type, title, body, link, read, created_at")
-      .order("created_at", { ascending: false })
-      .limit(30);
+    let data: any[] | null = null;
+    try {
+      const res = await supabase
+        .from("notifications")
+        .select("id, type, title, body, link, read, created_at")
+        .order("created_at", { ascending: false })
+        .limit(30);
+      data = res.data as any[] | null;
+    } catch { data = null; }
     setItems(
       (data ?? []).map((n) => ({
         id: n.id,

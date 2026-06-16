@@ -190,31 +190,37 @@ export function AccountantShell({ children }: { children: React.ReactNode }) {
     pendingCount(REGISTRATION_PAYMENTS) + pendingCount(WALLET_REQUESTS) + pendingCount(WITHDRAWALS);
 
   const [notifications, setNotifications] = useState<any[]>([]);
-  useEffect(() => {
-    let on = true;
-    (async () => {
-      const { data: sess } = await supabase.auth.getSession();
-      if (!sess.session) return;
+  const loadNotifs = async () => {
+    try {
       const { data } = await supabase
         .from("notifications")
-        .select("id,type,title,body,created_at,read")
+        .select("id,type,title,body,link,created_at,read")
         .order("created_at", { ascending: false })
         .limit(20);
-      if (!on) return;
       setNotifications(
         (data ?? []).map((n: any) => ({
           id: String(n.id),
           tone: notifTone(n.type),
-          icon: <FileCheck2 className="h-3.5 w-3.5" />,
+          icon: <LayoutDashboard className="h-4 w-4" />,
           title: n.title,
           body: n.body ?? "",
           time: relTime(n.created_at),
+          link: n.link ?? null,
           read: n.read,
         })),
       );
-    })();
-    return () => { on = false; };
-  }, []);
+    } catch { /* ignore */ }
+  };
+  useEffect(() => { loadNotifs(); }, []);
+  const markNotifRead = async (id: string) => {
+    setNotifications((xs: any[]) => xs.map((n) => (n.id === id ? { ...n, read: true } : n)));
+    try { await supabase.from("notifications").update({ read: true }).eq("id", id); } catch { /* ignore */ }
+  };
+  const markAllNotifsRead = async () => {
+    setNotifications((xs: any[]) => xs.map((n) => ({ ...n, read: true })));
+    try { await supabase.from("notifications").update({ read: true }).eq("read", false); } catch { /* ignore */ }
+  };
+  const onNotifClick = (n: any) => { markNotifRead(n.id); if (n.link) navigate({ to: n.link as any }); };
 
   return (
     <div className="h-screen overflow-hidden bg-slate-50 flex">
@@ -292,18 +298,18 @@ export function AccountantShell({ children }: { children: React.ReactNode }) {
                 >
                   <Bell className="h-4 w-4 text-slate-700" />
                   <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-extrabold flex items-center justify-center ring-2 ring-white">
-                    {notifications.length}
+                    {notifications.filter((n: any) => !n.read).length}
                   </span>
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-80 p-0 overflow-hidden">
                 <div className="px-3 py-2.5 border-b bg-gradient-to-r from-emerald-600 to-teal-600 text-white">
                   <p className="text-xs font-bold">Notifications</p>
-                  <p className="text-[10px] opacity-90">{notifications.length} new · approvals and payouts</p>
+                  <p className="text-[10px] opacity-90">{notifications.filter((n: any) => !n.read).length} new · approvals and payouts</p>
                 </div>
                 <ul className="max-h-80 overflow-y-auto">
                   {notifications.map((n) => (
-                    <li key={n.id} className="px-3 py-2.5 border-b last:border-0 hover:bg-muted/50 cursor-pointer">
+                    <li key={n.id} onClick={() => onNotifClick(n)} className={`px-3 py-2.5 border-b last:border-0 hover:bg-muted/50 cursor-pointer ${n.read ? "" : "bg-emerald-50/40"}`}>
                       <div className="flex items-start gap-2">
                         <span
                           className={`mt-0.5 h-6 w-6 rounded-lg flex items-center justify-center text-white ${
@@ -326,7 +332,7 @@ export function AccountantShell({ children }: { children: React.ReactNode }) {
                   ))}
                 </ul>
                 <div className="px-3 py-2 border-t bg-muted/30 flex justify-between">
-                  <button className="text-[11px] font-bold text-emerald-700 hover:underline">Mark all read</button>
+                  <button onClick={markAllNotifsRead} className="text-[11px] font-bold text-emerald-700 hover:underline">Mark all read</button>
                   <button className="text-[11px] font-bold text-slate-700 hover:underline">View all</button>
                 </div>
               </DropdownMenuContent>

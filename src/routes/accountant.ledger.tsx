@@ -121,9 +121,11 @@ function LedgerPage() {
   useEffect(() => {
     let on = true;
     (async () => {
-      const { data: sess } = await supabase.auth.getSession();
-      if (!sess.session) return;
-      const { data } = await supabase.from("ledger_entries").select("*").order("created_at", { ascending: false });
+      let data: any[] | null = null;
+      try {
+        const res = await supabase.from("ledger_entries").select("*").order("created_at", { ascending: false });
+        data = res.data as any[] | null;
+      } catch { data = null; }
       if (!on) return;
       setRealRows(
         (data ?? []).map((e: any) => ({

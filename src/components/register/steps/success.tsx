@@ -145,8 +145,9 @@ export function SuccessStep({ info }: { info: SubmissionInfo }) {
   const downloadPDF = async () => {
     try {
       setBusy("pdf");
-      const { jsPDF } = await import("jspdf");
-      const pdf = new jsPDF({ unit: "pt", format: "a4" });
+      const mod: any = await import("jspdf");
+      const JsPDF = mod.jsPDF ?? mod.default;
+      const pdf = new JsPDF({ unit: "pt", format: "a4" });
       const W = pdf.internal.pageSize.getWidth();
       pdf.setFillColor(255, 153, 51); pdf.rect(0, 0, W / 3, 8, "F");
       pdf.setFillColor(19, 136, 8); pdf.rect((2 * W) / 3, 0, W / 3, 8, "F");
@@ -175,6 +176,9 @@ export function SuccessStep({ info }: { info: SubmissionInfo }) {
       pdf.setTextColor(107, 114, 128); pdf.setFont("helvetica", "normal"); pdf.setFontSize(10);
       pdf.text("Thank you for choosing BharatOne - support@bharatone.com", 40, y + 24);
       pdf.save(`BharatOne-Receipt-${info.applicationId}.pdf`);
+    } catch (e) {
+      console.error(e);
+      try { (await import("sonner")).toast.error("Could not generate PDF", { description: e instanceof Error ? e.message : String(e) }); } catch { /* ignore */ }
     } finally {
       setBusy(null);
     }
