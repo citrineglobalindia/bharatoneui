@@ -64,7 +64,7 @@ function Card({ icon, title, children }: { icon: React.ReactNode; title: string;
   );
 }
 
-const TABS = ["Basic", "KYC Docs", "Payment", "Verification"] as const;
+const TABS = ["Personal", "Business", "Bank", "KYC Docs", "Payment", "Verification"] as const;
 
 function ReviewPage() {
   const { id } = Route.useParams();
@@ -74,7 +74,7 @@ function ReviewPage() {
   const [urls, setUrls] = useState<Record<string, string>>({});
   const [docReviews, setDocReviews] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<(typeof TABS)[number]>("Basic");
+  const [tab, setTab] = useState<(typeof TABS)[number]>("Personal");
   const [busy, setBusy] = useState(false);
   const [lightbox, setLightbox] = useState<{ url: string; kind: string; label: string } | null>(null);
   const [creds, setCreds] = useState<{ username: string; email: string; password: string } | null>(null);
@@ -192,44 +192,48 @@ function ReviewPage() {
           ))}
         </div>
 
-        {tab === "Basic" && (
-          <div className="space-y-4">
-            <Card icon={<User className="h-4 w-4" />} title="Personal Information">
-              <Field label="Full Name" value={fullName} />
-              <Field label="First Name" value={reg.first_name} />
-              <Field label="Middle Name" value={reg.middle_name} />
-              <Field label="Surname" value={reg.surname} />
-              <Field label="Date of Birth" value={reg.dob} />
-              <Field label="Mobile" value={reg.mobile} />
-              <Field label="Email" value={reg.email} />
-              <Field label="Retailer Type" value={typeLabel(reg.registration_type)} />
-              <Field label="Agent ID" value={reg.username} />
-            </Card>
-            <Card icon={<Building2 className="h-4 w-4" />} title="Business Information">
-              <Field label="Shop Name" value={reg.shop_name} />
-              <Field label="Address Type" value={reg.address_type} />
-              <Field label="Building / Shop No" value={reg.building_shop_no} />
-              <Field label="Street / Area" value={reg.street_area} />
-              <Field label="Ward Number" value={reg.ward_number} />
-              <Field label="Landmark" value={reg.landmark} />
-              <Field label="Village" value={reg.village_name} />
-              <Field label="Gram Panchayat" value={reg.gram_panchayat} />
-              <Field label="Hobli" value={reg.hobli_name} />
-              <Field label="Post Office" value={reg.post_office} />
-              <Field label="Taluk" value={reg.taluk} />
-              <Field label="City" value={reg.city} />
-              <Field label="District" value={reg.district} />
-              <Field label="State" value={reg.state} />
-              <Field label="Pincode" value={reg.pincode} />
-            </Card>
-            <Card icon={<Landmark className="h-4 w-4" />} title="Bank Details">
-              <Field label="Account Holder" value={reg.bank_holder_name} />
-              <Field label="Bank" value={reg.bank_name} />
-              <Field label="Account Number" value={reg.account_number} />
-              <Field label="IFSC" value={reg.ifsc} />
-              <Field label="Account Type" value={reg.account_type} />
-            </Card>
-          </div>
+        {tab === "Personal" && (
+          <Card icon={<User className="h-4 w-4" />} title="Personal Information">
+            <Field label="Full Name" value={fullName} />
+            <Field label="First Name" value={reg.first_name} />
+            <Field label="Middle Name" value={reg.middle_name} />
+            <Field label="Surname" value={reg.surname} />
+            <Field label="Date of Birth" value={reg.dob} />
+            <Field label="Mobile" value={reg.mobile} />
+            <Field label="Email" value={reg.email} />
+            <Field label="Retailer Type" value={typeLabel(reg.registration_type)} />
+            <Field label="Agent ID" value={reg.username} />
+          </Card>
+        )}
+
+        {tab === "Business" && (
+          <Card icon={<Building2 className="h-4 w-4" />} title="Business Information">
+            <Field label="Shop Name" value={reg.shop_name} />
+            <Field label="Address Type" value={reg.address_type} />
+            <Field label="Building / Shop No" value={reg.building_shop_no} />
+            <Field label="Street / Area" value={reg.street_area} />
+            <Field label="Ward Number" value={reg.ward_number} />
+            <Field label="Landmark" value={reg.landmark} />
+            <Field label="Village" value={reg.village_name} />
+            <Field label="Gram Panchayat" value={reg.gram_panchayat} />
+            <Field label="Hobli" value={reg.hobli_name} />
+            <Field label="Post Office" value={reg.post_office} />
+            <Field label="Taluk" value={reg.taluk} />
+            <Field label="City" value={reg.city} />
+            <Field label="District" value={reg.district} />
+            <Field label="State" value={reg.state} />
+            <Field label="Pincode" value={reg.pincode} />
+          </Card>
+        )}
+
+        {tab === "Bank" && (
+          <Card icon={<Landmark className="h-4 w-4" />} title="Bank Details">
+            <Field label="Account Holder" value={reg.bank_holder_name} />
+            <Field label="Bank" value={reg.bank_name} />
+            <Field label="Account Number" value={reg.account_number} />
+            <Field label="IFSC" value={reg.ifsc} />
+            <Field label="Account Type" value={reg.account_type} />
+          </Card>
         )}
 
         {tab === "KYC Docs" && (
