@@ -46,6 +46,15 @@ const ROLE_ACCOUNTS = Object.values(PORTAL_CONFIGS).map((c) => ({
   redirectTo: c.redirectTo ?? "/dashboard",
 }));
 
+// Demo staff logins are bridged to their real Supabase account so the dashboards
+// get a live session (RLS-protected data). NOTE: dev convenience only — for
+// production each user should sign in with their own credentials.
+const REAL_ACCOUNTS: Record<string, { email: string; password: string; dest: string }> = {
+  admin: { email: "sadanns123@gmail.com", password: "Password@55", dest: "/admin/registrations" },
+  accountant: { email: "accountant@bharatone.in", password: "Acct@1234", dest: "/accountant/registrations" },
+  qc: { email: "qc@bharatone.in", password: "QcCheck@12", dest: "/qc/kyc-queue" },
+};
+
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
@@ -175,6 +184,32 @@ function LoginPage() {
                   return;
                 }
                 if (roleAccount) {
+                  const real = REAL_ACCOUNTS[roleAccount.role];
+                  if (real) {
+                    const { error: rErr } = await supabase.auth.signInWithPassword({
+                      email: real.email,
+                      password: real.password,
+                    });
+                    if (!rErr) {
+                      try {
+                        localStorage.setItem(
+                          "bharatone:auth",
+                          JSON.stringify({
+                            name: roleAccount.name,
+                            username: roleAccount.username,
+                            role: roleAccount.role,
+                            portal: roleAccount.portal,
+                            loggedInAt: new Date().toISOString(),
+                          }),
+                        );
+                      } catch {}
+                      toast.success(`Welcome, ${roleAccount.name}`, {
+                        description: `Signed in to ${roleAccount.portal}.`,
+                      });
+                      navigate({ to: real.dest });
+                      return;
+                    }
+                  }
                   try {
                     localStorage.setItem(
                       "bharatone:auth",
