@@ -12,11 +12,13 @@ type U = {
   id: string; email: string; display_name: string; department: string | null; designation: string | null;
   employee_code: string | null; is_active: boolean; created_at: string; roles: string[];
 };
-const ALL_ROLES = ["admin", "accountant", "qc", "telecaller", "manager", "hr_staff", "employee", "retailer"];
+const ALL_ROLES = ["admin", "accountant", "qc", "telecaller", "distributor", "master-distributor", "bde", "dro", "tro", "manager", "hr_staff", "employee", "retailer"];
 const roleColor: Record<string, string> = {
   admin: "bg-rose-100 text-rose-700", accountant: "bg-emerald-100 text-emerald-700", qc: "bg-indigo-100 text-indigo-700",
   telecaller: "bg-orange-100 text-orange-700", retailer: "bg-sky-100 text-sky-700",
 };
+
+function genPwd() { return "Bo" + Math.random().toString(36).slice(2, 8) + "@" + Math.floor(Math.random() * 90 + 10); }
 
 export function AdminUsers() {
   const [rows, setRows] = useState<U[]>([]);
@@ -25,7 +27,7 @@ export function AdminUsers() {
   const [roleFilter, setRoleFilter] = useState("all");
   const [detail, setDetail] = useState<U | null>(null);
   const [showAdd, setShowAdd] = useState(false);
-  const [add, setAdd] = useState({ email: "", password: "", name: "", role: "accountant", department: "" });
+  const [add, setAdd] = useState({ email: "", password: "", name: "", role: "accountant", department: "", designation: "", employee_code: "" });
   const [busy, setBusy] = useState(false);
 
   async function load() {
@@ -61,10 +63,10 @@ export function AdminUsers() {
     if (!add.email || !add.password || !add.name) { toast.error("Email, password and name are required"); return; }
     setBusy(true);
     try {
-      const { error } = await supabase.rpc("create_staff_account", { _email: add.email, _password: add.password, _name: add.name, _role: add.role, _department: add.department || null });
+      const { error } = await supabase.rpc("create_staff_account", { _email: add.email, _password: add.password, _name: add.name, _role: add.role, _department: add.department || null, _designation: add.designation || null, _employee_code: add.employee_code || null });
       if (error) { toast.error("Create failed", { description: error.message }); return; }
       toast.success("Staff account created");
-      setShowAdd(false); setAdd({ email: "", password: "", name: "", role: "accountant", department: "" });
+      setShowAdd(false); setAdd({ email: "", password: "", name: "", role: "accountant", department: "", designation: "", employee_code: "" });
       await load();
     } finally { setBusy(false); }
   };
@@ -140,16 +142,22 @@ export function AdminUsers() {
 
       {/* Add staff */}
       <Dialog open={showAdd} onOpenChange={setShowAdd}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-india-green" /> Create staff account</DialogTitle><DialogDescription>Creates a login with the chosen role.</DialogDescription></DialogHeader>
-          <div className="grid gap-3">
-            <input className={input} placeholder="Email" value={add.email} onChange={(e) => setAdd({ ...add, email: e.target.value })} />
-            <input className={input} placeholder="Temporary password" value={add.password} onChange={(e) => setAdd({ ...add, password: e.target.value })} />
-            <input className={input} placeholder="Full name" value={add.name} onChange={(e) => setAdd({ ...add, name: e.target.value })} />
-            <div className="grid grid-cols-2 gap-3">
-              <select className={input} value={add.role} onChange={(e) => setAdd({ ...add, role: e.target.value })}>{ALL_ROLES.map((r) => <option key={r} value={r}>{r}</option>)}</select>
-              <input className={input} placeholder="Department" value={add.department} onChange={(e) => setAdd({ ...add, department: e.target.value })} />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <input className={input} placeholder="Full name *" value={add.name} onChange={(e) => setAdd({ ...add, name: e.target.value })} />
+            <input className={input} placeholder="Email *" value={add.email} onChange={(e) => setAdd({ ...add, email: e.target.value })} />
+            <div className="flex gap-2 sm:col-span-2">
+              <input className={input} placeholder="Temporary password *" value={add.password} onChange={(e) => setAdd({ ...add, password: e.target.value })} />
+              <Button type="button" variant="outline" onClick={() => setAdd({ ...add, password: genPwd() })}>Generate</Button>
             </div>
+            <div>
+              <label className="text-[11px] font-semibold text-muted-foreground">Role *</label>
+              <select className={input} value={add.role} onChange={(e) => setAdd({ ...add, role: e.target.value })}>{ALL_ROLES.map((r) => <option key={r} value={r}>{r}</option>)}</select>
+            </div>
+            <input className={input} placeholder="Department" value={add.department} onChange={(e) => setAdd({ ...add, department: e.target.value })} />
+            <input className={input} placeholder="Designation" value={add.designation} onChange={(e) => setAdd({ ...add, designation: e.target.value })} />
+            <input className={input} placeholder="Employee / Agent code" value={add.employee_code} onChange={(e) => setAdd({ ...add, employee_code: e.target.value })} />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAdd(false)}><X className="h-4 w-4" /> Cancel</Button>
