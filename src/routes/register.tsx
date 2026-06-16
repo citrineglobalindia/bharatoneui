@@ -291,7 +291,7 @@ function RegisterFlow() {
   const aadhaarOk = /^\d{12}$/.test(data.aadhaarNumber);
 
   const stepValid: Record<string, boolean> = {
-    portal: true,
+    portal: data.emailVerified && data.mobileVerified,
     account: accountVerified,
     personal: data.personalValid,
     business: !!data.shopName.trim() && addrOk && bankOk,
@@ -303,7 +303,7 @@ function RegisterFlow() {
   const blockNext = currentKey in stepValid ? !stepValid[currentKey] : false;
 
   const blockMsg =
-    currentKey === "account"
+    currentKey === "account" || currentKey === "portal"
       ? "Verify email & mobile OTP to continue"
       : currentKey === "business"
         ? "Fill shop name, address, pincode (6 digits) and valid bank details"

@@ -18,6 +18,7 @@ import { Field, inputCls, Notice, StepHeader } from "../field";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { OtpSuccessDialog, type OtpSuccessChannel } from "../otp-success-dialog";
+import { useRegistration } from "../registration-context";
 
 type Stage = "lookup" | "fetched" | "otp" | "verified";
 type Channel = "email" | "mobile";
@@ -46,6 +47,7 @@ function maskMobile(m: string) {
 }
 
 export function OldPortalStep() {
+  const { set: setReg } = useRegistration();
   const [stage, setStage] = useState<Stage>("lookup");
   const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
@@ -70,6 +72,16 @@ export function OldPortalStep() {
 
   const [successOpen, setSuccessOpen] = useState(false);
   const [successChannel, setSuccessChannel] = useState<OtpSuccessChannel>("email");
+
+  useEffect(() => {
+    setReg({
+      email: user?.email ?? "",
+      mobile: user?.mobile ?? "",
+      emailVerified,
+      mobileVerified,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, emailVerified, mobileVerified]);
 
   useEffect(() => {
     if (emailCooldown <= 0) return;
@@ -97,11 +109,18 @@ export function OldPortalStep() {
       setLookupError("No JSKO record found for this username. Please double-check.");
       return;
     }
+    const fetchedName = "Ramesh Kumar Sharma";
     setUser({
       username: username.trim().toUpperCase(),
-      fullName: "Ramesh Kumar Sharma",
+      fullName: fetchedName,
       email: "ramesh.sharma@example.com",
       mobile: "9845098450",
+    });
+    const parts = fetchedName.trim().split(/\s+/);
+    setReg({
+      firstName: parts[0] ?? "",
+      middleName: parts.length > 2 ? parts.slice(1, -1).join(" ") : "",
+      surname: parts.length > 1 ? parts[parts.length - 1] : "",
     });
     setStage("otp");
   };
