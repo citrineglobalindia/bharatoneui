@@ -1,13 +1,21 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { MessageSquare } from "lucide-react";
 import { BdeShell } from "@/components/bde/bde-shell";
+import { PageHeader } from "@/components/retailer/page-header";
+import { FeedbackPanel } from "@/components/account/feedback-panel";
 
 export const Route = createFileRoute("/bde/feedback")({
-  component: () => (
+  head: () => ({ meta: [{ title: "Feedback — BharatOne" }] }),
+  component: Page,
+});
+
+function Page() {
+  return (
     <BdeShell>
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
-        <h1 className="text-2xl font-bold font-display uppercase tracking-widest text-bd mb-2">feedback</h1>
-        <p className="text-muted-foreground">This module is currently under development.</p>
+      <div className="space-y-5">
+        <PageHeader icon={<MessageSquare className="h-5 w-5" />} title="Feedback" subtitle="Share suggestions, report issues, or tell us how we can improve" />
+        <FeedbackPanel />
       </div>
     </BdeShell>
-  ),
-});
+  );
+}
