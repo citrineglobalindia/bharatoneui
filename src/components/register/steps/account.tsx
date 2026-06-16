@@ -70,7 +70,17 @@ export function AccountStep() {
         body: { channel: "email", target: email },
       });
       if (error) {
-        setEmailError("Could not send the code. Please try again in a moment.");
+        let msg = "Could not send the code. Please try again in a moment.";
+        try {
+          const ctx = (error as { context?: Response }).context;
+          const body = ctx ? await ctx.json() : null;
+          if (body?.error) {
+            msg = String(body.error).includes("only send testing emails")
+              ? "Email sending is in test mode — it only works for the Resend owner email right now. Verify a domain to send to anyone."
+              : String(body.error);
+          }
+        } catch { /* keep default */ }
+        setEmailError(msg);
         return;
       }
       setEmailOtp(Array(6).fill(""));
@@ -202,6 +212,9 @@ export function AccountStep() {
           />
         )}
 
+        {emailError && !emailSent && !emailVerified && (
+          <p className="mt-2 text-[12px] font-medium text-red-600">{emailError}</p>
+        )}
         {!emailSent && !emailVerified && (
           <p className="text-[12px] leading-relaxed text-muted-foreground">
             📧 We'll send a 6-digit verification code to this email.
