@@ -62,6 +62,7 @@ import { Route as TroDashboardRouteImport } from './routes/tro.dashboard'
 import { Route as TroCatalogRouteImport } from './routes/tro.catalog'
 import { Route as TroAttendanceRouteImport } from './routes/tro.attendance'
 import { Route as TelecallerRegistrationsRouteImport } from './routes/telecaller.registrations'
+import { Route as ReviewIdRouteImport } from './routes/review.$id'
 import { Route as QcSupportRouteImport } from './routes/qc.support'
 import { Route as QcSettingsRouteImport } from './routes/qc.settings'
 import { Route as QcReviewersRouteImport } from './routes/qc.reviewers'
@@ -405,6 +406,11 @@ const TelecallerRegistrationsRoute = TelecallerRegistrationsRouteImport.update({
   id: '/registrations',
   path: '/registrations',
   getParentRoute: () => TelecallerRoute,
+} as any)
+const ReviewIdRoute = ReviewIdRouteImport.update({
+  id: '/review/$id',
+  path: '/review/$id',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const QcSupportRoute = QcSupportRouteImport.update({
   id: '/qc/support',
@@ -915,6 +921,7 @@ export interface FileRoutesByFullPath {
   '/qc/reviewers': typeof QcReviewersRoute
   '/qc/settings': typeof QcSettingsRoute
   '/qc/support': typeof QcSupportRoute
+  '/review/$id': typeof ReviewIdRoute
   '/telecaller/registrations': typeof TelecallerRegistrationsRoute
   '/tro/attendance': typeof TroAttendanceRoute
   '/tro/catalog': typeof TroCatalogRoute
@@ -1047,6 +1054,7 @@ export interface FileRoutesByTo {
   '/qc/reviewers': typeof QcReviewersRoute
   '/qc/settings': typeof QcSettingsRoute
   '/qc/support': typeof QcSupportRoute
+  '/review/$id': typeof ReviewIdRoute
   '/telecaller/registrations': typeof TelecallerRegistrationsRoute
   '/tro/attendance': typeof TroAttendanceRoute
   '/tro/catalog': typeof TroCatalogRoute
@@ -1181,6 +1189,7 @@ export interface FileRoutesById {
   '/qc/reviewers': typeof QcReviewersRoute
   '/qc/settings': typeof QcSettingsRoute
   '/qc/support': typeof QcSupportRoute
+  '/review/$id': typeof ReviewIdRoute
   '/telecaller/registrations': typeof TelecallerRegistrationsRoute
   '/tro/attendance': typeof TroAttendanceRoute
   '/tro/catalog': typeof TroCatalogRoute
@@ -1316,6 +1325,7 @@ export interface FileRouteTypes {
     | '/qc/reviewers'
     | '/qc/settings'
     | '/qc/support'
+    | '/review/$id'
     | '/telecaller/registrations'
     | '/tro/attendance'
     | '/tro/catalog'
@@ -1448,6 +1458,7 @@ export interface FileRouteTypes {
     | '/qc/reviewers'
     | '/qc/settings'
     | '/qc/support'
+    | '/review/$id'
     | '/telecaller/registrations'
     | '/tro/attendance'
     | '/tro/catalog'
@@ -1581,6 +1592,7 @@ export interface FileRouteTypes {
     | '/qc/reviewers'
     | '/qc/settings'
     | '/qc/support'
+    | '/review/$id'
     | '/telecaller/registrations'
     | '/tro/attendance'
     | '/tro/catalog'
@@ -1703,6 +1715,7 @@ export interface RootRouteChildren {
   QcReviewersRoute: typeof QcReviewersRoute
   QcSettingsRoute: typeof QcSettingsRoute
   QcSupportRoute: typeof QcSupportRoute
+  ReviewIdRoute: typeof ReviewIdRoute
   TroAttendanceRoute: typeof TroAttendanceRoute
   TroCatalogRoute: typeof TroCatalogRoute
   TroDashboardRoute: typeof TroDashboardRoute
@@ -2088,6 +2101,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/telecaller/registrations'
       preLoaderRoute: typeof TelecallerRegistrationsRouteImport
       parentRoute: typeof TelecallerRoute
+    }
+    '/review/$id': {
+      id: '/review/$id'
+      path: '/review/$id'
+      fullPath: '/review/$id'
+      preLoaderRoute: typeof ReviewIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/qc/support': {
       id: '/qc/support'
@@ -2851,6 +2871,7 @@ const rootRouteChildren: RootRouteChildren = {
   QcReviewersRoute: QcReviewersRoute,
   QcSettingsRoute: QcSettingsRoute,
   QcSupportRoute: QcSupportRoute,
+  ReviewIdRoute: ReviewIdRoute,
   TroAttendanceRoute: TroAttendanceRoute,
   TroCatalogRoute: TroCatalogRoute,
   TroDashboardRoute: TroDashboardRoute,

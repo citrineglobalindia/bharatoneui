@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {
   ShieldCheck, CreditCard, CheckCircle2, XCircle, Search, FileText, Copy, Loader2, RefreshCw, Eye, User, Building2, Landmark, Maximize2, X, ExternalLink, FileSearch, Banknote,
@@ -65,6 +66,7 @@ function statusPill(s: string) {
 
 export function RegistrationsReview() {
   const { role } = useAuth();
+  const navigate = useNavigate();
   const [rows, setRows] = useState<RegRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<string>("accountant_review");
@@ -274,7 +276,7 @@ export function RegistrationsReview() {
                 </td>
                 <td className="px-3 py-3">
                   <div className="flex flex-wrap justify-end gap-1.5">
-                    <Button size="sm" variant="outline" className="h-8" onClick={() => openDetail(r)}>
+                    <Button size="sm" variant="outline" className="h-8" onClick={() => navigate({ to: "/review/$id", params: { id: r.id } })}>
                       <Eye className="h-3.5 w-3.5" /> View
                     </Button>
                     {r.status === "accountant_review" && canAccountant && (
