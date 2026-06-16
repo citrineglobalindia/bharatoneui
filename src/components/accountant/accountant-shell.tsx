@@ -87,6 +87,19 @@ const NAV: NavSection[] = [
 ];
 
 function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
+  const [regCount, setRegCount] = useState(0);
+  useEffect(() => {
+    let on = true;
+    (async () => {
+      await ensureStaffSession();
+      const { count } = await supabase
+        .from("retailer_registrations")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "accountant_review");
+      if (on) setRegCount(count ?? 0);
+    })();
+    return () => { on = false; };
+  }, []);
   const navigate = useNavigate();
   return (
     <div className="flex h-full flex-col bg-slate-900 text-slate-100">
@@ -113,6 +126,10 @@ function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: 
               {sec.items.map((it) => {
                 const active = pathname === it.to;
                 const isSignOut = it.label === "Sign Out";
+                const badge =
+                  it.label === "Registration Payments" ? (regCount ? String(regCount) : "0")
+                    : it.label === "Wallet Requests" || it.label === "Withdrawals" ? "0"
+                    : it.badge;
                 return (
                   <li key={it.label}>
                     {isSignOut ? (
@@ -139,9 +156,9 @@ function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: 
                       >
                         <span className={active ? "text-emerald-300" : "text-slate-400"}>{it.icon}</span>
                         <span className="truncate flex-1">{it.label}</span>
-                        {it.badge && it.badge !== "0" && (
+                        {badge && badge !== "0" && (
                           <span className="text-[10px] font-bold bg-emerald-500 text-white px-1.5 py-0.5 rounded-full">
-                            {it.badge}
+                            {badge}
                           </span>
                         )}
                       </Link>
@@ -187,8 +204,19 @@ export function AccountantShell({ children }: { children: React.ReactNode }) {
   const timeStr = now.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
   const dateStr = now.toLocaleDateString("en-IN", { weekday: "short", day: "2-digit", month: "short" });
 
-  const totalPending =
-    pendingCount(REGISTRATION_PAYMENTS) + pendingCount(WALLET_REQUESTS) + pendingCount(WITHDRAWALS);
+  const [totalPending, setTotalPending] = useState(0);
+  useEffect(() => {
+    let on = true;
+    (async () => {
+      await ensureStaffSession();
+      const { count } = await supabase
+        .from("retailer_registrations")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "accountant_review");
+      if (on) setTotalPending(count ?? 0);
+    })();
+    return () => { on = false; };
+  }, []);
 
   const [notifications, setNotifications] = useState<any[]>([]);
   const loadNotifs = async () => {
