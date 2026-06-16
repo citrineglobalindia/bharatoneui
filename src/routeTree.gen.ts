@@ -61,6 +61,7 @@ import { Route as TroFeedbackRouteImport } from './routes/tro.feedback'
 import { Route as TroDashboardRouteImport } from './routes/tro.dashboard'
 import { Route as TroCatalogRouteImport } from './routes/tro.catalog'
 import { Route as TroAttendanceRouteImport } from './routes/tro.attendance'
+import { Route as TelecallerRegistrationsRouteImport } from './routes/telecaller.registrations'
 import { Route as QcSupportRouteImport } from './routes/qc.support'
 import { Route as QcSettingsRouteImport } from './routes/qc.settings'
 import { Route as QcReviewersRouteImport } from './routes/qc.reviewers'
@@ -399,6 +400,11 @@ const TroAttendanceRoute = TroAttendanceRouteImport.update({
   id: '/tro/attendance',
   path: '/tro/attendance',
   getParentRoute: () => rootRouteImport,
+} as any)
+const TelecallerRegistrationsRoute = TelecallerRegistrationsRouteImport.update({
+  id: '/registrations',
+  path: '/registrations',
+  getParentRoute: () => TelecallerRoute,
 } as any)
 const QcSupportRoute = QcSupportRouteImport.update({
   id: '/qc/support',
@@ -830,7 +836,7 @@ export interface FileRoutesByFullPath {
   '/services': typeof ServicesRoute
   '/settings': typeof SettingsRoute
   '/support': typeof SupportRoute
-  '/telecaller': typeof TelecallerRoute
+  '/telecaller': typeof TelecallerRouteWithChildren
   '/telecaller-login': typeof TelecallerLoginRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/track-application': typeof TrackApplicationRoute
@@ -909,6 +915,7 @@ export interface FileRoutesByFullPath {
   '/qc/reviewers': typeof QcReviewersRoute
   '/qc/settings': typeof QcSettingsRoute
   '/qc/support': typeof QcSupportRoute
+  '/telecaller/registrations': typeof TelecallerRegistrationsRoute
   '/tro/attendance': typeof TroAttendanceRoute
   '/tro/catalog': typeof TroCatalogRoute
   '/tro/dashboard': typeof TroDashboardRoute
@@ -962,7 +969,7 @@ export interface FileRoutesByTo {
   '/services': typeof ServicesRoute
   '/settings': typeof SettingsRoute
   '/support': typeof SupportRoute
-  '/telecaller': typeof TelecallerRoute
+  '/telecaller': typeof TelecallerRouteWithChildren
   '/telecaller-login': typeof TelecallerLoginRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/track-application': typeof TrackApplicationRoute
@@ -1040,6 +1047,7 @@ export interface FileRoutesByTo {
   '/qc/reviewers': typeof QcReviewersRoute
   '/qc/settings': typeof QcSettingsRoute
   '/qc/support': typeof QcSupportRoute
+  '/telecaller/registrations': typeof TelecallerRegistrationsRoute
   '/tro/attendance': typeof TroAttendanceRoute
   '/tro/catalog': typeof TroCatalogRoute
   '/tro/dashboard': typeof TroDashboardRoute
@@ -1094,7 +1102,7 @@ export interface FileRoutesById {
   '/services': typeof ServicesRoute
   '/settings': typeof SettingsRoute
   '/support': typeof SupportRoute
-  '/telecaller': typeof TelecallerRoute
+  '/telecaller': typeof TelecallerRouteWithChildren
   '/telecaller-login': typeof TelecallerLoginRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/track-application': typeof TrackApplicationRoute
@@ -1173,6 +1181,7 @@ export interface FileRoutesById {
   '/qc/reviewers': typeof QcReviewersRoute
   '/qc/settings': typeof QcSettingsRoute
   '/qc/support': typeof QcSupportRoute
+  '/telecaller/registrations': typeof TelecallerRegistrationsRoute
   '/tro/attendance': typeof TroAttendanceRoute
   '/tro/catalog': typeof TroCatalogRoute
   '/tro/dashboard': typeof TroDashboardRoute
@@ -1307,6 +1316,7 @@ export interface FileRouteTypes {
     | '/qc/reviewers'
     | '/qc/settings'
     | '/qc/support'
+    | '/telecaller/registrations'
     | '/tro/attendance'
     | '/tro/catalog'
     | '/tro/dashboard'
@@ -1438,6 +1448,7 @@ export interface FileRouteTypes {
     | '/qc/reviewers'
     | '/qc/settings'
     | '/qc/support'
+    | '/telecaller/registrations'
     | '/tro/attendance'
     | '/tro/catalog'
     | '/tro/dashboard'
@@ -1570,6 +1581,7 @@ export interface FileRouteTypes {
     | '/qc/reviewers'
     | '/qc/settings'
     | '/qc/support'
+    | '/telecaller/registrations'
     | '/tro/attendance'
     | '/tro/catalog'
     | '/tro/dashboard'
@@ -1624,7 +1636,7 @@ export interface RootRouteChildren {
   ServicesRoute: typeof ServicesRoute
   SettingsRoute: typeof SettingsRoute
   SupportRoute: typeof SupportRoute
-  TelecallerRoute: typeof TelecallerRoute
+  TelecallerRoute: typeof TelecallerRouteWithChildren
   TelecallerLoginRoute: typeof TelecallerLoginRoute
   TermsAndConditionsRoute: typeof TermsAndConditionsRoute
   TrackApplicationRoute: typeof TrackApplicationRoute
@@ -2069,6 +2081,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/tro/attendance'
       preLoaderRoute: typeof TroAttendanceRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/telecaller/registrations': {
+      id: '/telecaller/registrations'
+      path: '/registrations'
+      fullPath: '/telecaller/registrations'
+      preLoaderRoute: typeof TelecallerRegistrationsRouteImport
+      parentRoute: typeof TelecallerRoute
     }
     '/qc/support': {
       id: '/qc/support'
@@ -2659,6 +2678,18 @@ const BdeRouteChildren: BdeRouteChildren = {
 
 const BdeRouteWithChildren = BdeRoute._addFileChildren(BdeRouteChildren)
 
+interface TelecallerRouteChildren {
+  TelecallerRegistrationsRoute: typeof TelecallerRegistrationsRoute
+}
+
+const TelecallerRouteChildren: TelecallerRouteChildren = {
+  TelecallerRegistrationsRoute: TelecallerRegistrationsRoute,
+}
+
+const TelecallerRouteWithChildren = TelecallerRoute._addFileChildren(
+  TelecallerRouteChildren,
+)
+
 interface DistributorOfficersRouteChildren {
   DistributorOfficersIdRoute: typeof DistributorOfficersIdRoute
 }
@@ -2753,7 +2784,7 @@ const rootRouteChildren: RootRouteChildren = {
   ServicesRoute: ServicesRoute,
   SettingsRoute: SettingsRoute,
   SupportRoute: SupportRoute,
-  TelecallerRoute: TelecallerRoute,
+  TelecallerRoute: TelecallerRouteWithChildren,
   TelecallerLoginRoute: TelecallerLoginRoute,
   TermsAndConditionsRoute: TermsAndConditionsRoute,
   TrackApplicationRoute: TrackApplicationRoute,

@@ -6,6 +6,7 @@ const REAL_ACCOUNTS: Record<string, { email: string; password: string }> = {
   admin: { email: "sadanns123@gmail.com", password: "Password@55" },
   accountant: { email: "accountant@bharatone.in", password: "Acct@1234" },
   qc: { email: "qc@bharatone.in", password: "QcCheck@12" },
+  telecaller: { email: "telecaller@bharatone.in", password: "Tele@1234" },
 };
 
 function storedRole(): string | undefined {

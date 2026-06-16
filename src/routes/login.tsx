@@ -53,6 +53,7 @@ const REAL_ACCOUNTS: Record<string, { email: string; password: string; dest: str
   admin: { email: "sadanns123@gmail.com", password: "Password@55", dest: "/admin/registrations" },
   accountant: { email: "accountant@bharatone.in", password: "Acct@1234", dest: "/accountant/registrations" },
   qc: { email: "qc@bharatone.in", password: "QcCheck@12", dest: "/qc/kyc-queue" },
+  telecaller: { email: "telecaller@bharatone.in", password: "Tele@1234", dest: "/telecaller/registrations" },
 };
 
 export const Route = createFileRoute("/login")({
@@ -160,7 +161,9 @@ function LoginPage() {
                         ? "/accountant/registrations"
                         : set.has("qc")
                           ? "/qc/kyc-queue"
-                          : "/dashboard";
+                          : set.has("telecaller")
+                            ? "/telecaller/registrations"
+                            : "/dashboard";
                     toast.success("Welcome back");
                     navigate({ to: dest });
                     return;

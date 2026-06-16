@@ -32,15 +32,19 @@ export type RegRow = {
   created_at: string;
 };
 
-const TABS = ["under_review", "verified", "approved", "rejected"] as const;
+const TABS = ["accountant_review", "qc_review", "telecaller", "approved", "rejected"] as const;
 const TAB_LABEL: Record<string, string> = {
-  under_review: "Pending", verified: "Verified", approved: "Approved", rejected: "Rejected",
+  accountant_review: "Accountant", qc_review: "QC", telecaller: "Telecaller", approved: "Approved", rejected: "Rejected",
+};
+const PRIMARY_TAB: Record<string, string> = {
+  accountant: "accountant_review", qc: "qc_review", telecaller: "telecaller", admin: "accountant_review",
 };
 
 function statusPill(s: string) {
   const map: Record<string, string> = {
-    under_review: "bg-amber-100 text-amber-700",
-    verified: "bg-indigo-100 text-indigo-700",
+    accountant_review: "bg-amber-100 text-amber-700",
+    qc_review: "bg-indigo-100 text-indigo-700",
+    telecaller: "bg-orange-100 text-orange-700",
     approved: "bg-emerald-100 text-emerald-700",
     rejected: "bg-rose-100 text-rose-700",
     on_hold: "bg-slate-100 text-slate-700",
@@ -52,7 +56,7 @@ export function RegistrationsReview() {
   const { role } = useAuth();
   const [rows, setRows] = useState<RegRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<string>("under_review");
+  const [tab, setTab] = useState<string>("accountant_review");
   const [query, setQuery] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [creds, setCreds] = useState<{ username: string; email: string; password: string } | null>(null);
@@ -113,6 +117,7 @@ export function RegistrationsReview() {
     }
   }
   useEffect(() => { (async () => { await ensureStaffSession(); load(); })(); }, []);
+  useEffect(() => { if (role && PRIMARY_TAB[role]) setTab(PRIMARY_TAB[role]); }, [role]);
 
   const filtered = useMemo(() => {
     return rows
@@ -141,24 +146,28 @@ export function RegistrationsReview() {
     } finally { setBusy(null); }
   }
 
-  const verifyPayment = (r: RegRow, received: boolean) =>
-    run(r.id, () => supabase.rpc("verify_retailer_payment", { reg_id: r.id, received, notes: null }),
-      received ? "Payment marked received" : "Payment marked not received");
-
-  const verifyQc = (r: RegRow, verified: boolean) =>
-    run(r.id, () => supabase.rpc("verify_retailer_qc", { reg_id: r.id, verified, notes: null }),
-      verified ? "Retailer QC verified" : "QC verification cleared");
-
-  const reject = (r: RegRow) => {
-    const reason = window.prompt("Reason for rejection?");
-    if (!reason) return;
-    run(r.id, () => supabase.rpc("reject_retailer_registration", { reg_id: r.id, reason }), "Registration rejected");
+  const acctApprove = (r: RegRow) =>
+    run(r.id, () => supabase.rpc("verify_retailer_payment", { reg_id: r.id, received: true, notes: null }),
+      "Payment verified — forwarded to QC");
+  const acctReject = (r: RegRow) => {
+    const reason = window.prompt("Reason for rejection (will be sent to Telecaller):");
+    if (reason === null) return;
+    run(r.id, () => supabase.rpc("verify_retailer_payment", { reg_id: r.id, received: false, notes: reason || "Payment not received" }),
+      "Sent to Telecaller for follow-up");
   };
-
-  const approve = async (r: RegRow) => {
-    const data = await run(r.id, () => supabase.rpc("approve_retailer_registration", { reg_id: r.id }), "Retailer approved");
+  const qcApprove = async (r: RegRow) => {
+    const data = await run(r.id, () => supabase.rpc("verify_retailer_qc", { reg_id: r.id, verified: true, notes: null }),
+      "Verified — retailer login created");
     if (data) setCreds(data as { username: string; email: string; password: string });
   };
+  const qcReject = (r: RegRow) => {
+    const reason = window.prompt("Reason for QC rejection (will be sent to Telecaller):");
+    if (reason === null) return;
+    run(r.id, () => supabase.rpc("verify_retailer_qc", { reg_id: r.id, verified: false, notes: reason || "Rejected by QC" }),
+      "Sent to Telecaller for follow-up");
+  };
+  const reroute = (r: RegRow) =>
+    run(r.id, () => supabase.rpc("route_to_accountant", { reg_id: r.id, notes: null }), "Re-sent to Accountant");
 
   const viewDocs = async (r: RegRow) => {
     const items: { label: string; path: string }[] = [
@@ -172,9 +181,9 @@ export function RegistrationsReview() {
     }
   };
 
-  const canPay = role === "accountant" || role === "admin";
+  const canAccountant = role === "accountant" || role === "admin";
   const canQc = role === "qc" || role === "admin";
-  const canApprove = role === "admin";
+  const canTele = role === "telecaller" || role === "admin";
 
   return (
     <div className="space-y-4">
@@ -237,31 +246,36 @@ export function RegistrationsReview() {
                   </div>
                 </td>
                 <td className="px-3 py-3">
-                  <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${statusPill(r.status)}`}>{r.status}</span>
+                  <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${statusPill(r.status)}`}>{r.status.replace("_", " ")}</span>
                 </td>
                 <td className="px-3 py-3">
                   <div className="flex flex-wrap justify-end gap-1.5">
                     <Button size="sm" variant="outline" className="h-8" onClick={() => openDetail(r)}>
                       <Eye className="h-3.5 w-3.5" /> View
                     </Button>
-                    {canPay && !r.payment_verified && r.status !== "approved" && r.status !== "rejected" && (
-                      <Button size="sm" className="h-8 bg-india-green text-white" disabled={busy === r.id} onClick={() => verifyPayment(r, true)}>
-                        {busy === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CreditCard className="h-3.5 w-3.5" />} Mark Paid
-                      </Button>
+                    {r.status === "accountant_review" && canAccountant && (
+                      <>
+                        <Button size="sm" className="h-8 bg-india-green text-white" disabled={busy === r.id} onClick={() => acctApprove(r)}>
+                          {busy === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CreditCard className="h-3.5 w-3.5" />} Approve
+                        </Button>
+                        <Button size="sm" variant="outline" className="h-8 text-rose-600" disabled={busy === r.id} onClick={() => acctReject(r)}>
+                          <XCircle className="h-3.5 w-3.5" /> Reject
+                        </Button>
+                      </>
                     )}
-                    {canQc && !r.qc_verified && r.status !== "approved" && r.status !== "rejected" && (
-                      <Button size="sm" className="h-8 bg-indigo-600 text-white" disabled={busy === r.id} onClick={() => verifyQc(r, true)}>
-                        {busy === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5" />} QC Verify
-                      </Button>
+                    {r.status === "qc_review" && canQc && (
+                      <>
+                        <Button size="sm" className="h-8 bg-saffron-gradient text-white" disabled={busy === r.id} onClick={() => qcApprove(r)}>
+                          {busy === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />} Verify & Approve
+                        </Button>
+                        <Button size="sm" variant="outline" className="h-8 text-rose-600" disabled={busy === r.id} onClick={() => qcReject(r)}>
+                          <XCircle className="h-3.5 w-3.5" /> Reject
+                        </Button>
+                      </>
                     )}
-                    {canApprove && r.payment_verified && r.qc_verified && r.status !== "approved" && r.status !== "rejected" && (
-                      <Button size="sm" className="h-8 bg-saffron-gradient text-white" disabled={busy === r.id} onClick={() => approve(r)}>
-                        {busy === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />} Approve
-                      </Button>
-                    )}
-                    {(canApprove || canQc || canPay) && r.status !== "approved" && r.status !== "rejected" && (
-                      <Button size="sm" variant="outline" className="h-8 text-rose-600" disabled={busy === r.id} onClick={() => reject(r)}>
-                        <XCircle className="h-3.5 w-3.5" /> Reject
+                    {r.status === "telecaller" && canTele && (
+                      <Button size="sm" className="h-8 bg-indigo-600 text-white" disabled={busy === r.id} onClick={() => reroute(r)}>
+                        {busy === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />} Re-send to Accountant
                       </Button>
                     )}
                   </div>
