@@ -1,6 +1,7 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 import {
   LayoutDashboard,
   ClipboardCheck,
@@ -119,7 +120,7 @@ function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: 
                         onClick={() => {
                           onNavigate?.();
                           try { localStorage.removeItem("bharatone:auth"); } catch {}
-                          navigate({ to: "/qc-login" });
+                          void supabase.auth.signOut(); navigate({ to: "/login" });
                         }}
                         className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-rose-300 hover:bg-rose-500/10 hover:text-rose-200"
                       >
@@ -191,6 +192,7 @@ export function QcShell({ children }: { children: React.ReactNode }) {
   const [notifications, setNotifications] = useState<any[]>([]);
   const loadNotifs = async () => {
     try {
+      await ensureStaffSession();
       const { data } = await supabase
         .from("notifications")
         .select("id,type,title,body,link,created_at,read")
@@ -419,7 +421,7 @@ export function QcShell({ children }: { children: React.ReactNode }) {
                   className="text-rose-600 focus:text-rose-700"
                   onClick={() => {
                     try { localStorage.removeItem("bharatone:auth"); } catch {}
-                    navigate({ to: "/qc-login" });
+                    void supabase.auth.signOut(); navigate({ to: "/login" });
                   }}
                 >
                   <LogOut className="h-4 w-4" /> Sign out

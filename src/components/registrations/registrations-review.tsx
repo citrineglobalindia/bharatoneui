@@ -8,6 +8,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { ensureStaffSession, withTimeout } from "@/integrations/supabase/ensure-session";
 import { useAuth } from "@/hooks/use-auth";
 
 export type RegRow = {
@@ -87,10 +88,12 @@ export function RegistrationsReview() {
   async function load() {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("retailer_registrations")
-        .select("id, application_id, first_name, surname, shop_name, email, mobile, status, payment_verified, qc_verified, payment_amount, payment_utr, pan_doc_path, aadhaar_doc_path, shop_photo_path, selfie_path, payment_screenshot_path, created_at")
-        .order("created_at", { ascending: false });
+      const { data, error } = await withTimeout(
+        supabase
+          .from("retailer_registrations")
+          .select("id, application_id, first_name, surname, shop_name, email, mobile, status, payment_verified, qc_verified, payment_amount, payment_utr, pan_doc_path, aadhaar_doc_path, shop_photo_path, selfie_path, payment_screenshot_path, created_at")
+          .order("created_at", { ascending: false }),
+      );
       if (error) {
         toast.error("Couldn't load registrations", {
           description: error.message.includes("JWT") || error.message.includes("auth")
@@ -108,7 +111,7 @@ export function RegistrationsReview() {
       setLoading(false);
     }
   }
-  useEffect(() => { load(); }, []);
+  useEffect(() => { (async () => { await ensureStaffSession(); load(); })(); }, []);
 
   const filtered = useMemo(() => {
     return rows

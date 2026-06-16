@@ -16,6 +16,7 @@ import { PageHeader, StatusBadge } from "@/components/retailer/page-header";
 import { StatCard } from "@/components/retailer/stat-card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { ensureStaffSession, withTimeout } from "@/integrations/supabase/ensure-session";
 import {
   REGISTRATION_PAYMENTS,
   WALLET_REQUESTS,
