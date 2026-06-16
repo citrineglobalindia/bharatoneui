@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
-  ShieldCheck, CreditCard, CheckCircle2, XCircle, Search, FileText, Copy, Loader2, RefreshCw, Eye,
+  ShieldCheck, CreditCard, CheckCircle2, XCircle, Search, FileText, Copy, Loader2, RefreshCw, Eye, User, Building2, Landmark, Maximize2, X, ExternalLink, FileSearch, Banknote,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -59,6 +59,7 @@ export function RegistrationsReview() {
   const [detail, setDetail] = useState<any | null>(null);
   const [detailUrls, setDetailUrls] = useState<Record<string, string>>({});
   const [detailLoading, setDetailLoading] = useState(false);
+  const [lightbox, setLightbox] = useState<{ url: string; kind: string; label: string } | null>(null);
 
   const openDetail = async (r: RegRow) => {
     setDetailLoading(true);
@@ -272,118 +273,182 @@ export function RegistrationsReview() {
       </div>
 
       <Dialog open={!!detail} onOpenChange={(o) => !o && setDetail(null)}>
-        <DialogContent className="max-h-[88vh] w-[min(900px,95vw)] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-india-green" /> Application details
-            </DialogTitle>
-            <DialogDescription>Full information submitted by the applicant.</DialogDescription>
-          </DialogHeader>
+        <DialogContent className="max-h-[92vh] w-[min(980px,96vw)] overflow-y-auto p-0">
           {detailLoading || !detail || !detail.application_id ? (
-            <div className="py-12 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></div>
+            <div className="py-20 text-center text-muted-foreground"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></div>
           ) : (
-            <div className="space-y-5 text-sm">
-              <div className="flex flex-wrap items-center justify-between gap-2">
+            <>
+              {/* Header banner */}
+              <div className="relative overflow-hidden rounded-t-lg bg-gradient-to-r from-orange-50 via-white to-emerald-50 px-6 pb-5 pt-6">
+                <div className="flex flex-wrap items-center gap-4">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-saffron-gradient text-lg font-extrabold text-white shadow-elev">
+                    {(detail.first_name?.[0] ?? "") + (detail.surname?.[0] ?? "")}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h2 className="font-display text-xl font-extrabold leading-tight">{detail.first_name} {detail.middle_name || ""} {detail.surname}</h2>
+                    <p className="font-mono text-xs text-muted-foreground">{detail.application_id}{detail.username ? " · " + detail.username : ""} · {detail.shop_name}</p>
+                  </div>
+                  <span className={`rounded-full px-3 py-1 text-xs font-bold ${statusPill(detail.status)}`}>{detail.status.replace("_", " ")}</span>
+                </div>
+                <div className="mt-4 grid grid-cols-3 gap-3">
+                  <div className="rounded-xl border border-border bg-white/70 px-3 py-2">
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Amount</p>
+                    <p className="font-display text-base font-extrabold">{detail.payment_amount ? `₹${Number(detail.payment_amount).toLocaleString("en-IN")}` : "—"}</p>
+                  </div>
+                  <div className="rounded-xl border border-border bg-white/70 px-3 py-2">
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Payment</p>
+                    <p className={`text-sm font-bold ${detail.payment_verified ? "text-emerald-600" : "text-amber-600"}`}>{detail.payment_verified ? "Verified" : "Pending"}</p>
+                  </div>
+                  <div className="rounded-xl border border-border bg-white/70 px-3 py-2">
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground">QC</p>
+                    <p className={`text-sm font-bold ${detail.qc_verified ? "text-emerald-600" : "text-amber-600"}`}>{detail.qc_verified ? "Verified" : "Pending"}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4 px-6 py-5">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <DCard icon={<User className="h-4 w-4" />} title="Account">
+                    <DField label="Email" value={detail.email} />
+                    <DField label="Mobile" value={detail.mobile} />
+                    <DField label="Email verified" value={detail.email_verified ? "Yes" : "No"} />
+                    <DField label="Mobile verified" value={detail.mobile_verified ? "Yes" : "No"} />
+                  </DCard>
+                  <DCard icon={<User className="h-4 w-4" />} title="Personal">
+                    <DField label="First name" value={detail.first_name} />
+                    <DField label="Middle name" value={detail.middle_name} />
+                    <DField label="Surname" value={detail.surname} />
+                    <DField label="Date of birth" value={detail.dob} />
+                  </DCard>
+                </div>
+
+                <DCard icon={<Building2 className="h-4 w-4" />} title="Business & Address">
+                  <DField label="Shop / Business" value={detail.shop_name} />
+                  <DField label="Address type" value={detail.address_type} />
+                  <DField label="Building / Shop No" value={detail.building_shop_no} />
+                  <DField label="Street / Area" value={detail.street_area} />
+                  <DField label="Ward" value={detail.ward_number} />
+                  <DField label="Landmark" value={detail.landmark} />
+                  <DField label="Village" value={detail.village_name} />
+                  <DField label="Gram Panchayat" value={detail.gram_panchayat} />
+                  <DField label="Hobli" value={detail.hobli_name} />
+                  <DField label="Post Office" value={detail.post_office} />
+                  <DField label="Taluk" value={detail.taluk} />
+                  <DField label="City" value={detail.city} />
+                  <DField label="District" value={detail.district} />
+                  <DField label="State" value={detail.state} />
+                  <DField label="Pincode" value={detail.pincode} />
+                  <DField label="Location" value={detail.latitude && detail.longitude ? `${detail.latitude}, ${detail.longitude}` : null} />
+                </DCard>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <DCard icon={<Landmark className="h-4 w-4" />} title="Bank">
+                    <DField label="Account holder" value={detail.bank_holder_name} />
+                    <DField label="Bank" value={detail.bank_name} />
+                    <DField label="Account number" value={detail.account_number} />
+                    <DField label="IFSC" value={detail.ifsc} />
+                    <DField label="Account type" value={detail.account_type} />
+                  </DCard>
+                  <DCard icon={<FileSearch className="h-4 w-4" />} title="KYC">
+                    <DField label="PAN number" value={detail.pan_number} />
+                    <DField label="Aadhaar number" value={detail.aadhaar_number} />
+                    <DField label="Declaration agreed" value={detail.declaration_agreed ? "Yes" : "No"} />
+                  </DCard>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <DCard icon={<Banknote className="h-4 w-4" />} title="Payment">
+                    <DField label="Amount" value={detail.payment_amount ? `₹${Number(detail.payment_amount).toLocaleString("en-IN")}` : null} />
+                    <DField label="UTR" value={detail.payment_utr} />
+                    <DField label="Method" value={detail.payment_method} />
+                    <DField label="Paid on" value={detail.payment_paid_on} />
+                    <DField label="Payer name" value={detail.payer_name} />
+                    <DField label="Payer bank" value={detail.payer_bank} />
+                  </DCard>
+                  <DCard icon={<ShieldCheck className="h-4 w-4" />} title="Verification">
+                    <DField label="Payment verified" value={detail.payment_verified ? "Yes" : "No"} />
+                    <DField label="Payment notes" value={detail.payment_verification_notes} />
+                    <DField label="QC verified" value={detail.qc_verified ? "Yes" : "No"} />
+                    <DField label="QC notes" value={detail.qc_notes} />
+                  </DCard>
+                </div>
+
+                {/* Documents */}
                 <div>
-                  <div className="font-display text-lg font-bold">{detail.first_name} {detail.middle_name || ""} {detail.surname}</div>
-                  <div className="font-mono text-xs text-muted-foreground">{detail.application_id}{detail.username ? " · " + detail.username : ""}</div>
-                </div>
-                <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusPill(detail.status)}`}>{detail.status}</span>
-              </div>
-
-              <DSection title="Account">
-                <DField label="Email" value={detail.email} />
-                <DField label="Mobile" value={detail.mobile} />
-                <DField label="Email verified" value={detail.email_verified ? "Yes" : "No"} />
-                <DField label="Mobile verified" value={detail.mobile_verified ? "Yes" : "No"} />
-              </DSection>
-
-              <DSection title="Personal">
-                <DField label="First name" value={detail.first_name} />
-                <DField label="Middle name" value={detail.middle_name} />
-                <DField label="Surname" value={detail.surname} />
-                <DField label="Date of birth" value={detail.dob} />
-              </DSection>
-
-              <DSection title="Business & Address">
-                <DField label="Shop / Business" value={detail.shop_name} />
-                <DField label="Address type" value={detail.address_type} />
-                <DField label="Building / Shop No" value={detail.building_shop_no} />
-                <DField label="Street / Area" value={detail.street_area} />
-                <DField label="Ward" value={detail.ward_number} />
-                <DField label="Landmark" value={detail.landmark} />
-                <DField label="Village" value={detail.village_name} />
-                <DField label="Gram Panchayat" value={detail.gram_panchayat} />
-                <DField label="Hobli" value={detail.hobli_name} />
-                <DField label="Post Office" value={detail.post_office} />
-                <DField label="Taluk" value={detail.taluk} />
-                <DField label="City" value={detail.city} />
-                <DField label="District" value={detail.district} />
-                <DField label="State" value={detail.state} />
-                <DField label="Pincode" value={detail.pincode} />
-                <DField label="Location" value={detail.latitude && detail.longitude ? `${detail.latitude}, ${detail.longitude}` : null} />
-              </DSection>
-
-              <DSection title="Bank">
-                <DField label="Account holder" value={detail.bank_holder_name} />
-                <DField label="Bank" value={detail.bank_name} />
-                <DField label="Account number" value={detail.account_number} />
-                <DField label="IFSC" value={detail.ifsc} />
-                <DField label="Account type" value={detail.account_type} />
-              </DSection>
-
-              <DSection title="KYC">
-                <DField label="PAN number" value={detail.pan_number} />
-                <DField label="Aadhaar number" value={detail.aadhaar_number} />
-              </DSection>
-
-              <DSection title="Payment">
-                <DField label="Amount" value={detail.payment_amount ? `₹${Number(detail.payment_amount).toLocaleString("en-IN")}` : null} />
-                <DField label="UTR" value={detail.payment_utr} />
-                <DField label="Method" value={detail.payment_method} />
-                <DField label="Paid on" value={detail.payment_paid_on} />
-                <DField label="Payer name" value={detail.payer_name} />
-                <DField label="Payer bank" value={detail.payer_bank} />
-              </DSection>
-
-              <DSection title="Verification">
-                <DField label="Payment verified" value={detail.payment_verified ? "Yes" : "No"} />
-                <DField label="Payment notes" value={detail.payment_verification_notes} />
-                <DField label="QC verified" value={detail.qc_verified ? "Yes" : "No"} />
-                <DField label="QC notes" value={detail.qc_notes} />
-                <DField label="Declaration agreed" value={detail.declaration_agreed ? "Yes" : "No"} />
-              </DSection>
-
-              <div>
-                <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Documents</p>
-                <div className="flex flex-wrap gap-2">
-                  {[["PAN","pan"],["Aadhaar","aadhaar"],["Shop photo","shop"],["Police verification","police"],["Selfie","selfie"],["Video KYC","video"],["Payment receipt","payment"]].map(([label,key]) => (
-                    detailUrls[key as string] ? (
-                      <a key={key as string} href={detailUrls[key as string]} target="_blank" rel="noreferrer"
-                        className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-semibold text-india-green hover:bg-muted">
-                        <FileText className="h-3.5 w-3.5" /> {label}
-                      </a>
-                    ) : (
-                      <span key={key as string} className="inline-flex items-center gap-1 rounded-lg border border-dashed border-border px-3 py-1.5 text-xs text-muted-foreground">{label}: —</span>
-                    )
-                  ))}
-                </div>
-                <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  {["selfie","shop","payment"].map((k) => detailUrls[k] ? (
-                    <img key={k} src={detailUrls[k]} alt={k} className="h-32 w-full rounded-lg border border-border object-cover" />
-                  ) : null)}
-                  {detailUrls.video ? (
-                    <video key="v" src={detailUrls.video} controls className="h-32 w-full rounded-lg border border-border bg-black object-cover" />
-                  ) : null}
+                  <p className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                    <FileText className="h-4 w-4 text-india-green" /> Documents & Media
+                  </p>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                    {([
+                      ["PAN Card", "pan", detail.pan_doc_path],
+                      ["Aadhaar", "aadhaar", detail.aadhaar_doc_path],
+                      ["Shop Photo", "shop", detail.shop_photo_path],
+                      ["Police Verification", "police", detail.police_verification_path],
+                      ["Selfie", "selfie", detail.selfie_path],
+                      ["Video KYC", "video", detail.video_kyc_path],
+                      ["Payment Receipt", "payment", detail.payment_screenshot_path],
+                    ] as [string, string, string | null][]).map(([label, key, path]) => {
+                      const url = detailUrls[key];
+                      const kind = fileKind(path);
+                      if (!url) return (
+                        <div key={key} className="flex h-32 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-border text-[11px] text-muted-foreground">
+                          <FileText className="h-5 w-5 opacity-40" /> {label}<span className="text-[10px]">Not provided</span>
+                        </div>
+                      );
+                      return (
+                        <button key={key} type="button" onClick={() => setLightbox({ url, kind, label })}
+                          className="group relative h-32 overflow-hidden rounded-xl border border-border bg-muted/40 text-left transition hover:border-india-green hover:shadow-elev">
+                          {kind === "image" ? (
+                            <img src={url} alt={label} className="h-full w-full object-cover" />
+                          ) : kind === "video" ? (
+                            <video src={url} className="h-full w-full object-cover" muted />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center"><FileText className="h-8 w-8 text-muted-foreground" /></div>
+                          )}
+                          <span className="absolute inset-x-0 bottom-0 bg-black/55 px-2 py-1 text-[10px] font-semibold text-white">{label}</span>
+                          <span className="absolute right-1.5 top-1.5 grid h-7 w-7 place-items-center rounded-lg bg-black/55 text-white opacity-0 transition group-hover:opacity-100">
+                            <Maximize2 className="h-3.5 w-3.5" />
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
-            </div>
+
+              <DialogFooter className="border-t border-border px-6 py-3">
+                <Button variant="outline" onClick={() => setDetail(null)}>Close</Button>
+              </DialogFooter>
+            </>
           )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDetail(null)}>Close</Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Full-screen document / video viewer */}
+      {lightbox && (
+        <div className="fixed inset-0 z-[80] flex flex-col bg-black/90 backdrop-blur-sm" onClick={() => setLightbox(null)}>
+          <div className="flex items-center justify-between px-4 py-3 text-white">
+            <span className="truncate text-sm font-semibold">{lightbox.label}</span>
+            <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+              <a href={lightbox.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-lg bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20">
+                <ExternalLink className="h-3.5 w-3.5" /> Open in new tab
+              </a>
+              <button onClick={() => setLightbox(null)} className="inline-flex items-center gap-1 rounded-lg bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20">
+                <X className="h-3.5 w-3.5" /> Close
+              </button>
+            </div>
+          </div>
+          <div className="flex flex-1 items-center justify-center overflow-auto p-4" onClick={(e) => e.stopPropagation()}>
+            {lightbox.kind === "image" ? (
+              <img src={lightbox.url} alt={lightbox.label} className="max-h-full max-w-full object-contain" />
+            ) : lightbox.kind === "video" ? (
+              <video src={lightbox.url} controls autoPlay className="max-h-full max-w-full rounded-lg bg-black" />
+            ) : (
+              <iframe src={lightbox.url} title={lightbox.label} className="h-full w-full rounded-lg bg-white" />
+            )}
+          </div>
+        </div>
+      )}
 
       <Dialog open={!!creds} onOpenChange={(o) => !o && setCreds(null)}>
         <DialogContent>
@@ -413,11 +478,22 @@ export function RegistrationsReview() {
   );
 }
 
-function DSection({ title, children }: { title: string; children: React.ReactNode }) {
+function fileKind(path?: string | null): "image" | "video" | "pdf" | "other" {
+  if (!path) return "other";
+  const ext = path.split("?")[0].split(".").pop()?.toLowerCase() ?? "";
+  if (["jpg", "jpeg", "png", "webp", "gif"].includes(ext)) return "image";
+  if (["webm", "mp4", "mov", "ogg", "m4v"].includes(ext)) return "video";
+  if (ext === "pdf") return "pdf";
+  return "other";
+}
+function DCard({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
   return (
-    <div>
-      <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">{title}</p>
-      <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">{children}</div>
+    <div className="rounded-2xl border border-border bg-card p-4 shadow-soft">
+      <p className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+        <span className="grid h-6 w-6 place-items-center rounded-lg bg-india-green/10 text-india-green">{icon}</span>
+        {title}
+      </p>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-3">{children}</div>
     </div>
   );
 }

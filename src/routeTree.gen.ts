@@ -119,6 +119,7 @@ import { Route as BdeMerchantsRouteImport } from './routes/bde.merchants'
 import { Route as BdeLeadsRouteImport } from './routes/bde.leads'
 import { Route as BdeFeedbackRouteImport } from './routes/bde.feedback'
 import { Route as BdeDashboardRouteImport } from './routes/bde.dashboard'
+import { Route as AdminRegistrationsRouteImport } from './routes/admin.registrations'
 import { Route as AccountantWithdrawalsRouteImport } from './routes/accountant.withdrawals'
 import { Route as AccountantWalletRequestsRouteImport } from './routes/accountant.wallet-requests'
 import { Route as AccountantSupportRouteImport } from './routes/accountant.support'
@@ -690,6 +691,11 @@ const BdeDashboardRoute = BdeDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => BdeRoute,
 } as any)
+const AdminRegistrationsRoute = AdminRegistrationsRouteImport.update({
+  id: '/registrations',
+  path: '/registrations',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AccountantWithdrawalsRoute = AccountantWithdrawalsRouteImport.update({
   id: '/accountant/withdrawals',
   path: '/accountant/withdrawals',
@@ -792,7 +798,7 @@ const DistributorOfficersIdRoute = DistributorOfficersIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/accountant-login': typeof AccountantLoginRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/admin-login': typeof AdminLoginRoute
   '/aeps': typeof AepsRoute
   '/aeps-activation': typeof AepsActivationRoute
@@ -844,6 +850,7 @@ export interface FileRoutesByFullPath {
   '/accountant/support': typeof AccountantSupportRoute
   '/accountant/wallet-requests': typeof AccountantWalletRequestsRoute
   '/accountant/withdrawals': typeof AccountantWithdrawalsRoute
+  '/admin/registrations': typeof AdminRegistrationsRoute
   '/bde/dashboard': typeof BdeDashboardRoute
   '/bde/feedback': typeof BdeFeedbackRoute
   '/bde/leads': typeof BdeLeadsRoute
@@ -923,7 +930,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/accountant-login': typeof AccountantLoginRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/admin-login': typeof AdminLoginRoute
   '/aeps': typeof AepsRoute
   '/aeps-activation': typeof AepsActivationRoute
@@ -975,6 +982,7 @@ export interface FileRoutesByTo {
   '/accountant/support': typeof AccountantSupportRoute
   '/accountant/wallet-requests': typeof AccountantWalletRequestsRoute
   '/accountant/withdrawals': typeof AccountantWithdrawalsRoute
+  '/admin/registrations': typeof AdminRegistrationsRoute
   '/bde/dashboard': typeof BdeDashboardRoute
   '/bde/feedback': typeof BdeFeedbackRoute
   '/bde/leads': typeof BdeLeadsRoute
@@ -1054,7 +1062,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/accountant-login': typeof AccountantLoginRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/admin-login': typeof AdminLoginRoute
   '/aeps': typeof AepsRoute
   '/aeps-activation': typeof AepsActivationRoute
@@ -1106,6 +1114,7 @@ export interface FileRoutesById {
   '/accountant/support': typeof AccountantSupportRoute
   '/accountant/wallet-requests': typeof AccountantWalletRequestsRoute
   '/accountant/withdrawals': typeof AccountantWithdrawalsRoute
+  '/admin/registrations': typeof AdminRegistrationsRoute
   '/bde/dashboard': typeof BdeDashboardRoute
   '/bde/feedback': typeof BdeFeedbackRoute
   '/bde/leads': typeof BdeLeadsRoute
@@ -1239,6 +1248,7 @@ export interface FileRouteTypes {
     | '/accountant/support'
     | '/accountant/wallet-requests'
     | '/accountant/withdrawals'
+    | '/admin/registrations'
     | '/bde/dashboard'
     | '/bde/feedback'
     | '/bde/leads'
@@ -1370,6 +1380,7 @@ export interface FileRouteTypes {
     | '/accountant/support'
     | '/accountant/wallet-requests'
     | '/accountant/withdrawals'
+    | '/admin/registrations'
     | '/bde/dashboard'
     | '/bde/feedback'
     | '/bde/leads'
@@ -1500,6 +1511,7 @@ export interface FileRouteTypes {
     | '/accountant/support'
     | '/accountant/wallet-requests'
     | '/accountant/withdrawals'
+    | '/admin/registrations'
     | '/bde/dashboard'
     | '/bde/feedback'
     | '/bde/leads'
@@ -1580,7 +1592,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccountantLoginRoute: typeof AccountantLoginRoute
-  AdminRoute: typeof AdminRoute
+  AdminRoute: typeof AdminRouteWithChildren
   AdminLoginRoute: typeof AdminLoginRoute
   AepsRoute: typeof AepsRoute
   AepsActivationRoute: typeof AepsActivationRoute
@@ -2464,6 +2476,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BdeDashboardRouteImport
       parentRoute: typeof BdeRoute
     }
+    '/admin/registrations': {
+      id: '/admin/registrations'
+      path: '/registrations'
+      fullPath: '/admin/registrations'
+      preLoaderRoute: typeof AdminRegistrationsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/accountant/withdrawals': {
       id: '/accountant/withdrawals'
       path: '/accountant/withdrawals'
@@ -2600,6 +2619,16 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminRouteChildren {
+  AdminRegistrationsRoute: typeof AdminRegistrationsRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminRegistrationsRoute: AdminRegistrationsRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 interface BdeRouteChildren {
   BdeDashboardRoute: typeof BdeDashboardRoute
   BdeFeedbackRoute: typeof BdeFeedbackRoute
@@ -2692,7 +2721,7 @@ const TroRetailersRouteWithChildren = TroRetailersRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccountantLoginRoute: AccountantLoginRoute,
-  AdminRoute: AdminRoute,
+  AdminRoute: AdminRouteWithChildren,
   AdminLoginRoute: AdminLoginRoute,
   AepsRoute: AepsRoute,
   AepsActivationRoute: AepsActivationRoute,
@@ -2806,3 +2835,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
