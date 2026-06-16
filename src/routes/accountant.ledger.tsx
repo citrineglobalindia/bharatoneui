@@ -146,7 +146,7 @@ function LedgerPage() {
     return () => { on = false; };
   }, []);
 
-  const entries = useMemo(() => [...realRows, ...ALL_ENTRIES], [realRows]);
+  const entries = useMemo(() => realRows, [realRows]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
