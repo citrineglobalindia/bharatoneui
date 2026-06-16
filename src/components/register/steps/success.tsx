@@ -53,6 +53,38 @@ export function buildSubmission(utr: string, plan: string, amount = 4999): Submi
   };
 }
 
+function buildReceiptCanvas(info: SubmissionInfo): HTMLCanvasElement {
+  const W = 920, H = 1120;
+  const c = document.createElement("canvas");
+  c.width = W; c.height = H;
+  const ctx = c.getContext("2d")!;
+  ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = "#FF9933"; ctx.fillRect(0, 0, W / 3, 14);
+  ctx.fillStyle = "#138808"; ctx.fillRect((2 * W) / 3, 0, W / 3, 14);
+  ctx.fillStyle = "#9A3412"; ctx.font = "bold 30px Arial"; ctx.fillText("BharatOne \u2014 Official Receipt", 56, 92);
+  ctx.fillStyle = "#6b7280"; ctx.font = "18px Arial"; ctx.fillText("KYC Submission \u00b7 BharatOne", 56, 124);
+  ctx.strokeStyle = "#E5E7EB"; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(56, 150); ctx.lineTo(W - 56, 150); ctx.stroke();
+  const rows: [string, string][] = [
+    ["Application ID", info.applicationId],
+    ["Transaction ID", info.transactionId],
+    ["UTR / Reference", info.utr],
+    ["Amount Paid", info.amount],
+    ["Plan", info.plan],
+    ["Submitted", info.submittedAt],
+    ["Status", "Under Review"],
+  ];
+  let y = 220;
+  for (const [k, v] of rows) {
+    ctx.fillStyle = "#9ca3af"; ctx.font = "14px Arial"; ctx.fillText(k.toUpperCase(), 56, y);
+    ctx.fillStyle = "#111827"; ctx.font = "bold 26px Arial"; ctx.fillText(String(v), 56, y + 34);
+    y += 92;
+  }
+  ctx.fillStyle = "#6b7280"; ctx.font = "16px Arial";
+  ctx.fillText("Thank you for choosing BharatOne \u00b7 support@bharatone.com", 56, H - 60);
+  return c;
+}
+
 export function SuccessStep({ info }: { info: SubmissionInfo }) {
   const [copied, setCopied] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -85,51 +117,22 @@ export function SuccessStep({ info }: { info: SubmissionInfo }) {
     [info]
   );
 
-  const captureCanvas = async () => {
-    const html2canvas = (await import("html2canvas")).default;
-    const node = receiptRef.current!;
-    return await html2canvas(node, {
-      backgroundColor: "#ffffff",
-      scale: 2,
-      useCORS: true,
-      logging: false,
-      onclone: (doc, clonedNode) => {
-        // Tailwind v4 emits oklch() which html2canvas can't parse.
-        // Walk the cloned subtree and replace any oklch color with a sRGB hex.
-        const root = clonedNode as HTMLElement;
-        const all = [root, ...Array.from(root.querySelectorAll<HTMLElement>("*"))];
-        const props = [
-          "color",
-          "backgroundColor",
-          "borderTopColor",
-          "borderRightColor",
-          "borderBottomColor",
-          "borderLeftColor",
-          "outlineColor",
-          "fill",
-          "stroke",
-        ] as const;
-        for (const el of all) {
-          const cs = doc.defaultView!.getComputedStyle(el);
-          for (const p of props) {
-            const v = cs[p as any] as string;
-            if (v && v.includes("oklch")) {
-              // Fallback: transparent for backgrounds, currentColor-ish dark for text.
-              if (p === "backgroundColor") el.style.backgroundColor = "transparent";
-              else if (p.startsWith("border") || p === "outlineColor")
-                el.style.setProperty(p.replace(/[A-Z]/g, (m) => "-" + m.toLowerCase()), "#E5E7EB");
-              else el.style.setProperty(p, "#111827");
-            }
-          }
-        }
-      },
-    });
-  };
+  const shareMessage = [
+    "BharatOne — KYC Submission Receipt",
+    `Application ID: ${info.applicationId}`,
+    `Transaction ID: ${info.transactionId}`,
+    `UTR / Reference: ${info.utr}`,
+    `Amount: ${info.amount}`,
+    `Plan: ${info.plan}`,
+    `Submitted: ${info.submittedAt}`,
+    "Status: Under Review",
+  ].join("\n");
+  const enc = encodeURIComponent(shareMessage);
 
-  const downloadPNG = async () => {
+  const downloadPNG = () => {
     try {
       setBusy("png");
-      const canvas = await captureCanvas();
+      const canvas = buildReceiptCanvas(info);
       const a = document.createElement("a");
       a.href = canvas.toDataURL("image/png");
       a.download = `BharatOne-Receipt-${info.applicationId}.png`;
@@ -142,58 +145,55 @@ export function SuccessStep({ info }: { info: SubmissionInfo }) {
   const downloadPDF = async () => {
     try {
       setBusy("pdf");
-      const [{ jsPDF }, canvas] = await Promise.all([
-        import("jspdf"),
-        captureCanvas(),
-      ]);
-      const img = canvas.toDataURL("image/png");
-      const pdf = new jsPDF({ unit: "pt", format: "a4", orientation: "portrait" });
-      const pageW = pdf.internal.pageSize.getWidth();
-      const pageH = pdf.internal.pageSize.getHeight();
-      const margin = 28;
-      const maxW = pageW - margin * 2;
-      const ratio = canvas.height / canvas.width;
-      let w = maxW;
-      let h = w * ratio;
-      if (h > pageH - margin * 2) {
-        h = pageH - margin * 2;
-        w = h / ratio;
+      const { jsPDF } = await import("jspdf");
+      const pdf = new jsPDF({ unit: "pt", format: "a4" });
+      const W = pdf.internal.pageSize.getWidth();
+      pdf.setFillColor(255, 153, 51); pdf.rect(0, 0, W / 3, 8, "F");
+      pdf.setFillColor(19, 136, 8); pdf.rect((2 * W) / 3, 0, W / 3, 8, "F");
+      pdf.setTextColor(154, 52, 18); pdf.setFont("helvetica", "bold"); pdf.setFontSize(18);
+      pdf.text("BharatOne - Official Receipt", 40, 60);
+      pdf.setTextColor(107, 114, 128); pdf.setFont("helvetica", "normal"); pdf.setFontSize(11);
+      pdf.text("KYC Submission - BharatOne", 40, 78);
+      pdf.setDrawColor(229, 231, 235); pdf.line(40, 95, W - 40, 95);
+      const rows: [string, string][] = [
+        ["Application ID", info.applicationId],
+        ["Transaction ID", info.transactionId],
+        ["UTR / Reference", info.utr],
+        ["Amount Paid", info.amount.replace("₹", "Rs ")],
+        ["Plan", info.plan],
+        ["Submitted", info.submittedAt],
+        ["Status", "Under Review"],
+      ];
+      let y = 130;
+      for (const [k, v] of rows) {
+        pdf.setTextColor(156, 163, 175); pdf.setFont("helvetica", "normal"); pdf.setFontSize(9);
+        pdf.text(k.toUpperCase(), 40, y);
+        pdf.setTextColor(17, 24, 39); pdf.setFont("helvetica", "bold"); pdf.setFontSize(14);
+        pdf.text(String(v), 40, y + 18);
+        y += 48;
       }
-      const x = (pageW - w) / 2;
-      pdf.addImage(img, "PNG", x, margin, w, h, undefined, "FAST");
+      pdf.setTextColor(107, 114, 128); pdf.setFont("helvetica", "normal"); pdf.setFontSize(10);
+      pdf.text("Thank you for choosing BharatOne - support@bharatone.com", 40, y + 24);
       pdf.save(`BharatOne-Receipt-${info.applicationId}.pdf`);
     } finally {
       setBusy(null);
     }
   };
 
-  const shareText = `BharatOne KYC Submission Receipt%0A%0AApplication ID: ${info.applicationId}%0ATransaction ID: ${info.transactionId}%0AUTR: ${info.utr}%0AAmount: ${info.amount}%0APlan: ${info.plan}%0ASubmitted: ${info.submittedAt}%0AStatus: Under Review`;
-
-  const shareWhatsApp = () =>
-    window.open(`https://wa.me/?text=${shareText}`, "_blank", "noopener");
+  const shareWhatsApp = () => window.open(`https://wa.me/?text=${enc}`, "_blank", "noopener");
   const shareTelegram = () =>
-    window.open(
-      `https://t.me/share/url?url=https://bharatone.com&text=${shareText}`,
-      "_blank",
-      "noopener"
-    );
-  const shareEmail = () =>
-    window.open(
-      `mailto:?subject=BharatOne%20Submission%20Receipt%20-%20${info.applicationId}&body=${shareText}`,
-      "_self"
-    );
-  const shareSMS = () =>
-    window.open(`sms:?&body=${shareText}`, "_self");
-
+    window.open(`https://t.me/share/url?url=${encodeURIComponent("https://bharatone.com")}&text=${enc}`, "_blank", "noopener");
+  const shareEmail = () => {
+    window.location.href = `mailto:?subject=${encodeURIComponent("BharatOne Submission Receipt - " + info.applicationId)}&body=${enc}`;
+  };
+  const shareSMS = () => {
+    window.location.href = `sms:?&body=${enc}`;
+  };
   const nativeShare = async () => {
-    const payload = {
-      title: "BharatOne Submission Receipt",
-      text: decodeURIComponent(shareText.replace(/%0A/g, "\n")),
-    };
     try {
-      if (navigator.share) await navigator.share(payload);
-      else await copy("share", payload.text);
-    } catch {}
+      if (navigator.share) await navigator.share({ title: "BharatOne Submission Receipt", text: shareMessage });
+      else await copy("share", shareMessage);
+    } catch { /* user cancelled */ }
   };
 
   const copyReceipt = () => copy("receipt", receiptText);
