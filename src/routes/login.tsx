@@ -25,6 +25,7 @@ import { BharatOneLogo } from "@/components/bharatone-logo";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { PORTAL_CONFIGS } from "@/components/portal-login";
+import { supabase } from "@/integrations/supabase/client";
 
 const DEMO_RETAILER = {
   phone: "9876789876",
@@ -128,8 +129,34 @@ function LoginPage() {
 
             <form
               className="mt-3 space-y-2.5"
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
+                if (captchaInput.trim() !== captcha) {
+                  toast.error("Captcha does not match");
+                  return;
+                }
+                const realId = identifier.trim();
+                if (realId.includes("@")) {
+                  const { data: sb, error: sbErr } = await supabase.auth.signInWithPassword({
+                    email: realId.toLowerCase(),
+                    password,
+                  });
+                  if (!sbErr && sb?.session && sb.user) {
+                    const { data: rr } = await supabase
+                      .from("user_roles").select("role").eq("user_id", sb.user.id);
+                    const set = new Set((rr ?? []).map((x) => x.role as string));
+                    const dest = set.has("admin")
+                      ? "/admin/registrations"
+                      : set.has("accountant")
+                        ? "/accountant/registrations"
+                        : set.has("qc")
+                          ? "/qc/kyc-queue"
+                          : "/dashboard";
+                    toast.success("Welcome back");
+                    navigate({ to: dest });
+                    return;
+                  }
+                }
                 const id = identifier.trim().toLowerCase();
                 const matchesRetailer =
                   (id === DEMO_RETAILER.phone || id === DEMO_RETAILER.email) &&

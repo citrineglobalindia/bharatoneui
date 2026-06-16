@@ -11,6 +11,7 @@ import {
   FileText,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { supabase } from "@/integrations/supabase/client";
 
 type Notif = {
   id: string;
@@ -90,11 +91,57 @@ const TONE: Record<Notif["tone"], string> = {
   danger: "bg-rose-100 text-rose-700",
 };
 
+function iconFor(type: string) {
+  if (type === "approved") return <ShieldCheck className="h-4 w-4" />;
+  if (type === "ready_for_approval") return <CheckCheck className="h-4 w-4" />;
+  if (type === "rejected") return <AlertTriangle className="h-4 w-4" />;
+  if (type === "new_registration") return <FileText className="h-4 w-4" />;
+  return <Bell className="h-4 w-4" />;
+}
+function toneFor(type: string): Notif["tone"] {
+  if (type === "approved") return "success";
+  if (type === "rejected") return "danger";
+  if (type === "ready_for_approval") return "info";
+  return "info";
+}
+function relTime(iso: string) {
+  const d = new Date(iso).getTime();
+  const s = Math.floor((Date.now() - d) / 1000);
+  if (s < 60) return "just now";
+  if (s < 3600) return `${Math.floor(s / 60)} min ago`;
+  if (s < 86400) return `${Math.floor(s / 3600)} hr ago`;
+  return new Date(iso).toLocaleDateString("en-IN");
+}
+
 export function NotificationsBell() {
   const [open, setOpen] = useState(false);
-  const [items, setItems] = useState<Notif[]>(SEED);
+  const [items, setItems] = useState<Notif[]>([]);
   const ref = useRef<HTMLDivElement>(null);
   const unread = items.filter((n) => !n.read).length;
+
+  async function load() {
+    const { data: sess } = await supabase.auth.getSession();
+    if (!sess.session) { setItems([]); return; }
+    const { data } = await supabase
+      .from("notifications")
+      .select("id, type, title, body, link, read, created_at")
+      .order("created_at", { ascending: false })
+      .limit(30);
+    setItems(
+      (data ?? []).map((n) => ({
+        id: n.id,
+        title: n.title,
+        body: n.body ?? "",
+        time: relTime(n.created_at),
+        to: n.link ?? "/notifications",
+        tone: toneFor(n.type),
+        icon: iconFor(n.type),
+        read: n.read,
+      })),
+    );
+  }
+
+  useEffect(() => { load(); }, []);
 
   useEffect(() => {
     function onDoc(e: MouseEvent) {
@@ -104,14 +151,20 @@ export function NotificationsBell() {
     return () => document.removeEventListener("mousedown", onDoc);
   }, [open]);
 
-  const markAll = () => setItems((xs) => xs.map((n) => ({ ...n, read: true })));
-  const markOne = (id: string) =>
+  const markAll = async () => {
+    setItems((xs) => xs.map((n) => ({ ...n, read: true })));
+    const { data: sess } = await supabase.auth.getSession();
+    if (sess.session) await supabase.from("notifications").update({ read: true }).eq("read", false);
+  };
+  const markOne = async (id: string) => {
     setItems((xs) => xs.map((n) => (n.id === id ? { ...n, read: true } : n)));
+    await supabase.from("notifications").update({ read: true }).eq("id", id);
+  };
 
   return (
     <div className="relative" ref={ref}>
       <button
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => { setOpen((v) => !v); if (!open) load(); }}
         aria-label="Notifications"
         className="relative h-9 w-9 rounded-full hover:bg-muted flex items-center justify-center"
       >
@@ -133,10 +186,7 @@ export function NotificationsBell() {
               </p>
             </div>
             {unread > 0 && (
-              <button
-                onClick={markAll}
-                className="inline-flex items-center gap-1 text-[11px] font-semibold text-saffron hover:underline"
-              >
+              <button onClick={markAll} className="inline-flex items-center gap-1 text-[11px] font-semibold text-saffron hover:underline">
                 <CheckCheck className="h-3.5 w-3.5" /> Mark all read
               </button>
             )}
@@ -152,35 +202,20 @@ export function NotificationsBell() {
             {items.map((n) => (
               <li key={n.id}>
                 <Link
-                  to={n.to}
-                  onClick={() => {
-                    markOne(n.id);
-                    setOpen(false);
-                  }}
-                  className={`flex gap-3 px-4 py-3 hover:bg-muted/60 transition ${
-                    n.read ? "" : "bg-saffron/[0.04]"
-                  }`}
+                  to={n.to as never}
+                  onClick={() => { markOne(n.id); setOpen(false); }}
+                  className={`flex gap-3 px-4 py-3 hover:bg-muted/60 transition ${n.read ? "" : "bg-saffron/[0.04]"}`}
                 >
-                  <span
-                    className={`mt-0.5 h-8 w-8 shrink-0 rounded-full flex items-center justify-center ${TONE[n.tone]}`}
-                  >
+                  <span className={`mt-0.5 h-8 w-8 shrink-0 rounded-full flex items-center justify-center ${TONE[n.tone]}`}>
                     {n.icon}
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-2">
-                      <p className="text-sm font-semibold leading-snug truncate">
-                        {n.title}
-                      </p>
-                      {!n.read && (
-                        <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-saffron" />
-                      )}
+                      <p className="text-sm font-semibold leading-snug truncate">{n.title}</p>
+                      {!n.read && <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-saffron" />}
                     </div>
-                    <p className="text-xs text-muted-foreground leading-snug mt-0.5 line-clamp-2">
-                      {n.body}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground mt-1 font-medium">
-                      {n.time}
-                    </p>
+                    <p className="text-xs text-muted-foreground leading-snug mt-0.5 line-clamp-2">{n.body}</p>
+                    <p className="text-[10px] text-muted-foreground mt-1 font-medium">{n.time}</p>
                   </div>
                 </Link>
               </li>
@@ -188,11 +223,7 @@ export function NotificationsBell() {
           </ul>
 
           <div className="px-4 py-2.5 border-t border-border bg-muted/30">
-            <Link
-              to="/notifications"
-              onClick={() => setOpen(false)}
-              className="block text-center text-xs font-semibold text-saffron hover:underline"
-            >
+            <Link to="/notifications" onClick={() => setOpen(false)} className="block text-center text-xs font-semibold text-saffron hover:underline">
               View all notifications
             </Link>
           </div>

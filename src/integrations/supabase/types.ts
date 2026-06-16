@@ -116,8 +116,58 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          link: string | null
+          read: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          link?: string | null
+          read?: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          link?: string | null
+          read?: boolean
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       retailer_registrations: {
         Row: {
+          approved_at: string | null
+          approved_by: string | null
+          auth_user_id: string | null
+          payment_verification_notes: string | null
+          payment_verified: boolean
+          payment_verified_at: string | null
+          payment_verified_by: string | null
+          qc_notes: string | null
+          qc_verified: boolean
+          qc_verified_at: string | null
+          qc_verified_by: string | null
           aadhaar_doc_path: string | null
           aadhaar_number: string | null
           account_number: string | null
@@ -183,6 +233,17 @@ export type Database = {
           ward_number: string | null
         }
         Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          auth_user_id?: string | null
+          payment_verification_notes?: string | null
+          payment_verified?: boolean
+          payment_verified_at?: string | null
+          payment_verified_by?: string | null
+          qc_notes?: string | null
+          qc_verified?: boolean
+          qc_verified_at?: string | null
+          qc_verified_by?: string | null
           aadhaar_doc_path?: string | null
           aadhaar_number?: string | null
           account_number?: string | null
@@ -248,6 +309,17 @@ export type Database = {
           ward_number?: string | null
         }
         Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          auth_user_id?: string | null
+          payment_verification_notes?: string | null
+          payment_verified?: boolean
+          payment_verified_at?: string | null
+          payment_verified_by?: string | null
+          qc_notes?: string | null
+          qc_verified?: boolean
+          qc_verified_at?: string | null
+          qc_verified_by?: string | null
           aadhaar_doc_path?: string | null
           aadhaar_number?: string | null
           account_number?: string | null
@@ -326,6 +398,29 @@ export type Database = {
       approve_retailer_registration: {
         Args: { reg_id: string }
         Returns: Json
+      }
+      verify_retailer_payment: {
+        Args: { reg_id: string; received: boolean; notes?: string | null }
+        Returns: Json
+      }
+      verify_retailer_qc: {
+        Args: { reg_id: string; verified: boolean; notes?: string | null }
+        Returns: Json
+      }
+      reject_retailer_registration: {
+        Args: { reg_id: string; reason: string }
+        Returns: Json
+      }
+      create_staff_account: {
+        Args: { _email: string; _password: string; _name: string; _role: string; _department?: string | null }
+        Returns: Json
+      }
+      notify_roles: {
+        Args: {
+          _roles: string[]; _type: string; _title: string; _body: string
+          _link: string; _entity_type: string; _entity_id: string
+        }
+        Returns: undefined
       }
     }
     Enums: {
