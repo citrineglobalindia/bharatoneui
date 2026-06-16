@@ -2,9 +2,10 @@ import { useState } from "react";
 import { User } from "lucide-react";
 import { Field, inputCls, StepHeader } from "../field";
 import { ConfirmPasswordField, PasswordField } from "../password-field";
+import { useRegistration } from "../registration-context";
 
 export function PersonalStep() {
-  const [pwd, setPwd] = useState("");
+  const { data, set } = useRegistration();
   const [confirm, setConfirm] = useState("");
   return (
     <div className="space-y-6">
@@ -15,21 +16,36 @@ export function PersonalStep() {
       />
       <div className="grid gap-4 sm:grid-cols-3">
         <Field label="First Name" required>
-          <input className={inputCls} placeholder="First name" />
+          <input
+            className={inputCls}
+            placeholder="First name"
+            value={data.firstName}
+            onChange={(e) => set({ firstName: e.target.value })}
+          />
         </Field>
         <Field label="Middle Name">
-          <input className={inputCls} placeholder="Middle name (optional)" />
+          <input
+            className={inputCls}
+            placeholder="Middle name (optional)"
+            value={data.middleName}
+            onChange={(e) => set({ middleName: e.target.value })}
+          />
         </Field>
         <Field label="Surname" required>
-          <input className={inputCls} placeholder="Surname" />
+          <input
+            className={inputCls}
+            placeholder="Surname"
+            value={data.surname}
+            onChange={(e) => set({ surname: e.target.value })}
+          />
         </Field>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Password" required>
-          <PasswordField value={pwd} onChange={setPwd} />
+          <PasswordField value={data.password} onChange={(v) => set({ password: v })} />
         </Field>
         <Field label="Confirm Password" required>
-          <ConfirmPasswordField value={confirm} onChange={setConfirm} original={pwd} />
+          <ConfirmPasswordField value={confirm} onChange={setConfirm} original={data.password} />
         </Field>
       </div>
     </div>

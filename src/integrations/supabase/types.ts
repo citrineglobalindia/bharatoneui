@@ -116,12 +116,217 @@ export type Database = {
         }
         Relationships: []
       }
+      retailer_registrations: {
+        Row: {
+          aadhaar_doc_path: string | null
+          aadhaar_number: string | null
+          account_number: string | null
+          account_type: string | null
+          address_type: string | null
+          application_id: string
+          bank_holder_name: string | null
+          bank_name: string | null
+          building_shop_no: string | null
+          city: string | null
+          created_at: string
+          declaration_agreed: boolean
+          district: string | null
+          email: string
+          email_verified: boolean
+          first_name: string
+          gram_panchayat: string | null
+          hobli_name: string | null
+          id: string
+          ifsc: string | null
+          landmark: string | null
+          latitude: number | null
+          longitude: number | null
+          middle_name: string | null
+          mobile: string
+          mobile_verified: boolean
+          pan_doc_path: string | null
+          pan_number: string | null
+          password_hash: string | null
+          payer_account: string | null
+          payer_bank: string | null
+          payer_name: string | null
+          payment_amount: number | null
+          payment_method: string | null
+          payment_paid_on: string | null
+          payment_remarks: string | null
+          payment_screenshot_path: string | null
+          payment_utr: string | null
+          pincode: string | null
+          police_verification_path: string | null
+          post_office: string | null
+          post_office_name: string | null
+          registration_type: string
+          rejection_reason: string | null
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          selfie_path: string | null
+          shop_name: string
+          shop_photo_path: string | null
+          state: string | null
+          status: string
+          street_area: string | null
+          surname: string
+          taluk: string | null
+          transaction_id: string | null
+          updated_at: string
+          username: string | null
+          village_name: string | null
+          video_kyc_lat: number | null
+          video_kyc_lng: number | null
+          video_kyc_path: string | null
+          ward_number: string | null
+        }
+        Insert: {
+          aadhaar_doc_path?: string | null
+          aadhaar_number?: string | null
+          account_number?: string | null
+          account_type?: string | null
+          address_type?: string | null
+          application_id: string
+          bank_holder_name?: string | null
+          bank_name?: string | null
+          building_shop_no?: string | null
+          city?: string | null
+          created_at?: string
+          declaration_agreed?: boolean
+          district?: string | null
+          email: string
+          email_verified?: boolean
+          first_name: string
+          gram_panchayat?: string | null
+          hobli_name?: string | null
+          id?: string
+          ifsc?: string | null
+          landmark?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          middle_name?: string | null
+          mobile: string
+          mobile_verified?: boolean
+          pan_doc_path?: string | null
+          pan_number?: string | null
+          password_hash?: string | null
+          payer_account?: string | null
+          payer_bank?: string | null
+          payer_name?: string | null
+          payment_amount?: number | null
+          payment_method?: string | null
+          payment_paid_on?: string | null
+          payment_remarks?: string | null
+          payment_screenshot_path?: string | null
+          payment_utr?: string | null
+          pincode?: string | null
+          police_verification_path?: string | null
+          post_office?: string | null
+          post_office_name?: string | null
+          registration_type?: string
+          rejection_reason?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          selfie_path?: string | null
+          shop_name: string
+          shop_photo_path?: string | null
+          state?: string | null
+          status?: string
+          street_area?: string | null
+          surname: string
+          taluk?: string | null
+          transaction_id?: string | null
+          updated_at?: string
+          username?: string | null
+          village_name?: string | null
+          video_kyc_lat?: number | null
+          video_kyc_lng?: number | null
+          video_kyc_path?: string | null
+          ward_number?: string | null
+        }
+        Update: {
+          aadhaar_doc_path?: string | null
+          aadhaar_number?: string | null
+          account_number?: string | null
+          account_type?: string | null
+          address_type?: string | null
+          application_id?: string
+          bank_holder_name?: string | null
+          bank_name?: string | null
+          building_shop_no?: string | null
+          city?: string | null
+          created_at?: string
+          declaration_agreed?: boolean
+          district?: string | null
+          email?: string
+          email_verified?: boolean
+          first_name?: string
+          gram_panchayat?: string | null
+          hobli_name?: string | null
+          id?: string
+          ifsc?: string | null
+          landmark?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          middle_name?: string | null
+          mobile?: string
+          mobile_verified?: boolean
+          pan_doc_path?: string | null
+          pan_number?: string | null
+          password_hash?: string | null
+          payer_account?: string | null
+          payer_bank?: string | null
+          payer_name?: string | null
+          payment_amount?: number | null
+          payment_method?: string | null
+          payment_paid_on?: string | null
+          payment_remarks?: string | null
+          payment_screenshot_path?: string | null
+          payment_utr?: string | null
+          pincode?: string | null
+          police_verification_path?: string | null
+          post_office?: string | null
+          post_office_name?: string | null
+          registration_type?: string
+          rejection_reason?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          selfie_path?: string | null
+          shop_name?: string
+          shop_photo_path?: string | null
+          state?: string | null
+          status?: string
+          street_area?: string | null
+          surname?: string
+          taluk?: string | null
+          transaction_id?: string | null
+          updated_at?: string
+          username?: string | null
+          village_name?: string | null
+          video_kyc_lat?: number | null
+          video_kyc_lng?: number | null
+          video_kyc_path?: string | null
+          ward_number?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      submit_retailer_registration: {
+        Args: { payload: Json }
+        Returns: Json
+      }
+      approve_retailer_registration: {
+        Args: { reg_id: string }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "hr_staff" | "manager" | "employee" | "admin"

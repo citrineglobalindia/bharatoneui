@@ -2,12 +2,14 @@ import { useEffect, useRef, useState } from "react";
 import { Camera, X, CheckCircle2 } from "lucide-react";
 import { StepHeader } from "../field";
 import { Button } from "@/components/ui/button";
+import { useRegistration, dataUrlToFile } from "../registration-context";
 
 export function SelfieStep() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [active, setActive] = useState(false);
   const [shot, setShot] = useState<string | null>(null);
+  const { setFile } = useRegistration();
 
   const open = async () => {
     try {
@@ -40,7 +42,9 @@ export function SelfieStep() {
     c.width = v.videoWidth;
     c.height = v.videoHeight;
     c.getContext("2d")?.drawImage(v, 0, 0);
-    setShot(c.toDataURL("image/jpeg", 0.9));
+    const dataUrl = c.toDataURL("image/jpeg", 0.9);
+    setShot(dataUrl);
+    setFile("selfie", dataUrlToFile(dataUrl, "selfie.jpg"));
     close();
   };
 
@@ -60,7 +64,7 @@ export function SelfieStep() {
             <div className="flex items-center gap-2 text-sm font-medium text-[oklch(0.45_0.12_150)]">
               <CheckCircle2 className="h-4 w-4" /> Selfie captured
             </div>
-            <Button variant="outline" onClick={() => { setShot(null); open(); }}>
+            <Button variant="outline" onClick={() => { setShot(null); setFile("selfie", undefined); open(); }}>
               <Camera className="h-4 w-4" /> Retake
             </Button>
           </div>

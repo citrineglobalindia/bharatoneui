@@ -24,6 +24,7 @@ import {
   CheckCircle2,
   FileText,
   CreditCard,
+  Loader2,
 } from "lucide-react";
 import { BharatOneLogo } from "@/components/bharatone-logo";
 import { Button } from "@/components/ui/button";
@@ -36,9 +37,14 @@ import { KycDocsStep } from "@/components/register/steps/kyc-docs";
 import { VideoKycStep } from "@/components/register/steps/video-kyc";
 import { SelfieStep } from "@/components/register/steps/selfie";
 import { SuccessStep, buildSubmission, type SubmissionInfo } from "@/components/register/steps/success";
-import { PaymentStep, type PaymentData } from "@/components/register/steps/payment";
+import { PaymentStep } from "@/components/register/steps/payment";
 import { DistributorEntityStep } from "@/components/register/steps/distributor-entity";
 import { DistributorSinglePage } from "@/components/register/distributor-single";
+import {
+  RegistrationProvider,
+  useRegistration,
+} from "@/components/register/registration-context";
+import { supabase } from "@/integrations/supabase/client";
 
 const searchSchema = z.object({
   type: z.enum(["old", "new", "distributor"]).optional().default("new"),
@@ -80,13 +86,34 @@ const oldSteps: Step[] = [
 ];
 
 function RegisterPage() {
+  return (
+    <RegistrationProvider>
+      <RegisterFlow />
+    </RegistrationProvider>
+  );
+}
+
+async function uploadFile(folder: string, label: string, file: File | undefined) {
+  if (!file) return undefined;
+  const ext = (file.name?.split(".").pop() || "bin").toLowerCase();
+  const path = `${folder}/${label}.${ext}`;
+  const { error } = await supabase.storage
+    .from("retailer-kyc")
+    .upload(path, file, { upsert: true, contentType: file.type || undefined });
+  if (error) throw new Error(`Upload failed (${label}): ${error.message}`);
+  return path;
+}
+
+function RegisterFlow() {
   const { type } = Route.useSearch();
   const navigate = Route.useNavigate();
+  const { data, files, set } = useRegistration();
   const steps = type === "old" ? oldSteps : newSteps;
   const [current, setCurrent] = useState(0);
   const [done, setDone] = useState(false);
-  const [payment, setPayment] = useState<PaymentData>({ utr: "" });
   const [submission, setSubmission] = useState<SubmissionInfo | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const heading =
     type === "old"
@@ -104,9 +131,103 @@ function RegisterPage() {
 
   const next = () => setCurrent((c) => Math.min(c + 1, steps.length - 1));
   const prev = () => setCurrent((c) => Math.max(c - 1, 0));
-  const submit = () => {
-    setSubmission(buildSubmission(payment.utr, heading, amount));
-    setDone(true);
+
+  const submit = async () => {
+    // Distributor flow is not persisted yet — keep the local receipt.
+    if (type === "distributor") {
+      setSubmission(buildSubmission(data.payment.utr, heading, amount));
+      setDone(true);
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    try {
+      const folder =
+        (typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : String(Date.now()));
+      const [pan, aadhaar, shopPhoto, police, selfie, paymentScreenshot] = await Promise.all([
+        uploadFile(folder, "pan", files.pan),
+        uploadFile(folder, "aadhaar", files.aadhaar),
+        uploadFile(folder, "shop-photo", files.shopPhoto),
+        uploadFile(folder, "police", files.police),
+        uploadFile(folder, "selfie", files.selfie),
+        uploadFile(folder, "payment-screenshot", files.paymentScreenshot),
+      ]);
+
+      const payload = {
+        registration_type: type,
+        email: data.email,
+        mobile: data.mobile,
+        email_verified: data.emailVerified,
+        mobile_verified: data.mobileVerified,
+        first_name: data.firstName,
+        middle_name: data.middleName,
+        surname: data.surname,
+        password: data.password,
+        shop_name: data.shopName,
+        address_type: data.addressType,
+        building_shop_no: data.buildingShopNo,
+        street_area: data.streetArea,
+        ward_number: data.wardNumber,
+        landmark: data.landmark,
+        village_name: data.villageName,
+        gram_panchayat: data.gramPanchayat,
+        hobli_name: data.hobliName,
+        post_office: data.postOffice,
+        post_office_name: data.postOfficeName,
+        taluk: data.taluk,
+        city: data.city,
+        district: data.district,
+        state: data.state,
+        pincode: data.pincode,
+        latitude: data.latitude,
+        longitude: data.longitude,
+        bank_holder_name: data.bank.holderName,
+        bank_name: data.bank.bankName,
+        account_number: data.bank.accountNumber,
+        ifsc: data.bank.ifsc,
+        account_type: data.bank.accountType,
+        pan_number: data.panNumber,
+        aadhaar_number: data.aadhaarNumber,
+        pan_doc_path: pan,
+        aadhaar_doc_path: aadhaar,
+        shop_photo_path: shopPhoto,
+        police_verification_path: police,
+        selfie_path: selfie,
+        declaration_agreed: data.declarationAgreed,
+        payment_amount: amount,
+        payment_utr: data.payment.utr,
+        payment_method: data.payment.method,
+        payment_paid_on: data.payment.paidOn,
+        payer_name: data.payment.payerName,
+        payer_bank: data.payment.payerBank,
+        payer_account: data.payment.payerAccount,
+        payment_remarks: data.payment.remarks,
+        payment_screenshot_path: paymentScreenshot,
+      };
+
+      const { data: res, error: rpcErr } = await supabase.rpc(
+        "submit_retailer_registration",
+        { payload },
+      );
+      if (rpcErr) throw new Error(rpcErr.message);
+      const r = res as unknown as { application_id: string; transaction_id: string };
+
+      setSubmission({
+        applicationId: r.application_id,
+        transactionId: r.transaction_id,
+        utr: data.payment.utr || "—",
+        amount: `₹${amount.toLocaleString("en-IN")}`,
+        submittedAt: new Date().toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }),
+        plan: heading,
+      });
+      setDone(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Submission failed. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const StepBody = useMemo(() => {
@@ -125,14 +246,21 @@ function RegisterPage() {
       case "video":
         return <VideoKycStep />;
       case "payment":
-        return <PaymentStep value={payment} onChange={setPayment} planLabel={heading} amount={amount} />;
+        return (
+          <PaymentStep
+            value={data.payment}
+            onChange={(v) => set({ payment: v })}
+            planLabel={heading}
+            amount={amount}
+          />
+        );
       case "selfie":
         return <SelfieStep />;
       default:
         return null;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [current, type, payment]);
+  }, [current, type, data.payment]);
 
   return (
     <div className="min-h-screen bg-tricolor">
@@ -185,11 +313,17 @@ function RegisterPage() {
           ) : (
             <>
               {StepBody}
+              {error && (
+                <div className="mt-5 flex items-start gap-2 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                  <span>{error}</span>
+                </div>
+              )}
               <div className="mt-7 grid grid-cols-2 gap-3 border-t border-border pt-5 sm:flex sm:items-center sm:justify-between">
                 <Button
                   variant="outline"
                   onClick={prev}
-                  disabled={current === 0}
+                  disabled={current === 0 || submitting}
                   className="h-12 rounded-xl text-[15px] sm:h-10 sm:text-sm sm:w-auto"
                 >
                   <ChevronLeft className="h-4 w-4" /> Back
@@ -197,9 +331,14 @@ function RegisterPage() {
                 {current === steps.length - 1 ? (
                   <Button
                     onClick={submit}
+                    disabled={submitting}
                     className="h-12 rounded-xl bg-saffron-gradient text-[15px] font-semibold shadow-elev hover:opacity-95 sm:h-10 sm:text-sm sm:w-auto"
                   >
-                    Submit <CheckCircle2 className="h-4 w-4" />
+                    {submitting ? (
+                      <><Loader2 className="h-4 w-4 animate-spin" /> Submitting…</>
+                    ) : (
+                      <>Submit <CheckCircle2 className="h-4 w-4" /></>
+                    )}
                   </Button>
                 ) : (
                   <Button

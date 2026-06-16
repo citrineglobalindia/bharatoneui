@@ -14,6 +14,7 @@ import { inputCls, Notice, SectionCard, StepHeader } from "../field";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { OtpSuccessDialog, type OtpSuccessChannel } from "../otp-success-dialog";
+import { useRegistration } from "../registration-context";
 
 const MOCK_OTP = "123456";
 const RESEND_COOLDOWN = 30;
@@ -116,6 +117,12 @@ export function AccountStep() {
       } else setMobileError("Incorrect code. Please try again or resend.");
     }
   };
+
+  const { set: setReg } = useRegistration();
+  useEffect(() => {
+    setReg({ email, mobile, emailVerified, mobileVerified });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [email, mobile, emailVerified, mobileVerified]);
 
   return (
     <>

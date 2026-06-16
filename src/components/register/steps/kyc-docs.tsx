@@ -1,18 +1,22 @@
 import { Upload, FileText } from "lucide-react";
 import { useRef, useState } from "react";
 import { Field, inputCls, StepHeader } from "../field";
+import { useRegistration, type RegFileKey } from "../registration-context";
 
 function UploadBox({
   title,
   required,
   subtitle,
+  fileKey,
 }: {
   title: string;
   required?: boolean;
   subtitle: string;
+  fileKey: RegFileKey;
 }) {
   const ref = useRef<HTMLInputElement>(null);
-  const [name, setName] = useState<string | null>(null);
+  const { files, setFile } = useRegistration();
+  const [name, setName] = useState<string | null>(files[fileKey]?.name ?? null);
   return (
     <div className="rounded-xl border border-border bg-background/40 p-4">
       <div className="text-sm font-semibold text-foreground">
@@ -32,13 +36,18 @@ function UploadBox({
         type="file"
         accept="image/*,application/pdf"
         className="hidden"
-        onChange={(e) => setName(e.target.files?.[0]?.name ?? null)}
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          setName(f?.name ?? null);
+          setFile(fileKey, f);
+        }}
       />
     </div>
   );
 }
 
 export function KycDocsStep() {
+  const { data, set } = useRegistration();
   return (
     <div className="space-y-6">
       <StepHeader
@@ -47,17 +56,29 @@ export function KycDocsStep() {
         description="Upload clear Aadhaar, PAN, and supporting documents manually. Max 5MB per file."
       />
       <div className="grid gap-4 sm:grid-cols-2">
-        <UploadBox title="PAN Card" required subtitle="Front side clearly visible" />
-        <UploadBox title="Aadhaar Card" required subtitle="Front & back or e-Aadhaar" />
-        <UploadBox title="Shop Photo" required subtitle="Visible signboard preferred" />
-        <UploadBox title="Police Verification (Optional)" subtitle="Police verification certificate" />
+        <UploadBox title="PAN Card" required subtitle="Front side clearly visible" fileKey="pan" />
+        <UploadBox title="Aadhaar Card" required subtitle="Front & back or e-Aadhaar" fileKey="aadhaar" />
+        <UploadBox title="Shop Photo" required subtitle="Visible signboard preferred" fileKey="shopPhoto" />
+        <UploadBox title="Police Verification (Optional)" subtitle="Police verification certificate" fileKey="police" />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="PAN Number" icon={<FileText className="h-4 w-4" />}>
-          <input className={inputCls} placeholder="ABCDE1234F" maxLength={10} />
+          <input
+            className={inputCls}
+            placeholder="ABCDE1234F"
+            maxLength={10}
+            value={data.panNumber}
+            onChange={(e) => set({ panNumber: e.target.value.toUpperCase() })}
+          />
         </Field>
         <Field label="Aadhaar Number" icon={<FileText className="h-4 w-4" />}>
-          <input className={inputCls} placeholder="12 digit Aadhaar" maxLength={12} />
+          <input
+            className={inputCls}
+            placeholder="12 digit Aadhaar"
+            maxLength={12}
+            value={data.aadhaarNumber}
+            onChange={(e) => set({ aadhaarNumber: e.target.value.replace(/\D/g, "") })}
+          />
         </Field>
       </div>
     </div>

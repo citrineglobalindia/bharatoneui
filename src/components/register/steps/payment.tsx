@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { Field, SectionCard, StepHeader, Notice, inputCls } from "../field";
 import { Button } from "@/components/ui/button";
+import { useRegistration } from "../registration-context";
 
 export type PaymentData = {
   utr: string;
@@ -59,6 +60,7 @@ export function PaymentStep({
   const [preview, setPreview] = useState<string | null>(null);
   const [fileSize, setFileSize] = useState<number | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const { setFile } = useRegistration();
 
   const amountStr = String(amount);
   const amountDisplay = `₹${formatINR(amount)}`;
@@ -86,6 +88,7 @@ export function PaymentStep({
     if (preview) URL.revokeObjectURL(preview);
     setPreview(URL.createObjectURL(f));
     setFileSize(f.size);
+    setFile("paymentScreenshot", f);
     onChange({ ...value, screenshotName: f.name });
   };
 
@@ -93,6 +96,7 @@ export function PaymentStep({
     if (preview) URL.revokeObjectURL(preview);
     setPreview(null);
     setFileSize(null);
+    setFile("paymentScreenshot", undefined);
     onChange({ ...value, screenshotName: undefined });
     if (fileRef.current) fileRef.current.value = "";
   };

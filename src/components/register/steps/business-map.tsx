@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
@@ -19,8 +19,9 @@ function ClickPicker({ onPick }: { onPick: (lat: number, lng: number) => void })
   return null;
 }
 
-export default function BusinessMap() {
+export default function BusinessMap({ onChange }: { onChange?: (lat: number, lng: number) => void }) {
   const [coords, setCoords] = useState({ lat: 12.937917, lng: 77.476868 });
+  useEffect(() => { onChange?.(coords.lat, coords.lng); }, [coords.lat, coords.lng]);
 
   const useGPS = () => {
     if (!navigator.geolocation) return;

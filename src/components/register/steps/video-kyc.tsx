@@ -1,10 +1,12 @@
-import { useState } from "react";
 import { Video, MapPin } from "lucide-react";
 import { Notice, StepHeader } from "../field";
 import { Button } from "@/components/ui/button";
+import { useRegistration } from "../registration-context";
 
 export function VideoKycStep() {
-  const [agree, setAgree] = useState(false);
+  const { data, set } = useRegistration();
+  const agree = data.declarationAgreed;
+  const setAgree = (v: boolean) => set({ declarationAgreed: v });
   return (
     <div className="space-y-6">
       <StepHeader
