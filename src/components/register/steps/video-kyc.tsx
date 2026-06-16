@@ -1,12 +1,120 @@
-import { Video, MapPin } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Video, MapPin, Square, RotateCcw, CheckCircle2, AlertTriangle } from "lucide-react";
 import { Notice, StepHeader } from "../field";
 import { Button } from "@/components/ui/button";
 import { useRegistration } from "../registration-context";
 
+const MIN_SECONDS = 15;
+
 export function VideoKycStep() {
-  const { data, set } = useRegistration();
+  const { data, set, files, setFile } = useRegistration();
   const agree = data.declarationAgreed;
   const setAgree = (v: boolean) => set({ declarationAgreed: v });
+
+  const liveRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<BlobPart[]>([]);
+  const timerRef = useRef<number | null>(null);
+
+  const [recording, setRecording] = useState(false);
+  const [seconds, setSeconds] = useState(0);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const hasVideo = !!files.video;
+
+  const stopTracks = () => {
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+  };
+  const clearTimer = () => {
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+  };
+
+  useEffect(() => {
+    return () => {
+      clearTimer();
+      stopTracks();
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const captureGps = () => {
+    if (!("geolocation" in navigator)) return;
+    navigator.geolocation.getCurrentPosition(
+      (p) => set({ videoLat: +p.coords.latitude.toFixed(6), videoLng: +p.coords.longitude.toFixed(6) }),
+      () => {},
+      { enableHighAccuracy: true, timeout: 8000 },
+    );
+  };
+
+  const start = async () => {
+    setError(null);
+    if (previewUrl) { URL.revokeObjectURL(previewUrl); setPreviewUrl(null); }
+    setFile("video", undefined);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user" },
+        audio: true,
+      });
+      streamRef.current = stream;
+      if (liveRef.current) {
+        liveRef.current.srcObject = stream;
+        liveRef.current.muted = true;
+        await liveRef.current.play();
+      }
+      captureGps();
+
+      const mime = MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus")
+        ? "video/webm;codecs=vp9,opus"
+        : MediaRecorder.isTypeSupported("video/webm")
+          ? "video/webm"
+          : "";
+      const rec = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+      chunksRef.current = [];
+      rec.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunksRef.current.push(e.data); };
+      rec.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: "video/webm" });
+        setPreviewUrl(URL.createObjectURL(blob));
+        setFile("video", new File([blob], "video-kyc.webm", { type: "video/webm" }));
+        stopTracks();
+      };
+      recorderRef.current = rec;
+      rec.start();
+      setRecording(true);
+      setSeconds(0);
+      timerRef.current = window.setInterval(() => setSeconds((s) => s + 1), 1000);
+    } catch (e) {
+      console.error(e);
+      setError("Camera / microphone access was denied or is unavailable. Please allow access and try again.");
+    }
+  };
+
+  const stop = () => {
+    if (seconds < MIN_SECONDS) {
+      setError(`Please record at least ${MIN_SECONDS} seconds before stopping.`);
+      return;
+    }
+    clearTimer();
+    recorderRef.current?.stop();
+    setRecording(false);
+  };
+
+  const retake = () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(null);
+    setFile("video", undefined);
+    setSeconds(0);
+    setError(null);
+  };
+
+  const gpsLabel =
+    data.videoLat != null && data.videoLng != null
+      ? `${data.videoLat}, ${data.videoLng}`
+      : "Will be captured when recording starts";
+
   return (
     <div className="space-y-6">
       <StepHeader
@@ -40,9 +148,9 @@ export function VideoKycStep() {
 
       <label className="flex items-start gap-3 rounded-lg border border-border bg-background/40 px-4 py-3 cursor-pointer">
         <input
-          type="radio"
+          type="checkbox"
           checked={agree}
-          onChange={() => setAgree(true)}
+          onChange={(e) => setAgree(e.target.checked)}
           className="mt-0.5 h-4 w-4 accent-[oklch(0.68_0.18_45)]"
         />
         <span className="text-sm text-muted-foreground">
@@ -51,22 +159,61 @@ export function VideoKycStep() {
       </label>
 
       <div className="flex items-center gap-2 text-sm font-medium text-primary">
-        <MapPin className="h-4 w-4" /> GPS: 12.9379, 77.4769
+        <MapPin className="h-4 w-4" /> GPS: {gpsLabel}
       </div>
 
-      <div className="flex justify-center">
-        <Button disabled={!agree} className="bg-primary/70 hover:bg-primary disabled:opacity-60">
-          <Video className="h-4 w-4" /> Start Recording
-        </Button>
-      </div>
-
-      <div className="flex flex-col items-center gap-2 rounded-xl border border-border bg-background/40 p-8">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-accent text-primary">
-          <Video className="h-7 w-7" />
+      {error && (
+        <div className="flex items-start gap-2 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" /> <span>{error}</span>
         </div>
-        <p className="text-sm text-muted-foreground">
-          {agree ? "Click 'Start Recording' to begin" : "Accept declaration & start recording"}
-        </p>
+      )}
+
+      {/* Recorder */}
+      <div className="rounded-xl border border-border bg-background/40 p-4">
+        {previewUrl && hasVideo ? (
+          <div className="flex flex-col items-center gap-3">
+            <video src={previewUrl} controls playsInline className="max-h-72 w-full rounded-lg border border-border bg-black" />
+            <div className="flex items-center gap-2 text-sm font-medium text-[oklch(0.45_0.12_150)]">
+              <CheckCircle2 className="h-4 w-4" /> Video recorded ({seconds}s)
+            </div>
+            <Button type="button" variant="outline" onClick={retake}>
+              <RotateCcw className="h-4 w-4" /> Re-record
+            </Button>
+          </div>
+        ) : recording ? (
+          <div className="flex flex-col items-center gap-3">
+            <video ref={liveRef} playsInline muted className="max-h-72 w-full rounded-lg border border-border bg-black" />
+            <div className="flex items-center gap-2 text-sm font-semibold text-red-600">
+              <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-red-600" />
+              Recording… {seconds}s {seconds < MIN_SECONDS ? `(min ${MIN_SECONDS}s)` : ""}
+            </div>
+            <Button
+              type="button"
+              onClick={stop}
+              disabled={seconds < MIN_SECONDS}
+              className="bg-red-600 text-white hover:bg-red-700 disabled:opacity-60"
+            >
+              <Square className="h-4 w-4" /> Stop {seconds < MIN_SECONDS ? `(${MIN_SECONDS - seconds}s)` : "& Save"}
+            </Button>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-3 py-6">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-accent text-primary">
+              <Video className="h-7 w-7" />
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {agree ? "Click 'Start Recording' to begin" : "Accept the declaration above to enable recording"}
+            </p>
+            <Button
+              type="button"
+              onClick={start}
+              disabled={!agree}
+              className="bg-primary text-white hover:bg-primary/90 disabled:opacity-60"
+            >
+              <Video className="h-4 w-4" /> Start Recording
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

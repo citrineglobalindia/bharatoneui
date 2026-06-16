@@ -147,13 +147,14 @@ function RegisterFlow() {
         (typeof crypto !== "undefined" && "randomUUID" in crypto
           ? crypto.randomUUID()
           : String(Date.now()));
-      const [pan, aadhaar, shopPhoto, police, selfie, paymentScreenshot] = await Promise.all([
+      const [pan, aadhaar, shopPhoto, police, selfie, paymentScreenshot, videoKyc] = await Promise.all([
         uploadFile(folder, "pan", files.pan),
         uploadFile(folder, "aadhaar", files.aadhaar),
         uploadFile(folder, "shop-photo", files.shopPhoto),
         uploadFile(folder, "police", files.police),
         uploadFile(folder, "selfie", files.selfie),
         uploadFile(folder, "payment-screenshot", files.paymentScreenshot),
+        uploadFile(folder, "video-kyc", files.video),
       ]);
 
       const payload = {
@@ -197,6 +198,9 @@ function RegisterFlow() {
         police_verification_path: police,
         selfie_path: selfie,
         declaration_agreed: data.declarationAgreed,
+        video_kyc_path: videoKyc,
+        video_kyc_lat: data.videoLat,
+        video_kyc_lng: data.videoLng,
         payment_amount: amount,
         payment_utr: data.payment.utr,
         payment_method: data.payment.method,
@@ -291,7 +295,7 @@ function RegisterFlow() {
     personal: data.personalValid,
     business: !!data.shopName.trim() && addrOk && bankOk,
     kyc: !!files.pan && !!files.aadhaar && !!files.shopPhoto && panOk && aadhaarOk,
-    video: data.declarationAgreed,
+    video: data.declarationAgreed && !!files.video,
     payment: data.payment.utr.trim().length > 0 && !!files.paymentScreenshot,
     selfie: !!files.selfie,
   };
@@ -305,7 +309,7 @@ function RegisterFlow() {
         : currentKey === "kyc"
           ? "Upload PAN, Aadhaar & shop photo and enter valid PAN/Aadhaar numbers"
           : currentKey === "video"
-            ? "Accept the declaration to continue"
+            ? "Accept the declaration and record a 15s+ video to continue"
             : currentKey === "payment"
               ? "Enter the UTR and upload the payment screenshot"
               : currentKey === "selfie"
