@@ -20,12 +20,12 @@ function storedRole(): string | undefined {
 // Returns true if a Supabase session is available (existing or restored).
 export async function ensureStaffSession(): Promise<boolean> {
   try {
-    const { data } = await supabase.auth.getSession();
-    if (data.session) return true;
+    const { data } = await withTimeout(supabase.auth.getSession(), 6000);
+    if (data?.session) return true;
     const role = storedRole();
     const acct = role ? REAL_ACCOUNTS[role] : undefined;
     if (!acct) return false;
-    const { error } = await supabase.auth.signInWithPassword(acct);
+    const { error } = await withTimeout(supabase.auth.signInWithPassword(acct), 8000);
     return !error;
   } catch {
     return false;

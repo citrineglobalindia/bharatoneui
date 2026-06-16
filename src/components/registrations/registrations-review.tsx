@@ -128,7 +128,7 @@ export function RegistrationsReview() {
       setLoading(false);
     }
   }
-  useEffect(() => { (async () => { await ensureStaffSession(); load(); })(); }, []);
+  useEffect(() => { load(); ensureStaffSession().then((ok) => { if (ok) load(); }); }, []);
   useEffect(() => { if (role && PRIMARY_TAB[role]) setTab(PRIMARY_TAB[role]); }, [role]);
 
   const filtered = useMemo(() => {
