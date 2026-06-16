@@ -1,3 +1,21 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { HrAccountPage } from "@/components/hr/hr-account-pages";
-export const Route = createFileRoute("/hr/feedback")({ head:()=>({meta:[{title:"HR Feedback — BharatOne"},{name:"description",content:"Share feedback and improvement ideas for BharatOne HR."}]}), component:()=> <HrAccountPage page="feedback"/> });
+import { MessageSquare } from "lucide-react";
+import { HrShell } from "@/components/hr/hr-shell";
+import { PageHeader } from "@/components/retailer/page-header";
+import { FeedbackPanel } from "@/components/account/feedback-panel";
+
+export const Route = createFileRoute("/hr/feedback")({
+  head: () => ({ meta: [{ title: "Feedback — BharatOne" }] }),
+  component: Page,
+});
+
+function Page() {
+  return (
+    <HrShell>
+      <div className="space-y-5">
+        <PageHeader icon={<MessageSquare className="h-5 w-5" />} title="Feedback" subtitle="Share suggestions or report issues" />
+        <FeedbackPanel />
+      </div>
+    </HrShell>
+  );
+}
