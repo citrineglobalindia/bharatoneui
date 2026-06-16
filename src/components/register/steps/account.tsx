@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { OtpSuccessDialog, type OtpSuccessChannel } from "../otp-success-dialog";
 import { useRegistration } from "../registration-context";
+import { supabase } from "@/integrations/supabase/client";
 
 const MOCK_OTP = "123456";
 const RESEND_COOLDOWN = 30;
@@ -58,14 +59,21 @@ export function AccountStep() {
   const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const validMobile = /^[6-9]\d{9}$/.test(mobile);
 
-  const sendOtp = (ch: Channel) => {
+  const sendOtp = async (ch: Channel) => {
     if (ch === "email") {
       if (!validEmail) {
         setEmailError("Enter a valid email address first.");
         return;
       }
-      setEmailOtp(Array(6).fill(""));
       setEmailError(null);
+      const { error } = await supabase.functions.invoke("send-otp", {
+        body: { channel: "email", target: email },
+      });
+      if (error) {
+        setEmailError("Could not send the code. Please try again in a moment.");
+        return;
+      }
+      setEmailOtp(Array(6).fill(""));
       setEmailSent(true);
       setEmailCooldown(RESEND_COOLDOWN);
       setTimeout(() => emailInputsRef.current[0]?.focus(), 50);
@@ -87,9 +95,14 @@ export function AccountStep() {
       const code = emailOtp.join("");
       if (code.length !== 6) return setEmailError("Please enter the complete 6-digit code.");
       setVerifyingEmail(true);
-      await new Promise((r) => setTimeout(r, 700));
+      const { data, error } = await supabase.rpc("verify_registration_otp", {
+        _target: email,
+        _channel: "email",
+        _code: code,
+      });
       setVerifyingEmail(false);
-      if (code === MOCK_OTP) {
+      const ok = !error && (data as { verified?: boolean } | null)?.verified === true;
+      if (ok) {
         setEmailVerified(true);
         setEmailError(null);
         if (mobileVerified) {
@@ -98,7 +111,7 @@ export function AccountStep() {
           setSuccessChannel("email");
         }
         setSuccessOpen(true);
-      } else setEmailError("Incorrect code. Please try again or resend.");
+      } else setEmailError("Incorrect or expired code. Please try again or resend.");
     } else {
       const code = mobileOtp.join("");
       if (code.length !== 6) return setMobileError("Please enter the complete 6-digit code.");
@@ -276,7 +289,7 @@ export function AccountStep() {
         </div>
       ) : (
         <p className="text-center text-[11px] text-muted-foreground">
-          Demo OTP: <span className="font-mono font-semibold text-foreground">123456</span> (use for both)
+          Mobile demo OTP: <span className="font-mono font-semibold text-foreground">123456</span> (email is live)
         </p>
       )}
     </div>
