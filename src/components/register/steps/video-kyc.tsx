@@ -10,6 +10,7 @@ export function VideoKycStep() {
   const { data, set, files, setFile } = useRegistration();
   const agree = data.declarationAgreed;
   const setAgree = (v: boolean) => set({ declarationAgreed: v });
+  const fullName = [data.firstName, data.middleName, data.surname].filter(Boolean).join(" ") || "[Your Name]";
 
   const liveRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -127,7 +128,7 @@ export function VideoKycStep() {
         <div className="mt-3 max-h-48 overflow-auto rounded-md border border-border bg-card p-3 text-sm leading-relaxed text-muted-foreground space-y-2">
           <p className="font-semibold text-foreground">ಸ್ವಯಂ ಘೋಷಣೆ (Short Video Script)</p>
           <p>
-            ನಾನು, [Name], ಈ ವೀಡಿಯೊದಲ್ಲಿ ಕಾಣಿಸುತ್ತಿರುವ ವ್ಯಕ್ತಿ ನಾನಾಗಿದ್ದು, ನೋಂದಣಿ ಸಮಯದಲ್ಲಿ ನೀಡಿದ ಎಲ್ಲಾ ಮಾಹಿತಿಯೂ ಸತ್ಯ ಮತ್ತು ಸರಿಯಾಗಿದೆ ಎಂದು ಘೋಷಿಸುತ್ತೇನೆ.
+            ನಾನು, {fullName}, ಈ ವೀಡಿಯೊದಲ್ಲಿ ಕಾಣಿಸುತ್ತಿರುವ ವ್ಯಕ್ತಿ ನಾನಾಗಿದ್ದು, ನೋಂದಣಿ ಸಮಯದಲ್ಲಿ ನೀಡಿದ ಎಲ್ಲಾ ಮಾಹಿತಿಯೂ ಸತ್ಯ ಮತ್ತು ಸರಿಯಾಗಿದೆ ಎಂದು ಘೋಷಿಸುತ್ತೇನೆ.
           </p>
           <p>ನಾನು ಸ್ವಯಂ ಪ್ರೇರಿತವಾಗಿ BharatOne Retailer ಆಗಿ ನೋಂದಣಿ ಮಾಡುತ್ತಿದ್ದೇನೆ.</p>
           <p>ಈ ವೀಡಿಯೊವನ್ನು KYC ಪರಿಶೀಲನೆಗಾಗಿ ದಾಖಲಿಸಲು ಮತ್ತು ಬಳಸಲು ನನ್ನ ಸಂಪೂರ್ಣ ಒಪ್ಪಿಗೆ ಇದೆ.</p>

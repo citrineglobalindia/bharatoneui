@@ -166,6 +166,7 @@ function RegisterFlow() {
         first_name: data.firstName,
         middle_name: data.middleName,
         surname: data.surname,
+        dob: data.dob,
         password: data.password,
         shop_name: data.shopName,
         address_type: data.addressType,
