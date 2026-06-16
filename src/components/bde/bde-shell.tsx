@@ -40,7 +40,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           <div><p className="text-sm font-extrabold">BharatOne BDE</p><p className="text-[10px] text-bd-foreground/60">Business Development</p></div>
         </div>
       </div>
-      <nav className="flex-1 overflow-y-auto p-3">
+      <nav className="flex-1 overflow-y-auto nav-scroll p-3">
         <p className="px-3 pb-2 pt-1 text-[10px] font-bold uppercase tracking-widest text-bd-foreground/40">Sales Workspace</p>
         <ul className="space-y-1">
           {NAV.map((item) => {

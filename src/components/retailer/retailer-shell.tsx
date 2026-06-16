@@ -95,7 +95,7 @@ function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: 
           <span className="inline-block mt-0.5 text-[10px] font-semibold bg-india-green text-white px-1.5 py-0.5 rounded">Retailer</span>
         </div>
       </div>
-      <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-4">
+      <nav className="flex-1 overflow-y-auto nav-scroll px-2 py-3 space-y-4">
         {NAV.map((sec) => (
           <div key={sec.heading}>
             <p className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{sec.heading}</p>

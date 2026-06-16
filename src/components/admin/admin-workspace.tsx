@@ -100,7 +100,7 @@ function Sidebar({ active, onChange, onClose }: { active: string; onChange: (val
         <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-admin-panel-foreground/10"><div className="h-full w-[99%] rounded-full bg-admin-success" /></div>
         <p className="mt-2 text-[10px] text-admin-panel-foreground/45">99.98% uptime · 42ms response</p>
       </div>
-      <nav className="flex-1 overflow-y-auto px-3 py-4">
+      <nav className="flex-1 overflow-y-auto nav-scroll px-3 py-4">
         {NAVIGATION.map((group) => (
           <div key={group.label} className="mb-5">
             <p className="mb-1.5 px-3 text-[9px] font-extrabold uppercase tracking-[0.18em] text-admin-panel-foreground/35">{group.label}</p>

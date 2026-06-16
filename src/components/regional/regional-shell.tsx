@@ -106,7 +106,7 @@ function SidebarBody({ cfg, pathname, onNavigate }: { cfg: RegionalConfig; pathn
           </div>
         </div>
       </div>
-      <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-4">
+      <nav className="flex-1 overflow-y-auto nav-scroll px-2 py-3 space-y-4">
         <div>
           <p className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">Reports</p>
           <ul className="space-y-0.5">
