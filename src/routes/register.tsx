@@ -44,6 +44,7 @@ import {
   RegistrationProvider,
   useRegistration,
 } from "@/components/register/registration-context";
+import { validateBankDetails } from "@/components/register/bank-details";
 import { supabase } from "@/integrations/supabase/client";
 
 const searchSchema = z.object({
@@ -264,13 +265,52 @@ function RegisterFlow() {
 
   const currentKey = steps[current].key;
   const accountVerified = data.emailVerified && data.mobileVerified;
-  const blockNext =
-    (currentKey === "account" && !accountVerified) ||
-    (currentKey === "personal" && !data.personalValid);
+
+  const pin6 = /^\d{6}$/.test(data.pincode);
+  const addrOk =
+    data.addressType === "urban"
+      ? !!(data.buildingShopNo && data.city && data.district && data.state && pin6)
+      : !!(
+          data.buildingShopNo &&
+          data.villageName &&
+          data.gramPanchayat &&
+          data.hobliName &&
+          data.postOffice &&
+          data.taluk &&
+          data.district &&
+          data.state &&
+          pin6
+        );
+  const bankOk = Object.keys(validateBankDetails(data.bank)).length === 0;
+  const panOk = /^[A-Z]{5}[0-9]{4}[A-Z]$/.test(data.panNumber);
+  const aadhaarOk = /^\d{12}$/.test(data.aadhaarNumber);
+
+  const stepValid: Record<string, boolean> = {
+    portal: true,
+    account: accountVerified,
+    personal: data.personalValid,
+    business: !!data.shopName.trim() && addrOk && bankOk,
+    kyc: !!files.pan && !!files.aadhaar && !!files.shopPhoto && panOk && aadhaarOk,
+    video: data.declarationAgreed,
+    payment: data.payment.utr.trim().length > 0 && !!files.paymentScreenshot,
+    selfie: !!files.selfie,
+  };
+  const blockNext = currentKey in stepValid ? !stepValid[currentKey] : false;
+
   const blockMsg =
     currentKey === "account"
       ? "Verify email & mobile OTP to continue"
-      : "Complete the required fields to continue";
+      : currentKey === "business"
+        ? "Fill shop name, address, pincode (6 digits) and valid bank details"
+        : currentKey === "kyc"
+          ? "Upload PAN, Aadhaar & shop photo and enter valid PAN/Aadhaar numbers"
+          : currentKey === "video"
+            ? "Accept the declaration to continue"
+            : currentKey === "payment"
+              ? "Enter the UTR and upload the payment screenshot"
+              : currentKey === "selfie"
+                ? "Capture your selfie to submit"
+                : "Complete the required fields to continue";
 
   return (
     <div className="min-h-screen bg-tricolor">
@@ -339,17 +379,22 @@ function RegisterFlow() {
                   <ChevronLeft className="h-4 w-4" /> Back
                 </Button>
                 {current === steps.length - 1 ? (
-                  <Button
-                    onClick={submit}
-                    disabled={submitting}
-                    className="h-12 rounded-xl bg-saffron-gradient text-[15px] font-semibold shadow-elev hover:opacity-95 sm:h-10 sm:text-sm sm:w-auto"
-                  >
-                    {submitting ? (
-                      <><Loader2 className="h-4 w-4 animate-spin" /> Submitting…</>
-                    ) : (
-                      <>Submit <CheckCircle2 className="h-4 w-4" /></>
+                  <div className="flex flex-col items-end gap-1 sm:flex-row sm:items-center">
+                    {blockNext && (
+                      <span className="text-[11px] font-medium text-amber-700">{blockMsg}</span>
                     )}
-                  </Button>
+                    <Button
+                      onClick={submit}
+                      disabled={submitting || blockNext}
+                      className="h-12 rounded-xl bg-saffron-gradient text-[15px] font-semibold shadow-elev hover:opacity-95 disabled:opacity-50 disabled:cursor-not-allowed sm:h-10 sm:text-sm sm:w-auto"
+                    >
+                      {submitting ? (
+                        <><Loader2 className="h-4 w-4 animate-spin" /> Submitting…</>
+                      ) : (
+                        <>Submit <CheckCircle2 className="h-4 w-4" /></>
+                      )}
+                    </Button>
+                  </div>
                 ) : (
                   <div className="flex flex-col items-end gap-1 sm:flex-row sm:items-center">
                     {blockNext && (

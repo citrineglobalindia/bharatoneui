@@ -62,16 +62,19 @@ export function KycDocsStep() {
         <UploadBox title="Police Verification (Optional)" subtitle="Police verification certificate" fileKey="police" />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="PAN Number" icon={<FileText className="h-4 w-4" />}>
+        <Field label="PAN Number" required icon={<FileText className="h-4 w-4" />}>
           <input
             className={inputCls}
             placeholder="ABCDE1234F"
             maxLength={10}
             value={data.panNumber}
-            onChange={(e) => set({ panNumber: e.target.value.toUpperCase() })}
+            onChange={(e) => set({ panNumber: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "") })}
           />
+          {data.panNumber.length > 0 && !/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(data.panNumber) && (
+            <p className="mt-1 text-[11px] font-medium text-red-600">Format: 5 letters, 4 digits, 1 letter (e.g. ABCDE1234F)</p>
+          )}
         </Field>
-        <Field label="Aadhaar Number" icon={<FileText className="h-4 w-4" />}>
+        <Field label="Aadhaar Number" required icon={<FileText className="h-4 w-4" />}>
           <input
             className={inputCls}
             placeholder="12 digit Aadhaar"
@@ -79,6 +82,9 @@ export function KycDocsStep() {
             value={data.aadhaarNumber}
             onChange={(e) => set({ aadhaarNumber: e.target.value.replace(/\D/g, "") })}
           />
+          {data.aadhaarNumber.length > 0 && !/^\d{12}$/.test(data.aadhaarNumber) && (
+            <p className="mt-1 text-[11px] font-medium text-red-600">Aadhaar must be exactly 12 digits</p>
+          )}
         </Field>
       </div>
     </div>
