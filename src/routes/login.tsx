@@ -145,6 +145,7 @@ function LoginPage() {
                   toast.error("Captcha does not match");
                   return;
                 }
+                try { await supabase.auth.signOut(); } catch { /* clear any stale session */ }
                 const realId = identifier.trim();
                 if (realId.includes("@")) {
                   const { data: sb, error: sbErr } = await supabase.auth.signInWithPassword({
