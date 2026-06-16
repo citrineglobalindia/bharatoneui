@@ -130,6 +130,7 @@ export function BankDetailsSection({
           <input
             className={cn(inputCls, showErr("holderName") && "border-red-400 focus-visible:ring-red-500/15")}
             placeholder="e.g. Ramesh Kumar"
+            autoComplete="off"
             value={value.holderName}
             maxLength={100}
             onChange={(e) => {
@@ -153,6 +154,7 @@ export function BankDetailsSection({
           <input
             className={cn(inputCls, showErr("bankName") && "border-red-400 focus-visible:ring-red-500/15")}
             placeholder="e.g. State Bank of India"
+            autoComplete="off"
             value={value.bankName}
             maxLength={80}
             onChange={(e) => set("bankName", e.target.value.replace(/\d/g, ""))}

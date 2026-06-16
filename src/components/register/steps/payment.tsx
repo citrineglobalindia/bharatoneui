@@ -188,7 +188,7 @@ export function PaymentStep({
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Payment Method" required>
             <select
-              className={inputCls}
+              className={inputCls} autoComplete="off"
               value={value.method ?? "upi"}
               onChange={(e) => onChange({ ...value, method: e.target.value as PaymentData["method"] })}
             >
@@ -202,7 +202,7 @@ export function PaymentStep({
           <Field label="Payment Date" required icon={<Calendar className="h-4 w-4" />}>
             <input
               type="date"
-              className={inputCls}
+              className={inputCls} autoComplete="off"
               value={value.paidOn ?? ""}
               max={new Date().toISOString().slice(0, 10)}
               onChange={(e) => onChange({ ...value, paidOn: e.target.value })}
@@ -219,7 +219,7 @@ export function PaymentStep({
           </Field>
           <Field label="Payer Name" required icon={<User className="h-4 w-4" />}>
             <input
-              className={inputCls}
+              className={inputCls} autoComplete="off"
               placeholder="Name as in bank account"
               value={value.payerName ?? ""}
               onChange={(e) => onChange({ ...value, payerName: e.target.value })}
@@ -227,7 +227,7 @@ export function PaymentStep({
           </Field>
           <Field label="Payer Bank" icon={<Building2 className="h-4 w-4" />}>
             <input
-              className={inputCls}
+              className={inputCls} autoComplete="off"
               placeholder="e.g. HDFC Bank"
               value={value.payerBank ?? ""}
               onChange={(e) => onChange({ ...value, payerBank: e.target.value })}
@@ -235,7 +235,7 @@ export function PaymentStep({
           </Field>
           <Field label="Payer Account / UPI ID" icon={<CreditCard className="h-4 w-4" />}>
             <input
-              className={inputCls}
+              className={inputCls} autoComplete="off"
               placeholder="Last 4 digits or UPI ID"
               value={value.payerAccount ?? ""}
               onChange={(e) => onChange({ ...value, payerAccount: e.target.value })}

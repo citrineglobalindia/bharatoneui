@@ -54,6 +54,7 @@ export function PasswordField({
           onBlur={() => setFocused(false)}
           className={`${inputCls} pr-10`}
           placeholder={placeholder}
+          autoComplete="new-password"
           aria-describedby="password-criteria"
         />
         <button
@@ -145,6 +146,7 @@ export function ConfirmPasswordField({
             mismatch && "border-red-400 focus-visible:border-red-500 focus-visible:ring-red-500/15",
             match && "border-india-green/60 focus-visible:border-india-green",
           )}
+          autoComplete="new-password"
           placeholder={placeholder}
         />
         <button

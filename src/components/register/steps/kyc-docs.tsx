@@ -64,7 +64,7 @@ export function KycDocsStep() {
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="PAN Number" required icon={<FileText className="h-4 w-4" />}>
           <input
-            className={inputCls}
+            className={inputCls} autoComplete="off"
             placeholder="ABCDE1234F"
             maxLength={10}
             value={data.panNumber}
@@ -76,7 +76,7 @@ export function KycDocsStep() {
         </Field>
         <Field label="Aadhaar Number" required icon={<FileText className="h-4 w-4" />}>
           <input
-            className={inputCls}
+            className={inputCls} autoComplete="off"
             placeholder="12 digit Aadhaar"
             maxLength={12}
             value={data.aadhaarNumber}

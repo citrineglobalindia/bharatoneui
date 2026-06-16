@@ -37,12 +37,12 @@ export default function BusinessMap({ onChange }: { onChange?: (lat: number, lng
       </p>
       <div className="flex flex-col gap-3 sm:flex-row">
         <input
-          className={inputCls}
+          className={inputCls} autoComplete="off"
           value={coords.lat}
           onChange={(e) => setCoords((c) => ({ ...c, lat: +e.target.value || 0 }))}
         />
         <input
-          className={inputCls}
+          className={inputCls} autoComplete="off"
           value={coords.lng}
           onChange={(e) => setCoords((c) => ({ ...c, lng: +e.target.value || 0 }))}
         />

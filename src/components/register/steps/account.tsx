@@ -170,7 +170,7 @@ export function AccountStep() {
       <SectionCard title="Email ID" icon={<Mail className="h-4 w-4" />}>
         <div className="flex flex-col gap-2 sm:flex-row">
           <input
-            className={inputCls}
+            className={inputCls} autoComplete="off"
             type="email"
             placeholder="yourname@example.com"
             value={email}
@@ -240,7 +240,7 @@ export function AccountStep() {
               +91
             </div>
             <input
-              className={inputCls}
+              className={inputCls} autoComplete="off"
               placeholder="10 digit mobile number"
               maxLength={10}
               inputMode="numeric"

@@ -45,15 +45,15 @@ export function PersonalStep() {
       />
       <div className="grid gap-4 sm:grid-cols-3">
         <Field label="First Name" required>
-          <input className={inputCls} placeholder="First name" value={data.firstName}
+          <input className={inputCls} autoComplete="off" placeholder="First name" value={data.firstName}
             onChange={(e) => set({ firstName: onlyLetters(e.target.value) })} />
         </Field>
         <Field label="Middle Name">
-          <input className={inputCls} placeholder="Middle name (optional)" value={data.middleName}
+          <input className={inputCls} autoComplete="off" placeholder="Middle name (optional)" value={data.middleName}
             onChange={(e) => set({ middleName: onlyLetters(e.target.value) })} />
         </Field>
         <Field label="Surname" required>
-          <input className={inputCls} placeholder="Surname" value={data.surname}
+          <input className={inputCls} autoComplete="off" placeholder="Surname" value={data.surname}
             onChange={(e) => set({ surname: onlyLetters(e.target.value) })} />
         </Field>
       </div>
@@ -62,7 +62,7 @@ export function PersonalStep() {
         <Field label="Date of Birth" required>
           <input
             type="date"
-            className={inputCls}
+            className={inputCls} autoComplete="off"
             max={today}
             value={data.dob}
             onChange={(e) => set({ dob: e.target.value })}
