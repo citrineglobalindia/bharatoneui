@@ -1,13 +1,21 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Bell, Settings as SettingsIcon, User } from "lucide-react";
 import { BdeShell } from "@/components/bde/bde-shell";
+import { PageHeader } from "@/components/retailer/page-header";
+import { AccountProfile } from "@/components/account/account-profile";
 
 export const Route = createFileRoute("/bde/profile")({
-  component: () => (
+  head: () => ({ meta: [{ title: "My Profile — BharatOne" }] }),
+  component: Page,
+});
+
+function Page() {
+  return (
     <BdeShell>
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
-        <h1 className="text-2xl font-bold font-display uppercase tracking-widest text-bd mb-2">profile</h1>
-        <p className="text-muted-foreground">This module is currently under development.</p>
+      <div className="space-y-5">
+        <PageHeader icon={<User className="h-5 w-5" />} title="My Profile" subtitle="Your account details" />
+        <AccountProfile />
       </div>
     </BdeShell>
-  ),
-});
+  );
+}
