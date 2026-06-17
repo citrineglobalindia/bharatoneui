@@ -44,6 +44,7 @@ function NewRequestPage() {
   const catServices = useMemo(() => svcs.filter((s) => s.category_id === f.category_id), [svcs, f.category_id]);
   const service = useMemo(() => svcs.find((s) => s.id === f.service_id), [svcs, f.service_id]);
   const inr = (n: number) => "₹" + Number(n || 0).toLocaleString("en-IN");
+  const commAmt = service ? Math.round((Number(service.service_charge) * Number(service.retailer_commission) / 100) * 100) / 100 : 0;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -124,12 +125,12 @@ function NewRequestPage() {
                 </Select>
               </Field>
 
-              <Field label="Service Charge"><Input readOnly value={service ? inr(service.service_charge) : "—"} className="bg-muted font-semibold" /></Field>
-              <Field label="Commission Price"><Input readOnly value={service ? inr(service.retailer_commission) : "—"} className="bg-muted font-semibold text-india-green" /></Field>
+              <Field label="Total Cost of Service"><Input readOnly value={service ? inr(service.service_charge) : "—"} className="bg-muted font-semibold" /></Field>
+              <Field label="Your Commission"><Input readOnly value={service ? `${inr(commAmt)} (${service.retailer_commission}%)` : "—"} className="bg-muted font-semibold text-india-green" /></Field>
 
               {service && (
                 <div className="sm:col-span-2 flex items-center gap-2 rounded-lg bg-india-green/5 px-3 py-2 text-xs text-muted-foreground">
-                  <IndianRupee className="h-3.5 w-3.5 text-india-green" /> Pay <b className="mx-1 text-foreground">{inr(service.service_charge)}</b> · You earn <b className="mx-1 text-india-green">{inr(service.retailer_commission)}</b> commission on completion.
+                  <IndianRupee className="h-3.5 w-3.5 text-india-green" /> Total cost <b className="mx-1 text-foreground">{inr(service.service_charge)}</b> · You earn <b className="mx-1 text-india-green">{inr(commAmt)}</b> ({service.retailer_commission}%) commission on completion.
                 </div>
               )}
 

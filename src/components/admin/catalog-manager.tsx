@@ -127,19 +127,26 @@ function ServicesTab({ cats, svcs, reload }: { cats: Cat[]; svcs: Svc[]; reload:
   const [q, setQ] = useState("");
   const [filterCat, setFilterCat] = useState("");
 
-  const catName = (id: string) => cats.find((c) => c.id === id)?.name ?? "—";
+  const catName = (id: string) => cats.find((c) => c.id === id)?.name ?? "\u2014";
   const filtered = useMemo(() => svcs.filter((s) =>
     (!filterCat || s.category_id === filterCat) &&
     (!q || s.name.toLowerCase().includes(q.toLowerCase()))), [svcs, q, filterCat]);
+
+  const fields: [string, string][] = [["Company","company_commission"],["Distributor","distributor_commission"],["DRO","dro_commission"],["TRO","tro_commission"],["Retailer","retailer_commission"]];
+  const charge = Number(form.service_charge) || 0;
+  const totalPct = fields.reduce((a, [, k]) => a + (Number(form[k]) || 0), 0);
+  const pctOk = Math.abs(totalPct - 100) < 0.001;
+  const amt = (pct: number) => Math.round((charge * (Number(pct) || 0) / 100) * 100) / 100;
 
   const reset = () => { setForm({ ...emptySvc }); setEditing(false); };
   const save = async () => {
     if (!form.category_id) return toast.error("Select a category");
     if (!form.name.trim()) return toast.error("Service name required");
+    if (!pctOk) return toast.error("Commission split must total 100%", { description: `Currently ${totalPct}%` });
     setSaving(true);
     try {
       const payload = { category_id: form.category_id, name: form.name.trim(), description: form.description || null,
-        service_charge: Number(form.service_charge) || 0, company_commission: Number(form.company_commission) || 0,
+        service_charge: charge, company_commission: Number(form.company_commission) || 0,
         distributor_commission: Number(form.distributor_commission) || 0, tro_commission: Number(form.tro_commission) || 0,
         dro_commission: Number(form.dro_commission) || 0, retailer_commission: Number(form.retailer_commission) || 0, is_active: form.is_active };
       const res = editing ? await supabase.from("catalog_services").update(payload).eq("id", form.id) : await supabase.from("catalog_services").insert(payload);
@@ -150,8 +157,7 @@ function ServicesTab({ cats, svcs, reload }: { cats: Cat[]; svcs: Svc[]; reload:
   const edit = (s: Svc) => { setForm({ ...s, description: s.description ?? "" }); setEditing(true); window.scrollTo({ top: 0, behavior: "smooth" }); };
   const toggle = async (s: Svc) => { await supabase.from("catalog_services").update({ is_active: !s.is_active }).eq("id", s.id); reload(); };
   const del = async (id: string) => { if (!confirm("Delete this service?")) return; await supabase.from("catalog_services").delete().eq("id", id); reload(); };
-  const fields: [string, string][] = [["Company","company_commission"],["Distributor","distributor_commission"],["DRO","dro_commission"],["TRO","tro_commission"],["Retailer","retailer_commission"]];
-  const totalComm = fields.reduce((a, [, k]) => a + (Number(form[k]) || 0), 0);
+  const rowAmt = (s: Svc, pct: number) => inr(Math.round((Number(s.service_charge) * (Number(pct) || 0) / 100) * 100) / 100);
 
   return (
     <div className="space-y-5">
@@ -165,15 +171,23 @@ function ServicesTab({ cats, svcs, reload }: { cats: Cat[]; svcs: Svc[]; reload:
             </select>
           </div>
           <div><label className="text-[11px] font-semibold text-muted-foreground">Service name *</label><input className={inp + " h-10"} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. PAN Card Application" /></div>
-          <div><label className="text-[11px] font-semibold text-muted-foreground">Service charge (₹)</label><input type="number" min="0" className={inp + " h-10"} value={form.service_charge} onChange={(e) => setForm({ ...form, service_charge: e.target.value })} /></div>
+          <div><label className="text-[11px] font-semibold text-muted-foreground">Total Cost of Service (\u20b9)</label><input type="number" min="0" className={inp + " h-10"} value={form.service_charge} onChange={(e) => setForm({ ...form, service_charge: e.target.value })} /></div>
         </div>
         <div className="mt-3"><label className="text-[11px] font-semibold text-muted-foreground">Description</label><input className={inp + " h-10"} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Optional" /></div>
-        <p className="mb-2 mt-4 flex items-center justify-between text-xs font-bold uppercase tracking-wide text-muted-foreground"><span className="flex items-center gap-1.5"><IndianRupee className="h-3.5 w-3.5" /> Commission split</span><span className="font-semibold normal-case text-foreground">Total: {inr(totalComm)}</span></p>
+        <div className="mb-2 mt-4 flex items-center justify-between">
+          <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-muted-foreground"><IndianRupee className="h-3.5 w-3.5" /> Commission split (% of total cost)</span>
+          <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${pctOk ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"}`}>Total: {totalPct}% {pctOk ? "\u2713" : "(must be 100%)"}</span>
+        </div>
         <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-5">
           {fields.map(([label, key]) => (
-            <div key={key}><label className="text-[11px] font-semibold text-muted-foreground">{label} (₹)</label><input type="number" min="0" className={inp} value={form[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })} /></div>
+            <div key={key}>
+              <label className="text-[11px] font-semibold text-muted-foreground">{label} (%)</label>
+              <input type="number" min="0" max="100" className={inp} value={form[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })} />
+              <p className="mt-0.5 text-[11px] text-muted-foreground">= {inr(amt(form[key]))}</p>
+            </div>
           ))}
         </div>
+        <p className="mt-2 text-xs text-muted-foreground">Sum of splits = total cost of service. Company {inr(amt(form.company_commission))} + Distributor {inr(amt(form.distributor_commission))} + DRO {inr(amt(form.dro_commission))} + TRO {inr(amt(form.tro_commission))} + Retailer {inr(amt(form.retailer_commission))} = <b className="text-foreground">{inr(amt(totalPct))}</b></p>
         <label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} className="h-4 w-4 accent-[oklch(0.55_0.12_150)]" /> Active (visible to retailers)</label>
         <div className="mt-3 flex gap-2">
           <Button onClick={save} disabled={saving} className="bg-india-green text-white hover:bg-india-green/90">{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} {editing ? "Update Service" : "Create Service"}</Button>
@@ -189,7 +203,7 @@ function ServicesTab({ cats, svcs, reload }: { cats: Cat[]; svcs: Svc[]; reload:
       <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-soft">
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
-            <tr><th className="px-3 py-2">Service</th><th className="px-3 py-2">Category</th><th className="px-3 py-2">Charge</th><th className="px-3 py-2">Company</th><th className="px-3 py-2">Distrib.</th><th className="px-3 py-2">DRO</th><th className="px-3 py-2">TRO</th><th className="px-3 py-2">Retailer</th><th className="px-3 py-2">Status</th><th className="px-3 py-2 text-right">Actions</th></tr>
+            <tr><th className="px-3 py-2">Service</th><th className="px-3 py-2">Category</th><th className="px-3 py-2">Total Cost</th><th className="px-3 py-2">Company</th><th className="px-3 py-2">Distrib.</th><th className="px-3 py-2">DRO</th><th className="px-3 py-2">TRO</th><th className="px-3 py-2">Retailer</th><th className="px-3 py-2">Status</th><th className="px-3 py-2 text-right">Actions</th></tr>
           </thead>
           <tbody>
             {filtered.length === 0 ? <tr><td colSpan={10} className="px-3 py-10 text-center text-muted-foreground">No services found.</td></tr>
@@ -197,9 +211,11 @@ function ServicesTab({ cats, svcs, reload }: { cats: Cat[]; svcs: Svc[]; reload:
               <tr key={s.id} className="border-t border-border">
                 <td className="px-3 py-2 font-semibold">{s.name}</td>
                 <td className="px-3 py-2 text-muted-foreground">{catName(s.category_id)}</td>
-                <td className="px-3 py-2">{inr(s.service_charge)}</td>
-                <td className="px-3 py-2">{inr(s.company_commission)}</td><td className="px-3 py-2">{inr(s.distributor_commission)}</td>
-                <td className="px-3 py-2">{inr(s.dro_commission)}</td><td className="px-3 py-2">{inr(s.tro_commission)}</td><td className="px-3 py-2 text-india-green">{inr(s.retailer_commission)}</td>
+                <td className="px-3 py-2 font-semibold">{inr(s.service_charge)}</td>
+                <td className="px-3 py-2">{s.company_commission}% <span className="text-[11px] text-muted-foreground">({rowAmt(s, s.company_commission)})</span></td>
+                <td className="px-3 py-2">{s.distributor_commission}% <span className="text-[11px] text-muted-foreground">({rowAmt(s, s.distributor_commission)})</span></td>
+                <td className="px-3 py-2">{s.dro_commission}%</td><td className="px-3 py-2">{s.tro_commission}%</td>
+                <td className="px-3 py-2 text-india-green">{s.retailer_commission}% <span className="text-[11px]">({rowAmt(s, s.retailer_commission)})</span></td>
                 <td className="px-3 py-2"><Pill on={s.is_active} /></td>
                 <td className="px-3 py-2 text-right whitespace-nowrap">
                   <button onClick={() => toggle(s)} className="mr-3 text-xs font-semibold text-muted-foreground hover:text-foreground">{s.is_active ? "Deactivate" : "Activate"}</button>
