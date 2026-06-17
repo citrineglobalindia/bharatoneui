@@ -138,6 +138,7 @@ import { Route as AccountantFeedbackRouteImport } from './routes/accountant.feed
 import { Route as AccountantDashboardRouteImport } from './routes/accountant.dashboard'
 import { Route as AccountantChangePasswordRouteImport } from './routes/accountant.change-password'
 import { Route as AccountantApplicationsRouteImport } from './routes/accountant.applications'
+import { Route as AccountantAppLedgerRouteImport } from './routes/accountant.app-ledger'
 import { Route as DistributorRetailersIndexRouteImport } from './routes/distributor.retailers.index'
 import { Route as TroRetailersIdRouteImport } from './routes/tro.retailers.$id'
 import { Route as QcKycReviewIdRouteImport } from './routes/qc.kyc-review.$id'
@@ -794,6 +795,11 @@ const AccountantApplicationsRoute = AccountantApplicationsRouteImport.update({
   path: '/accountant/applications',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountantAppLedgerRoute = AccountantAppLedgerRouteImport.update({
+  id: '/accountant/app-ledger',
+  path: '/accountant/app-ledger',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DistributorRetailersIndexRoute =
   DistributorRetailersIndexRouteImport.update({
     id: '/',
@@ -875,6 +881,7 @@ export interface FileRoutesByFullPath {
   '/tro-login': typeof TroLoginRoute
   '/video-kyc': typeof VideoKycRoute
   '/wallet': typeof WalletRoute
+  '/accountant/app-ledger': typeof AccountantAppLedgerRoute
   '/accountant/applications': typeof AccountantApplicationsRoute
   '/accountant/change-password': typeof AccountantChangePasswordRoute
   '/accountant/dashboard': typeof AccountantDashboardRoute
@@ -1013,6 +1020,7 @@ export interface FileRoutesByTo {
   '/tro-login': typeof TroLoginRoute
   '/video-kyc': typeof VideoKycRoute
   '/wallet': typeof WalletRoute
+  '/accountant/app-ledger': typeof AccountantAppLedgerRoute
   '/accountant/applications': typeof AccountantApplicationsRoute
   '/accountant/change-password': typeof AccountantChangePasswordRoute
   '/accountant/dashboard': typeof AccountantDashboardRoute
@@ -1151,6 +1159,7 @@ export interface FileRoutesById {
   '/tro-login': typeof TroLoginRoute
   '/video-kyc': typeof VideoKycRoute
   '/wallet': typeof WalletRoute
+  '/accountant/app-ledger': typeof AccountantAppLedgerRoute
   '/accountant/applications': typeof AccountantApplicationsRoute
   '/accountant/change-password': typeof AccountantChangePasswordRoute
   '/accountant/dashboard': typeof AccountantDashboardRoute
@@ -1291,6 +1300,7 @@ export interface FileRouteTypes {
     | '/tro-login'
     | '/video-kyc'
     | '/wallet'
+    | '/accountant/app-ledger'
     | '/accountant/applications'
     | '/accountant/change-password'
     | '/accountant/dashboard'
@@ -1429,6 +1439,7 @@ export interface FileRouteTypes {
     | '/tro-login'
     | '/video-kyc'
     | '/wallet'
+    | '/accountant/app-ledger'
     | '/accountant/applications'
     | '/accountant/change-password'
     | '/accountant/dashboard'
@@ -1566,6 +1577,7 @@ export interface FileRouteTypes {
     | '/tro-login'
     | '/video-kyc'
     | '/wallet'
+    | '/accountant/app-ledger'
     | '/accountant/applications'
     | '/accountant/change-password'
     | '/accountant/dashboard'
@@ -1705,6 +1717,7 @@ export interface RootRouteChildren {
   TroLoginRoute: typeof TroLoginRoute
   VideoKycRoute: typeof VideoKycRoute
   WalletRoute: typeof WalletRoute
+  AccountantAppLedgerRoute: typeof AccountantAppLedgerRoute
   AccountantApplicationsRoute: typeof AccountantApplicationsRoute
   AccountantChangePasswordRoute: typeof AccountantChangePasswordRoute
   AccountantDashboardRoute: typeof AccountantDashboardRoute
@@ -2686,6 +2699,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountantApplicationsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/accountant/app-ledger': {
+      id: '/accountant/app-ledger'
+      path: '/accountant/app-ledger'
+      fullPath: '/accountant/app-ledger'
+      preLoaderRoute: typeof AccountantAppLedgerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/distributor/retailers/': {
       id: '/distributor/retailers/'
       path: '/'
@@ -2893,6 +2913,7 @@ const rootRouteChildren: RootRouteChildren = {
   TroLoginRoute: TroLoginRoute,
   VideoKycRoute: VideoKycRoute,
   WalletRoute: WalletRoute,
+  AccountantAppLedgerRoute: AccountantAppLedgerRoute,
   AccountantApplicationsRoute: AccountantApplicationsRoute,
   AccountantChangePasswordRoute: AccountantChangePasswordRoute,
   AccountantDashboardRoute: AccountantDashboardRoute,
