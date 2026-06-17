@@ -10,6 +10,7 @@ import {
 
 import appCss from "../styles.css?url";
 import { Toaster } from "sonner";
+import { LiveChatWidget } from "@/components/live-chat-widget";
 
 function NotFoundComponent() {
   return (
@@ -122,6 +123,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <Outlet />
+      <LiveChatWidget />
       <Toaster richColors position="top-right" />
     </QueryClientProvider>
   );
