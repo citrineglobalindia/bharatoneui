@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 import { useCurrentUser } from "@/lib/use-current-user";
 import {
+  Receipt,
   LayoutDashboard,
   ClipboardCheck,
   ShieldCheck,
@@ -55,6 +56,7 @@ const NAV: NavSection[] = [
     heading: "KYC Operations",
     items: [
       { label: "Review Queue", icon: <ClipboardCheck className="h-4 w-4" />, to: "/qc/kyc-queue", badge: "12" },
+      { label: "Application Transactions", icon: <Receipt className="h-4 w-4" />, to: "/qc/applications" },
       { label: "Document Search", icon: <FileSearch className="h-4 w-4" />, to: "/qc/document-search" },
       { label: "Flagged Cases", icon: <AlertTriangle className="h-4 w-4" />, to: "/qc/flagged", badge: "3" },
       { label: "Approved", icon: <ShieldCheck className="h-4 w-4" />, to: "/qc/approved" },

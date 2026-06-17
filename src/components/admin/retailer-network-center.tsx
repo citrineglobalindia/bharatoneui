@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Activity, BadgeIndianRupee, Ban, CheckCircle2, Download, MapPin, Power,
   Search, Store, TrendingUp, Wallet, Eye, type LucideIcon,
@@ -13,6 +13,8 @@ import { downloadCsv } from "@/lib/admin-actions";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { RetailerDetailSheet } from "./retailer-detail-sheet";
+import { supabase } from "@/integrations/supabase/client";
+import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 
 type KycStatus = "Verified" | "Pending" | "Rejected";
 type RState = "Active" | "Suspended";
@@ -59,13 +61,46 @@ const TIER_TONE: Record<Retailer["tier"], string> = {
 const inr = (n: number) => "₹" + n.toLocaleString("en-IN");
 
 export function RetailerNetworkCenter() {
-  const [rows, setRows] = useState<Retailer[]>(SEED);
+  const [rows, setRows] = useState<Retailer[]>([]);
+  const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("All");
   const [query, setQuery] = useState("");
-  const [selected, setSelected] = useState<Retailer | null>(SEED[0]);
+  const [selected, setSelected] = useState<Retailer | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      try {
+        await ensureStaffSession();
+        const { data } = await supabase.from("retailer_registrations")
+          .select("application_id, first_name, surname, shop_name, mobile, status, payment_amount, created_at")
+          .eq("status", "approved").order("created_at", { ascending: false });
+        const mapped: Retailer[] = ((data as any[]) ?? []).map((r) => ({
+          id: r.application_id ?? "RET", name: [r.first_name, r.surname].filter(Boolean).join(" ") || "Retailer",
+          shop: r.shop_name ?? "-", phone: r.mobile ?? "-", district: "-", taluk: "-",
+          kyc: "Verified", wallet: 0, txnToday: 0, revenue: Number(r.payment_amount ?? 0),
+          tier: "Silver", state: "Active", officer: "-",
+        }));
+        setRows(mapped);
+        setSelected(mapped[0] ?? null);
+      } finally { setLoading(false); }
+    })();
+  }, []);
+
   const openDetail = (r: Retailer) => { setSelected(r); setDetailOpen(true); };
+
+  const kpis = useMemo(() => {
+    const total = rows.length;
+    const active = rows.filter((r) => r.state === "Active").length;
+    const revenue = rows.reduce((a, r) => a + Number(r.revenue || 0), 0);
+    return [
+      { ...KPI[0], value: loading ? "…" : total.toLocaleString("en-IN"), detail: "Approved retailers" },
+      { ...KPI[1], value: loading ? "…" : active.toLocaleString("en-IN"), detail: total ? `${Math.round((active/total)*100)}% active` : "—" },
+      { ...KPI[2], value: "₹" + revenue.toLocaleString("en-IN"), detail: "Onboarding collected" },
+      { ...KPI[3], value: loading ? "…" : "0", detail: "No pending here" },
+    ];
+  }, [rows, loading]);
 
   const filtered = useMemo(() => {
     const t = query.trim().toLowerCase();
@@ -95,7 +130,7 @@ export function RetailerNetworkCenter() {
   return (
     <div className="space-y-5">
       <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {KPI.map((k) => { const Icon = k.icon; return (
+        {kpis.map((k) => { const Icon = k.icon; return (
           <div key={k.label} className="rounded-2xl border border-border bg-card p-4 shadow-soft">
             <div className="flex items-start justify-between"><span className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">{k.label}</span><span className={cn("grid h-9 w-9 place-items-center rounded-xl", k.tone)}><Icon className="h-4 w-4" /></span></div>
             <p className="mt-3 font-display text-2xl font-extrabold tracking-tight">{k.value}</p><p className="mt-1 text-[10px] font-semibold text-muted-foreground">{k.detail}</p>

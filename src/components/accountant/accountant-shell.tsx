@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 import { useCurrentUser } from "@/lib/use-current-user";
 import {
+  Receipt,
   LayoutDashboard,
   FileCheck2,
   Wrench,
@@ -68,6 +69,7 @@ const NAV: NavSection[] = [
     heading: "Finance",
     items: [
       { label: "Services & Commission", icon: <Wrench className="h-4 w-4" />, to: "/accountant/services" },
+      { label: "Application Transactions", icon: <Receipt className="h-4 w-4" />, to: "/accountant/applications" },
       { label: "Main Account Recharge", icon: <Banknote className="h-4 w-4" />, to: "/accountant/main-recharge" },
       { label: "Ledger", icon: <BookOpenCheck className="h-4 w-4" />, to: "/accountant/ledger" },
     ],

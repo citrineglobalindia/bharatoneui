@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, FileSearch, RefreshCw, Search, IndianRupee, Clock3, CheckCircle2, UserCog, Download, ChevronRight, X } from "lucide-react";
+import { Loader2, FileSearch, RefreshCw, Search, IndianRupee, Clock3, CheckCircle2, UserCog, Download, ChevronRight, X, XCircle } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -40,6 +41,7 @@ export function ServiceApplicationsView() {
   const [status, setStatus] = useState("all");
   const [opFilter, setOpFilter] = useState("all");
   const [sel, setSel] = useState<Row | null>(null);
+  const [saving, setSaving] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -56,6 +58,16 @@ export function ServiceApplicationsView() {
     } finally { setLoading(false); }
   }
   useEffect(() => { load(); }, []);
+
+  const updateStatus = async (r: Row, status: string) => {
+    setSaving(true);
+    const { error } = await supabase.from("service_applications").update({ status }).eq("id", r.id);
+    setSaving(false);
+    if (error) return toast.error("Update failed", { description: error.message });
+    toast.success(`Marked ${label[status] ?? status}`);
+    setRows((p) => p.map((x) => x.id === r.id ? { ...x, status } : x));
+    setSel((s2) => s2 && s2.id === r.id ? { ...s2, status } : s2);
+  };
 
   const opName = (id: string | null) => id ? (ops[id] ?? "Assigned") : "Unassigned";
   const operatorIds = useMemo(() => Array.from(new Set(rows.map((r) => r.assigned_operator).filter(Boolean))) as string[], [rows]);
@@ -149,6 +161,14 @@ export function ServiceApplicationsView() {
               </div>
             )}
             <div className="mt-3 flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-sm"><span>Total cost <b>{inr(sel.service_charge)}</b></span><span className="text-india-green">Retailer commission <b>{inr(sel.commission_price)}</b></span></div>
+            <div className="mt-4"><p className="mb-1.5 text-xs font-bold uppercase tracking-wide text-muted-foreground">Approve transaction / update status</p>
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" disabled={saving} onClick={() => updateStatus(sel, "in_progress")} className="bg-amber-500 text-white hover:bg-amber-600"><Clock3 className="h-4 w-4" /> In Progress</Button>
+                <Button size="sm" disabled={saving} onClick={() => updateStatus(sel, "approved")} className="bg-india-green text-white hover:bg-india-green/90"><CheckCircle2 className="h-4 w-4" /> Approve</Button>
+                <Button size="sm" disabled={saving} onClick={() => updateStatus(sel, "completed")} variant="outline"><CheckCircle2 className="h-4 w-4" /> Complete</Button>
+                <Button size="sm" disabled={saving} onClick={() => updateStatus(sel, "rejected")} variant="outline" className="text-rose-600"><XCircle className="h-4 w-4" /> Reject</Button>
+              </div>
+            </div>
             {sel.result_note && <p className="mt-3 rounded-lg bg-muted/50 px-3 py-2 text-sm"><b>Operator note:</b> {sel.result_note}</p>}
             {sel.result_doc_path && <button onClick={() => openDoc(sel.result_doc_path!)} className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-9 text-xs font-semibold hover:bg-muted"><Download className="h-3.5 w-3.5" /> Download returned attachment</button>}
           </div>
