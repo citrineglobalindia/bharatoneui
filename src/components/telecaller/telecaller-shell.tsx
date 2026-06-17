@@ -54,6 +54,7 @@ function Sidebar({ activeSection, onSelect, onNavigate }: { activeSection: strin
 export function TelecallerShell({ children, activeSection, onSectionChange }: { children: React.ReactNode; activeSection: string; onSectionChange: (section: string) => void }) {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+  const me = useCurrentUser();
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       <aside className="hidden h-screen w-72 shrink-0 lg:block"><Sidebar activeSection={activeSection} onSelect={onSectionChange} /></aside>

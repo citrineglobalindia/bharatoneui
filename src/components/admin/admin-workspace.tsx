@@ -133,6 +133,7 @@ export function AdminWorkspace() {
   const [lastUpdated, setLastUpdated] = useState("Just now");
   const [globalQuery, setGlobalQuery] = useState("");
   const navigate = useNavigate();
+  const me = useCurrentUser();
   const date = useMemo(() => new Intl.DateTimeFormat("en-IN", { weekday: "long", day: "numeric", month: "long" }).format(new Date()), []);
 
   const signOut = () => { void supabase.auth.signOut(); localStorage.removeItem("bharatone:auth"); navigate({ to: "/login", replace: true }); };
