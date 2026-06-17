@@ -10,6 +10,7 @@ export function LiveChatWidget() {
   const [authed, setAuthed] = useState(false);
   const [open, setOpen] = useState(false);
   const [ticketId, setTicketId] = useState<string | null>(null);
+  const [myId, setMyId] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => { (async () => { const { data } = await supabase.auth.getUser(); setAuthed(!!data.user); })(); }, []);
@@ -22,6 +23,7 @@ export function LiveChatWidget() {
       const { data: u } = await supabase.auth.getUser();
       const uid = u.user?.id;
       if (!uid) { toast.error("Please sign in to use live chat"); setOpen(false); return; }
+      setMyId(uid);
       const { data: ex } = await supabase.from("support_tickets").select("id").eq("user_id", uid).eq("category", "Live Chat").in("status", ["open", "in_progress"]).order("created_at", { ascending: false }).limit(1).maybeSingle();
       let id = (ex as any)?.id as string | undefined;
       if (!id) {
@@ -46,7 +48,7 @@ export function LiveChatWidget() {
           </div>
           <div className="p-3">
             {loading || !ticketId ? <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Connecting…</div>
-              : <SupportThread ticketId={ticketId} />}
+              : <SupportThread ticketId={ticketId} ownerId={myId} />}
           </div>
         </div>
       )}

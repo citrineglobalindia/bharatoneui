@@ -104,7 +104,7 @@ export function ChatInbox({ filter }: { filter: "live-admin" | "assigned" }) {
               </div>
               <div className="flex-1 space-y-2 overflow-y-auto bg-[#f7f7f5] p-3">
                 {msgs.length === 0 ? <p className="py-10 text-center text-xs text-muted-foreground">No messages yet. Say hello 👋</p>
-                  : msgs.map((m) => { const mine = m.sender_id === uid; return (
+                  : msgs.map((m) => { const mine = m.sender_id === sel.user_id; return (
                     <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                       <div className={`max-w-[78%] rounded-2xl px-3 py-2 text-sm shadow-soft ${mine ? "rounded-br-sm bg-[#dcf8c6]" : "rounded-bl-sm bg-white"}`}>
                         {!mine && <p className="mb-0.5 text-[10px] font-bold text-india-green">{m.sender_name || "User"}</p>}

@@ -20,7 +20,7 @@ export function ApplicationThread({ applicationId, title = "Chat with operator" 
     setMsgs((data as Msg[]) ?? []); setLoading(false);
     setTimeout(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
   }
-  useEffect(() => { (async () => { const { data } = await supabase.auth.getUser(); setUid(data.user?.id ?? ""); await load(); })(); /* eslint-disable-next-line */ }, [applicationId]);
+  useEffect(() => { let on = true; (async () => { const { data } = await supabase.auth.getUser(); if (on) setUid(data.user?.id ?? ""); await load(); })(); const t = setInterval(load, 6000); return () => { on = false; clearInterval(t); }; /* eslint-disable-next-line */ }, [applicationId]);
 
   const send = async () => {
     if (!text.trim()) return;

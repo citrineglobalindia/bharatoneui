@@ -6,7 +6,7 @@ import { useCurrentUser } from "@/lib/use-current-user";
 
 type Msg = { id: string; sender_id: string; sender_name: string | null; sender_role: string | null; body: string; created_at: string };
 
-export function SupportThread({ ticketId }: { ticketId: string }) {
+export function SupportThread({ ticketId, ownerId }: { ticketId: string; ownerId?: string }) {
   const me = useCurrentUser();
   const [uid, setUid] = useState("");
   const [msgs, setMsgs] = useState<Msg[]>([]);
@@ -20,7 +20,7 @@ export function SupportThread({ ticketId }: { ticketId: string }) {
     setMsgs((data as Msg[]) ?? []); setLoading(false);
     setTimeout(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
   }
-  useEffect(() => { (async () => { const { data } = await supabase.auth.getUser(); setUid(data.user?.id ?? ""); await load(); })(); /* eslint-disable-next-line */ }, [ticketId]);
+  useEffect(() => { let on = true; (async () => { const { data } = await supabase.auth.getUser(); if (on) setUid(data.user?.id ?? ""); await load(); })(); const t = setInterval(load, 6000); return () => { on = false; clearInterval(t); }; /* eslint-disable-next-line */ }, [ticketId]);
 
   const send = async () => {
     if (!text.trim()) return;
@@ -37,7 +37,7 @@ export function SupportThread({ ticketId }: { ticketId: string }) {
       <div className="max-h-64 space-y-2 overflow-y-auto p-3">
         {loading ? <div className="py-6 text-center"><Loader2 className="mx-auto h-4 w-4 animate-spin text-muted-foreground" /></div>
           : msgs.length === 0 ? <p className="py-6 text-center text-xs text-muted-foreground">No replies yet.</p>
-          : msgs.map((m) => { const mine = m.sender_id === uid; return (
+          : msgs.map((m) => { const mine = ownerId ? m.sender_id === ownerId : m.sender_id === uid; return (
             <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
               <div className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${mine ? "bg-india-green text-white" : "bg-muted"}`}>
                 {!mine && <p className="mb-0.5 text-[10px] font-bold opacity-70">{m.sender_name || "User"}{m.sender_role ? ` · ${m.sender_role}` : ""}</p>}

@@ -93,7 +93,7 @@ export function SupportCenter() {
             <div className="flex items-start justify-between"><div><p className="font-mono text-xs font-bold text-muted-foreground">{sel.ticket_no}</p><p className="font-display text-lg font-extrabold">{sel.subject}</p><p className="text-sm text-muted-foreground">{sel.category} · {sel.priority}</p></div><button onClick={() => setSel(null)}><X className="h-5 w-5 text-muted-foreground" /></button></div>
             <div className="mt-2 flex items-center gap-2"><span className={`rounded-full px-2 py-0.5 text-[11px] font-bold capitalize ${statusTone[sel.status]}`}>{sel.status.replace("_", " ")}</span>{sel.assigned_name && <span className="text-xs text-muted-foreground">Handled by {sel.assigned_name}</span>}</div>
             {sel.body && <p className="mt-3 rounded-lg bg-muted/50 px-3 py-2 text-sm">{sel.body}</p>}
-            <div className="mt-4"><SupportThread ticketId={sel.id} /></div>
+            <div className="mt-4"><SupportThread ticketId={sel.id} ownerId={sel.user_id} /></div>
           </div>
         </div>
       )}
