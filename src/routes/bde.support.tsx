@@ -1,13 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { LifeBuoy } from "lucide-react";
 import { BdeShell } from "@/components/bde/bde-shell";
-
+import { PageHeader } from "@/components/retailer/page-header";
+import { SupportCenter } from "@/components/support-center";
 export const Route = createFileRoute("/bde/support")({
-  component: () => (
-    <BdeShell>
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
-        <h1 className="text-2xl font-bold font-display uppercase tracking-widest text-bd mb-2">support</h1>
-        <p className="text-muted-foreground">This module is currently under development.</p>
-      </div>
-    </BdeShell>
-  ),
+  head: () => ({ meta: [{ title: "Support — BharatOne BDE" }] }),
+  component: () => (<BdeShell><div className="space-y-5"><PageHeader icon={<LifeBuoy className="h-5 w-5" />} title="Support" subtitle="Reach our team or raise a ticket." /><SupportCenter /></div></BdeShell>),
 });
