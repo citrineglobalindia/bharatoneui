@@ -33,7 +33,7 @@ function NewRequestPage() {
     (async () => {
       const [c, s] = await Promise.all([
         supabase.from("service_categories").select("id,name").eq("is_active", true).order("sort_order").order("name"),
-        supabase.from("catalog_services").select("id,category_id,name,service_charge,retailer_commission").eq("is_active", true).order("sort_order").order("name"),
+        supabase.from("services").select("id,category_id,name,service_charge,retailer_commission").eq("is_active", true).order("sort_order").order("name"),
       ]);
       setCats((c.data as Cat[]) ?? []);
       setSvcs((s.data as Svc[]) ?? []);

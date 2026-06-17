@@ -10,12 +10,16 @@ type ServiceType = "inlink" | "api" | "backend";
 type Service = {
   id: string; name: string; logo_url: string | null; redirect_url: string | null;
   backend_route: string | null; service_type: ServiceType; category: string | null;
-  is_active: boolean; sort_order: number;
+  category_id: string | null; is_active: boolean; sort_order: number;
+  service_charge: number; company_commission: number; distributor_commission: number;
+  dro_commission: number; tro_commission: number; retailer_commission: number;
 };
+type Cat = { id: string; name: string; is_active: boolean };
 
 const emptyForm = {
   id: "", name: "", logo_url: "", redirect_url: "", backend_route: "", service_type: "inlink" as ServiceType,
-  category: "", is_active: true, sort_order: 0, form_schema: [] as FormField[],
+  category: "", category_id: "", is_active: true, sort_order: 0, form_schema: [] as FormField[],
+  service_charge: 0, company_commission: 0, distributor_commission: 0, dro_commission: 0, tro_commission: 0, retailer_commission: 0,
   api_endpoint: "", api_method: "POST", api_auth_type: "apikey", api_auth_header: "Authorization", api_secret_ref: "", api_notes: "",
 };
 
@@ -27,6 +31,7 @@ const TYPE_META: Record<ServiceType, { label: string; icon: React.ReactNode; ton
 
 export function ServicesManager() {
   const [rows, setRows] = useState<Service[]>([]);
+  const [cats, setCats] = useState<Cat[]>([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ ...emptyForm });
   const [editing, setEditing] = useState(false);
@@ -36,14 +41,24 @@ export function ServicesManager() {
   async function load() {
     setLoading(true);
     try {
-      const { data } = await supabase.from("services").select("*").order("sort_order").order("created_at", { ascending: false });
-      setRows((data as Service[]) ?? []);
+      const [sv, ct] = await Promise.all([
+        supabase.from("services").select("*").order("sort_order").order("created_at", { ascending: false }),
+        supabase.from("service_categories").select("id,name,is_active").order("sort_order").order("name"),
+      ]);
+      setRows((sv.data as Service[]) ?? []);
+      setCats((ct.data as Cat[]) ?? []);
     } finally { setLoading(false); }
   }
   useEffect(() => { load(); ensureStaffSession().then((ok) => { if (ok) load(); }); }, []);
 
   const reset = () => { setForm({ ...emptyForm }); setEditing(false); };
   const set = (patch: Partial<typeof emptyForm>) => setForm((f) => ({ ...f, ...patch }));
+  const inr = (n: number) => "\u20b9" + Number(n || 0).toLocaleString("en-IN");
+  const commFields: [string, string][] = [["Company","company_commission"],["Distributor","distributor_commission"],["DRO","dro_commission"],["TRO","tro_commission"],["Retailer","retailer_commission"]];
+  const charge = Number((form as any).service_charge) || 0;
+  const totalPct = commFields.reduce((a, [, k]) => a + (Number((form as any)[k]) || 0), 0);
+  const pctOk = charge <= 0 || Math.abs(totalPct - 100) < 0.001;
+  const amt = (pct: any) => Math.round((charge * (Number(pct) || 0) / 100) * 100) / 100;
 
   const uploadLogo = async (file: File) => {
     setUploading(true);
@@ -65,6 +80,7 @@ export function ServicesManager() {
       if (!/^https?:\/\//i.test(redirect)) redirect = "https://" + redirect;
     }
     if (form.service_type === "api" && !form.api_endpoint.trim()) { toast.error("API endpoint is required for an API service"); return; }
+    if (charge > 0 && !pctOk) { toast.error("Commission split must total 100%", { description: `Currently ${totalPct}%` }); return; }
     setSaving(true);
     try {
       const payload = {
@@ -74,9 +90,16 @@ export function ServicesManager() {
         redirect_url: form.service_type === "inlink" ? redirect : (redirect || null),
         backend_route: null,
         form_schema: form.service_type === "backend" ? form.form_schema : [],
-        category: form.category || null,
+        category: (cats.find((c) => c.id === form.category_id)?.name) || form.category || null,
+        category_id: form.category_id || null,
         is_active: form.is_active,
         sort_order: Number(form.sort_order) || 0,
+        service_charge: Number(form.service_charge) || 0,
+        company_commission: Number(form.company_commission) || 0,
+        distributor_commission: Number(form.distributor_commission) || 0,
+        dro_commission: Number(form.dro_commission) || 0,
+        tro_commission: Number(form.tro_commission) || 0,
+        retailer_commission: Number(form.retailer_commission) || 0,
       };
       let serviceId = form.id;
       if (editing) {
@@ -103,7 +126,8 @@ export function ServicesManager() {
 
   const edit = async (s: Service) => {
     const base = { ...emptyForm, id: s.id, name: s.name, logo_url: s.logo_url ?? "", redirect_url: s.redirect_url ?? "",
-      backend_route: s.backend_route ?? "", service_type: s.service_type, category: s.category ?? "", is_active: s.is_active, sort_order: s.sort_order, form_schema: (s as any).form_schema ?? [] };
+      backend_route: s.backend_route ?? "", service_type: s.service_type, category: s.category ?? "", category_id: s.category_id ?? "", is_active: s.is_active, sort_order: s.sort_order, form_schema: (s as any).form_schema ?? [],
+      service_charge: s.service_charge ?? 0, company_commission: s.company_commission ?? 0, distributor_commission: s.distributor_commission ?? 0, dro_commission: s.dro_commission ?? 0, tro_commission: s.tro_commission ?? 0, retailer_commission: s.retailer_commission ?? 0 };
     if (s.service_type === "api") {
       const { data } = await supabase.from("service_api_config").select("*").eq("service_id", s.id).maybeSingle();
       if (data) Object.assign(base, { api_endpoint: data.endpoint ?? "", api_method: data.method ?? "POST", api_auth_type: data.auth_type ?? "apikey", api_auth_header: data.auth_header ?? "Authorization", api_secret_ref: data.secret_ref ?? "", api_notes: data.notes ?? "" });
@@ -134,7 +158,10 @@ export function ServicesManager() {
           <div><label className="text-xs font-semibold text-muted-foreground">Service name *</label>
             <input className={input} value={form.name} onChange={(e) => set({ name: e.target.value })} placeholder="e.g. AEPS Services" /></div>
           <div><label className="text-xs font-semibold text-muted-foreground">Category</label>
-            <input className={input} value={form.category} onChange={(e) => set({ category: e.target.value })} placeholder="Banking / Travel / Bills…" /></div>
+            <select className={input} value={form.category_id} onChange={(e) => set({ category_id: e.target.value })}>
+              <option value="">Select category</option>
+              {cats.map((c) => <option key={c.id} value={c.id}>{c.name}{!c.is_active ? " (inactive)" : ""}</option>)}
+            </select></div>
 
           {form.service_type === "inlink" && (
             <div className="sm:col-span-2"><label className="text-xs font-semibold text-muted-foreground">Redirect URL *</label>
@@ -163,8 +190,27 @@ export function ServicesManager() {
             </>
           )}
 
+          <div><label className="text-xs font-semibold text-muted-foreground">Total Cost of Service (\u20b9)</label>
+            <input type="number" min="0" className={input} value={form.service_charge} onChange={(e) => set({ service_charge: Number(e.target.value) })} /></div>
           <div><label className="text-xs font-semibold text-muted-foreground">Sort order</label>
             <input type="number" className={input} value={form.sort_order} onChange={(e) => set({ sort_order: Number(e.target.value) })} /></div>
+
+          <div className="sm:col-span-2 rounded-xl border border-border bg-background/40 p-3">
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-xs font-semibold text-foreground">Commission split (% of total cost)</p>
+              <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${pctOk ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"}`}>Total: {totalPct}% {charge <= 0 ? "" : pctOk ? "\u2713" : "(must be 100%)"}</span>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-5">
+              {commFields.map(([label, key]) => (
+                <div key={key}>
+                  <label className="text-[11px] font-semibold text-muted-foreground">{label} (%)</label>
+                  <input type="number" min="0" max="100" className={input} value={(form as any)[key]} onChange={(e) => set({ [key]: Number(e.target.value) } as any)} />
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">= {inr(amt((form as any)[key]))}</p>
+                </div>
+              ))}
+            </div>
+            <p className="mt-2 text-[11px] text-muted-foreground">Company {inr(amt(form.company_commission))} + Distributor {inr(amt(form.distributor_commission))} + DRO {inr(amt(form.dro_commission))} + TRO {inr(amt(form.tro_commission))} + Retailer {inr(amt(form.retailer_commission))} = <b className="text-foreground">{inr(amt(totalPct))}</b></p>
+          </div>
 
           <div className="sm:col-span-2"><label className="text-xs font-semibold text-muted-foreground">Logo</label>
             <div className="flex flex-wrap items-center gap-3">
@@ -196,6 +242,7 @@ export function ServicesManager() {
                   <div className="flex items-center gap-1.5"><p className="truncate font-semibold">{s.name}</p>
                     <span className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${TYPE_META[s.service_type].tone}`}>{TYPE_META[s.service_type].icon}{s.service_type}</span></div>
                   {s.category && <p className="text-[11px] text-muted-foreground">{s.category}</p>}
+                  {Number(s.service_charge) > 0 && <p className="text-[11px] font-semibold text-foreground">{inr(s.service_charge)} \u00b7 Retailer {s.retailer_commission}%</p>}
                   <p className="mt-0.5 truncate text-[11px] font-medium text-india-green">{s.service_type === "backend" ? s.backend_route : s.service_type === "api" ? "API integration" : s.redirect_url}</p>
                   <div className="mt-2 flex items-center gap-2">
                     <button onClick={() => toggle(s)} className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${s.is_active ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>{s.is_active ? "Active" : "Inactive"}</button>
