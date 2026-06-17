@@ -18,6 +18,7 @@ type App = {
   address: string | null; aadhaar_number: string | null; pan_number: string | null;
   service_charge: number; commission_price: number; status: string; submitter_name: string | null; created_at: string;
   result_doc_path: string | null; result_note: string | null; result_uploaded_at: string | null;
+  form_data: Record<string, any> | null;
 };
 const STAGES = ["submitted", "in_progress", "approved", "rejected", "completed"];
 const label: Record<string, string> = { submitted: "New", in_progress: "In Progress", approved: "Approved", rejected: "Rejected", completed: "Completed" };
@@ -155,6 +156,11 @@ function OperatorPortal() {
               ))}
               <div className="col-span-2"><p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Address</p><p className="font-medium">{sel.address || "—"}</p></div>
             </div>
+            {sel.form_data && Object.keys(sel.form_data).length > 0 && (
+              <div className="mt-3 rounded-lg border border-border p-3"><p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Submitted form</p>
+                <div className="grid grid-cols-2 gap-2 text-sm">{Object.entries(sel.form_data).map(([k, v]) => (<div key={k}><p className="text-[11px] text-muted-foreground">{k}</p><p className="font-medium break-words">{String(v)}</p></div>))}</div>
+              </div>
+            )}
             <div className="mt-3 flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-sm"><span>Total cost <b>{inr(sel.service_charge)}</b></span><span className="text-india-green">Retailer commission <b>{inr(sel.commission_price)}</b></span></div>
             <p className="mt-4 mb-1.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-muted-foreground"><Paperclip className="h-3.5 w-3.5" /> Return attachment</p>
             <div className="flex flex-wrap items-center gap-2">

@@ -10,6 +10,7 @@ type Row = {
   address: string | null; aadhaar_number: string | null; pan_number: string | null;
   service_charge: number; commission_price: number; status: string; submitter_name: string | null;
   assigned_operator: string | null; result_doc_path: string | null; result_note: string | null; created_at: string;
+  form_data: Record<string, any> | null;
 };
 const tone: Record<string, string> = {
   submitted: "bg-saffron/10 text-saffron", in_progress: "bg-amber-500/10 text-amber-600",
@@ -135,6 +136,11 @@ export function ServiceApplicationsView() {
               ))}
               <div className="col-span-2"><p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Address</p><p className="font-medium">{sel.address || "—"}</p></div>
             </div>
+            {sel.form_data && Object.keys(sel.form_data).length > 0 && (
+              <div className="mt-3 rounded-lg border border-border p-3"><p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Submitted form</p>
+                <div className="grid grid-cols-2 gap-2 text-sm">{Object.entries(sel.form_data).map(([k, v]) => (<div key={k}><p className="text-[11px] text-muted-foreground">{k}</p><p className="font-medium break-words">{String(v)}</p></div>))}</div>
+              </div>
+            )}
             <div className="mt-3 flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-sm"><span>Total cost <b>{inr(sel.service_charge)}</b></span><span className="text-india-green">Retailer commission <b>{inr(sel.commission_price)}</b></span></div>
             {sel.result_note && <p className="mt-3 rounded-lg bg-muted/50 px-3 py-2 text-sm"><b>Operator note:</b> {sel.result_note}</p>}
             {sel.result_doc_path && <button onClick={() => openDoc(sel.result_doc_path!)} className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-9 text-xs font-semibold hover:bg-muted"><Download className="h-3.5 w-3.5" /> Download returned attachment</button>}

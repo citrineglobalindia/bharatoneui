@@ -52,12 +52,11 @@ function ServiceLauncher() {
     try {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) { toast.error("Please sign in to submit."); return; }
-      const { error } = await supabase.from("service_submissions").insert({
-        service_id: id, service_name: svc.name, submitted_by: u.user.id, submitter_name: u.user.email, data: values,
-      });
+      const { data, error } = await supabase.rpc("submit_backend_application", { p_service_id: id, p_form: values });
       if (error) { toast.error("Submit failed", { description: error.message }); return; }
+      const res = (data as any) ?? {};
       setDone(true);
-      toast.success("Submitted successfully");
+      toast.success("Application submitted", { description: res.application_no ? `Reference ${res.application_no}` : undefined });
     } finally { setSubmitting(false); }
   };
 
