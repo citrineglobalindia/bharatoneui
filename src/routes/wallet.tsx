@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { Wallet, Plus, Loader2, ArrowDownToLine, ArrowUpFromLine, Clock3, RefreshCw, Send } from "lucide-react";
+import { Wallet, Plus, Loader2, ArrowDownToLine, ArrowUpFromLine, Clock3, RefreshCw, Send, Upload } from "lucide-react";
 import { RetailerShell } from "@/components/retailer/retailer-shell";
 import { PageHeader } from "@/components/retailer/page-header";
 import { SectionCard, Field, Input, Select, PrimaryButton } from "@/components/retailer/section-card";
@@ -25,6 +25,10 @@ function WalletPage() {
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState("UPI");
   const [reference, setReference] = useState("");
+  const [txnDate, setTxnDate] = useState("");
+  const [receiptPath, setReceiptPath] = useState("");
+  const [receiptName, setReceiptName] = useState("");
+  const [uploadingRcpt, setUploadingRcpt] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [withdrawals, setWithdrawals] = useState<any[]>([]);
   const [wAmt, setWAmt] = useState(""); const [wMethod, setWMethod] = useState("Bank Transfer"); const [wAcct, setWAcct] = useState(""); const [wBusy, setWBusy] = useState(false);
@@ -47,16 +51,29 @@ function WalletPage() {
   }
   useEffect(() => { load(); }, []);
 
+  const uploadReceipt = async (file: File) => {
+    setUploadingRcpt(true);
+    try {
+      const { data: u } = await supabase.auth.getUser();
+      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+      const path = `${u.user?.id}/${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage.from("wallet-receipts").upload(path, file, { upsert: false, contentType: file.type || undefined });
+      if (error) { toast.error("Upload failed", { description: error.message }); return; }
+      setReceiptPath(path); setReceiptName(file.name); toast.success("Receipt uploaded");
+    } finally { setUploadingRcpt(false); }
+  };
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const amt = Number(amount);
     if (!amt || amt <= 0) return toast.error("Enter a valid amount");
+    if (!txnDate) return toast.error("Select the date of transaction");
+    if (!receiptPath) return toast.error("Please upload the transaction receipt");
     setSubmitting(true);
-    const { error } = await supabase.rpc("request_wallet_topup", { p_amount: amt, p_method: method, p_reference: reference || null });
+    const { error } = await supabase.rpc("request_wallet_topup", { p_amount: amt, p_method: method, p_reference: reference || null, p_txn_date: txnDate, p_receipt_path: receiptPath });
     setSubmitting(false);
     if (error) return toast.error("Request failed", { description: error.message });
     toast.success("Top-up request sent", { description: "Awaiting accountant verification." });
-    setAmount(""); setReference(""); load();
+    setAmount(""); setReference(""); setTxnDate(""); setReceiptPath(""); setReceiptName(""); load();
   };
 
   const withdraw = async (e: React.FormEvent) => {
@@ -89,10 +106,17 @@ function WalletPage() {
           </div>
           <SectionCard title="Add Funds" className="lg:col-span-2">
             <form onSubmit={submit} className="grid gap-3 sm:grid-cols-3">
-              <Field label="Amount (₹)"><Input type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="500" /></Field>
-              <Field label="Method"><Select value={method} onChange={(e) => setMethod(e.target.value)}><option>UPI</option><option>Bank Transfer</option><option>Cash Deposit</option><option>NEFT/IMPS</option></Select></Field>
+              <Field label="Amount (₹) *"><Input type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="500" /></Field>
+              <Field label="Date of Transaction *"><Input type="date" value={txnDate} max={new Date().toISOString().slice(0,10)} onChange={(e) => setTxnDate(e.target.value)} /></Field>
+              <Field label="Method *"><Select value={method} onChange={(e) => setMethod(e.target.value)}><option>UPI</option><option>Bank Transfer</option><option>Cash Deposit</option><option>NEFT/IMPS</option></Select></Field>
               <Field label="Reference / UTR"><Input value={reference} onChange={(e) => setReference(e.target.value)} placeholder="Txn ref (optional)" /></Field>
-              <div className="sm:col-span-3 flex justify-end"><PrimaryButton type="submit" disabled={submitting}>{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Request Top-up</PrimaryButton></div>
+              <div className="sm:col-span-2"><Field label="Transaction Receipt *">
+                <div className="flex flex-wrap items-center gap-2">
+                  <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-card px-3 h-10 text-sm font-semibold hover:bg-muted">{uploadingRcpt ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} {receiptPath ? "Replace receipt" : "Upload receipt"}<input type="file" accept="image/*,application/pdf" className="hidden" onChange={(e) => e.target.files?.[0] && uploadReceipt(e.target.files[0])} /></label>
+                  {receiptName && <span className="truncate max-w-[180px] text-xs font-medium text-india-green">{receiptName}</span>}
+                </div>
+              </Field></div>
+              <div className="sm:col-span-3 flex justify-end"><PrimaryButton type="submit" disabled={submitting || uploadingRcpt}>{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Request Top-up</PrimaryButton></div>
             </form>
             <p className="mt-1 text-xs text-muted-foreground">Funds are credited after the accountant verifies your payment.</p>
           </SectionCard>
