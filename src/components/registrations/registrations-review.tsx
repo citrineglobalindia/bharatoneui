@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {
-  ShieldCheck, CreditCard, CheckCircle2, XCircle, Search, FileText, Copy, Loader2, RefreshCw, Eye, User, Building2, Landmark, Maximize2, X, ExternalLink, FileSearch, Banknote,
+  ShieldCheck, CreditCard, CheckCircle2, Pencil, XCircle, Search, FileText, Copy, Loader2, RefreshCw, Eye, User, Building2, Landmark, Maximize2, X, ExternalLink, FileSearch, Banknote,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -77,7 +77,30 @@ export function RegistrationsReview() {
   const [detail, setDetail] = useState<any | null>(null);
   const [detailUrls, setDetailUrls] = useState<Record<string, string>>({});
   const [detailLoading, setDetailLoading] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [editForm, setEditForm] = useState<any>({});
+  const [savingEdit, setSavingEdit] = useState(false);
   const [lightbox, setLightbox] = useState<{ url: string; kind: string; label: string } | null>(null);
+
+  const startEdit = () => {
+    setEditForm({
+      first_name: detail.first_name ?? "", middle_name: detail.middle_name ?? "", surname: detail.surname ?? "",
+      shop_name: detail.shop_name ?? "", email: detail.email ?? "", mobile: detail.mobile ?? "",
+      payment_amount: detail.payment_amount ?? "", payment_utr: detail.payment_utr ?? "",
+    });
+    setEditMode(true);
+  };
+  const saveEdit = async () => {
+    setSavingEdit(true);
+    try {
+      const payload: any = { ...editForm, payment_amount: editForm.payment_amount === "" ? null : Number(editForm.payment_amount) };
+      const { error } = await supabase.from("retailer_registrations").update(payload).eq("id", detail.id);
+      if (error) { toast.error("Save failed", { description: error.message }); return; }
+      toast.success("Registration updated");
+      setDetail((d: any) => ({ ...d, ...payload }));
+      setEditMode(false); load();
+    } finally { setSavingEdit(false); }
+  };
 
   const openDetail = async (r: RegRow) => {
     setDetailLoading(true);
@@ -312,7 +335,7 @@ export function RegistrationsReview() {
         </table>
       </div>
 
-      <Dialog open={!!detail} onOpenChange={(o) => !o && setDetail(null)}>
+      <Dialog open={!!detail} onOpenChange={(o) => !o && (setDetail(null), setEditMode(false))}>
         <DialogContent className="max-h-[92vh] w-[min(980px,96vw)] overflow-y-auto p-0">
           {detailLoading || !detail || !detail.application_id ? (
             <div className="py-20 text-center text-muted-foreground"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></div>
@@ -331,6 +354,7 @@ export function RegistrationsReview() {
                   <div className="flex flex-col items-end gap-1">
                     <span className={`rounded-full px-3 py-1 text-xs font-bold ${typeBadge(detail.registration_type)}`}>{typeLabel(detail.registration_type)}</span>
                     <span className={`rounded-full px-3 py-1 text-xs font-bold ${statusPill(detail.status)}`}>{detail.status.replace("_", " ")}</span>
+                    {role === "admin" && !editMode && <button onClick={startEdit} className="mt-1 inline-flex items-center gap-1 rounded-lg border border-border bg-white px-2.5 py-1 text-xs font-semibold hover:bg-muted"><Pencil className="h-3.5 w-3.5" /> Edit details</button>}
                   </div>
                 </div>
                 <div className="mt-4 grid grid-cols-3 gap-3">
@@ -350,6 +374,21 @@ export function RegistrationsReview() {
               </div>
 
               <div className="space-y-4 px-6 py-5">
+                {role === "admin" && editMode && (
+                  <div className="rounded-xl border-2 border-india-green/30 bg-india-green/5 p-4">
+                    <p className="mb-3 flex items-center gap-2 text-sm font-bold"><Pencil className="h-4 w-4 text-india-green" /> Edit registration (admin)</p>
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      {([["First name","first_name"],["Middle name","middle_name"],["Surname","surname"],["Shop name","shop_name"],["Email","email"],["Mobile","mobile"],["Payment amount","payment_amount"],["Payment UTR","payment_utr"]] as [string,string][]).map(([lbl,key]) => (
+                        <div key={key}><label className="text-[11px] font-semibold text-muted-foreground">{lbl}</label>
+                          <input className="h-9 w-full rounded-lg border border-border bg-background px-2.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-india-green/30" value={editForm[key] ?? ""} onChange={(e) => setEditForm({ ...editForm, [key]: e.target.value })} /></div>
+                      ))}
+                    </div>
+                    <div className="mt-3 flex gap-2">
+                      <Button size="sm" onClick={saveEdit} disabled={savingEdit} className="bg-india-green text-white hover:bg-india-green/90">{savingEdit ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} Save changes</Button>
+                      <Button size="sm" variant="outline" onClick={() => setEditMode(false)}><X className="h-4 w-4" /> Cancel</Button>
+                    </div>
+                  </div>
+                )}
                 <div className="grid gap-4 md:grid-cols-2">
                   <DCard icon={<User className="h-4 w-4" />} title="Account">
                     <DField label="Email" value={detail.email} />
