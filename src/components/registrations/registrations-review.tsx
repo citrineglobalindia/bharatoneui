@@ -159,6 +159,7 @@ export function RegistrationsReview() {
   const filtered = useMemo(() => {
     return rows
       .filter((r) => r.status === tab)
+      .filter((r) => !(role === "qc" && r.status === "accountant_review"))
       .filter((r) => typeFilter === "all" ? true : (r.registration_type || "new") === typeFilter)
       .filter((r) => {
         if (!query.trim()) return true;
@@ -222,11 +223,15 @@ export function RegistrationsReview() {
   const canAccountant = role === "accountant" || role === "admin";
   const canQc = role === "qc" || role === "admin";
   const canTele = role === "telecaller" || role === "admin";
+  const visibleTabs = role === "qc" ? TABS.filter((t) => t !== "accountant_review")
+    : role === "accountant" ? TABS.filter((t) => t !== "qc_review" && t !== "telecaller")
+    : role === "telecaller" ? (["telecaller", "rejected"] as unknown as typeof TABS)
+    : TABS;
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        {TABS.map((t) => (
+        {visibleTabs.map((t) => (
           <button key={t} onClick={() => setTab(t)}
             className={`rounded-lg px-3 h-9 text-sm font-semibold transition ${tab === t ? "bg-india-green text-white" : "bg-muted text-foreground hover:bg-muted/70"}`}>
             {TAB_LABEL[t]} {rows.filter((r) => r.status === t).length ? `(${rows.filter((r) => r.status === t).length})` : ""}
