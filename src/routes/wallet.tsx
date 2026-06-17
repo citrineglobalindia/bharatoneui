@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { Wallet, Plus, Loader2, ArrowDownToLine, ArrowUpFromLine, Clock3, RefreshCw } from "lucide-react";
+import { Wallet, Plus, Loader2, ArrowDownToLine, ArrowUpFromLine, Clock3, RefreshCw, Send } from "lucide-react";
 import { RetailerShell } from "@/components/retailer/retailer-shell";
 import { PageHeader } from "@/components/retailer/page-header";
 import { SectionCard, Field, Input, Select, PrimaryButton } from "@/components/retailer/section-card";
@@ -15,7 +15,7 @@ export const Route = createFileRoute("/wallet")({
 type Tx = { id: string; direction: "credit" | "debit"; amount: number; balance_after: number; reason: string | null; created_at: string };
 type Topup = { id: string; amount: number; method: string | null; reference: string | null; status: string; created_at: string };
 const inr = (n: number) => "₹" + Number(n || 0).toLocaleString("en-IN");
-const statusTone: Record<string, string> = { pending: "bg-amber-100 text-amber-700", verified: "bg-emerald-100 text-emerald-700", rejected: "bg-rose-100 text-rose-700" };
+const statusTone: Record<string, string> = { pending: "bg-amber-100 text-amber-700", verified: "bg-emerald-100 text-emerald-700", paid: "bg-emerald-100 text-emerald-700", rejected: "bg-rose-100 text-rose-700" };
 
 function WalletPage() {
   const [balance, setBalance] = useState(0);
@@ -26,19 +26,23 @@ function WalletPage() {
   const [method, setMethod] = useState("UPI");
   const [reference, setReference] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [withdrawals, setWithdrawals] = useState<any[]>([]);
+  const [wAmt, setWAmt] = useState(""); const [wMethod, setWMethod] = useState("Bank Transfer"); const [wAcct, setWAcct] = useState(""); const [wBusy, setWBusy] = useState(false);
 
   async function load() {
     setLoading(true);
     const { data: u } = await supabase.auth.getUser();
     if (!u.user) { setLoading(false); return; }
-    const [w, t, tp] = await Promise.all([
+    const [w, t, tp, wd] = await Promise.all([
       supabase.from("wallets").select("balance").eq("user_id", u.user.id).maybeSingle(),
       supabase.from("wallet_transactions").select("id,direction,amount,balance_after,reason,created_at").order("created_at", { ascending: false }).limit(50),
       supabase.from("wallet_topups").select("id,amount,method,reference,status,created_at").order("created_at", { ascending: false }).limit(20),
+      supabase.from("wallet_withdrawals").select("id,amount,method,account_details,status,requested_at").order("requested_at", { ascending: false }).limit(20),
     ]);
     setBalance(Number((w.data as any)?.balance ?? 0));
     setTxns((t.data as Tx[]) ?? []);
     setTopups((tp.data as Topup[]) ?? []);
+    setWithdrawals((wd.data as any[]) ?? []);
     setLoading(false);
   }
   useEffect(() => { load(); }, []);
@@ -53,6 +57,20 @@ function WalletPage() {
     if (error) return toast.error("Request failed", { description: error.message });
     toast.success("Top-up request sent", { description: "Awaiting accountant verification." });
     setAmount(""); setReference(""); load();
+  };
+
+  const withdraw = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const amt = Number(wAmt);
+    if (!amt || amt <= 0) return toast.error("Enter a valid amount");
+    if (amt > balance) return toast.error("Amount exceeds your wallet balance");
+    if (!wAcct.trim()) return toast.error("Enter your payout account details");
+    setWBusy(true);
+    const { error } = await supabase.rpc("request_withdrawal", { p_amount: amt, p_method: wMethod, p_account: wAcct, p_note: null });
+    setWBusy(false);
+    if (error) { if (String(error.message).includes("INSUFFICIENT_FUNDS")) return toast.error("Insufficient balance"); return toast.error("Request failed", { description: error.message }); }
+    toast.success("Withdrawal request sent", { description: "Awaiting approval." });
+    setWAmt(""); setWAcct(""); load();
   };
 
   const pendingTotal = useMemo(() => topups.filter((t) => t.status === "pending").reduce((a, t) => a + Number(t.amount), 0), [topups]);
@@ -79,6 +97,21 @@ function WalletPage() {
             <p className="mt-1 text-xs text-muted-foreground">Funds are credited after the accountant verifies your payment.</p>
           </SectionCard>
         </div>
+
+        <SectionCard title="Withdraw Funds">
+          <form onSubmit={withdraw} className="grid gap-3 sm:grid-cols-4">
+            <Field label="Amount (₹)"><Input type="number" min="1" value={wAmt} onChange={(e) => setWAmt(e.target.value)} placeholder="500" /></Field>
+            <Field label="Method"><Select value={wMethod} onChange={(e) => setWMethod(e.target.value)}><option>Bank Transfer</option><option>UPI</option><option>NEFT/IMPS</option></Select></Field>
+            <div className="sm:col-span-2"><Field label="Payout account (A/C no, IFSC or UPI)"><Input value={wAcct} onChange={(e) => setWAcct(e.target.value)} placeholder="Account / UPI details" /></Field></div>
+            <div className="sm:col-span-4 flex justify-end"><PrimaryButton type="submit" disabled={wBusy}>{wBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Request Withdrawal</PrimaryButton></div>
+          </form>
+          {withdrawals.length > 0 && (
+            <div className="mt-3 overflow-x-auto"><table className="w-full text-sm">
+              <thead className="text-left text-[11px] uppercase tracking-wide text-muted-foreground"><tr><th className="py-2">Date</th><th className="py-2">Amount</th><th className="py-2">Method</th><th className="py-2">Status</th></tr></thead>
+              <tbody>{withdrawals.map((wd) => (<tr key={wd.id} className="border-t border-border"><td className="py-2 text-xs text-muted-foreground">{new Date(wd.requested_at).toLocaleString("en-IN")}</td><td className="py-2 font-semibold">{inr(wd.amount)}</td><td className="py-2">{wd.method ?? "—"}</td><td className="py-2"><span className={`rounded-full px-2 py-0.5 text-[11px] font-bold capitalize ${statusTone[wd.status] ?? "bg-muted"}`}>{wd.status}</span></td></tr>))}</tbody>
+            </table></div>
+          )}
+        </SectionCard>
 
         {topups.length > 0 && (
           <SectionCard title="Top-up Requests">
