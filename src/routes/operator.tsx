@@ -122,12 +122,13 @@ function OperatorPortal() {
           <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-soft">
             <table className="w-full text-sm">
               <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
-                <tr><th className="px-3 py-2">Application</th><th className="px-3 py-2">Applicant</th><th className="px-3 py-2">Service</th><th className="px-3 py-2">Charge</th><th className="px-3 py-2">Status</th><th className="px-3 py-2 text-right">Action</th></tr>
+                <tr><th className="px-3 py-2">Application ID</th><th className="px-3 py-2">Retailer</th><th className="px-3 py-2">Applicant</th><th className="px-3 py-2">Service</th><th className="px-3 py-2">Charge</th><th className="px-3 py-2">Status</th><th className="px-3 py-2 text-right">Action</th></tr>
               </thead>
               <tbody>
                 {filtered.map((a) => (
                   <tr key={a.id} className="border-t border-border hover:bg-muted/30">
                     <td className="px-3 py-2 font-mono text-xs font-semibold">{a.application_no}</td>
+                    <td className="px-3 py-2"><span className="text-xs font-medium">{a.submitter_name || "—"}</span></td>
                     <td className="px-3 py-2"><div className="font-semibold">{a.full_name}</div><div className="text-[11px] text-muted-foreground">{a.phone}</div></td>
                     <td className="px-3 py-2"><div className="font-medium">{a.service_name}</div><div className="text-[11px] text-muted-foreground">{a.category_name}</div></td>
                     <td className="px-3 py-2">{inr(a.service_charge)}</td>

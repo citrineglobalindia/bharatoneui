@@ -95,14 +95,15 @@ export function ServiceApplicationsView() {
       <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-soft">
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
-            <tr><th className="px-3 py-2">Application</th><th className="px-3 py-2">Applicant</th><th className="px-3 py-2">Service</th><th className="px-3 py-2">Mapped Operator</th><th className="px-3 py-2">Charge</th><th className="px-3 py-2">Commission</th><th className="px-3 py-2">Result</th><th className="px-3 py-2">Status</th><th className="px-3 py-2 text-right"></th></tr>
+            <tr><th className="px-3 py-2">Application ID</th><th className="px-3 py-2">Retailer</th><th className="px-3 py-2">Applicant</th><th className="px-3 py-2">Service</th><th className="px-3 py-2">Mapped Operator</th><th className="px-3 py-2">Charge</th><th className="px-3 py-2">Commission</th><th className="px-3 py-2">Result</th><th className="px-3 py-2">Status</th><th className="px-3 py-2 text-right"></th></tr>
           </thead>
           <tbody>
-            {loading ? <tr><td colSpan={9} className="px-3 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr>
-              : filtered.length === 0 ? <tr><td colSpan={9} className="px-3 py-10 text-center text-muted-foreground">No applications found.</td></tr>
+            {loading ? <tr><td colSpan={10} className="px-3 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr>
+              : filtered.length === 0 ? <tr><td colSpan={10} className="px-3 py-10 text-center text-muted-foreground">No applications found.</td></tr>
               : filtered.map((r) => (
               <tr key={r.id} className="border-t border-border hover:bg-muted/30">
                 <td className="px-3 py-2 font-mono text-xs font-semibold">{r.application_no}</td>
+                <td className="px-3 py-2"><span className="text-xs font-medium">{r.submitter_name || "—"}</span></td>
                 <td className="px-3 py-2"><div className="font-semibold">{r.full_name}</div><div className="text-[11px] text-muted-foreground">{r.phone}</div></td>
                 <td className="px-3 py-2"><div className="font-medium">{r.service_name}</div><div className="text-[11px] text-muted-foreground">{r.category_name}</div></td>
                 <td className="px-3 py-2"><span className={`inline-flex items-center gap-1 text-xs ${r.assigned_operator ? "text-foreground" : "text-muted-foreground"}`}><UserCog className="h-3.5 w-3.5" /> {opName(r.assigned_operator)}</span></td>
