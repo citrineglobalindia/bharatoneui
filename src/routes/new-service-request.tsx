@@ -63,7 +63,7 @@ function NewRequestPage() {
           category_id: f.category_id, service_id: f.service_id,
         },
       });
-      if (error) { toast.error("Submission failed", { description: error.message }); return; }
+      if (error) { if (String(error.message).includes("INSUFFICIENT_FUNDS")) { toast.error("Insufficient wallet balance", { description: "Please add funds to your wallet before applying." }); return; } toast.error("Submission failed", { description: error.message }); return; }
       const res = (data as any) ?? {};
       setDone({
         application_no: res.application_no ?? "—", status: res.status ?? "submitted", created_at: new Date().toISOString(),

@@ -1,261 +1,108 @@
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
 import { toast } from "sonner";
-import { Wallet, Plus, ArrowDownToLine, ArrowUpFromLine, X, Download } from "lucide-react";
+import { Wallet, Plus, Loader2, ArrowDownToLine, ArrowUpFromLine, Clock3, RefreshCw } from "lucide-react";
 import { RetailerShell } from "@/components/retailer/retailer-shell";
-import { PageHeader, StatusBadge } from "@/components/retailer/page-header";
-import { StatCard } from "@/components/retailer/stat-card";
-import { DataTable, type Column } from "@/components/retailer/data-table";
-import { SectionCard, Field, Input, Select, PrimaryButton, GhostButton } from "@/components/retailer/section-card";
-import { MOCK_TXNS, inr, type Txn } from "@/components/retailer/mock-data";
+import { PageHeader } from "@/components/retailer/page-header";
+import { SectionCard, Field, Input, Select, PrimaryButton } from "@/components/retailer/section-card";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/wallet")({
   head: () => ({ meta: [{ title: "Wallet — BharatOne" }] }),
   component: WalletPage,
 });
 
-type LedgerRow = Txn & { kind: "credit" | "debit"; running: number };
-
-function buildLedger(opening: number): LedgerRow[] {
-  let bal = opening;
-  return MOCK_TXNS.slice(0, 8).map((t, i) => {
-    const kind: "credit" | "debit" = i % 3 === 0 ? "credit" : "debit";
-    const delta = kind === "credit" ? t.commission : -t.amount;
-    bal = bal + delta;
-    return { ...t, kind, running: bal };
-  });
-}
-
-const cols: Column<LedgerRow>[] = [
-  { key: "date", header: "Date", cell: (r) => <span className="text-xs">{r.date}</span> },
-  { key: "service", header: "Description", cell: (r) => r.service },
-  {
-    key: "amount",
-    header: "Debit / Credit",
-    cell: (r) =>
-      r.kind === "credit" ? (
-        <span className="font-semibold text-emerald-700">+ {inr(r.commission)}</span>
-      ) : (
-        <span className="font-semibold text-rose-700">- {inr(r.amount)}</span>
-      ),
-    className: "text-right",
-  },
-  { key: "balance", header: "Balance", cell: (r) => <span className="font-mono text-sm">{inr(r.running)}</span>, className: "text-right" },
-  { key: "status", header: "Status", cell: (r) => <StatusBadge status={r.status} /> },
-];
+type Tx = { id: string; direction: "credit" | "debit"; amount: number; balance_after: number; reason: string | null; created_at: string };
+type Topup = { id: string; amount: number; method: string | null; reference: string | null; status: string; created_at: string };
+const inr = (n: number) => "₹" + Number(n || 0).toLocaleString("en-IN");
+const statusTone: Record<string, string> = { pending: "bg-amber-100 text-amber-700", verified: "bg-emerald-100 text-emerald-700", rejected: "bg-rose-100 text-rose-700" };
 
 function WalletPage() {
-  const [balance, setBalance] = useState(12480);
-  const [pending, setPending] = useState(264.07);
-  const [settledToday, setSettledToday] = useState(0);
-  const [modal, setModal] = useState<null | "load" | "settle" | "transfer">(null);
+  const [balance, setBalance] = useState(0);
+  const [txns, setTxns] = useState<Tx[]>([]);
+  const [topups, setTopups] = useState<Topup[]>([]);
+  const [loading, setLoading] = useState(true);
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState("UPI");
-  const ledger = buildLedger(balance);
+  const [reference, setReference] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  function reset() {
-    setAmount("");
-    setModal(null);
+  async function load() {
+    setLoading(true);
+    const { data: u } = await supabase.auth.getUser();
+    if (!u.user) { setLoading(false); return; }
+    const [w, t, tp] = await Promise.all([
+      supabase.from("wallets").select("balance").eq("user_id", u.user.id).maybeSingle(),
+      supabase.from("wallet_transactions").select("id,direction,amount,balance_after,reason,created_at").order("created_at", { ascending: false }).limit(50),
+      supabase.from("wallet_topups").select("id,amount,method,reference,status,created_at").order("created_at", { ascending: false }).limit(20),
+    ]);
+    setBalance(Number((w.data as any)?.balance ?? 0));
+    setTxns((t.data as Tx[]) ?? []);
+    setTopups((tp.data as Topup[]) ?? []);
+    setLoading(false);
   }
+  useEffect(() => { load(); }, []);
 
-  function handleLoad(e: React.FormEvent) {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const v = Number(amount);
-    if (!v || v < 500) return toast.error("Minimum top-up is ₹500");
-    setBalance((b) => b + v);
-    toast.success(`₹${v.toLocaleString("en-IN")} loaded via ${method}`);
-    reset();
-  }
+    const amt = Number(amount);
+    if (!amt || amt <= 0) return toast.error("Enter a valid amount");
+    setSubmitting(true);
+    const { error } = await supabase.rpc("request_wallet_topup", { p_amount: amt, p_method: method, p_reference: reference || null });
+    setSubmitting(false);
+    if (error) return toast.error("Request failed", { description: error.message });
+    toast.success("Top-up request sent", { description: "Awaiting accountant verification." });
+    setAmount(""); setReference(""); load();
+  };
 
-  function handleSettle(e: React.FormEvent) {
-    e.preventDefault();
-    const v = Number(amount);
-    if (!v || v <= 0) return toast.error("Enter a valid amount");
-    if (v > pending) return toast.error("Amount exceeds pending settlement");
-    setPending((p) => p - v);
-    setSettledToday((s) => s + v);
-    setBalance((b) => b + v);
-    toast.success(`Settlement of ₹${v.toLocaleString("en-IN")} initiated to your bank`);
-    reset();
-  }
-
-  function handleTransfer(e: React.FormEvent) {
-    e.preventDefault();
-    const v = Number(amount);
-    if (!v || v <= 0) return toast.error("Enter a valid amount");
-    if (v > balance) return toast.error("Insufficient wallet balance");
-    setBalance((b) => b - v);
-    toast.success(`₹${v.toLocaleString("en-IN")} transferred successfully`);
-    reset();
-  }
+  const pendingTotal = useMemo(() => topups.filter((t) => t.status === "pending").reduce((a, t) => a + Number(t.amount), 0), [topups]);
 
   return (
     <RetailerShell>
       <div className="space-y-5">
-        <PageHeader
-          icon={<Wallet className="h-5 w-5" />}
-          title="My Wallet"
-          subtitle="Manage your retailer wallet, load funds and view ledger"
-          actions={
-            <button
-              onClick={() => toast.success("Statement (PDF) downloaded")}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold hover:bg-muted"
-            >
-              <Download className="h-3.5 w-3.5" /> Statement
-            </button>
-          }
-        />
+        <PageHeader icon={<Wallet className="h-5 w-5" />} title="Wallet" subtitle="Add funds, track balance and view all wallet transactions"
+          actions={<button onClick={load} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-10 text-sm font-semibold hover:bg-muted"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh</button>} />
 
-        <div className="grid lg:grid-cols-3 gap-3">
-          <div className="lg:col-span-2 rounded-2xl bg-saffron-gradient text-white p-5 shadow-elev">
-            <p className="text-[11px] font-bold uppercase tracking-wider opacity-90">Available Balance</p>
-            <p className="font-display text-4xl font-extrabold mt-1">{inr(balance)}</p>
-            <p className="text-xs opacity-90">Updated just now</p>
-            <div className="grid grid-cols-3 gap-2 mt-4 max-w-md">
-              <button onClick={() => setModal("load")} className="rounded-lg bg-white/15 hover:bg-white/25 border border-white/20 py-2 text-xs font-semibold inline-flex items-center justify-center gap-1"><Plus className="h-3.5 w-3.5" /> Load</button>
-              <button onClick={() => setModal("settle")} className="rounded-lg bg-white/15 hover:bg-white/25 border border-white/20 py-2 text-xs font-semibold inline-flex items-center justify-center gap-1"><ArrowDownToLine className="h-3.5 w-3.5" /> Settle</button>
-              <button onClick={() => setModal("transfer")} className="rounded-lg bg-white/15 hover:bg-white/25 border border-white/20 py-2 text-xs font-semibold inline-flex items-center justify-center gap-1"><ArrowUpFromLine className="h-3.5 w-3.5" /> Transfer</button>
-            </div>
+        <div className="grid gap-4 lg:grid-cols-3">
+          <div className="rounded-2xl bg-saffron-gradient p-5 text-white shadow-elev lg:col-span-1">
+            <p className="text-xs font-semibold uppercase tracking-wide opacity-90">Available Balance</p>
+            <p className="mt-1 font-display text-3xl font-extrabold">{loading ? "…" : inr(balance)}</p>
+            {pendingTotal > 0 && <p className="mt-2 inline-flex items-center gap-1 rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-semibold"><Clock3 className="h-3 w-3" /> {inr(pendingTotal)} pending verification</p>}
           </div>
-          <div className="grid grid-cols-2 lg:grid-cols-1 gap-3">
-            <StatCard label="Settled Today" value={inr(settledToday)} icon={<ArrowDownToLine className="h-5 w-5" />} tone="green" />
-            <StatCard label="Pending Settlement" value={inr(pending)} icon={<Wallet className="h-5 w-5" />} tone="violet" />
-          </div>
-        </div>
-
-        <div className="grid lg:grid-cols-3 gap-4">
-          <SectionCard title="Load Wallet" description="Add funds via UPI / Net Banking / Card">
-            <form onSubmit={handleLoad} className="space-y-3">
-              <Field label="Amount (₹)" hint="Min ₹500">
-                <Input type="number" placeholder="0" value={amount} onChange={(e) => setAmount(e.target.value)} />
-              </Field>
-              <div className="flex gap-2 flex-wrap">
-                {[500, 1000, 2000, 5000].map((q) => (
-                  <button
-                    type="button"
-                    key={q}
-                    onClick={() => setAmount(String(q))}
-                    className="px-2.5 py-1 rounded-full bg-muted text-xs font-semibold hover:bg-muted/70"
-                  >
-                    ₹{q.toLocaleString("en-IN")}
-                  </button>
-                ))}
-              </div>
-              <Field label="Method">
-                <Select value={method} onChange={(e) => setMethod(e.target.value)}>
-                  <option>UPI</option>
-                  <option>Net Banking</option>
-                  <option>Debit Card</option>
-                </Select>
-              </Field>
-              <PrimaryButton type="submit" className="w-full">Continue to Pay</PrimaryButton>
+          <SectionCard title="Add Funds" className="lg:col-span-2">
+            <form onSubmit={submit} className="grid gap-3 sm:grid-cols-3">
+              <Field label="Amount (₹)"><Input type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="500" /></Field>
+              <Field label="Method"><Select value={method} onChange={(e) => setMethod(e.target.value)}><option>UPI</option><option>Bank Transfer</option><option>Cash Deposit</option><option>NEFT/IMPS</option></Select></Field>
+              <Field label="Reference / UTR"><Input value={reference} onChange={(e) => setReference(e.target.value)} placeholder="Txn ref (optional)" /></Field>
+              <div className="sm:col-span-3 flex justify-end"><PrimaryButton type="submit" disabled={submitting}>{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Request Top-up</PrimaryButton></div>
             </form>
+            <p className="mt-1 text-xs text-muted-foreground">Funds are credited after the accountant verifies your payment.</p>
           </SectionCard>
-          <div className="lg:col-span-2">
-            <SectionCard
-              title="Recent Ledger"
-              description="Latest credits and debits"
-              action={
-                <GhostButton onClick={() => toast.success("Ledger refreshed")}>
-                  Refresh
-                </GhostButton>
-              }
-            >
-              <DataTable columns={cols} rows={ledger} />
-            </SectionCard>
-          </div>
         </div>
 
-        {modal && (
-          <ActionModal
-            title={modal === "load" ? "Load Wallet" : modal === "settle" ? "Settle to Bank" : "Transfer Funds"}
-            subtitle={
-              modal === "load"
-                ? "Add money to your BharatOne wallet"
-                : modal === "settle"
-                ? `Pending settlement: ${inr(pending)}`
-                : `Available balance: ${inr(balance)}`
-            }
-            onClose={reset}
-          >
-            <form
-              onSubmit={modal === "load" ? handleLoad : modal === "settle" ? handleSettle : handleTransfer}
-              className="space-y-3"
-            >
-              <Field label="Amount (₹)">
-                <Input type="number" placeholder="0" value={amount} onChange={(e) => setAmount(e.target.value)} autoFocus />
-              </Field>
-              {modal === "load" && (
-                <Field label="Method">
-                  <Select value={method} onChange={(e) => setMethod(e.target.value)}>
-                    <option>UPI</option>
-                    <option>Net Banking</option>
-                    <option>Debit Card</option>
-                  </Select>
-                </Field>
-              )}
-              {modal === "settle" && (
-                <Field label="Bank Account">
-                  <Select>
-                    <option>HDFC Bank ••4421</option>
-                    <option>SBI ••8801</option>
-                  </Select>
-                </Field>
-              )}
-              {modal === "transfer" && (
-                <>
-                  <Field label="Beneficiary">
-                    <Input placeholder="Mobile / VPA / Account number" />
-                  </Field>
-                  <Field label="Mode">
-                    <Select>
-                      <option>UPI</option>
-                      <option>IMPS</option>
-                      <option>Wallet-to-Wallet</option>
-                    </Select>
-                  </Field>
-                </>
-              )}
-              <div className="flex justify-end gap-2 pt-2 border-t border-border">
-                <GhostButton type="button" onClick={reset}>Cancel</GhostButton>
-                <PrimaryButton type="submit">Confirm</PrimaryButton>
-              </div>
-            </form>
-          </ActionModal>
+        {topups.length > 0 && (
+          <SectionCard title="Top-up Requests">
+            <div className="overflow-x-auto"><table className="w-full text-sm">
+              <thead className="text-left text-[11px] uppercase tracking-wide text-muted-foreground"><tr><th className="py-2">Date</th><th className="py-2">Amount</th><th className="py-2">Method</th><th className="py-2">Reference</th><th className="py-2">Status</th></tr></thead>
+              <tbody>{topups.map((t) => (<tr key={t.id} className="border-t border-border"><td className="py-2 text-xs text-muted-foreground">{new Date(t.created_at).toLocaleString("en-IN")}</td><td className="py-2 font-semibold">{inr(t.amount)}</td><td className="py-2">{t.method ?? "—"}</td><td className="py-2 text-xs">{t.reference ?? "—"}</td><td className="py-2"><span className={`rounded-full px-2 py-0.5 text-[11px] font-bold capitalize ${statusTone[t.status]}`}>{t.status}</span></td></tr>))}</tbody>
+            </table></div>
+          </SectionCard>
         )}
+
+        <SectionCard title="Recent Transactions">
+          {loading ? <div className="py-6 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></div>
+            : txns.length === 0 ? <p className="py-6 text-center text-sm text-muted-foreground">No transactions yet.</p>
+            : <div className="overflow-x-auto"><table className="w-full text-sm">
+                <thead className="text-left text-[11px] uppercase tracking-wide text-muted-foreground"><tr><th className="py-2">Date</th><th className="py-2">Details</th><th className="py-2 text-right">Amount</th><th className="py-2 text-right">Balance</th></tr></thead>
+                <tbody>{txns.map((t) => (<tr key={t.id} className="border-t border-border">
+                  <td className="py-2 text-xs text-muted-foreground whitespace-nowrap">{new Date(t.created_at).toLocaleString("en-IN")}</td>
+                  <td className="py-2"><span className="inline-flex items-center gap-1.5">{t.direction === "credit" ? <ArrowDownToLine className="h-3.5 w-3.5 text-emerald-600" /> : <ArrowUpFromLine className="h-3.5 w-3.5 text-rose-500" />}{t.reason ?? (t.direction === "credit" ? "Credit" : "Debit")}</span></td>
+                  <td className={`py-2 text-right font-semibold ${t.direction === "credit" ? "text-emerald-600" : "text-rose-500"}`}>{t.direction === "credit" ? "+" : "−"}{inr(t.amount)}</td>
+                  <td className="py-2 text-right text-muted-foreground">{inr(t.balance_after)}</td>
+                </tr>))}</tbody>
+              </table></div>}
+        </SectionCard>
       </div>
     </RetailerShell>
-  );
-}
-
-function ActionModal({
-  title,
-  subtitle,
-  onClose,
-  children,
-}: {
-  title: string;
-  subtitle?: string;
-  onClose: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={onClose}>
-      <div
-        className="w-full max-w-md rounded-2xl bg-card border border-border shadow-xl overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-start justify-between gap-3 px-5 py-4 border-b border-border">
-          <div className="min-w-0">
-            <h3 className="font-display text-lg font-bold">{title}</h3>
-            {subtitle && <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>}
-          </div>
-          <button onClick={onClose} className="h-8 w-8 rounded-full hover:bg-muted flex items-center justify-center" aria-label="Close">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-        <div className="p-5">{children}</div>
-      </div>
-    </div>
   );
 }

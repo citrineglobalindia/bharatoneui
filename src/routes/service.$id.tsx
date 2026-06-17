@@ -68,7 +68,7 @@ function ServiceLauncher() {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) { toast.error("Please sign in to submit."); return; }
       const { data, error } = await supabase.rpc("submit_backend_application", { p_service_id: id, p_form: values });
-      if (error) { toast.error("Submit failed", { description: error.message }); return; }
+      if (error) { if (String(error.message).includes("INSUFFICIENT_FUNDS")) { toast.error("Insufficient wallet balance", { description: "Please add funds to your wallet before applying." }); return; } toast.error("Submit failed", { description: error.message }); return; }
       const res = (data as any) ?? {};
       const pick = (re: RegExp) => { const k = Object.keys(values).find((x) => re.test(x.toLowerCase()) && typeof values[x] !== "object"); return k ? String(values[k]) : undefined; };
       setReceipt({
