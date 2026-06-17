@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { Headphones, LogOut, RefreshCw, Loader2, FileSearch, IndianRupee, CheckCircle2, Clock3, XCircle, ChevronRight } from "lucide-react";
+import { LogOut, RefreshCw, Loader2, FileSearch, IndianRupee, CheckCircle2, Clock3, XCircle, ChevronRight, Upload, Paperclip, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
@@ -17,6 +17,7 @@ type App = {
   full_name: string; father_name: string | null; gender: string | null; email: string | null; phone: string | null;
   address: string | null; aadhaar_number: string | null; pan_number: string | null;
   service_charge: number; commission_price: number; status: string; submitter_name: string | null; created_at: string;
+  result_doc_path: string | null; result_note: string | null; result_uploaded_at: string | null;
 };
 const STAGES = ["submitted", "in_progress", "approved", "rejected", "completed"];
 const label: Record<string, string> = { submitted: "New", in_progress: "In Progress", approved: "Approved", rejected: "Rejected", completed: "Completed" };
@@ -30,6 +31,8 @@ function OperatorPortal() {
   const [filter, setFilter] = useState("all");
   const [sel, setSel] = useState<App | null>(null);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [note, setNote] = useState("");
 
   async function load() {
     setLoading(true);
@@ -61,6 +64,32 @@ function OperatorPortal() {
     setSel((s) => s && s.id === a.id ? { ...s, status } : s);
   };
   const logout = () => { try { localStorage.removeItem("bharatone:auth"); } catch {} void supabase.auth.signOut(); navigate({ to: "/login" }); };
+
+  const uploadAttachment = async (a: App, file: File) => {
+    setUploading(true);
+    try {
+      const ext = (file.name.split(".").pop() || "pdf").toLowerCase();
+      const path = `${a.id}/${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage.from("service-attachments").upload(path, file, { upsert: false, contentType: file.type || undefined });
+      if (error) { toast.error("Upload failed", { description: error.message }); return; }
+      const { error: uErr } = await supabase.from("service_applications").update({ result_doc_path: path, result_uploaded_at: new Date().toISOString() }).eq("id", a.id);
+      if (uErr) { toast.error("Save failed", { description: uErr.message }); return; }
+      toast.success("Attachment added");
+      setApps((p) => p.map((x) => x.id === a.id ? { ...x, result_doc_path: path, result_uploaded_at: new Date().toISOString() } : x));
+      setSel((s2) => s2 && s2.id === a.id ? { ...s2, result_doc_path: path } : s2);
+    } finally { setUploading(false); }
+  };
+  const viewAttachment = async (path: string) => {
+    const { data, error } = await supabase.storage.from("service-attachments").createSignedUrl(path, 3600);
+    if (error || !data) { toast.error("Could not open attachment"); return; }
+    window.open(data.signedUrl, "_blank");
+  };
+  const saveNote = async (a: App) => {
+    const { error } = await supabase.from("service_applications").update({ result_note: note }).eq("id", a.id);
+    if (error) { toast.error("Save failed", { description: error.message }); return; }
+    toast.success("Note saved");
+    setApps((p) => p.map((x) => x.id === a.id ? { ...x, result_note: note } : x));
+  };
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -103,7 +132,7 @@ function OperatorPortal() {
                     <td className="px-3 py-2"><div className="font-medium">{a.service_name}</div><div className="text-[11px] text-muted-foreground">{a.category_name}</div></td>
                     <td className="px-3 py-2">{inr(a.service_charge)}</td>
                     <td className="px-3 py-2"><span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${tone[a.status] ?? "bg-muted"}`}>{label[a.status] ?? a.status}</span></td>
-                    <td className="px-3 py-2 text-right"><button onClick={() => setSel(a)} className="inline-flex items-center gap-1 text-xs font-semibold text-india-green hover:underline">Open <ChevronRight className="h-3.5 w-3.5" /></button></td>
+                    <td className="px-3 py-2 text-right"><button onClick={() => { setSel(a); setNote(a.result_note ?? ""); }} className="inline-flex items-center gap-1 text-xs font-semibold text-india-green hover:underline">Open <ChevronRight className="h-3.5 w-3.5" /></button></td>
                   </tr>
                 ))}
               </tbody>
@@ -126,6 +155,17 @@ function OperatorPortal() {
               <div className="col-span-2"><p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Address</p><p className="font-medium">{sel.address || "—"}</p></div>
             </div>
             <div className="mt-3 flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-sm"><span>Total cost <b>{inr(sel.service_charge)}</b></span><span className="text-india-green">Retailer commission <b>{inr(sel.commission_price)}</b></span></div>
+            <p className="mt-4 mb-1.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-muted-foreground"><Paperclip className="h-3.5 w-3.5" /> Return attachment</p>
+            <div className="flex flex-wrap items-center gap-2">
+              {sel.result_doc_path && <button onClick={() => viewAttachment(sel.result_doc_path!)} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-9 text-xs font-semibold hover:bg-muted"><Download className="h-3.5 w-3.5" /> View current</button>}
+              <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-india-green px-3 h-9 text-xs font-semibold text-white hover:bg-india-green/90">
+                {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />} {sel.result_doc_path ? "Replace file" : "Upload file"}
+                <input type="file" className="hidden" onChange={(e) => e.target.files?.[0] && uploadAttachment(sel, e.target.files[0])} />
+              </label>
+            </div>
+            <textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note for the retailer (optional)" className="mt-2 w-full rounded-lg border border-border bg-background p-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-india-green/30" />
+            <button onClick={() => saveNote(sel)} className="mt-1 text-xs font-semibold text-india-green hover:underline">Save note</button>
+
             <p className="mt-4 mb-1.5 text-xs font-bold uppercase tracking-wide text-muted-foreground">Update status</p>
             <div className="flex flex-wrap gap-2">
               <Button size="sm" disabled={saving} onClick={() => setStatus(sel, "in_progress")} className="bg-amber-500 text-white hover:bg-amber-600"><Loader2 className="h-4 w-4" /> In Progress</Button>

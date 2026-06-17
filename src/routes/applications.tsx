@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ClipboardList, Plus, Loader2, FileText, IndianRupee, TrendingUp, RefreshCw } from "lucide-react";
+import { ClipboardList, Plus, Loader2, FileText, IndianRupee, TrendingUp, RefreshCw, Download } from "lucide-react";
 import { RetailerShell } from "@/components/retailer/retailer-shell";
 import { PageHeader, StatusBadge } from "@/components/retailer/page-header";
 import { DataTable, type Column } from "@/components/retailer/data-table";
@@ -11,7 +11,7 @@ export const Route = createFileRoute("/applications")({
   component: ApplicationsPage,
 });
 
-type Row = { id: string; application_no: string; service_name: string; category_name: string; full_name: string; status: string; service_charge: number; commission_price: number; created_at: string };
+type Row = { id: string; application_no: string; service_name: string; category_name: string; full_name: string; status: string; service_charge: number; commission_price: number; created_at: string; result_doc_path: string | null };
 const statusLabel: Record<string, string> = { submitted: "Pending", in_progress: "Processing", approved: "Approved", rejected: "Rejected", completed: "Completed" };
 const inr = (n: number) => "₹" + Number(n || 0).toLocaleString("en-IN");
 
@@ -23,9 +23,16 @@ const cols: Column<Row>[] = [
   { key: "commission", header: "Commission", cell: (r) => <span className="text-xs font-semibold text-india-green">{inr(r.commission_price)}</span> },
   { key: "created_at", header: "Submitted", cell: (r) => <span className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString("en-IN")}</span> },
   { key: "status", header: "Status", cell: (r) => <StatusBadge status={statusLabel[r.status] ?? r.status} /> },
+  { key: "result", header: "Result", cell: (r) => r.result_doc_path ? <button onClick={() => openResult(r.result_doc_path!)} className="inline-flex items-center gap-1 text-xs font-semibold text-india-green hover:underline"><Download className="h-3.5 w-3.5" /> Download</button> : <span className="text-xs text-muted-foreground">—</span>, className: "text-right" },
 ];
 
 const FILTERS = ["All", "Pending", "Processing", "Approved", "Completed", "Rejected"];
+
+async function openResult(path: string) {
+  const { data, error } = await supabase.storage.from("service-attachments").createSignedUrl(path, 3600);
+  if (error || !data) return;
+  window.open(data.signedUrl, "_blank");
+}
 
 function Stat({ icon: Icon, label, value, tone }: { icon: any; label: string; value: string; tone: string }) {
   return (
@@ -45,7 +52,7 @@ function ApplicationsPage() {
   async function load() {
     setLoading(true);
     const { data } = await supabase.from("service_applications")
-      .select("id,application_no,service_name,category_name,full_name,status,service_charge,commission_price,created_at")
+      .select("id,application_no,service_name,category_name,full_name,status,service_charge,commission_price,created_at,result_doc_path")
       .order("created_at", { ascending: false });
     setRows((data as Row[]) ?? []);
     setLoading(false);
