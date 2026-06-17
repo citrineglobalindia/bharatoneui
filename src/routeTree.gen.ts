@@ -128,6 +128,7 @@ import { Route as AccountantWithdrawalsRouteImport } from './routes/accountant.w
 import { Route as AccountantWalletRequestsRouteImport } from './routes/accountant.wallet-requests'
 import { Route as AccountantSupportRouteImport } from './routes/accountant.support'
 import { Route as AccountantSettingsRouteImport } from './routes/accountant.settings'
+import { Route as AccountantServicesPaymentsRouteImport } from './routes/accountant.services-payments'
 import { Route as AccountantServicesRouteImport } from './routes/accountant.services'
 import { Route as AccountantRegistrationsRouteImport } from './routes/accountant.registrations'
 import { Route as AccountantProfileRouteImport } from './routes/accountant.profile'
@@ -743,6 +744,12 @@ const AccountantSettingsRoute = AccountantSettingsRouteImport.update({
   path: '/accountant/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountantServicesPaymentsRoute =
+  AccountantServicesPaymentsRouteImport.update({
+    id: '/accountant/services-payments',
+    path: '/accountant/services-payments',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AccountantServicesRoute = AccountantServicesRouteImport.update({
   id: '/accountant/services',
   path: '/accountant/services',
@@ -885,6 +892,7 @@ export interface FileRoutesByFullPath {
   '/accountant/profile': typeof AccountantProfileRoute
   '/accountant/registrations': typeof AccountantRegistrationsRoute
   '/accountant/services': typeof AccountantServicesRoute
+  '/accountant/services-payments': typeof AccountantServicesPaymentsRoute
   '/accountant/settings': typeof AccountantSettingsRoute
   '/accountant/support': typeof AccountantSupportRoute
   '/accountant/wallet-requests': typeof AccountantWalletRequestsRoute
@@ -1023,6 +1031,7 @@ export interface FileRoutesByTo {
   '/accountant/profile': typeof AccountantProfileRoute
   '/accountant/registrations': typeof AccountantRegistrationsRoute
   '/accountant/services': typeof AccountantServicesRoute
+  '/accountant/services-payments': typeof AccountantServicesPaymentsRoute
   '/accountant/settings': typeof AccountantSettingsRoute
   '/accountant/support': typeof AccountantSupportRoute
   '/accountant/wallet-requests': typeof AccountantWalletRequestsRoute
@@ -1161,6 +1170,7 @@ export interface FileRoutesById {
   '/accountant/profile': typeof AccountantProfileRoute
   '/accountant/registrations': typeof AccountantRegistrationsRoute
   '/accountant/services': typeof AccountantServicesRoute
+  '/accountant/services-payments': typeof AccountantServicesPaymentsRoute
   '/accountant/settings': typeof AccountantSettingsRoute
   '/accountant/support': typeof AccountantSupportRoute
   '/accountant/wallet-requests': typeof AccountantWalletRequestsRoute
@@ -1301,6 +1311,7 @@ export interface FileRouteTypes {
     | '/accountant/profile'
     | '/accountant/registrations'
     | '/accountant/services'
+    | '/accountant/services-payments'
     | '/accountant/settings'
     | '/accountant/support'
     | '/accountant/wallet-requests'
@@ -1439,6 +1450,7 @@ export interface FileRouteTypes {
     | '/accountant/profile'
     | '/accountant/registrations'
     | '/accountant/services'
+    | '/accountant/services-payments'
     | '/accountant/settings'
     | '/accountant/support'
     | '/accountant/wallet-requests'
@@ -1576,6 +1588,7 @@ export interface FileRouteTypes {
     | '/accountant/profile'
     | '/accountant/registrations'
     | '/accountant/services'
+    | '/accountant/services-payments'
     | '/accountant/settings'
     | '/accountant/support'
     | '/accountant/wallet-requests'
@@ -1715,6 +1728,7 @@ export interface RootRouteChildren {
   AccountantProfileRoute: typeof AccountantProfileRoute
   AccountantRegistrationsRoute: typeof AccountantRegistrationsRoute
   AccountantServicesRoute: typeof AccountantServicesRoute
+  AccountantServicesPaymentsRoute: typeof AccountantServicesPaymentsRoute
   AccountantSettingsRoute: typeof AccountantSettingsRoute
   AccountantSupportRoute: typeof AccountantSupportRoute
   AccountantWalletRequestsRoute: typeof AccountantWalletRequestsRoute
@@ -2616,6 +2630,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountantSettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/accountant/services-payments': {
+      id: '/accountant/services-payments'
+      path: '/accountant/services-payments'
+      fullPath: '/accountant/services-payments'
+      preLoaderRoute: typeof AccountantServicesPaymentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/accountant/services': {
       id: '/accountant/services'
       path: '/accountant/services'
@@ -2903,6 +2924,7 @@ const rootRouteChildren: RootRouteChildren = {
   AccountantProfileRoute: AccountantProfileRoute,
   AccountantRegistrationsRoute: AccountantRegistrationsRoute,
   AccountantServicesRoute: AccountantServicesRoute,
+  AccountantServicesPaymentsRoute: AccountantServicesPaymentsRoute,
   AccountantSettingsRoute: AccountantSettingsRoute,
   AccountantSupportRoute: AccountantSupportRoute,
   AccountantWalletRequestsRoute: AccountantWalletRequestsRoute,

@@ -69,7 +69,7 @@ const NAV: NavSection[] = [
     heading: "Finance",
     items: [
       { label: "Services & Commission", icon: <Wrench className="h-4 w-4" />, to: "/accountant/services" },
-      { label: "Application Transactions", icon: <Receipt className="h-4 w-4" />, to: "/accountant/applications" },
+      { label: "Services Payments", icon: <Receipt className="h-4 w-4" />, to: "/accountant/services-payments" },
       { label: "Main Account Recharge", icon: <Banknote className="h-4 w-4" />, to: "/accountant/main-recharge" },
       { label: "Ledger", icon: <BookOpenCheck className="h-4 w-4" />, to: "/accountant/ledger" },
       { label: "Application Ledger", icon: <Wallet className="h-4 w-4" />, to: "/accountant/app-ledger" },

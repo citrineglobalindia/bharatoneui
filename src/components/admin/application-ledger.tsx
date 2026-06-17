@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, RefreshCw, Search, IndianRupee, BadgeCheck, Clock3, Wallet, TrendingUp, CheckCircle2, RotateCcw, Download, UserCog } from "lucide-react";
+import { Loader2, RefreshCw, Search, IndianRupee, BadgeCheck, Clock3, Wallet, TrendingUp, CheckCircle2, RotateCcw, Download, UserCog, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
@@ -47,6 +47,15 @@ export function ApplicationLedger() {
     setRows((p) => p.map((x) => x.id === r.id ? { ...x, payment_verified: val, payment_verified_at: val ? new Date().toISOString() : null } : x));
   };
 
+  const setStatus = async (r: Row, status: string) => {
+    setBusy(r.id + status);
+    const { error } = await supabase.from("service_applications").update({ status }).eq("id", r.id);
+    setBusy(null);
+    if (error) return toast.error("Failed", { description: error.message });
+    toast.success("Transaction " + status);
+    setRows((p) => p.map((x) => x.id === r.id ? { ...x, status } : x));
+  };
+
   const totals = useMemo(() => ({
     amount: rows.reduce((a, r) => a + Number(r.service_charge || 0), 0),
     verified: rows.filter((r) => r.payment_verified).reduce((a, r) => a + Number(r.service_charge || 0), 0),
@@ -91,11 +100,11 @@ export function ApplicationLedger() {
       <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-soft">
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
-            <tr><th className="px-3 py-2">Application ID</th><th className="px-3 py-2">Date</th><th className="px-3 py-2">Retailer</th><th className="px-3 py-2">Service</th><th className="px-3 py-2">Amount</th><th className="px-3 py-2">Commission</th><th className="px-3 py-2">Status</th><th className="px-3 py-2">Payment</th><th className="px-3 py-2 text-right">Verify</th></tr>
+            <tr><th className="px-3 py-2">Application ID</th><th className="px-3 py-2">Date</th><th className="px-3 py-2">Retailer</th><th className="px-3 py-2">Service</th><th className="px-3 py-2">Amount</th><th className="px-3 py-2">Commission</th><th className="px-3 py-2">Status</th><th className="px-3 py-2">Payment</th><th className="px-3 py-2 text-right">Verify Payment</th><th className="px-3 py-2 text-right">Approve</th></tr>
           </thead>
           <tbody>
-            {loading ? <tr><td colSpan={9} className="px-3 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr>
-              : filtered.length === 0 ? <tr><td colSpan={9} className="px-3 py-10 text-center text-muted-foreground">No application transactions found.</td></tr>
+            {loading ? <tr><td colSpan={10} className="px-3 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr>
+              : filtered.length === 0 ? <tr><td colSpan={10} className="px-3 py-10 text-center text-muted-foreground">No application transactions found.</td></tr>
               : filtered.map((r) => (
               <tr key={r.id} className="border-t border-border hover:bg-muted/30">
                 <td className="px-3 py-2 font-mono text-xs font-semibold">{r.application_no}</td>
@@ -110,6 +119,13 @@ export function ApplicationLedger() {
                   {r.payment_verified
                     ? <button onClick={() => verify(r, false)} disabled={busy === r.id} className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground">{busy === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="h-3.5 w-3.5" />} Unverify</button>
                     : <button onClick={() => verify(r, true)} disabled={busy === r.id} className="inline-flex items-center gap-1 rounded-lg bg-india-green px-2.5 py-1 text-xs font-semibold text-white hover:bg-india-green/90">{busy === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />} Verify</button>}
+                </td>
+                <td className="px-3 py-2 text-right whitespace-nowrap">
+                  {["approved","completed"].includes(r.status)
+                    ? <span className="inline-flex items-center gap-1 text-xs font-semibold text-india-green"><CheckCircle2 className="h-3.5 w-3.5" /> {statusLabel[r.status]}</span>
+                    : r.status === "rejected"
+                      ? <span className="text-xs font-semibold text-rose-600">Rejected</span>
+                      : <><button onClick={() => setStatus(r, "approved")} disabled={busy === r.id+"approved"} className="mr-2 inline-flex items-center gap-1 rounded-lg bg-admin px-2.5 py-1 text-xs font-semibold text-admin-foreground hover:bg-admin/90">{busy === r.id+"approved" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />} Approve</button><button onClick={() => setStatus(r, "rejected")} disabled={busy === r.id+"rejected"} className="text-xs font-semibold text-rose-600 hover:underline"><XCircle className="inline h-3.5 w-3.5" /></button></>}
                 </td>
               </tr>
             ))}
