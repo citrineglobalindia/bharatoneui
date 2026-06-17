@@ -29,7 +29,7 @@ const TYPE_META: Record<ServiceType, { label: string; icon: React.ReactNode; ton
   backend: { label: "Backend", icon: <Server className="h-3.5 w-3.5" />, tone: "bg-emerald-100 text-emerald-700" },
 };
 
-export function ServicesManager() {
+export function ServicesManager({ categoryId }: { categoryId?: string } = {}) {
   const [rows, setRows] = useState<Service[]>([]);
   const [cats, setCats] = useState<Cat[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,17 +41,20 @@ export function ServicesManager() {
   async function load() {
     setLoading(true);
     try {
+      let sq = supabase.from("services").select("*").order("sort_order").order("created_at", { ascending: false });
+      if (categoryId) sq = sq.eq("category_id", categoryId);
       const [sv, ct] = await Promise.all([
-        supabase.from("services").select("*").order("sort_order").order("created_at", { ascending: false }),
+        sq,
         supabase.from("service_categories").select("id,name,is_active").order("sort_order").order("name"),
       ]);
       setRows((sv.data as Service[]) ?? []);
       setCats((ct.data as Cat[]) ?? []);
     } finally { setLoading(false); }
   }
-  useEffect(() => { load(); ensureStaffSession().then((ok) => { if (ok) load(); }); }, []);
+  useEffect(() => { load(); ensureStaffSession().then((ok) => { if (ok) load(); }); /* eslint-disable-next-line */ }, [categoryId]);
+  useEffect(() => { if (categoryId) setForm((f) => ({ ...f, category_id: categoryId })); /* eslint-disable-next-line */ }, [categoryId]);
 
-  const reset = () => { setForm({ ...emptyForm }); setEditing(false); };
+  const reset = () => { setForm({ ...emptyForm, category_id: categoryId ?? "" }); setEditing(false); };
   const set = (patch: Partial<typeof emptyForm>) => setForm((f) => ({ ...f, ...patch }));
   const inr = (n: number) => "\u20b9" + Number(n || 0).toLocaleString("en-IN");
   const commFields: [string, string][] = [["Company","company_commission"],["Distributor","distributor_commission"],["DRO","dro_commission"],["TRO","tro_commission"],["Retailer","retailer_commission"]];
@@ -157,11 +160,11 @@ export function ServicesManager() {
         <div className="grid gap-3 sm:grid-cols-2">
           <div><label className="text-xs font-semibold text-muted-foreground">Service name *</label>
             <input className={input} value={form.name} onChange={(e) => set({ name: e.target.value })} placeholder="e.g. AEPS Services" /></div>
-          <div><label className="text-xs font-semibold text-muted-foreground">Category</label>
+          {!categoryId && <div><label className="text-xs font-semibold text-muted-foreground">Category</label>
             <select className={input} value={form.category_id} onChange={(e) => set({ category_id: e.target.value })}>
               <option value="">Select category</option>
               {cats.map((c) => <option key={c.id} value={c.id}>{c.name}{!c.is_active ? " (inactive)" : ""}</option>)}
-            </select></div>
+            </select></div>}
 
           {form.service_type === "inlink" && (
             <div className="sm:col-span-2"><label className="text-xs font-semibold text-muted-foreground">Redirect URL *</label>

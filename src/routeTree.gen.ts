@@ -27,6 +27,7 @@ import { Route as QcLoginRouteImport } from './routes/qc-login'
 import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
 import { Route as PortalsRouteImport } from './routes/portals'
 import { Route as PanRouteImport } from './routes/pan'
+import { Route as OperatorRouteImport } from './routes/operator'
 import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as NewServiceRequestRouteImport } from './routes/new-service-request'
 import { Route as MoneyTransferRouteImport } from './routes/money-transfer'
@@ -231,6 +232,11 @@ const PortalsRoute = PortalsRouteImport.update({
 const PanRoute = PanRouteImport.update({
   id: '/pan',
   path: '/pan',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OperatorRoute = OperatorRouteImport.update({
+  id: '/operator',
+  path: '/operator',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NotificationsRoute = NotificationsRouteImport.update({
@@ -838,6 +844,7 @@ export interface FileRoutesByFullPath {
   '/money-transfer': typeof MoneyTransferRoute
   '/new-service-request': typeof NewServiceRequestRoute
   '/notifications': typeof NotificationsRoute
+  '/operator': typeof OperatorRoute
   '/pan': typeof PanRoute
   '/portals': typeof PortalsRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
@@ -973,6 +980,7 @@ export interface FileRoutesByTo {
   '/money-transfer': typeof MoneyTransferRoute
   '/new-service-request': typeof NewServiceRequestRoute
   '/notifications': typeof NotificationsRoute
+  '/operator': typeof OperatorRoute
   '/pan': typeof PanRoute
   '/portals': typeof PortalsRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
@@ -1108,6 +1116,7 @@ export interface FileRoutesById {
   '/money-transfer': typeof MoneyTransferRoute
   '/new-service-request': typeof NewServiceRequestRoute
   '/notifications': typeof NotificationsRoute
+  '/operator': typeof OperatorRoute
   '/pan': typeof PanRoute
   '/portals': typeof PortalsRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
@@ -1245,6 +1254,7 @@ export interface FileRouteTypes {
     | '/money-transfer'
     | '/new-service-request'
     | '/notifications'
+    | '/operator'
     | '/pan'
     | '/portals'
     | '/privacy-policy'
@@ -1380,6 +1390,7 @@ export interface FileRouteTypes {
     | '/money-transfer'
     | '/new-service-request'
     | '/notifications'
+    | '/operator'
     | '/pan'
     | '/portals'
     | '/privacy-policy'
@@ -1514,6 +1525,7 @@ export interface FileRouteTypes {
     | '/money-transfer'
     | '/new-service-request'
     | '/notifications'
+    | '/operator'
     | '/pan'
     | '/portals'
     | '/privacy-policy'
@@ -1650,6 +1662,7 @@ export interface RootRouteChildren {
   MoneyTransferRoute: typeof MoneyTransferRoute
   NewServiceRequestRoute: typeof NewServiceRequestRoute
   NotificationsRoute: typeof NotificationsRoute
+  OperatorRoute: typeof OperatorRoute
   PanRoute: typeof PanRoute
   PortalsRoute: typeof PortalsRoute
   PrivacyPolicyRoute: typeof PrivacyPolicyRoute
@@ -1868,6 +1881,13 @@ declare module '@tanstack/react-router' {
       path: '/pan'
       fullPath: '/pan'
       preLoaderRoute: typeof PanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/operator': {
+      id: '/operator'
+      path: '/operator'
+      fullPath: '/operator'
+      preLoaderRoute: typeof OperatorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/notifications': {
@@ -2814,6 +2834,7 @@ const rootRouteChildren: RootRouteChildren = {
   MoneyTransferRoute: MoneyTransferRoute,
   NewServiceRequestRoute: NewServiceRequestRoute,
   NotificationsRoute: NotificationsRoute,
+  OperatorRoute: OperatorRoute,
   PanRoute: PanRoute,
   PortalsRoute: PortalsRoute,
   PrivacyPolicyRoute: PrivacyPolicyRoute,

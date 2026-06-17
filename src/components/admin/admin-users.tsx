@@ -12,7 +12,7 @@ type U = {
   id: string; email: string; display_name: string; department: string | null; designation: string | null;
   employee_code: string | null; is_active: boolean; created_at: string; roles: string[];
 };
-const ALL_ROLES = ["admin", "accountant", "qc", "telecaller", "distributor", "master-distributor", "bde", "dro", "tro", "manager", "hr_staff", "employee", "retailer"];
+const ALL_ROLES = ["admin", "accountant", "qc", "operator", "telecaller", "distributor", "master-distributor", "bde", "dro", "tro", "manager", "hr_staff", "employee", "retailer"];
 const roleColor: Record<string, string> = {
   admin: "bg-rose-100 text-rose-700", accountant: "bg-emerald-100 text-emerald-700", qc: "bg-indigo-100 text-indigo-700",
   telecaller: "bg-orange-100 text-orange-700", retailer: "bg-sky-100 text-sky-700",

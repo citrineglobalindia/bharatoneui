@@ -164,7 +164,9 @@ function LoginPage() {
                           ? "/qc/kyc-queue"
                           : set.has("telecaller")
                             ? "/telecaller/registrations"
-                            : "/dashboard";
+                            : set.has("operator")
+                              ? "/operator"
+                              : "/dashboard";
                     toast.success("Welcome back");
                     navigate({ to: dest });
                     return;
