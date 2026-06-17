@@ -73,15 +73,25 @@ export function RetailerNetworkCenter() {
       setLoading(true);
       try {
         await ensureStaffSession();
-        const { data } = await supabase.from("retailer_registrations")
-          .select("application_id, first_name, surname, shop_name, mobile, status, payment_amount, created_at")
-          .eq("status", "approved").order("created_at", { ascending: false });
-        const mapped: Retailer[] = ((data as any[]) ?? []).map((r) => ({
-          id: r.application_id ?? "RET", name: [r.first_name, r.surname].filter(Boolean).join(" ") || "Retailer",
-          shop: r.shop_name ?? "-", phone: r.mobile ?? "-", district: "-", taluk: "-",
-          kyc: "Verified", wallet: 0, txnToday: 0, revenue: Number(r.payment_amount ?? 0),
-          tier: "Silver", state: "Active", officer: "-",
-        }));
+        const [u, regsRes] = await Promise.all([
+          supabase.rpc("admin_list_users"),
+          supabase.from("retailer_registrations").select("application_id, first_name, surname, shop_name, mobile, email, status, payment_amount"),
+        ]);
+        const regs = (regsRes.data as any[]) ?? [];
+        const byEmail: Record<string, any> = {};
+        regs.forEach((r) => { if (r.email) byEmail[String(r.email).toLowerCase()] = r; });
+        const retailers = ((u.data as any[]) ?? []).filter((x) => Array.isArray(x.roles) && x.roles.includes("retailer"));
+        const mapped: Retailer[] = retailers.map((x) => {
+          const reg = byEmail[String(x.email).toLowerCase()];
+          return {
+            id: reg?.application_id ?? x.employee_code ?? (x.email ?? "RET"),
+            name: x.display_name || [reg?.first_name, reg?.surname].filter(Boolean).join(" ") || x.email || "Retailer",
+            shop: reg?.shop_name ?? "-", phone: reg?.mobile ?? "-", district: "-", taluk: "-",
+            kyc: reg ? (reg.status === "approved" ? "Verified" : reg.status === "rejected" ? "Rejected" : "Pending") : "Verified",
+            wallet: 0, txnToday: 0, revenue: Number(reg?.payment_amount ?? 0),
+            tier: "Silver", state: x.is_active === false ? "Suspended" : "Active", officer: "-",
+          } as Retailer;
+        });
         setRows(mapped);
         setSelected(mapped[0] ?? null);
       } finally { setLoading(false); }
@@ -96,7 +106,7 @@ export function RetailerNetworkCenter() {
     const revenue = rows.reduce((a, r) => a + Number(r.revenue || 0), 0);
     return [
       { ...KPI[0], value: loading ? "…" : total.toLocaleString("en-IN"), detail: "Approved retailers" },
-      { ...KPI[1], value: loading ? "…" : active.toLocaleString("en-IN"), detail: total ? `${Math.round((active/total)*100)}% active` : "—" },
+      { ...KPI[1], value: loading ? "…" : active.toLocaleString("en-IN"), detail: "Active accounts" },
       { ...KPI[2], value: "₹" + revenue.toLocaleString("en-IN"), detail: "Onboarding collected" },
       { ...KPI[3], value: loading ? "…" : "0", detail: "No pending here" },
     ];

@@ -41,25 +41,11 @@ const NAV: NavSection[] = [
     ],
   },
   {
-    heading: "Financial Services",
+    heading: "Services",
     items: [
-      { label: "AEPS", icon: <Banknote className="h-4 w-4" />, to: "/aeps" },
-      { label: "AEPS Activation", icon: <CheckCircle2 className="h-4 w-4" />, to: "/aeps-activation" },
-      { label: "Money Transfer", icon: <ArrowLeftRight className="h-4 w-4" />, to: "/money-transfer" },
-      { label: "Recharge", icon: <Smartphone className="h-4 w-4" />, to: "/recharge" },
-      { label: "BBPS Bills", icon: <Receipt className="h-4 w-4" />, to: "/bbps" },
-    ],
-  },
-  {
-    heading: "Business Services",
-    items: [
-      { label: "GST Services", icon: <FileText className="h-4 w-4" />, to: "/gst" },
-      { label: "PAN Services", icon: <IdCard className="h-4 w-4" />, to: "/pan" },
-      { label: "Business Reg.", icon: <Building2 className="h-4 w-4" />, to: "/business-reg" },
-      { label: "Gov. Services", icon: <Globe className="h-4 w-4" />, to: "/gov-services" },
-      { label: "My Applications", icon: <ClipboardList className="h-4 w-4" />, to: "/applications" },
       { label: "My Services", icon: <Wrench className="h-4 w-4" />, to: "/services" },
-      { label: "New Service Request", icon: <PlusCircle className="h-4 w-4" />, to: "/new-service-request" },
+      { label: "New Application", icon: <PlusCircle className="h-4 w-4" />, to: "/new-service-request" },
+      { label: "My Applications", icon: <ClipboardList className="h-4 w-4" />, to: "/applications" },
     ],
   },
   {
