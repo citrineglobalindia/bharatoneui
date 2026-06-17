@@ -1,124 +1,97 @@
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
 import { toast } from "sonner";
-import { Banknote, Plus } from "lucide-react";
+import { Banknote, Plus, Loader2, RefreshCw, ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
 import { AccountantShell } from "@/components/accountant/accountant-shell";
-import { PageHeader, StatusBadge } from "@/components/retailer/page-header";
-import { StatCard } from "@/components/retailer/stat-card";
+import { PageHeader } from "@/components/retailer/page-header";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { MAIN_ACCOUNT, MAIN_ACCOUNT_RECHARGES, inr, type MainAccountRecharge } from "@/components/accountant/mock-data";
+import { supabase } from "@/integrations/supabase/client";
+import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 
 export const Route = createFileRoute("/accountant/main-recharge")({
   head: () => ({ meta: [{ title: "Main Account Recharge — BharatOne Accountant" }] }),
   component: MainRechargePage,
 });
 
-function MainRechargePage() {
-  const [rows, setRows] = useState<MainAccountRecharge[]>(MAIN_ACCOUNT_RECHARGES);
-  const [balance, setBalance] = useState(MAIN_ACCOUNT.balance);
-  const [open, setOpen] = useState(false);
-  const [amount, setAmount] = useState("");
-  const [source, setSource] = useState("Aggregator Top-up (NSDL)");
-  const [method, setMethod] = useState("RTGS");
-  const [reference, setReference] = useState("");
-  const [processing, setProcessing] = useState(false);
+type Ledger = { id: string; direction: "credit" | "debit"; amount: number; balance_after: number; reason: string | null; created_at: string };
+const inr = (n: number) => "₹" + Number(n || 0).toLocaleString("en-IN");
 
-  const submit = () => {
-    const amt = Number(amount);
-    if (!amt || amt <= 0) { toast.error("Enter a valid amount"); return; }
-    if (reference.trim() === "") { toast.error("Enter a payment reference"); return; }
-    setProcessing(true);
-    setTimeout(() => {
-      const rec: MainAccountRecharge = { id: `BO-MAR-${9002 + rows.length}`, source, amount: amt, method, reference, date: new Date().toISOString().slice(0, 16).replace("T", " "), status: "Credited" };
-      setRows((p) => [rec, ...p]);
-      setBalance((b) => b + amt);
-      toast.success("Main account recharged", { description: `${inr(amt)} credited via ${method}` });
-      setProcessing(false); setOpen(false); setAmount(""); setReference("");
-    }, 900);
+function MainRechargePage() {
+  const [balance, setBalance] = useState(0);
+  const [ledger, setLedger] = useState<Ledger[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [amt, setAmt] = useState(""); const [note, setNote] = useState(""); const [busy, setBusy] = useState(false);
+
+  async function load() {
+    setLoading(true);
+    try {
+      await ensureStaffSession();
+      const [b, l] = await Promise.all([
+        supabase.rpc("company_balance"),
+        supabase.from("company_ledger").select("id,direction,amount,balance_after,reason,created_at").order("created_at", { ascending: false }).limit(100),
+      ]);
+      setBalance(Number((b.data as any) ?? 0));
+      setLedger((l.data as Ledger[]) ?? []);
+    } finally { setLoading(false); }
+  }
+  useEffect(() => { load(); }, []);
+
+  const recharge = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const v = Number(amt); if (!v || v <= 0) return toast.error("Enter a valid amount");
+    setBusy(true);
+    const { error } = await supabase.rpc("recharge_company_account", { p_amount: v, p_note: note || null });
+    setBusy(false);
+    if (error) return toast.error("Recharge failed", { description: error.message });
+    toast.success("Main account recharged"); setAmt(""); setNote(""); load();
   };
+
+  const totals = useMemo(() => ({
+    credit: ledger.filter((l) => l.direction === "credit").reduce((a, l) => a + Number(l.amount), 0),
+    debit: ledger.filter((l) => l.direction === "debit").reduce((a, l) => a + Number(l.amount), 0),
+  }), [ledger]);
 
   return (
     <AccountantShell>
       <div className="space-y-5">
-        <PageHeader
-          icon={<Banknote className="h-5 w-5" />}
-          title="Main Account Recharge"
-          subtitle="Top up the company master wallet that funds AEPS, BBPS and recharge floats."
-          actions={<Button onClick={() => setOpen(true)} className="h-9 bg-emerald-600 hover:bg-emerald-700 text-white"><Plus className="h-4 w-4" /> New Recharge</Button>}
-        />
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <StatCard label="Main A/C Balance" value={inr(balance)} icon={<Banknote className="h-5 w-5" />} tone="green" />
-          <StatCard label="AEPS Float" value={inr(MAIN_ACCOUNT.aepsFloat)} icon={<Banknote className="h-5 w-5" />} tone="sky" />
-          <StatCard label="BBPS Float" value={inr(MAIN_ACCOUNT.bbpsFloat)} icon={<Banknote className="h-5 w-5" />} tone="violet" />
-          <StatCard label="Recharge Float" value={inr(MAIN_ACCOUNT.rechargeFloat)} icon={<Banknote className="h-5 w-5" />} tone="saffron" />
+        <PageHeader icon={<Banknote className="h-5 w-5" />} title="Main Account Recharge" subtitle="Company float used to credit retailer wallets."
+          actions={<button onClick={load} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-10 text-sm font-semibold hover:bg-muted"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh</button>} />
+
+        <div className="grid gap-4 lg:grid-cols-3">
+          <div className="rounded-2xl bg-saffron-gradient p-5 text-white shadow-elev">
+            <p className="text-xs font-semibold uppercase tracking-wide opacity-90">Main Account Balance</p>
+            <p className="mt-1 font-display text-3xl font-extrabold">{loading ? "…" : inr(balance)}</p>
+          </div>
+          <div className="rounded-2xl border border-border bg-card p-5 shadow-soft lg:col-span-2">
+            <p className="mb-3 flex items-center gap-2 text-sm font-bold"><Plus className="h-4 w-4 text-india-green" /> Recharge main account</p>
+            <form onSubmit={recharge} className="grid gap-3 sm:grid-cols-4">
+              <input type="number" min="1" className="h-10 rounded-lg border border-border bg-background px-2 text-sm sm:col-span-1" placeholder="Amount" value={amt} onChange={(e) => setAmt(e.target.value)} />
+              <input className="h-10 rounded-lg border border-border bg-background px-2 text-sm sm:col-span-2" placeholder="Note / reference (optional)" value={note} onChange={(e) => setNote(e.target.value)} />
+              <Button type="submit" disabled={busy} className="bg-india-green text-white hover:bg-india-green/90">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Recharge</Button>
+            </form>
+            <p className="mt-3 grid grid-cols-2 gap-3 text-sm">
+              <span className="rounded-lg bg-emerald-50 px-3 py-2">Total in <b className="text-emerald-700">{inr(totals.credit)}</b></span>
+              <span className="rounded-lg bg-rose-50 px-3 py-2">Total disbursed <b className="text-rose-600">{inr(totals.debit)}</b></span>
+            </p>
+          </div>
         </div>
 
-        <div className="rounded-xl border border-border bg-card shadow-soft overflow-hidden">
-          <div className="p-4 border-b border-border"><h3 className="text-sm font-bold">Recharge History</h3></div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/50 text-[11px] uppercase tracking-wider text-muted-foreground">
-                <tr>
-                  <th className="text-left px-4 py-3 font-bold">Ref ID</th>
-                  <th className="text-left px-4 py-3 font-bold">Source</th>
-                  <th className="text-left px-4 py-3 font-bold">Method / Ref</th>
-                  <th className="text-right px-4 py-3 font-bold">Amount</th>
-                  <th className="text-left px-4 py-3 font-bold">Date</th>
-                  <th className="text-left px-4 py-3 font-bold">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r) => (
-                  <tr key={r.id} className="border-t border-border hover:bg-muted/30">
-                    <td className="px-4 py-3 font-mono text-xs">{r.id}</td>
-                    <td className="px-4 py-3">{r.source}</td>
-                    <td className="px-4 py-3 text-xs"><p className="font-bold">{r.method}</p><p className="font-mono text-muted-foreground">{r.reference}</p></td>
-                    <td className="px-4 py-3 text-right font-bold">{inr(r.amount)}</td>
-                    <td className="px-4 py-3 text-xs">{r.date}</td>
-                    <td className="px-4 py-3"><StatusBadge status={r.status === "Credited" ? "success" : "pending"} /></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-soft">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground"><tr><th className="px-3 py-2">Date</th><th className="px-3 py-2">Details</th><th className="px-3 py-2 text-right">Amount</th><th className="px-3 py-2 text-right">Balance</th></tr></thead>
+            <tbody>
+              {loading ? <tr><td colSpan={4} className="px-3 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr>
+                : ledger.length === 0 ? <tr><td colSpan={4} className="px-3 py-10 text-center text-muted-foreground">No movements yet. Recharge to add float.</td></tr>
+                : ledger.map((l) => (<tr key={l.id} className="border-t border-border">
+                  <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">{new Date(l.created_at).toLocaleString("en-IN")}</td>
+                  <td className="px-3 py-2"><span className="inline-flex items-center gap-1.5">{l.direction === "credit" ? <ArrowDownToLine className="h-3.5 w-3.5 text-emerald-600" /> : <ArrowUpFromLine className="h-3.5 w-3.5 text-rose-500" />}{l.reason ?? l.direction}</span></td>
+                  <td className={`px-3 py-2 text-right font-semibold ${l.direction === "credit" ? "text-emerald-600" : "text-rose-500"}`}>{l.direction === "credit" ? "+" : "−"}{inr(l.amount)}</td>
+                  <td className="px-3 py-2 text-right text-muted-foreground">{inr(l.balance_after)}</td>
+                </tr>))}
+            </tbody>
+          </table>
         </div>
       </div>
-
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><Banknote className="h-5 w-5 text-emerald-600" /> Recharge Main Account</DialogTitle>
-            <DialogDescription>Record a top-up to the company master wallet.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div>
-              <label className="text-xs font-semibold">Amount (₹)</label>
-              <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="e.g. 1000000" className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40" />
-            </div>
-            <div>
-              <label className="text-xs font-semibold">Source</label>
-              <select value={source} onChange={(e) => setSource(e.target.value)} className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none">
-                <option>Aggregator Top-up (NSDL)</option><option>AEPS Settlement Pool</option><option>BBPS Float Recharge</option><option>Recharge Float Top-up</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-xs font-semibold">Method</label>
-              <select value={method} onChange={(e) => setMethod(e.target.value)} className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none">
-                <option>RTGS</option><option>NEFT</option><option>IMPS</option><option>UPI</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-xs font-semibold">Payment Reference / UTR</label>
-              <input value={reference} onChange={(e) => setReference(e.target.value)} placeholder="UTR number" className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40" />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)} disabled={processing}>Cancel</Button>
-            <Button onClick={submit} disabled={processing} className="bg-emerald-600 hover:bg-emerald-700 text-white">{processing ? "Processing…" : "Confirm Recharge"}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </AccountantShell>
   );
 }

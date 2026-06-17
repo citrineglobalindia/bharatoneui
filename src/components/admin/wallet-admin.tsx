@@ -15,6 +15,8 @@ export function WalletAdmin() {
   const [users, setUsers] = useState<Record<string, RUser>>({});
   const [retailers, setRetailers] = useState<RUser[]>([]);
   const [balances, setBalances] = useState<{ user_id: string; balance: number }[]>([]);
+  const [mainBal, setMainBal] = useState(0);
+  const [rcAmt, setRcAmt] = useState(""); const [rcBusy, setRcBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [tab, setTab] = useState<"pending" | "all">("pending");
@@ -24,11 +26,13 @@ export function WalletAdmin() {
     setLoading(true);
     try {
       await ensureStaffSession();
-      const [t, u, w] = await Promise.all([
+      const [t, u, w, cb] = await Promise.all([
         supabase.from("wallet_topups").select("*").order("created_at", { ascending: false }),
         supabase.rpc("admin_list_users"),
         supabase.from("wallets").select("user_id,balance"),
+        supabase.rpc("company_balance"),
       ]);
+      setMainBal(Number((cb.data as any) ?? 0));
       setRows((t.data as Topup[]) ?? []);
       setBalances((w.data as any[]) ?? []);
       const map: Record<string, RUser> = {}; const rets: RUser[] = [];
@@ -56,6 +60,16 @@ export function WalletAdmin() {
     toast.success("Wallet topped up"); setTuAmt(""); setTuNote(""); load();
   };
 
+  const recharge = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const amt = Number(rcAmt); if (!amt || amt <= 0) return toast.error("Enter a valid amount");
+    setRcBusy(true);
+    const { error } = await supabase.rpc("recharge_company_account", { p_amount: amt, p_note: null });
+    setRcBusy(false);
+    if (error) return toast.error("Recharge failed", { description: error.message });
+    toast.success("Main account recharged"); setRcAmt(""); load();
+  };
+
   const pendingTotal = useMemo(() => rows.filter((r) => r.status === "pending").reduce((a, r) => a + Number(r.amount), 0), [rows]);
   const floatTotal = useMemo(() => balances.reduce((a, b) => a + Number(b.balance), 0), [balances]);
   const filtered = useMemo(() => tab === "pending" ? rows.filter((r) => r.status === "pending") : rows, [rows, tab]);
@@ -68,8 +82,16 @@ export function WalletAdmin() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <div className="rounded-2xl border border-border bg-card p-4 shadow-soft"><p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Wallet float</p><p className="text-2xl font-extrabold">{inr(floatTotal)}</p><p className="text-xs text-muted-foreground">{balances.length} wallet(s)</p></div>
-        <div className="rounded-2xl border border-border bg-card p-4 shadow-soft"><p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Pending requests</p><p className="text-2xl font-extrabold">{rows.filter((r) => r.status === "pending").length}</p><p className="text-xs text-muted-foreground">{inr(pendingTotal)} awaiting</p></div>
+        <div className="rounded-2xl border border-india-green/30 bg-india-green/5 p-4 shadow-soft">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Main account balance</p>
+          <p className="text-2xl font-extrabold text-india-green">{inr(mainBal)}</p>
+          <form onSubmit={recharge} className="mt-2 flex gap-2">
+            <input type="number" min="1" className="h-8 w-24 rounded-lg border border-border bg-background px-2 text-sm" placeholder="Amount" value={rcAmt} onChange={(e) => setRcAmt(e.target.value)} />
+            <Button type="submit" size="sm" variant="outline" disabled={rcBusy}>{rcBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />} Recharge</Button>
+          </form>
+          <p className="mt-1 text-[10px] text-muted-foreground">Approvals & top-ups deduct from this.</p>
+        </div>
+        <div className="rounded-2xl border border-border bg-card p-4 shadow-soft"><p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Retailer wallet float</p><p className="text-2xl font-extrabold">{inr(floatTotal)}</p><p className="text-xs text-muted-foreground">{balances.length} wallet(s) · {rows.filter((r) => r.status === "pending").length} pending ({inr(pendingTotal)})</p></div>
         <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
           <p className="mb-2 flex items-center gap-2 text-sm font-bold"><Plus className="h-4 w-4 text-india-green" /> Direct top-up</p>
           <form onSubmit={directTopup} className="space-y-2">
