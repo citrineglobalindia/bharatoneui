@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 import { BharatOneLogo } from "@/components/bharatone-logo";
+import { useCurrentUser } from "@/lib/use-current-user";
 
 export const Route = createFileRoute("/operator")({
   head: () => ({ meta: [{ title: "Operator — BharatOne" }] }),
@@ -27,6 +28,7 @@ const inr = (n: number) => "₹" + Number(n || 0).toLocaleString("en-IN");
 
 function OperatorPortal() {
   const navigate = useNavigate();
+  const me = useCurrentUser();
   const [apps, setApps] = useState<App[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
@@ -99,6 +101,7 @@ function OperatorPortal() {
           <div><p className="font-display text-sm font-extrabold">Operator Console</p><p className="text-[11px] text-muted-foreground">Service applications assigned to you</p></div>
         </div>
         <div className="flex items-center gap-2">
+          <div className="hidden sm:flex items-center gap-2 mr-1"><span className="grid h-8 w-8 place-items-center rounded-lg bg-india-green/10 text-xs font-extrabold text-india-green">{me.initials}</span><div className="leading-tight"><p className="text-xs font-bold">{me.name}</p><p className="text-[10px] text-muted-foreground">{me.role || "Operator"}</p></div></div>
           <Button variant="outline" size="sm" onClick={load} disabled={loading}><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh</Button>
           <Button variant="outline" size="sm" onClick={logout}><LogOut className="h-4 w-4" /> Logout</Button>
         </div>

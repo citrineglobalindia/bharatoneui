@@ -36,6 +36,7 @@ import { downloadCsv } from "@/lib/admin-actions";
 import { cn } from "@/lib/utils";
 import { RegistrationsReview } from "@/components/registrations/registrations-review";
 import { supabase } from "@/integrations/supabase/client";
+import { useCurrentUser } from "@/lib/use-current-user";
 import { toast } from "sonner";
 
 type NavItem = { label: string; icon: LucideIcon; badge?: string };
@@ -91,6 +92,7 @@ const ALERTS = [
 ];
 
 function Sidebar({ active, onChange, onClose }: { active: string; onChange: (value: string) => void; onClose?: () => void }) {
+  const me = useCurrentUser();
   return (
     <div className="flex h-full flex-col bg-admin-panel text-admin-panel-foreground">
       <div className="flex h-20 items-center gap-3 border-b border-admin-panel-foreground/10 px-5">
@@ -114,7 +116,7 @@ function Sidebar({ active, onChange, onClose }: { active: string; onChange: (val
           </div>
         ))}
       </nav>
-      <div className="border-t border-admin-panel-foreground/10 p-3"><div className="flex items-center gap-3 rounded-xl bg-admin-panel-foreground/5 p-2.5"><span className="grid h-9 w-9 place-items-center rounded-lg bg-admin font-display text-xs font-extrabold text-admin-foreground">SA</span><div className="min-w-0 flex-1"><p className="truncate text-xs font-bold">Super Admin</p><p className="truncate text-[9px] text-admin-panel-foreground/45">Full system access</p></div><ShieldCheck className="h-4 w-4 text-admin-success" /></div></div>
+      <div className="border-t border-admin-panel-foreground/10 p-3"><div className="flex items-center gap-3 rounded-xl bg-admin-panel-foreground/5 p-2.5"><span className="grid h-9 w-9 place-items-center rounded-lg bg-admin font-display text-xs font-extrabold text-admin-foreground">{me.initials}</span><div className="min-w-0 flex-1"><p className="truncate text-xs font-bold">{me.name}</p><p className="truncate text-[9px] text-admin-panel-foreground/45">{me.role || "Full system access"}</p></div><ShieldCheck className="h-4 w-4 text-admin-success" /></div></div>
     </div>
   );
 }
@@ -158,7 +160,7 @@ export function AdminWorkspace() {
           <div className="flex-1 md:hidden" />
           <div className="hidden items-center gap-2 xl:flex"><span className="h-2 w-2 rounded-full bg-admin-success animate-pulse" /><span className="text-[10px] font-bold text-muted-foreground">All systems operational</span></div>
           <Button variant="outline" size="icon" className="relative" onClick={() => setActive("Risk & Fraud")} aria-label="Open risk alerts"><Bell /><span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-admin-danger px-1 text-[8px] font-bold text-admin-danger-foreground">8</span></Button>
-          <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" className="h-10 gap-2 px-2"><span className="grid h-7 w-7 place-items-center rounded-lg bg-admin text-[10px] font-extrabold text-admin-foreground">SA</span><span className="hidden text-left sm:block"><span className="block text-[11px] font-bold">Super Admin</span><span className="block text-[8px] text-muted-foreground">Platform owner</span></span><ChevronDown /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onClick={() => setActive("User Management")}><Building2 />Organization</DropdownMenuItem><DropdownMenuItem onClick={() => setActive("System Settings")}><Settings />Preferences</DropdownMenuItem><DropdownMenuSeparator /><DropdownMenuItem onClick={signOut}><LogOut />Sign out</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
+          <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" className="h-10 gap-2 px-2"><span className="grid h-7 w-7 place-items-center rounded-lg bg-admin text-[10px] font-extrabold text-admin-foreground">{me.initials}</span><span className="hidden text-left sm:block"><span className="block text-[11px] font-bold">{me.name}</span><span className="block text-[8px] text-muted-foreground">{me.role || "Platform owner"}</span></span><ChevronDown /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onClick={() => setActive("User Management")}><Building2 />Organization</DropdownMenuItem><DropdownMenuItem onClick={() => setActive("System Settings")}><Settings />Preferences</DropdownMenuItem><DropdownMenuSeparator /><DropdownMenuItem onClick={signOut}><LogOut />Sign out</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
         </header>
 
         <main className="flex-1 overflow-y-auto">

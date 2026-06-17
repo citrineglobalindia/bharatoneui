@@ -1,0 +1,44 @@
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
+
+export type CurrentUser = { name: string; email: string; role: string; initials: string };
+
+const ROLE_LABEL: Record<string, string> = {
+  admin: "Administrator", accountant: "Accountant", qc: "Quality Control", operator: "Service Operator",
+  telecaller: "Telecaller", retailer: "Retailer", distributor: "Distributor", "master-distributor": "Master Distributor",
+  bde: "Business Development", dro: "DRO", tro: "TRO", hr_staff: "HR", manager: "Manager", employee: "Employee",
+};
+function initialsOf(s: string) {
+  return (s || "U").trim().split(/\s+/).map((w) => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase() || "U";
+}
+
+export function useCurrentUser(): CurrentUser {
+  const [info, setInfo] = useState<{ name: string; email: string; role: string }>(() => {
+    try { const a = JSON.parse(localStorage.getItem("bharatone:auth") || "{}"); return { name: a.name || "", email: a.email || "", role: a.role || "" }; }
+    catch { return { name: "", email: "", role: "" }; }
+  });
+  useEffect(() => {
+    let on = true;
+    (async () => {
+      await ensureStaffSession();
+      const { data: u } = await supabase.auth.getUser();
+      if (!u?.user || !on) return;
+      const [{ data: p }, { data: r }] = await Promise.all([
+        supabase.from("profiles").select("display_name").eq("id", u.user.id).maybeSingle(),
+        supabase.from("user_roles").select("role").eq("user_id", u.user.id),
+      ]);
+      const roles = ((r as any[]) ?? []).map((x) => x.role as string);
+      const role = roles.find((x) => x !== "employee") || roles[0] || "";
+      const name = (p as any)?.display_name || u.user.email?.split("@")[0] || "User";
+      if (!on) return;
+      setInfo({ name, email: u.user.email || "", role });
+      try {
+        const a = JSON.parse(localStorage.getItem("bharatone:auth") || "{}");
+        localStorage.setItem("bharatone:auth", JSON.stringify({ ...a, name, email: u.user.email, role: a.role || role }));
+      } catch {}
+    })();
+    return () => { on = false; };
+  }, []);
+  return { name: info.name || "User", email: info.email, role: ROLE_LABEL[info.role] || info.role || "", initials: initialsOf(info.name || info.email) };
+}

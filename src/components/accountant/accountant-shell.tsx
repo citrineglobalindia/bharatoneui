@@ -2,6 +2,7 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
+import { useCurrentUser } from "@/lib/use-current-user";
 import {
   LayoutDashboard,
   FileCheck2,
@@ -189,6 +190,7 @@ function relTime(iso: string): string {
 }
 
 export function AccountantShell({ children }: { children: React.ReactNode }) {
+  const me = useCurrentUser();
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
@@ -372,11 +374,11 @@ export function AccountantShell({ children }: { children: React.ReactNode }) {
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-2 h-10 pl-1 pr-2 rounded-xl border border-border bg-white hover:bg-muted shadow-soft">
                   <div className="relative">
-                    <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center text-xs font-extrabold">M</div>
+                    <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center text-xs font-extrabold">{me.initials}</div>
                     <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white" />
                   </div>
                   <div className="hidden md:block leading-tight text-left">
-                    <p className="text-[11px] font-bold text-slate-900">Mahesh</p>
+                    <p className="text-[11px] font-bold text-slate-900">{me.name}</p>
                     <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Accountant · On duty</p>
                   </div>
                   <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
@@ -384,9 +386,9 @@ export function AccountantShell({ children }: { children: React.ReactNode }) {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-64">
                 <div className="px-2 py-2.5 flex items-center gap-2.5 border-b mb-1">
-                  <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center font-extrabold">M</div>
+                  <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center font-extrabold">{me.initials}</div>
                   <div className="min-w-0">
-                    <p className="text-sm font-bold truncate">Mahesh</p>
+                    <p className="text-sm font-bold truncate">{me.name}</p>
                     <p className="text-[11px] text-muted-foreground truncate">8879789067</p>
                     <span className="inline-block mt-0.5 text-[9px] font-bold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded uppercase tracking-wider">Accountant</span>
                   </div>
