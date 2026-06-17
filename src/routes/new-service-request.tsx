@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { PlusCircle, Send, Loader2, CheckCircle2, IndianRupee } from "lucide-react";
+import { PlusCircle, Send, Loader2, CheckCircle2, IndianRupee, FileDown, ImageDown, Share2 } from "lucide-react";
 import { RetailerShell } from "@/components/retailer/retailer-shell";
 import { PageHeader } from "@/components/retailer/page-header";
 import { SectionCard, Field, Input, Select, PrimaryButton } from "@/components/retailer/section-card";
 import { supabase } from "@/integrations/supabase/client";
+import { downloadReceiptPDF, downloadReceiptPNG, shareReceipt, type AppReceipt } from "@/lib/application-receipt";
 
 export const Route = createFileRoute("/new-service-request")({
   head: () => ({ meta: [{ title: "New Application — BharatOne" }] }),
@@ -21,7 +22,7 @@ function NewRequestPage() {
   const [svcs, setSvcs] = useState<Svc[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [done, setDone] = useState<{ application_no: string } | null>(null);
+  const [done, setDone] = useState<AppReceipt | null>(null);
 
   const [f, setF] = useState({
     full_name: "", father_name: "", gender: "", email: "", phone: "",
@@ -64,7 +65,13 @@ function NewRequestPage() {
       });
       if (error) { toast.error("Submission failed", { description: error.message }); return; }
       const res = (data as any) ?? {};
-      setDone({ application_no: res.application_no ?? "—" });
+      setDone({
+        application_no: res.application_no ?? "—", status: res.status ?? "submitted", created_at: new Date().toISOString(),
+        full_name: f.full_name.trim(), father_name: f.father_name.trim(), gender: f.gender, phone: f.phone.trim(),
+        email: f.email.trim(), aadhaar_number: f.aadhaar_number.trim(), pan_number: f.pan_number.trim().toUpperCase(), address: f.address.trim(),
+        category_name: cats.find((c) => c.id === f.category_id)?.name, service_name: service?.name,
+        service_charge: service?.service_charge, commission_price: commAmt,
+      });
       toast.success("Application submitted", { description: `Reference ${res.application_no ?? ""}` });
     } finally { setSubmitting(false); }
   };
@@ -72,13 +79,32 @@ function NewRequestPage() {
   if (done) {
     return (
       <RetailerShell>
-        <div className="mx-auto max-w-xl space-y-5">
+        <div className="mx-auto max-w-lg space-y-5">
           <div className="rounded-2xl border border-border bg-card p-8 text-center shadow-soft">
             <CheckCircle2 className="mx-auto h-14 w-14 text-india-green" />
             <h2 className="mt-3 text-xl font-extrabold">Application Submitted</h2>
             <p className="mt-1 text-sm text-muted-foreground">Your application has been received and is now under review.</p>
             <p className="mt-4 inline-block rounded-lg bg-muted px-4 py-2 font-mono text-sm font-bold">{done.application_no}</p>
-            <div className="mt-6 flex justify-center gap-2">
+
+            <div className="mt-6 rounded-xl border border-border bg-muted/30 p-4 text-left text-sm">
+              <div className="grid grid-cols-2 gap-3">
+                <div><p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Service</p><p className="font-semibold">{done.service_name}</p></div>
+                <div><p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Category</p><p className="font-semibold">{done.category_name}</p></div>
+                <div><p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Applicant</p><p className="font-semibold">{done.full_name}</p></div>
+                <div><p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Total Cost</p><p className="font-semibold">₹{Number(done.service_charge||0).toLocaleString("en-IN")}</p></div>
+                <div><p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Your Commission</p><p className="font-semibold text-india-green">₹{Number(done.commission_price||0).toLocaleString("en-IN")}</p></div>
+                <div><p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Date</p><p className="font-semibold">{new Date(done.created_at!).toLocaleDateString("en-IN")}</p></div>
+              </div>
+            </div>
+
+            <p className="mt-4 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Receipt</p>
+            <div className="mt-2 flex flex-wrap justify-center gap-2">
+              <button onClick={() => downloadReceiptPDF(done!)} className="inline-flex items-center gap-1.5 rounded-lg bg-india-green px-3 h-10 text-sm font-semibold text-white hover:bg-india-green/90"><FileDown className="h-4 w-4" /> Download PDF</button>
+              <button onClick={() => downloadReceiptPNG(done!)} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-10 text-sm font-semibold hover:bg-muted"><ImageDown className="h-4 w-4" /> Image</button>
+              <button onClick={async () => { const r = await shareReceipt(done!); if (r === "copied") toast.success("Receipt details copied"); }} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-10 text-sm font-semibold hover:bg-muted"><Share2 className="h-4 w-4" /> Share</button>
+            </div>
+
+            <div className="mt-6 flex justify-center gap-2 border-t border-border pt-5">
               <PrimaryButton onClick={() => navigate({ to: "/applications" })}>View My Applications</PrimaryButton>
               <button onClick={() => { setDone(null); setF({ full_name: "", father_name: "", gender: "", email: "", phone: "", address: "", aadhaar_number: "", pan_number: "", category_id: "", service_id: "" }); }} className="rounded-lg border border-border px-4 text-sm font-semibold hover:bg-muted">New Application</button>
             </div>

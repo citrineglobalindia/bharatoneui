@@ -1,11 +1,13 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2, Plug, ExternalLink, Play, CheckCircle2, Send } from "lucide-react";
+import { ArrowLeft, Loader2, Plug, ExternalLink, Play, CheckCircle2, Send, FileDown, ImageDown, Share2 } from "lucide-react";
 import { RetailerShell } from "@/components/retailer/retailer-shell";
 import { PageHeader } from "@/components/retailer/page-header";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { downloadReceiptPDF, downloadReceiptPNG, shareReceipt, type AppReceipt } from "@/lib/application-receipt";
+import { toast as _toast } from "sonner";
 
 export const Route = createFileRoute("/service/$id")({
   head: () => ({ meta: [{ title: "Service — BharatOne" }] }),
@@ -23,7 +25,7 @@ function ServiceLauncher() {
   const [result, setResult] = useState<string | null>(null);
   const [values, setValues] = useState<Record<string, any>>({});
   const [submitting, setSubmitting] = useState(false);
-  const [done, setDone] = useState(false);
+  const [receipt, setReceipt] = useState<AppReceipt | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -55,7 +57,14 @@ function ServiceLauncher() {
       const { data, error } = await supabase.rpc("submit_backend_application", { p_service_id: id, p_form: values });
       if (error) { toast.error("Submit failed", { description: error.message }); return; }
       const res = (data as any) ?? {};
-      setDone(true);
+      const pick = (re: RegExp) => { const k = Object.keys(values).find((x) => re.test(x.toLowerCase())); return k ? String(values[k]) : undefined; };
+      setReceipt({
+        application_no: res.application_no ?? "—", status: res.status ?? "submitted", created_at: new Date().toISOString(),
+        full_name: pick(/name/) , phone: pick(/phone|mobile/), email: pick(/email/), address: pick(/address/),
+        aadhaar_number: pick(/aadhaar|aadhar/), pan_number: pick(/pan/),
+        category_name: svc.category, service_name: svc.name,
+        service_charge: svc.service_charge, commission_price: Math.round((Number(svc.service_charge||0)*Number(svc.retailer_commission||0)/100)*100)/100,
+      });
       toast.success("Application submitted", { description: res.application_no ? `Reference ${res.application_no}` : undefined });
     } finally { setSubmitting(false); }
   };
@@ -83,12 +92,22 @@ function ServiceLauncher() {
         )}
 
         {svc.service_type === "backend" && fields.length > 0 && (
-          done ? (
+          receipt ? (
             <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-8 text-center">
               <CheckCircle2 className="mx-auto h-10 w-10 text-emerald-600" />
-              <p className="mt-3 font-display text-lg font-bold">Submitted successfully</p>
-              <p className="mt-1 text-sm text-muted-foreground">Your request for {svc.name} has been received. Our team will process it.</p>
-              <Link to="/services" className="mt-4 inline-block text-sm font-semibold text-india-green underline">Back to services</Link>
+              <p className="mt-3 font-display text-lg font-bold">Application Submitted</p>
+              <p className="mt-1 text-sm text-muted-foreground">Your request for {svc.name} has been received and is under review.</p>
+              <p className="mt-3 inline-block rounded-lg bg-white px-4 py-2 font-mono text-sm font-bold border border-border">{receipt.application_no}</p>
+              <p className="mt-4 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Receipt</p>
+              <div className="mt-2 flex flex-wrap justify-center gap-2">
+                <button onClick={() => downloadReceiptPDF(receipt!)} className="inline-flex items-center gap-1.5 rounded-lg bg-india-green px-3 h-10 text-sm font-semibold text-white hover:bg-india-green/90"><FileDown className="h-4 w-4" /> Download PDF</button>
+                <button onClick={() => downloadReceiptPNG(receipt!)} className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-white px-3 h-10 text-sm font-semibold hover:bg-muted"><ImageDown className="h-4 w-4" /> Image</button>
+                <button onClick={async () => { const r = await shareReceipt(receipt!); if (r === "copied") _toast.success("Receipt details copied"); }} className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-white px-3 h-10 text-sm font-semibold hover:bg-muted"><Share2 className="h-4 w-4" /> Share</button>
+              </div>
+              <div className="mt-5 flex justify-center gap-2">
+                <Link to="/applications" className="rounded-lg bg-saffron-gradient text-white px-4 h-10 inline-flex items-center text-sm font-semibold shadow-elev">My Applications</Link>
+                <Link to="/services" className="rounded-lg border border-border bg-white px-4 h-10 inline-flex items-center text-sm font-semibold hover:bg-muted">Back to services</Link>
+              </div>
             </div>
           ) : (
             <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
