@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { OtpSuccessDialog, type OtpSuccessChannel } from "../otp-success-dialog";
 import { useRegistration } from "../registration-context";
+import { supabase } from "@/integrations/supabase/client";
 
 type Stage = "lookup" | "fetched" | "otp" | "verified";
 type Channel = "email" | "mobile";
@@ -102,19 +103,19 @@ export function OldPortalStep() {
       return;
     }
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 900));
+    const { data, error } = await supabase.rpc("fetch_jsko_account", { p_username: username.trim() });
     setLoading(false);
-    // Mock: any username works; "notfound" simulates a miss
-    if (username.trim().toLowerCase() === "notfound") {
-      setLookupError("No JSKO record found for this username. Please double-check.");
+    const res = (data as any) ?? {};
+    if (error || !res.found) {
+      setLookupError("No JSKO record found for this username. Please check with admin.");
       return;
     }
-    const fetchedName = "Ramesh Kumar Sharma";
+    const fetchedName = res.full_name as string;
     setUser({
-      username: username.trim().toUpperCase(),
+      username: (res.username as string) ?? username.trim().toUpperCase(),
       fullName: fetchedName,
-      email: "ramesh.sharma@example.com",
-      mobile: "9845098450",
+      email: res.email ?? "",
+      mobile: res.mobile ?? "",
     });
     const parts = fetchedName.trim().split(/\s+/);
     setReg({

@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2, Plug, ExternalLink, Play, CheckCircle2, Send, FileDown, ImageDown, Share2 } from "lucide-react";
+import { ArrowLeft, Loader2, Plug, ExternalLink, Play, CheckCircle2, Send, FileDown, ImageDown, Share2, Upload } from "lucide-react";
 import { RetailerShell } from "@/components/retailer/retailer-shell";
 import { PageHeader } from "@/components/retailer/page-header";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ function ServiceLauncher() {
   const [result, setResult] = useState<string | null>(null);
   const [values, setValues] = useState<Record<string, any>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [uploadingKey, setUploadingKey] = useState<string | null>(null);
   const [receipt, setReceipt] = useState<AppReceipt | null>(null);
 
   useEffect(() => {
@@ -46,6 +47,18 @@ function ServiceLauncher() {
     finally { setRunning(false); }
   };
 
+  const uploadFile = async (key: string, file: File) => {
+    setUploadingKey(key);
+    try {
+      const ext = (file.name.split(".").pop() || "bin").toLowerCase();
+      const path = `${id}/${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage.from("application-files").upload(path, file, { upsert: false, contentType: file.type || undefined });
+      if (error) { toast.error("Upload failed", { description: error.message }); return; }
+      setValues((v) => ({ ...v, [key]: { __file: path, name: file.name } }));
+      toast.success(`${file.name} uploaded`);
+    } finally { setUploadingKey(null); }
+  };
+
   const submitForm = async (fields: Field[]) => {
     for (const f of fields) {
       if (f.required && !values[f.key] && f.type !== "checkbox") { toast.error(`${f.label} is required`); return; }
@@ -57,7 +70,7 @@ function ServiceLauncher() {
       const { data, error } = await supabase.rpc("submit_backend_application", { p_service_id: id, p_form: values });
       if (error) { toast.error("Submit failed", { description: error.message }); return; }
       const res = (data as any) ?? {};
-      const pick = (re: RegExp) => { const k = Object.keys(values).find((x) => re.test(x.toLowerCase())); return k ? String(values[k]) : undefined; };
+      const pick = (re: RegExp) => { const k = Object.keys(values).find((x) => re.test(x.toLowerCase()) && typeof values[x] !== "object"); return k ? String(values[k]) : undefined; };
       setReceipt({
         application_no: res.application_no ?? "—", status: res.status ?? "submitted", created_at: new Date().toISOString(),
         full_name: pick(/name/) , phone: pick(/phone|mobile/), email: pick(/email/), address: pick(/address/),
@@ -125,7 +138,13 @@ function ServiceLauncher() {
                     ) : f.type === "checkbox" ? (
                       <label className="mt-1 flex items-center gap-2 text-sm"><input type="checkbox" checked={!!values[f.key]} onChange={(e) => setValues({ ...values, [f.key]: e.target.checked })} className="h-4 w-4 accent-[oklch(0.55_0.12_150)]" /> Yes</label>
                     ) : f.type === "file" ? (
-                      <input type="file" className="mt-1 text-sm" onChange={(e) => setValues({ ...values, [f.key]: e.target.files?.[0]?.name ?? "" })} />
+                      <div className="mt-1 flex flex-wrap items-center gap-2">
+                        <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-card px-3 h-9 text-xs font-semibold hover:bg-muted">
+                          {uploadingKey === f.key ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />} {values[f.key]?.__file ? "Replace file" : "Choose file"}
+                          <input type="file" className="hidden" onChange={(e) => e.target.files?.[0] && uploadFile(f.key, e.target.files[0])} />
+                        </label>
+                        {values[f.key]?.name && <span className="text-xs text-india-green font-medium truncate max-w-[200px]">{values[f.key].name}</span>}
+                      </div>
                     ) : (
                       <input type={f.type} className={input} placeholder={f.placeholder} value={values[f.key] ?? ""} onChange={(e) => setValues({ ...values, [f.key]: e.target.value })} />
                     )}
