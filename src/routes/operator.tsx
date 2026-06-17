@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 import { BharatOneLogo } from "@/components/bharatone-logo";
+import { ApplicationThread } from "@/components/application-thread";
 import { useCurrentUser } from "@/lib/use-current-user";
 
 export const Route = createFileRoute("/operator")({
@@ -189,6 +190,9 @@ function OperatorPortal() {
               <Button size="sm" disabled={saving} onClick={() => setStatus(sel, "approved")} className="bg-india-green text-white hover:bg-india-green/90"><CheckCircle2 className="h-4 w-4" /> Approve</Button>
               <Button size="sm" disabled={saving} onClick={() => setStatus(sel, "completed")} variant="outline"><CheckCircle2 className="h-4 w-4" /> Complete</Button>
               <Button size="sm" disabled={saving} onClick={() => setStatus(sel, "rejected")} variant="outline" className="text-rose-600"><XCircle className="h-4 w-4" /> Reject</Button>
+            </div>
+            <div className="mt-4"><p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Chat with retailer</p>
+              <ApplicationThread applicationId={sel.id} title="Chat with retailer" />
             </div>
             <div className="mt-4 text-right"><button onClick={() => setSel(null)} className="text-sm font-semibold text-muted-foreground hover:text-foreground">Close</button></div>
           </div>
