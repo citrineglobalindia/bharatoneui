@@ -157,7 +157,7 @@ function CatForm({ name, setName, active, setActive, operatorId, setOperatorId, 
   );
 }
 
-type CatOp = { operator_id: string; name: string; is_active: boolean; assigned_count: number; pending: number };
+type CatOp = { operator_id: string; name: string; phone: string | null; is_active: boolean; assigned_count: number; pending: number };
 
 function CategoryOperators({ categoryId, allOperators, onChange }: { categoryId: string; allOperators: Operator[]; onChange: () => void }) {
   const [rows, setRows] = useState<CatOp[]>([]);
@@ -193,6 +193,12 @@ function CategoryOperators({ categoryId, allOperators, onChange }: { categoryId:
     if (error) return toast.error(error.message);
     toast.success("Operator removed"); await load(); onChange();
   };
+  const savePhone = async (op: CatOp, phone: string) => {
+    const { error } = await supabase.rpc("set_operator_phone", { _op: op.operator_id, _phone: phone });
+    if (error) return toast.error(error.message);
+    setRows((rs) => rs.map((r) => r.operator_id === op.operator_id ? { ...r, phone: phone || null } : r));
+    toast.success("Operator contact saved");
+  };
 
   const unassigned = allOperators.filter((o) => !rows.some((r) => r.operator_id === o.id));
   const activeCount = rows.filter((r) => r.is_active).length;
@@ -219,12 +225,13 @@ function CategoryOperators({ categoryId, allOperators, onChange }: { categoryId:
         <div className="overflow-hidden rounded-xl border border-border">
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
-              <tr><th className="px-3 py-2">Operator</th><th className="px-3 py-2 text-right">Total</th><th className="px-3 py-2 text-right">Pending</th><th className="px-3 py-2">Status</th><th className="px-3 py-2 text-right">Actions</th></tr>
+              <tr><th className="px-3 py-2">Operator</th><th className="px-3 py-2">Contact no.</th><th className="px-3 py-2 text-right">Total</th><th className="px-3 py-2 text-right">Pending</th><th className="px-3 py-2">Status</th><th className="px-3 py-2 text-right">Actions</th></tr>
             </thead>
             <tbody>
               {rows.map((op) => (
                 <tr key={op.operator_id} className="border-t border-border">
                   <td className="px-3 py-2 font-semibold">{op.name}</td>
+                  <td className="px-3 py-2"><input defaultValue={op.phone ?? ""} placeholder="Phone" onBlur={(e) => { const v = e.target.value.trim(); if (v !== (op.phone ?? "")) savePhone(op, v); }} className="h-8 w-32 rounded-lg border border-border bg-background px-2 text-xs outline-none focus-visible:ring-2 focus-visible:ring-india-green/30" /></td>
                   <td className="px-3 py-2 text-right text-muted-foreground">{op.assigned_count}</td>
                   <td className="px-3 py-2 text-right text-muted-foreground">{op.pending}</td>
                   <td className="px-3 py-2"><Pill on={op.is_active} /></td>

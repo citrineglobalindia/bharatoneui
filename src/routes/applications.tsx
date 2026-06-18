@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ClipboardList, Plus, Loader2, FileText, IndianRupee, TrendingUp, RefreshCw, Download, ChevronRight, X, FileDown, ImageDown, Share2, Paperclip } from "lucide-react";
+import { ClipboardList, Plus, Loader2, FileText, IndianRupee, TrendingUp, RefreshCw, Download, ChevronRight, X, FileDown, ImageDown, Share2, Paperclip, Phone } from "lucide-react";
 import { toast } from "sonner";
 import { RetailerShell } from "@/components/retailer/retailer-shell";
 import { PageHeader, StatusBadge } from "@/components/retailer/page-header";
@@ -18,7 +18,7 @@ type Row = {
   id: string; application_no: string; service_name: string; category_name: string; full_name: string;
   father_name: string | null; gender: string | null; email: string | null; phone: string | null; address: string | null;
   aadhaar_number: string | null; pan_number: string | null; status: string; service_charge: number; commission_price: number;
-  created_at: string; result_doc_path: string | null; result_note: string | null;
+  created_at: string; result_doc_path: string | null; result_note: string | null; form_data: any; assigned_operator: string | null;
 };
 const statusLabel: Record<string, string> = { submitted: "Pending", on_process: "On Process", in_progress: "On Process", waiting_approval: "Waiting for Approval", on_delay: "On Delay", approved: "Waiting for Approval", rejected: "Rejected", completed: "Completed" };
 const STEPS = ["submitted", "on_process", "waiting_approval", "completed"];
@@ -28,6 +28,14 @@ const FILTERS = ["All", "Pending", "Processing", "Approved", "Completed", "Rejec
 async function openResult(path: string) {
   const { data } = await supabase.storage.from("service-attachments").createSignedUrl(path, 3600);
   if (data) window.open(data.signedUrl, "_blank");
+}
+async function openSubmitted(path: string) {
+  const { data } = await supabase.storage.from("application-files").createSignedUrl(path, 3600);
+  if (data) window.open(data.signedUrl, "_blank");
+}
+function submittedFiles(form: any): { name: string; path: string }[] {
+  if (!form || typeof form !== "object") return [];
+  return Object.values(form).filter((v: any) => v && typeof v === "object" && v.__file).map((v: any) => ({ name: v.name || "Document", path: v.__file }));
 }
 const toReceipt = (r: Row): AppReceipt => ({
   application_no: r.application_no, status: r.status, created_at: r.created_at, full_name: r.full_name,
@@ -51,11 +59,18 @@ function ApplicationsPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("All");
   const [sel, setSel] = useState<Row | null>(null);
+  const [opContact, setOpContact] = useState<{ name: string; email: string | null; phone: string | null } | null>(null);
+  useEffect(() => {
+    if (!sel) { setOpContact(null); return; }
+    let on = true;
+    (async () => { const { data } = await supabase.rpc("application_operator_contact", { _app: sel.id }); if (on) setOpContact((data as any) ?? null); })();
+    return () => { on = false; };
+  }, [sel]);
 
   async function load() {
     setLoading(true);
     const { data } = await supabase.from("service_applications")
-      .select("id,application_no,service_name,category_name,full_name,father_name,gender,email,phone,address,aadhaar_number,pan_number,status,service_charge,commission_price,created_at,result_doc_path,result_note")
+      .select("id,application_no,service_name,category_name,full_name,father_name,gender,email,phone,address,aadhaar_number,pan_number,status,service_charge,commission_price,created_at,result_doc_path,result_note,form_data,assigned_operator")
       .order("created_at", { ascending: false });
     setRows((data as Row[]) ?? []);
     setLoading(false);
@@ -128,9 +143,23 @@ function ApplicationsPage() {
 
             <div className="mt-4 flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-sm"><span>Charge <b>{inr(sel.service_charge)}</b></span><span className="text-india-green">Commission <b>{inr(sel.commission_price)}</b></span></div>
 
+            {submittedFiles(sel.form_data).length > 0 && (
+              <div className="mt-3">
+                <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Documents you submitted</p>
+                <div className="space-y-1.5">
+                  {submittedFiles(sel.form_data).map((f, i) => (
+                    <div key={i} className="flex items-center justify-between rounded-lg border border-border bg-muted/30 px-3 py-2">
+                      <span className="flex items-center gap-1.5 truncate text-sm"><Paperclip className="h-4 w-4 text-muted-foreground shrink-0" /> <span className="truncate">{f.name}</span></span>
+                      <button onClick={() => openSubmitted(f.path)} className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-india-green hover:underline"><Download className="h-3.5 w-3.5" /> View</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {sel.result_doc_path && (
               <div className="mt-3 flex items-center justify-between rounded-lg border border-india-green/30 bg-india-green/5 px-3 py-2">
-                <span className="flex items-center gap-1.5 text-sm font-semibold"><Paperclip className="h-4 w-4 text-india-green" /> Result document ready</span>
+                <span className="flex items-center gap-1.5 text-sm font-semibold"><Paperclip className="h-4 w-4 text-india-green" /> Return document from operator</span>
                 <button onClick={() => openResult(sel.result_doc_path!)} className="inline-flex items-center gap-1 text-xs font-bold text-india-green hover:underline"><Download className="h-3.5 w-3.5" /> Download</button>
               </div>
             )}
@@ -143,6 +172,19 @@ function ApplicationsPage() {
               <button onClick={() => downloadReceiptPNG(toReceipt(sel))} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-9 text-sm font-semibold hover:bg-muted"><ImageDown className="h-4 w-4" /> Image</button>
               <button onClick={async () => { const r = await shareReceipt(toReceipt(sel)); if (r === "copied") toast.success("Receipt details copied"); }} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-9 text-sm font-semibold hover:bg-muted"><Share2 className="h-4 w-4" /> Share</button>
             </div>
+
+            {/* Operator contact */}
+            {opContact && (opContact.phone || opContact.email) && (
+              <div className="mt-4 rounded-xl border border-border bg-card p-3">
+                <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Assigned operator</p>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="min-w-0"><p className="truncate text-sm font-bold">{opContact.name}</p>{opContact.email && <p className="truncate text-[11px] text-muted-foreground">{opContact.email}</p>}</div>
+                  {opContact.phone
+                    ? <a href={`tel:${opContact.phone}`} className="inline-flex items-center gap-1.5 rounded-lg bg-india-green px-3 h-9 text-sm font-semibold text-white hover:bg-india-green/90"><Phone className="h-4 w-4" /> {opContact.phone}</a>
+                    : <span className="text-xs text-muted-foreground">No contact number added</span>}
+                </div>
+              </div>
+            )}
 
             {/* Contact operator */}
             <p className="mt-4 mb-2 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Reach out to operator</p>
