@@ -10,7 +10,7 @@ import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 
 type U = {
   id: string; email: string; display_name: string; department: string | null; designation: string | null;
-  employee_code: string | null; is_active: boolean; created_at: string; roles: string[];
+  employee_code: string | null; phone: string | null; skills: string | null; experience: string | null; education: string | null; is_active: boolean; created_at: string; roles: string[];
 };
 const ALL_ROLES = ["admin", "accountant", "qc", "operator", "telecaller", "distributor", "master-distributor", "bde", "dro", "tro", "manager", "hr_staff", "employee", "retailer"];
 const roleColor: Record<string, string> = {
@@ -27,7 +27,7 @@ export function AdminUsers() {
   const [roleFilter, setRoleFilter] = useState("all");
   const [detail, setDetail] = useState<U | null>(null);
   const [showAdd, setShowAdd] = useState(false);
-  const [add, setAdd] = useState({ email: "", password: "", name: "", role: "accountant", department: "", designation: "", employee_code: "" });
+  const [add, setAdd] = useState({ email: "", password: "", name: "", role: "accountant", department: "", designation: "", employee_code: "", phone: "", skills: "", experience: "", education: "" });
   const [busy, setBusy] = useState(false);
 
   async function load() {
@@ -70,12 +70,26 @@ export function AdminUsers() {
     if (!add.email || !add.password || !add.name) { toast.error("Email, password and name are required"); return; }
     setBusy(true);
     try {
-      const { error } = await supabase.rpc("create_staff_account", { _email: add.email, _password: add.password, _name: add.name, _role: add.role, _department: add.department || null, _designation: add.designation || null, _employee_code: add.employee_code || null });
+      const { error } = await supabase.rpc("create_staff_account", { _email: add.email, _password: add.password, _name: add.name, _role: add.role, _department: add.department || null, _designation: add.designation || null, _employee_code: add.employee_code || null, _phone: add.phone || null, _skills: add.skills || null, _experience: add.experience || null, _education: add.education || null });
       if (error) { toast.error("Create failed", { description: error.message }); return; }
       toast.success("Staff account created");
-      setShowAdd(false); setAdd({ email: "", password: "", name: "", role: "accountant", department: "", designation: "", employee_code: "" });
+      setShowAdd(false); setAdd({ email: "", password: "", name: "", role: "accountant", department: "", designation: "", employee_code: "", phone: "", skills: "", experience: "", education: "" });
       await load();
     } finally { setBusy(false); }
+  };
+  const [edit, setEdit] = useState<{ phone: string; skills: string; experience: string; education: string; department: string; designation: string; employee_code: string } | null>(null);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const openDetail = (u: U) => { setDetail(u); setEdit({ phone: u.phone ?? "", skills: u.skills ?? "", experience: u.experience ?? "", education: u.education ?? "", department: u.department ?? "", designation: u.designation ?? "", employee_code: u.employee_code ?? "" }); };
+  const saveProfile = async (u: U) => {
+    if (!edit) return;
+    setSavingProfile(true);
+    const payload = { phone: edit.phone || null, skills: edit.skills || null, experience: edit.experience || null, education: edit.education || null, department: edit.department || null, designation: edit.designation || null, employee_code: edit.employee_code || null };
+    const { error } = await supabase.from("profiles").update(payload).eq("id", u.id);
+    setSavingProfile(false);
+    if (error) return toast.error("Save failed", { description: error.message });
+    toast.success("Staff profile updated");
+    setRows((rs) => rs.map((x) => x.id === u.id ? { ...x, ...payload } : x));
+    setDetail((d) => d ? { ...d, ...payload } : d);
   };
   const input = "h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-india-green/30";
 
@@ -108,7 +122,7 @@ export function AdminUsers() {
                 <td className="px-3 py-3 text-muted-foreground">{u.department || "—"}</td>
                 <td className="px-3 py-3"><span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${u.is_active ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>{u.is_active ? "Active" : "Inactive"}</span></td>
                 <td className="px-3 py-3 text-xs text-muted-foreground">{new Date(u.created_at).toLocaleDateString("en-IN")}</td>
-                <td className="px-3 py-3 text-right"><Button size="sm" variant="outline" className="h-8" onClick={() => setDetail(u)}><Eye className="h-3.5 w-3.5" /> View</Button></td>
+                <td className="px-3 py-3 text-right"><Button size="sm" variant="outline" className="h-8" onClick={() => openDetail(u)}><Eye className="h-3.5 w-3.5" /> View</Button></td>
               </tr>
             ))}
           </tbody>
@@ -122,10 +136,24 @@ export function AdminUsers() {
           {detail && (
             <div className="space-y-4 text-sm">
               <div className="grid grid-cols-2 gap-3">
-                <Info label="Department" v={detail.department} /><Info label="Designation" v={detail.designation} />
-                <Info label="Employee Code" v={detail.employee_code} /><Info label="Joined" v={new Date(detail.created_at).toLocaleString("en-IN")} />
+                <Info label="Joined" v={new Date(detail.created_at).toLocaleString("en-IN")} />
                 <Info label="Status" v={detail.is_active ? "Active" : "Inactive"} />
               </div>
+              {edit && (
+                <div className="rounded-xl border border-border bg-muted/20 p-3">
+                  <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Staff Profile</p>
+                  <div className="grid gap-2.5 sm:grid-cols-2">
+                    <div><label className="text-[11px] font-semibold text-muted-foreground">Contact Number</label><input className={input} value={edit.phone} onChange={(e) => setEdit({ ...edit, phone: e.target.value })} placeholder="Phone number" /></div>
+                    <div><label className="text-[11px] font-semibold text-muted-foreground">Employee Code</label><input className={input} value={edit.employee_code} onChange={(e) => setEdit({ ...edit, employee_code: e.target.value })} placeholder="Code" /></div>
+                    <div><label className="text-[11px] font-semibold text-muted-foreground">Department</label><input className={input} value={edit.department} onChange={(e) => setEdit({ ...edit, department: e.target.value })} placeholder="Department" /></div>
+                    <div><label className="text-[11px] font-semibold text-muted-foreground">Designation</label><input className={input} value={edit.designation} onChange={(e) => setEdit({ ...edit, designation: e.target.value })} placeholder="Designation" /></div>
+                    <div className="sm:col-span-2"><label className="text-[11px] font-semibold text-muted-foreground">Education Qualification</label><input className={input} value={edit.education} onChange={(e) => setEdit({ ...edit, education: e.target.value })} placeholder="e.g. B.Com, MBA" /></div>
+                    <div className="sm:col-span-2"><label className="text-[11px] font-semibold text-muted-foreground">Experience</label><input className={input} value={edit.experience} onChange={(e) => setEdit({ ...edit, experience: e.target.value })} placeholder="e.g. 3 years in banking ops" /></div>
+                    <div className="sm:col-span-2"><label className="text-[11px] font-semibold text-muted-foreground">Skills</label><textarea rows={2} className={input + " h-auto py-2"} value={edit.skills} onChange={(e) => setEdit({ ...edit, skills: e.target.value })} placeholder="e.g. AEPS, KYC verification, customer support" /></div>
+                  </div>
+                  <Button size="sm" className="mt-3 bg-india-green text-white" disabled={savingProfile} onClick={() => saveProfile(detail)}>{savingProfile ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Save profile</Button>
+                </div>
+              )}
               <div>
                 <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Roles</p>
                 <div className="flex flex-wrap gap-1.5">
@@ -177,6 +205,10 @@ export function AdminUsers() {
             <input className={input} placeholder="Department" value={add.department} onChange={(e) => setAdd({ ...add, department: e.target.value })} />
             <input className={input} placeholder="Designation" value={add.designation} onChange={(e) => setAdd({ ...add, designation: e.target.value })} />
             <input className={input} placeholder="Employee / Agent code" value={add.employee_code} onChange={(e) => setAdd({ ...add, employee_code: e.target.value })} />
+            <input className={input} placeholder="Contact number" value={add.phone} onChange={(e) => setAdd({ ...add, phone: e.target.value })} />
+            <input className={input} placeholder="Education qualification" value={add.education} onChange={(e) => setAdd({ ...add, education: e.target.value })} />
+            <input className={input} placeholder="Experience (e.g. 3 years)" value={add.experience} onChange={(e) => setAdd({ ...add, experience: e.target.value })} />
+            <input className={input + " sm:col-span-2"} placeholder="Skills (comma separated)" value={add.skills} onChange={(e) => setAdd({ ...add, skills: e.target.value })} />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAdd(false)}><X className="h-4 w-4" /> Cancel</Button>
