@@ -318,7 +318,7 @@ export const DRO_CONFIG: RegionalConfig = {
   shortName: "DRO",
   scope: "Bengaluru Urban District",
   user: { name: "Kavya", phone: "8974532567", role: "DRO", initial: "K" },
-  loginPath: "/dro-login",
+  loginPath: "/login",
   basePath: "/dro",
 };
 
@@ -328,6 +328,6 @@ export const TRO_CONFIG: RegionalConfig = {
   shortName: "TRO",
   scope: "Anekal Taluk",
   user: { name: "Navya", phone: "8974532566", role: "TRO", initial: "N" },
-  loginPath: "/tro-login",
+  loginPath: "/login",
   basePath: "/tro",
 };

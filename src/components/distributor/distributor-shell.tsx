@@ -19,7 +19,7 @@ export const DISTRIBUTOR = {
   shortName: "Distributor",
   scope: "Bengaluru Zone",
   user: { name: "Karthik M", phone: "7259809887", role: "Distributor", initial: "K" },
-  loginPath: "/distributor-login",
+  loginPath: "/login",
   basePath: "/distributor",
 };
 

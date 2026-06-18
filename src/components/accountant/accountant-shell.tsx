@@ -85,7 +85,7 @@ const NAV: NavSection[] = [
   {
     heading: "Session",
     items: [
-      { label: "Sign Out", icon: <LogOut className="h-4 w-4" />, to: "/accountant-login" },
+      { label: "Sign Out", icon: <LogOut className="h-4 w-4" />, to: "/login" },
     ],
   },
 ];

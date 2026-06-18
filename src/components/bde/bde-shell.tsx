@@ -59,7 +59,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         <ul className="space-y-1">{ACCOUNT_NAV.map((item) => { const Icon = item.icon; const active = pathname === item.to; return <li key={item.label}><Link to={item.to} onClick={onNavigate} className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition ${active ? "bg-bd text-bd-foreground shadow-lg shadow-navy" : "text-bd-foreground/65 hover:bg-bd-foreground/10 hover:text-bd-foreground"}`}><Icon className="h-4 w-4"/><span>{item.label}</span></Link></li>; })}</ul>
       </nav>
       <div className="border-t border-bd-foreground/10 p-3">
-        <Button variant="ghost" className="w-full justify-start text-bd-foreground/70 hover:bg-bd-foreground/10 hover:text-bd-foreground" onClick={() => { localStorage.removeItem("bharatone:auth"); navigate({ to: "/bde-login", replace: true }); }}>
+        <Button variant="ghost" className="w-full justify-start text-bd-foreground/70 hover:bg-bd-foreground/10 hover:text-bd-foreground" onClick={() => { localStorage.removeItem("bharatone:auth"); navigate({ to: "/login", replace: true }); }}>
           <LogOut className="h-4 w-4 mr-2" /> Sign out
         </Button>
       </div>
@@ -83,7 +83,7 @@ export function BdeShell({ children }: { children: React.ReactNode }) {
           <Button variant="outline" size="icon" className="relative"><Bell /><span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-destructive-foreground">4</span></Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild><Button variant="outline" className="h-10 gap-2 px-2"><span className="flex h-7 w-7 items-center justify-center rounded-lg bg-bd text-xs font-bold text-bd-foreground">VS</span><span className="hidden text-left md:block"><span className="block text-xs font-bold">Vikram Singh</span><span className="block text-[9px] text-muted-foreground">BDE Executive</span></span><ChevronDown /></Button></DropdownMenuTrigger>
-              <DropdownMenuContent align="end"><DropdownMenuItem asChild><Link to="/bde/profile">My profile</Link></DropdownMenuItem><DropdownMenuItem asChild><Link to="/bde/settings">Settings</Link></DropdownMenuItem><DropdownMenuItem asChild><Link to="/bde/support">Help & support</Link></DropdownMenuItem><DropdownMenuSeparator /><DropdownMenuItem onClick={() => { localStorage.removeItem("bharatone:auth"); navigate({ to: "/bde-login", replace: true }); }}>Sign out</DropdownMenuItem></DropdownMenuContent>
+              <DropdownMenuContent align="end"><DropdownMenuItem asChild><Link to="/bde/profile">My profile</Link></DropdownMenuItem><DropdownMenuItem asChild><Link to="/bde/settings">Settings</Link></DropdownMenuItem><DropdownMenuItem asChild><Link to="/bde/support">Help & support</Link></DropdownMenuItem><DropdownMenuSeparator /><DropdownMenuItem onClick={() => { localStorage.removeItem("bharatone:auth"); navigate({ to: "/login", replace: true }); }}>Sign out</DropdownMenuItem></DropdownMenuContent>
           </DropdownMenu>
         </header>
         <main className="flex-1 overflow-y-auto p-4 lg:p-8">{children}</main>

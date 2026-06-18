@@ -83,7 +83,7 @@ const NAV: NavSection[] = [
       {
         label: "Sign Out",
         icon: <LogOut className="h-4 w-4" />,
-        to: "/qc-login",
+        to: "/login",
       },
     ],
   },
