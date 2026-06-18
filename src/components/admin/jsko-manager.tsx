@@ -61,6 +61,36 @@ export function JskoManager() {
 
   const filtered = useMemo(() => rows.filter((r) => !q || [r.username, r.full_name, r.email, r.mobile].filter(Boolean).some((v) => String(v).toLowerCase().includes(q.toLowerCase()))), [rows, q]);
 
+  if (view) {
+    return (
+      <div className="space-y-5">
+        <button onClick={() => setView(null)} className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground"><X className="h-4 w-4 rotate-45" /> Back to list</button>
+        <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-soft">
+          <div className="flex items-center gap-3 border-l-4 border-india-green bg-muted/20 p-5">
+            <span className="grid h-12 w-12 place-items-center rounded-xl bg-india-green/10 text-india-green"><IdCard className="h-6 w-6" /></span>
+            <div><p className="font-display text-lg font-extrabold">JSKO ID Details</p><p className="text-xs text-muted-foreground">Username {view.username} · Added {new Date(view.created_at).toLocaleString("en-IN")}</p></div>
+            <span className={`ml-auto rounded-full px-2.5 py-0.5 text-xs font-bold ${form.is_active ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>{form.is_active ? "Active" : "Inactive"}</span>
+          </div>
+          <div className="p-6">
+            <p className="mb-4 text-sm font-bold text-muted-foreground">Existing details — edit and save</p>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div><label className="text-[11px] font-semibold text-muted-foreground">Username *</label><input className={inp + " h-11"} value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} /></div>
+              <div><label className="text-[11px] font-semibold text-muted-foreground">Full name *</label><input className={inp + " h-11"} value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} /></div>
+              <div><label className="text-[11px] font-semibold text-muted-foreground">Email</label><input className={inp + " h-11"} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
+              <div><label className="text-[11px] font-semibold text-muted-foreground">Mobile</label><input className={inp + " h-11"} value={form.mobile} onChange={(e) => setForm({ ...form, mobile: e.target.value.replace(/\D/g, "") })} maxLength={10} /></div>
+              <div className="lg:col-span-2"><label className="text-[11px] font-semibold text-muted-foreground">Password (legacy)</label><input className={inp + " h-11"} value={form.legacy_password} onChange={(e) => setForm({ ...form, legacy_password: e.target.value })} /></div>
+            </div>
+            <label className="mt-4 flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} className="h-4 w-4 accent-[oklch(0.55_0.12_150)]" /> Active (fetchable during registration)</label>
+            <div className="mt-5 flex gap-2 border-t border-border pt-4">
+              <Button onClick={saveEdit} disabled={savingEdit} className="bg-india-green text-white hover:bg-india-green/90">{savingEdit ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Save changes</Button>
+              <Button variant="outline" onClick={() => setView(null)}><X className="h-4 w-4" /> Close</Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -121,25 +151,6 @@ export function JskoManager() {
         </table>
       </div>
 
-      {view && (
-        <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/40 p-4" onClick={() => setView(null)}>
-          <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-5 shadow-elev" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-start justify-between"><div><p className="flex items-center gap-2 font-display text-lg font-extrabold"><IdCard className="h-5 w-5 text-india-green" /> JSKO ID Details</p><p className="text-xs text-muted-foreground">Added {new Date(view.created_at).toLocaleString("en-IN")}</p></div><button onClick={() => setView(null)}><X className="h-5 w-5 text-muted-foreground" /></button></div>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <div><label className="text-[11px] font-semibold text-muted-foreground">Username *</label><input className={inp + " h-10"} value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} /></div>
-              <div><label className="text-[11px] font-semibold text-muted-foreground">Full name *</label><input className={inp + " h-10"} value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} /></div>
-              <div><label className="text-[11px] font-semibold text-muted-foreground">Email</label><input className={inp + " h-10"} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
-              <div><label className="text-[11px] font-semibold text-muted-foreground">Mobile</label><input className={inp + " h-10"} value={form.mobile} onChange={(e) => setForm({ ...form, mobile: e.target.value.replace(/\D/g, "") })} maxLength={10} /></div>
-              <div className="sm:col-span-2"><label className="text-[11px] font-semibold text-muted-foreground">Password (legacy)</label><input className={inp + " h-10"} value={form.legacy_password} onChange={(e) => setForm({ ...form, legacy_password: e.target.value })} /></div>
-            </div>
-            <label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} className="h-4 w-4 accent-[oklch(0.55_0.12_150)]" /> Active (fetchable during registration)</label>
-            <div className="mt-4 flex gap-2">
-              <Button onClick={saveEdit} disabled={savingEdit} className="bg-india-green text-white hover:bg-india-green/90">{savingEdit ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Save changes</Button>
-              <Button variant="outline" onClick={() => setView(null)}><X className="h-4 w-4" /> Close</Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
