@@ -35,6 +35,7 @@ function ServiceLauncher() {
       await ensureStaffSession();
       const { data } = await supabase.from("services").select("*").eq("id", id).maybeSingle();
       setSvc(data); setLoading(false);
+      if (data?.service_type === "inlink" && data.redirect_url) { try { window.open(data.redirect_url, "_blank", "noopener,noreferrer"); } catch { /* popup blocked */ } }
       const { data: sess0 } = await supabase.auth.getSession();
       const uid0 = sess0?.session?.user?.id;
       if (uid0) { const { data: w } = await supabase.from("wallets").select("balance").eq("user_id", uid0).maybeSingle(); setBalance(Number((w as any)?.balance ?? 0)); }
@@ -185,16 +186,11 @@ function ServiceLauncher() {
         )}
 
         {svc.service_type === "inlink" && svc.redirect_url && (
-          <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-soft">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-muted/40 px-4 py-2.5">
-              <p className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground"><Plug className="h-3.5 w-3.5 text-india-green" /> Running inside BharatOne · <span className="truncate max-w-[260px] text-foreground">{(() => { try { return new URL(svc.redirect_url).hostname; } catch { return svc.redirect_url; } })()}</span></p>
-              <div className="flex items-center gap-2">
-                <button onClick={() => { const f = document.getElementById("inlink-frame") as HTMLIFrameElement | null; if (f) f.src = svc.redirect_url; }} className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-2.5 h-8 text-[11px] font-semibold hover:bg-muted"><Play className="h-3.5 w-3.5" /> Reload</button>
-                <a href={svc.redirect_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-2.5 h-8 text-[11px] font-semibold hover:bg-muted">Open in new tab <ExternalLink className="h-3.5 w-3.5" /></a>
-              </div>
-            </div>
-            <iframe id="inlink-frame" src={svc.redirect_url} title={svc.name} className="h-[calc(100vh-240px)] min-h-[480px] w-full bg-white" sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-downloads" referrerPolicy="no-referrer" />
-            <p className="border-t border-border bg-muted/30 px-4 py-2 text-[11px] text-muted-foreground">If the page stays blank, the provider may block embedding for security — use <b>Open in new tab</b> above.</p>
+          <div className="rounded-2xl border border-border bg-card p-6 text-center shadow-soft">
+            <ExternalLink className="mx-auto h-10 w-10 text-india-green" />
+            <p className="mt-3 font-bold">This service opens on the provider's website</p>
+            <p className="mt-1 text-sm text-muted-foreground">It launches in a new browser tab. If it didn't open automatically, use the button below.</p>
+            <a href={svc.redirect_url} target="_blank" rel="noreferrer" className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-india-green px-4 h-11 text-sm font-semibold text-white hover:bg-india-green/90">Open {svc.name} <ExternalLink className="h-4 w-4" /></a>
           </div>
         )}
       </div>

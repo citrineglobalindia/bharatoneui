@@ -42,7 +42,7 @@ function ServiceTile({ s }: { s: Service }) {
   );
   const cls = "group relative flex flex-col items-center gap-2 rounded-xl border border-border bg-card p-4 text-center transition hover:shadow-elev hover:-translate-y-0.5";
   if (s.service_type === "inlink" && s.redirect_url) {
-    return (<Link to="/service/$id" params={{ id: s.id }} className={cls}>{inner}<ExternalLink className="absolute right-2 top-2 h-3.5 w-3.5 text-muted-foreground opacity-0 transition group-hover:opacity-100" /></Link>);
+    return (<a href={s.redirect_url} target="_blank" rel="noreferrer" className={cls}>{inner}<ExternalLink className="absolute right-2 top-2 h-3.5 w-3.5 text-muted-foreground opacity-0 transition group-hover:opacity-100" /></a>);
   }
   if (s.service_type === "backend" && s.backend_route) {
     return (<Link to={s.backend_route as never} className={cls}>{inner}</Link>);
