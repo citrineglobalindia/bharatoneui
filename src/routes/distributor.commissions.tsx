@@ -1,12 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { DistributorCommissions } from "@/components/distributor/distributor-views";
-
+import { DistributorShell } from "@/components/distributor/distributor-shell";
+import { DistributorCommissionsReal } from "@/components/distributor/distributor-real";
 export const Route = createFileRoute("/distributor/commissions")({
-  head: () => ({
-    meta: [
-      { title: "Commissions — Distributor Portal" },
-      { name: "description", content: "Commission earned across services and retailers in your network." },
-    ],
-  }),
-  component: DistributorCommissions,
+  head: () => ({ meta: [{ title: "Commissions — BharatOne Distributor" }] }),
+  component: () => (<DistributorShell><DistributorCommissionsReal /></DistributorShell>),
 });

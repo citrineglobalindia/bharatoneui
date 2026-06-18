@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { DistributorRetailers } from "@/components/distributor/distributor-views";
-
+import { DistributorShell } from "@/components/distributor/distributor-shell";
+import { DistributorRetailersReal } from "@/components/distributor/distributor-real";
 export const Route = createFileRoute("/distributor/retailers/")({
-  component: DistributorRetailers,
+  component: () => (<DistributorShell><DistributorRetailersReal /></DistributorShell>),
 });

@@ -166,7 +166,9 @@ function LoginPage() {
                             ? "/telecaller/registrations"
                             : set.has("operator")
                               ? "/operator"
-                              : "/dashboard";
+                              : set.has("distributor")
+                                ? "/distributor/dashboard"
+                                : "/dashboard";
                     toast.success("Welcome back");
                     navigate({ to: dest });
                     return;

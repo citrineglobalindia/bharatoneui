@@ -53,6 +53,13 @@ export function AdminUsers() {
     toast.success(u.is_active ? "User deactivated" : "User activated");
     await load(); setDetail((d) => d && d.id === u.id ? { ...d, is_active: !u.is_active } : d);
   };
+  const [distId, setDistId] = useState("");
+  const assignDistributor = async (u: U) => {
+    if (!distId) { toast.error("Select a distributor"); return; }
+    const { error } = await supabase.rpc("set_retailer_distributor", { p_retailer: u.id, p_distributor: distId });
+    if (error) { toast.error("Failed", { description: error.message }); return; }
+    toast.success("Retailer mapped to distributor"); setDistId("");
+  };
   const setRole = async (u: U, role: string, addRole: boolean) => {
     const { error } = await supabase.rpc("admin_set_user_role", { target: u.id, _role: role, _add: addRole });
     if (error) { toast.error(error.message); return; }
@@ -130,6 +137,18 @@ export function AdminUsers() {
                   })}
                 </div>
               </div>
+              {detail.roles.includes("retailer") && (
+                <div>
+                  <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Assign to Distributor</p>
+                  <div className="flex gap-2">
+                    <select className="h-9 flex-1 rounded-lg border border-border bg-background px-2 text-sm" value={distId} onChange={(e) => setDistId(e.target.value)}>
+                      <option value="">Select distributor</option>
+                      {rows.filter((x) => x.roles.includes("distributor")).map((x) => <option key={x.id} value={x.id}>{x.display_name} ({x.email})</option>)}
+                    </select>
+                    <Button size="sm" className="bg-india-green text-white" onClick={() => assignDistributor(detail)}>Map</Button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
           <DialogFooter className="gap-2">
