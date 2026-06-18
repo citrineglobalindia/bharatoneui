@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   ArrowLeft, User, Building2, Landmark, FileText, Banknote, ShieldCheck, MapPin,
-  CheckCircle2, XCircle, Maximize2, ExternalLink, X, Loader2, Phone, Mail, Copy, RefreshCw,
+  CheckCircle2, XCircle, Maximize2, ExternalLink, X, Loader2, Phone, Mail, Copy, RefreshCw, Pencil, UserPlus,
 } from "lucide-react";
 import { BharatOneLogo } from "@/components/bharatone-logo";
 import { Button } from "@/components/ui/button";
@@ -82,6 +82,12 @@ function ReviewPage() {
   const [reqMsg, setReqMsg] = useState("Not approved");
   const REQ_DOCS = ["PAN", "KYC Front", "KYC Back", "Shop Front Image", "Education Certificate", "Cancelled Cheque / Passbook", "Police Verification Certificate (Optional)"];
   const [reqSel, setReqSel] = useState<Record<string, boolean>>({ PAN: true, "KYC Front": true, "KYC Back": true });
+  const [editMode, setEditMode] = useState(false);
+  const [form, setForm] = useState<any>({});
+  const [savingAll, setSavingAll] = useState(false);
+  const [assignOpen, setAssignOpen] = useState(false);
+  const [assignList, setAssignList] = useState<{ id: string; name: string }[]>([]);
+  const [assignee, setAssignee] = useState("");
   const [busy, setBusy] = useState(false);
   const [lightbox, setLightbox] = useState<{ url: string; kind: string; label: string } | null>(null);
   const [creds, setCreds] = useState<{ username: string; email: string; password: string } | null>(null);
@@ -92,6 +98,7 @@ function ReviewPage() {
       const { data, error } = await supabase.from("retailer_registrations").select("*").eq("id", id).maybeSingle();
       if (error || !data) { toast.error("Could not load application"); setReg(null); return; }
       setReg(data);
+      setForm(data);
       setDocReviews(data.doc_reviews || {});
       const cols: Record<string, string | null> = {
         selfie: data.selfie_path, shop: data.shop_photo_path, aadhaar: data.aadhaar_doc_path,
@@ -106,6 +113,29 @@ function ReviewPage() {
     } finally { setLoading(false); }
   }
   useEffect(() => { load(); ensureStaffSession().then((ok) => { if (ok) load(); }); /* eslint-disable-next-line */ }, [id]);
+  useEffect(() => {
+    try { const intent = localStorage.getItem("bharatone:review-intent"); if (intent) { localStorage.removeItem("bharatone:review-intent"); if (intent === "edit") setTimeout(() => setEditMode(true), 300); if (intent === "assign") setTimeout(() => openAssign(), 300); } } catch {}
+  }, []);
+  const openAssign = async () => {
+    setAssignOpen(true);
+    if (assignList.length === 0) { const { data } = await supabase.rpc("admin_list_users"); setAssignList(((data as any[]) ?? []).map((x) => ({ id: x.id, name: (x.display_name || x.email || "User") + (Array.isArray(x.roles) && x.roles.length ? ` · ${x.roles.find((r:string)=>r!=="employee")||x.roles[0]}` : "") }))); }
+  };
+  const doAssign = async () => {
+    if (!assignee) { toast.error("Select a user"); return; }
+    const { error } = await supabase.rpc("assign_registration", { reg_id: id, p_user: assignee });
+    if (error) { toast.error("Assign failed", { description: error.message }); return; }
+    toast.success("Assigned"); setAssignOpen(false); await load();
+  };
+  const saveAll = async () => {
+    setSavingAll(true);
+    const cols = ["first_name","middle_name","surname","dob","mobile","email","shop_name","address_type","building_shop_no","street_area","ward_number","landmark","village_name","gram_panchayat","hobli_name","post_office","taluk","city","district","state","pincode","bank_holder_name","bank_name","account_number","ifsc","account_type","payment_amount","payment_utr","payment_method","payment_paid_on","payer_name","payer_bank"];
+    const payload: any = {}; cols.forEach((c) => { payload[c] = form[c] === "" ? null : form[c]; });
+    if (payload.payment_amount != null && payload.payment_amount !== "") payload.payment_amount = Number(payload.payment_amount);
+    const { error } = await supabase.from("retailer_registrations").update(payload).eq("id", id);
+    setSavingAll(false);
+    if (error) { toast.error("Save failed", { description: error.message }); return; }
+    toast.success("All details saved"); setEditMode(false); await load();
+  };
 
   const backTo = role === "qc" ? "/qc/kyc-queue" : role === "accountant" ? "/accountant/registrations"
     : role === "telecaller" ? "/telecaller/registrations" : "/admin/registrations";
@@ -170,6 +200,9 @@ function ReviewPage() {
   const gps = reg.video_kyc_lat && reg.video_kyc_lng ? `${reg.video_kyc_lat}, ${reg.video_kyc_lng}`
     : reg.latitude && reg.longitude ? `${reg.latitude}, ${reg.longitude}` : null;
   const mapUrl = gps ? `https://www.google.com/maps?q=${encodeURIComponent(gps)}` : null;
+  const ef = (label: string, key: string, type = "text") => editMode
+    ? <div className="min-w-0"><p className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</p><input type={type} className="mt-0.5 h-9 w-full rounded-lg border border-border bg-background px-2 text-sm font-semibold outline-none focus-visible:ring-2 focus-visible:ring-india-green/30" value={form[key] ?? ""} onChange={(e) => setForm({ ...form, [key]: e.target.value })} /></div>
+    : <Field label={label} value={reg[key]} />;
 
   return (
     <div className="min-h-screen bg-tricolor pb-28">
@@ -179,7 +212,12 @@ function ReviewPage() {
             <ArrowLeft className="h-4 w-4" /> Back
           </Link>
           <BharatOneLogo size="lg" />
-          <div className="absolute right-4"><NotificationsBell /></div>
+          <div className="absolute right-4 flex items-center gap-2">
+            {role === "admin" && !editMode && <Button size="sm" variant="outline" onClick={() => setEditMode(true)}><Pencil className="h-4 w-4" /> Edit</Button>}
+            {role === "admin" && editMode && <><Button size="sm" disabled={savingAll} className="bg-india-green text-white hover:bg-india-green/90" onClick={saveAll}>{savingAll ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} Save all</Button><Button size="sm" variant="outline" onClick={() => { setEditMode(false); setForm(reg); }}><X className="h-4 w-4" /> Cancel</Button></>}
+            {role === "admin" && !editMode && <Button size="sm" variant="outline" onClick={openAssign}><UserPlus className="h-4 w-4" /> Assign</Button>}
+            <NotificationsBell />
+          </div>
         </div>
       </header>
 
@@ -202,6 +240,7 @@ function ReviewPage() {
                 <span className="inline-flex items-center gap-1.5"><Building2 className="h-3.5 w-3.5" /> {reg.shop_name}</span>
                 <span className="font-mono font-semibold text-saffron">#{reg.application_id}</span>
                 {reg.username && <span className="font-mono font-semibold text-india-green">#{reg.username}</span>}
+                {reg.assigned_name && <span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2 py-0.5 text-[11px] font-bold text-indigo-700"><UserPlus className="h-3 w-3" /> {reg.assigned_name}</span>}
               </div>
             </div>
             <div className="text-right">
@@ -221,13 +260,12 @@ function ReviewPage() {
 
         {tab === "Personal" && (
           <Card icon={<User className="h-4 w-4" />} title="Personal Information">
-            <Field label="Full Name" value={fullName} />
-            <Field label="First Name" value={reg.first_name} />
-            <Field label="Middle Name" value={reg.middle_name} />
-            <Field label="Surname" value={reg.surname} />
-            <Field label="Date of Birth" value={reg.dob} />
-            <Field label="Mobile" value={reg.mobile} />
-            <Field label="Email" value={reg.email} />
+            {ef("First Name", "first_name")}
+            {ef("Middle Name", "middle_name")}
+            {ef("Surname", "surname")}
+            {ef("Date of Birth", "dob")}
+            {ef("Mobile", "mobile")}
+            {ef("Email", "email")}
             <Field label="Retailer Type" value={typeLabel(reg.registration_type)} />
             <Field label="Agent ID" value={reg.username} />
           </Card>
@@ -235,31 +273,31 @@ function ReviewPage() {
 
         {tab === "Business" && (
           <Card icon={<Building2 className="h-4 w-4" />} title="Business Information">
-            <Field label="Shop Name" value={reg.shop_name} />
-            <Field label="Address Type" value={reg.address_type} />
-            <Field label="Building / Shop No" value={reg.building_shop_no} />
-            <Field label="Street / Area" value={reg.street_area} />
-            <Field label="Ward Number" value={reg.ward_number} />
-            <Field label="Landmark" value={reg.landmark} />
-            <Field label="Village" value={reg.village_name} />
-            <Field label="Gram Panchayat" value={reg.gram_panchayat} />
-            <Field label="Hobli" value={reg.hobli_name} />
-            <Field label="Post Office" value={reg.post_office} />
-            <Field label="Taluk" value={reg.taluk} />
-            <Field label="City" value={reg.city} />
-            <Field label="District" value={reg.district} />
-            <Field label="State" value={reg.state} />
-            <Field label="Pincode" value={reg.pincode} />
+            {ef("Shop Name", "shop_name")}
+            {ef("Address Type", "address_type")}
+            {ef("Building / Shop No", "building_shop_no")}
+            {ef("Street / Area", "street_area")}
+            {ef("Ward Number", "ward_number")}
+            {ef("Landmark", "landmark")}
+            {ef("Village", "village_name")}
+            {ef("Gram Panchayat", "gram_panchayat")}
+            {ef("Hobli", "hobli_name")}
+            {ef("Post Office", "post_office")}
+            {ef("Taluk", "taluk")}
+            {ef("City", "city")}
+            {ef("District", "district")}
+            {ef("State", "state")}
+            {ef("Pincode", "pincode")}
           </Card>
         )}
 
         {tab === "Bank" && (
           <Card icon={<Landmark className="h-4 w-4" />} title="Bank Details">
-            <Field label="Account Holder" value={reg.bank_holder_name} />
-            <Field label="Bank" value={reg.bank_name} />
-            <Field label="Account Number" value={reg.account_number} />
-            <Field label="IFSC" value={reg.ifsc} />
-            <Field label="Account Type" value={reg.account_type} />
+            {ef("Account Holder", "bank_holder_name")}
+            {ef("Bank", "bank_name")}
+            {ef("Account Number", "account_number")}
+            {ef("IFSC", "ifsc")}
+            {ef("Account Type", "account_type")}
           </Card>
         )}
 
@@ -342,12 +380,12 @@ function ReviewPage() {
 
         {tab === "Payment" && (
           <Card icon={<Banknote className="h-4 w-4" />} title="Payment">
-            <Field label="Amount" value={reg.payment_amount ? `₹${Number(reg.payment_amount).toLocaleString("en-IN")}` : null} />
-            <Field label="UTR / Reference" value={reg.payment_utr} />
-            <Field label="Method" value={reg.payment_method} />
-            <Field label="Paid On" value={reg.payment_paid_on} />
-            <Field label="Payer Name" value={reg.payer_name} />
-            <Field label="Payer Bank" value={reg.payer_bank} />
+            {editMode ? ef("Amount", "payment_amount", "number") : <Field label="Amount" value={reg.payment_amount ? `₹${Number(reg.payment_amount).toLocaleString("en-IN")}` : null} />}
+            {ef("UTR / Reference", "payment_utr")}
+            {ef("Method", "payment_method")}
+            {ef("Paid On", "payment_paid_on")}
+            {ef("Payer Name", "payer_name")}
+            {ef("Payer Bank", "payer_bank")}
           </Card>
         )}
 
@@ -381,6 +419,15 @@ function ReviewPage() {
           </div>
         </div>
       )}
+
+      {/* Assign dialog */}
+      <Dialog open={assignOpen} onOpenChange={setAssignOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><UserPlus className="h-5 w-5 text-india-green" /> Assign application</DialogTitle><DialogDescription>Assign this KYC application to a user for review. They'll be notified and can open it.</DialogDescription></DialogHeader>
+          <select className="h-10 w-full rounded-lg border border-border bg-background px-2 text-sm" value={assignee} onChange={(e) => setAssignee(e.target.value)}><option value="">Select user</option>{assignList.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}</select>
+          <DialogFooter><Button variant="outline" onClick={() => setAssignOpen(false)}>Cancel</Button><Button className="bg-india-green text-white" onClick={doAssign}>Assign</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Required documents modal */}
       <Dialog open={reqOpen} onOpenChange={setReqOpen}>

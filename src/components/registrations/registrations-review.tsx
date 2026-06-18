@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {
-  ShieldCheck, CreditCard, CheckCircle2, Pencil, XCircle, Search, FileText, Copy, Loader2, RefreshCw, Eye, User, Building2, Landmark, Maximize2, X, ExternalLink, FileSearch, Banknote,
+  ShieldCheck, CreditCard, CheckCircle2, Pencil, UserPlus, XCircle, Search, FileText, Copy, Loader2, RefreshCw, Eye, User, Building2, Landmark, Maximize2, X, ExternalLink, FileSearch, Banknote,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -307,6 +307,14 @@ export function RegistrationsReview() {
                     <Button size="sm" variant="outline" className="h-8" onClick={() => navigate({ to: "/review/$id", params: { id: r.id } })}>
                       <Eye className="h-3.5 w-3.5" /> View
                     </Button>
+                    {role === "admin" && <>
+                      <Button size="sm" variant="outline" className="h-8 text-india-green" onClick={() => { try { localStorage.setItem("bharatone:review-intent", "edit"); } catch {} navigate({ to: "/review/$id", params: { id: r.id } }); }}>
+                        <Pencil className="h-3.5 w-3.5" /> Edit
+                      </Button>
+                      <Button size="sm" variant="outline" className="h-8" onClick={() => { try { localStorage.setItem("bharatone:review-intent", "assign"); } catch {} navigate({ to: "/review/$id", params: { id: r.id } }); }}>
+                        <UserPlus className="h-3.5 w-3.5" /> Assign
+                      </Button>
+                    </>}
                     {r.status === "accountant_review" && canAccountant && (
                       <>
                         <Button size="sm" className="h-8 bg-india-green text-white" disabled={busy === r.id} onClick={() => acctApprove(r)}>
