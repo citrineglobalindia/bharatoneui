@@ -286,6 +286,18 @@ export function OldPortalStep() {
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
           <FetchedUserCard user={user} onChange={resetAll} compact={stage === "verified"} />
 
+          {/* Fetched details — shown clearly on screen */}
+          <div className="rounded-2xl border border-india-green/30 bg-india-green/5 p-4">
+            <p className="mb-3 flex items-center gap-2 text-sm font-bold text-foreground"><CheckCircle2 className="h-4 w-4 text-india-green" /> Details fetched from JSKO records</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div><p className="text-[10px] uppercase tracking-wide text-muted-foreground">JSKO Username</p><p className="font-semibold text-foreground">{user.username}</p></div>
+              <div><p className="text-[10px] uppercase tracking-wide text-muted-foreground">Full Name</p><p className="font-semibold text-foreground">{user.fullName}</p></div>
+              <div><p className="text-[10px] uppercase tracking-wide text-muted-foreground">Email</p><p className="font-semibold text-foreground break-all">{user.email || "—"}</p></div>
+              <div><p className="text-[10px] uppercase tracking-wide text-muted-foreground">Mobile</p><p className="font-semibold text-foreground">{user.mobile || "—"}</p></div>
+            </div>
+            <p className="mt-2 text-[11px] text-muted-foreground">Verify the email and mobile below via OTP to continue your migration.</p>
+          </div>
+
           {stage === "otp" && (
             <Notice tone="warn" title="Both verifications required">
               For your security, you must verify <span className="font-semibold">both</span> your
