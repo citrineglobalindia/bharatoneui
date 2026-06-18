@@ -70,13 +70,13 @@ export function JskoManager() {
     setView(r); setForm(f); setDocBucket({}); setRegStatus(null);
     // Pull the retailer's completed registration (saved separately) and fill any blanks
     try {
-      const ors: string[] = [`username.eq.${r.username}`];
-      if (r.email) ors.push(`email.eq.${r.email}`);
-      if (r.mobile) ors.push(`mobile.eq.${r.mobile}`);
+      // Link strictly by the JSKO username so a freshly created ID (or one whose
+      // email was later reused by a different registration) never shows another
+      // record's data. Email/mobile matching was too loose and surfaced stale data.
       const { data: regs } = await supabase
         .from("retailer_registrations")
         .select("*")
-        .or(ors.join(","))
+        .eq("username", r.username)
         .order("created_at", { ascending: false })
         .limit(1);
       const reg = (regs as any[] | null)?.[0] ?? null;
