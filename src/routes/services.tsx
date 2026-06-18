@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { Wrench, Banknote, ArrowLeftRight, Smartphone, Receipt, FileText, IdCard, Building2, Globe, CheckCircle2, ExternalLink } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Wrench, Banknote, ArrowLeftRight, Smartphone, Receipt, FileText, IdCard, Building2, Globe, CheckCircle2, ExternalLink, Search, Layers, Cpu, Server, FolderTree } from "lucide-react";
 import { RetailerShell } from "@/components/retailer/retailer-shell";
 import { PageHeader } from "@/components/retailer/page-header";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,8 +24,38 @@ const CORE = [
 
 type Service = { id: string; name: string; logo_url: string | null; redirect_url: string | null; backend_route: string | null; service_type: "inlink" | "api" | "backend"; category: string | null };
 
+const TYPE_LABEL: Record<string, string> = { inlink: "Redirect", api: "API Integrated", backend: "Backend" };
+const TYPE_BADGE: Record<string, string> = { inlink: "bg-sky-100 text-sky-700", api: "bg-violet-100 text-violet-700", backend: "bg-emerald-100 text-emerald-700" };
+const PALETTE = ["from-sky-500 to-blue-600", "from-emerald-500 to-green-600", "from-orange-500 to-amber-600", "from-violet-500 to-fuchsia-600", "from-rose-500 to-pink-600", "from-cyan-500 to-teal-600", "from-indigo-500 to-blue-600", "from-teal-500 to-emerald-600"];
+
+function ServiceTile({ s }: { s: Service }) {
+  const inner = (
+    <>
+      <div className="relative">
+        {s.logo_url
+          ? <img src={s.logo_url} alt={s.name} className="h-12 w-12 object-contain" />
+          : <div className="grid h-12 w-12 place-items-center rounded-lg bg-india-green/10 text-india-green font-bold">{s.name[0]}</div>}
+      </div>
+      <p className="text-xs font-semibold leading-tight">{s.name}</p>
+      <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase ${TYPE_BADGE[s.service_type] || "bg-muted text-muted-foreground"}`}>{TYPE_LABEL[s.service_type] || s.service_type}</span>
+    </>
+  );
+  const cls = "group relative flex flex-col items-center gap-2 rounded-xl border border-border bg-card p-4 text-center transition hover:shadow-elev hover:-translate-y-0.5";
+  if (s.service_type === "inlink" && s.redirect_url) {
+    return (<a href={s.redirect_url} target="_blank" rel="noreferrer" className={cls}>{inner}<ExternalLink className="absolute right-2 top-2 h-3.5 w-3.5 text-muted-foreground opacity-0 transition group-hover:opacity-100" /></a>);
+  }
+  if (s.service_type === "backend" && s.backend_route) {
+    return (<Link to={s.backend_route as never} className={cls}>{inner}</Link>);
+  }
+  return (<Link to="/service/$id" params={{ id: s.id }} className={cls}>{inner}</Link>);
+}
+
 function ServicesPage() {
   const [services, setServices] = useState<Service[]>([]);
+  const [q, setQ] = useState("");
+  const [type, setType] = useState<"all" | "inlink" | "api" | "backend">("all");
+  const [cat, setCat] = useState("all");
+
   useEffect(() => {
     let on = true;
     (async () => {
@@ -35,6 +65,39 @@ function ServicesPage() {
     })();
     return () => { on = false; };
   }, []);
+
+  const TYPES = [
+    { key: "all" as const, label: "All", icon: Layers },
+    { key: "inlink" as const, label: "Redirect", icon: Globe },
+    { key: "api" as const, label: "API Integrated", icon: Cpu },
+    { key: "backend" as const, label: "Backend", icon: Server },
+  ];
+
+  const typeCounts = useMemo(() => {
+    const m: Record<string, number> = { all: services.length, inlink: 0, api: 0, backend: 0 };
+    services.forEach((s) => { if (m[s.service_type] != null) m[s.service_type]++; });
+    return m;
+  }, [services]);
+
+  const categories = useMemo(() => {
+    const m = new Map<string, number>();
+    services.forEach((s) => { const k = s.category || "Other"; m.set(k, (m.get(k) || 0) + 1); });
+    return Array.from(m.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [services]);
+
+  const filtered = useMemo(() => services.filter((s) =>
+    (type === "all" || s.service_type === type) &&
+    (cat === "all" || (s.category || "Other") === cat) &&
+    (!q || [s.name, s.category].filter(Boolean).some((v) => String(v).toLowerCase().includes(q.toLowerCase())))
+  ), [services, q, type, cat]);
+
+  const byCategory = useMemo(() => {
+    const m = new Map<string, Service[]>();
+    filtered.forEach((s) => { const k = s.category || "Other"; if (!m.has(k)) m.set(k, []); m.get(k)!.push(s); });
+    return Array.from(m.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [filtered]);
+
+  const catGrad = (name: string) => PALETTE[(name.charCodeAt(0) + name.length) % PALETTE.length];
 
   return (
     <RetailerShell>
@@ -54,28 +117,49 @@ function ServicesPage() {
         </div>
 
         {services.length > 0 && (
-          <div className="space-y-3">
-            <h2 className="font-display text-base font-bold text-foreground">Partner Services</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-              {services.map((s) => {
-                const inner = (
-                  <>
-                    {s.logo_url
-                      ? <img src={s.logo_url} alt={s.name} className="h-12 w-12 object-contain" />
-                      : <div className="grid h-12 w-12 place-items-center rounded-lg bg-india-green/10 text-india-green font-bold">{s.name[0]}</div>}
-                    <p className="text-xs font-semibold leading-tight">{s.name}</p>
-                  </>
-                );
-                const cls = "group relative flex flex-col items-center gap-2 rounded-xl border border-border bg-card p-4 text-center transition hover:shadow-elev hover:-translate-y-0.5";
-                if (s.service_type === "inlink" && s.redirect_url) {
-                  return (<a key={s.id} href={s.redirect_url} target="_blank" rel="noreferrer" className={cls}>{inner}<ExternalLink className="absolute right-2 top-2 h-3.5 w-3.5 text-muted-foreground opacity-0 transition group-hover:opacity-100" /></a>);
-                }
-                if (s.service_type === "backend" && s.backend_route) {
-                  return (<Link key={s.id} to={s.backend_route as never} className={cls}>{inner}</Link>);
-                }
-                return (<Link key={s.id} to="/service/$id" params={{ id: s.id }} className={cls}>{inner}</Link>);
-              })}
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="font-display text-lg font-extrabold text-foreground">Partner Services</h2>
+              <div className="relative w-60"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><input className="h-9 w-full rounded-lg border border-border bg-background pl-8 pr-2 text-sm outline-none" placeholder="Search service" value={q} onChange={(e) => setQ(e.target.value)} /></div>
             </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {TYPES.map((t) => (
+                <button key={t.key} onClick={() => setType(t.key)} className={`inline-flex items-center gap-1.5 rounded-full px-3 h-9 text-xs font-semibold transition ${type === t.key ? "bg-india-green text-white shadow-soft" : "border border-border bg-card hover:bg-muted"}`}>
+                  <t.icon className="h-3.5 w-3.5" />{t.label}<span className={`rounded-full px-1.5 text-[10px] font-bold ${type === t.key ? "bg-white/25" : "bg-muted text-muted-foreground"}`}>{typeCounts[t.key] ?? 0}</span>
+                </button>
+              ))}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <button onClick={() => setCat("all")} className={`inline-flex items-center gap-1.5 rounded-full px-3 h-8 text-xs font-semibold transition ${cat === "all" ? "bg-foreground text-background" : "border border-border bg-card hover:bg-muted"}`}><FolderTree className="h-3.5 w-3.5" /> All categories</button>
+              {categories.map(([name, n]) => (
+                <button key={name} onClick={() => setCat(name)} className={`inline-flex items-center gap-1.5 rounded-full px-3 h-8 text-xs font-semibold transition ${cat === name ? "bg-foreground text-background" : "border border-border bg-card hover:bg-muted"}`}>
+                  {name}<span className={`rounded-full px-1.5 text-[10px] font-bold ${cat === name ? "bg-background/25" : "bg-muted text-muted-foreground"}`}>{n}</span>
+                </button>
+              ))}
+            </div>
+
+            {byCategory.length === 0 ? (
+              <p className="py-10 text-center text-sm text-muted-foreground">No services match your filters.</p>
+            ) : (
+              <div className="space-y-5">
+                {byCategory.map(([cn, list]) => (
+                  <section key={cn} className="overflow-hidden rounded-2xl border border-border bg-card shadow-soft">
+                    <div className={`flex items-center gap-3 bg-gradient-to-r ${catGrad(cn)} p-4 text-white`}>
+                      <span className="grid h-10 w-10 place-items-center rounded-xl bg-white/20 text-base font-extrabold">{cn[0]?.toUpperCase() || "?"}</span>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-display text-base font-extrabold leading-tight">{cn}</p>
+                        <p className="text-xs text-white/85">{list.length} service{list.length !== 1 ? "s" : ""}</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 p-4">
+                      {list.map((s) => <ServiceTile key={s.id} s={s} />)}
+                    </div>
+                  </section>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
