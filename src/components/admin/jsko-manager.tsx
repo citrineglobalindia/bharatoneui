@@ -7,6 +7,9 @@ import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 
 type Row = { id: string; username: string; full_name: string; email: string | null; mobile: string | null; legacy_password: string | null; is_active: boolean; created_at: string };
 const inp = "h-9 w-full rounded-lg border border-border bg-background px-2.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-india-green/30";
+function F({ label, k, form, setForm }: { label: string; k: string; form: any; setForm: (f: any) => void }) {
+  return <div><label className="text-[11px] font-semibold text-muted-foreground">{label}</label><input className={inp + " h-10"} value={form[k] ?? ""} onChange={(e) => setForm({ ...form, [k]: e.target.value })} /></div>;
+}
 
 export function JskoManager() {
   const [rows, setRows] = useState<Row[]>([]);
@@ -36,11 +39,15 @@ export function JskoManager() {
     toast.success("JSKO ID added"); setAdd({ username: "", full_name: "", email: "", mobile: "", legacy_password: "", is_active: true }); load();
   };
 
-  const openView = (r: Row) => { setView(r); setForm({ username: r.username, full_name: r.full_name, email: r.email ?? "", mobile: r.mobile ?? "", legacy_password: r.legacy_password ?? "", is_active: r.is_active }); };
+  const FIELDS = ["first_name","middle_name","surname","dob","shop_name","address_type","building_shop_no","street_area","ward_number","landmark","village_name","taluk","city","district","state","pincode","bank_holder_name","bank_name","account_number","ifsc","account_type","payment_amount","payment_utr","payment_method"];
+  const openView = (r: any) => { const f: any = { username: r.username, full_name: r.full_name, email: r.email ?? "", mobile: r.mobile ?? "", legacy_password: r.legacy_password ?? "", is_active: r.is_active }; FIELDS.forEach((k) => { f[k] = r[k] ?? ""; }); setView(r); setForm(f); };
   const saveEdit = async () => {
     if (!form.username.trim() || !form.full_name.trim()) return toast.error("Username and full name required");
     setSavingEdit(true);
-    const { error } = await supabase.from("jsko_legacy_accounts").update({ username: form.username.trim(), full_name: form.full_name.trim(), email: form.email || null, mobile: form.mobile || null, legacy_password: form.legacy_password || null, is_active: form.is_active }).eq("id", view!.id);
+    const payload: any = { username: form.username.trim(), full_name: form.full_name.trim(), email: form.email || null, mobile: form.mobile || null, legacy_password: form.legacy_password || null, is_active: form.is_active };
+    FIELDS.forEach((k) => { payload[k] = form[k] === "" ? null : form[k]; });
+    if (payload.payment_amount != null) payload.payment_amount = Number(payload.payment_amount) || null;
+    const { error } = await supabase.from("jsko_legacy_accounts").update(payload).eq("id", view!.id);
     setSavingEdit(false);
     if (error) return toast.error("Save failed", { description: error.message });
     toast.success("Saved");
@@ -71,17 +78,70 @@ export function JskoManager() {
             <div><p className="font-display text-lg font-extrabold">JSKO ID Details</p><p className="text-xs text-muted-foreground">Username {view.username} · Added {new Date(view.created_at).toLocaleString("en-IN")}</p></div>
             <span className={`ml-auto rounded-full px-2.5 py-0.5 text-xs font-bold ${form.is_active ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>{form.is_active ? "Active" : "Inactive"}</span>
           </div>
-          <div className="p-6">
-            <p className="mb-4 text-sm font-bold text-muted-foreground">Existing details — edit and save</p>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <div><label className="text-[11px] font-semibold text-muted-foreground">Username *</label><input className={inp + " h-11"} value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} /></div>
-              <div><label className="text-[11px] font-semibold text-muted-foreground">Full name *</label><input className={inp + " h-11"} value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} /></div>
-              <div><label className="text-[11px] font-semibold text-muted-foreground">Email</label><input className={inp + " h-11"} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
-              <div><label className="text-[11px] font-semibold text-muted-foreground">Mobile</label><input className={inp + " h-11"} value={form.mobile} onChange={(e) => setForm({ ...form, mobile: e.target.value.replace(/\D/g, "") })} maxLength={10} /></div>
-              <div className="lg:col-span-2"><label className="text-[11px] font-semibold text-muted-foreground">Password (legacy)</label><input className={inp + " h-11"} value={form.legacy_password} onChange={(e) => setForm({ ...form, legacy_password: e.target.value })} /></div>
+          <div className="space-y-4 p-6">
+            <p className="text-sm font-bold text-muted-foreground">All details — edited by admin/QC, or auto-filled during Old JSKO onboarding.</p>
+
+            {/* Account */}
+            <div className="rounded-xl border border-border p-4">
+              <p className="mb-3 flex items-center gap-2 text-sm font-bold"><IdCard className="h-4 w-4 text-india-green" /> Account</p>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <F label="Username *" k="username" form={form} setForm={setForm} />
+                <F label="Full name *" k="full_name" form={form} setForm={setForm} />
+                <F label="Email" k="email" form={form} setForm={setForm} />
+                <F label="Mobile" k="mobile" form={form} setForm={setForm} />
+                <F label="Password (legacy)" k="legacy_password" form={form} setForm={setForm} />
+              </div>
+              <label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} className="h-4 w-4 accent-[oklch(0.55_0.12_150)]" /> Active (fetchable during registration)</label>
             </div>
-            <label className="mt-4 flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} className="h-4 w-4 accent-[oklch(0.55_0.12_150)]" /> Active (fetchable during registration)</label>
-            <div className="mt-5 flex gap-2 border-t border-border pt-4">
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              <div className="rounded-xl border border-border p-4">
+                <p className="mb-3 flex items-center gap-2 text-sm font-bold"><IdCard className="h-4 w-4 text-india-green" /> Personal Information</p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <F label="First Name" k="first_name" form={form} setForm={setForm} />
+                  <F label="Middle Name" k="middle_name" form={form} setForm={setForm} />
+                  <F label="Surname" k="surname" form={form} setForm={setForm} />
+                  <F label="Date of Birth" k="dob" form={form} setForm={setForm} />
+                </div>
+              </div>
+              <div className="rounded-xl border border-border p-4">
+                <p className="mb-3 flex items-center gap-2 text-sm font-bold"><IdCard className="h-4 w-4 text-india-green" /> Business Information</p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <F label="Shop Name" k="shop_name" form={form} setForm={setForm} />
+                  <F label="Address Type" k="address_type" form={form} setForm={setForm} />
+                  <F label="Building / Shop No" k="building_shop_no" form={form} setForm={setForm} />
+                  <F label="Street / Area" k="street_area" form={form} setForm={setForm} />
+                  <F label="Ward Number" k="ward_number" form={form} setForm={setForm} />
+                  <F label="Landmark" k="landmark" form={form} setForm={setForm} />
+                  <F label="Village" k="village_name" form={form} setForm={setForm} />
+                  <F label="Taluk" k="taluk" form={form} setForm={setForm} />
+                  <F label="City" k="city" form={form} setForm={setForm} />
+                  <F label="District" k="district" form={form} setForm={setForm} />
+                  <F label="State" k="state" form={form} setForm={setForm} />
+                  <F label="Pincode" k="pincode" form={form} setForm={setForm} />
+                </div>
+              </div>
+              <div className="rounded-xl border border-border p-4">
+                <p className="mb-3 flex items-center gap-2 text-sm font-bold"><IdCard className="h-4 w-4 text-india-green" /> Bank Details</p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <F label="Account Holder" k="bank_holder_name" form={form} setForm={setForm} />
+                  <F label="Bank" k="bank_name" form={form} setForm={setForm} />
+                  <F label="Account Number" k="account_number" form={form} setForm={setForm} />
+                  <F label="IFSC" k="ifsc" form={form} setForm={setForm} />
+                  <F label="Account Type" k="account_type" form={form} setForm={setForm} />
+                </div>
+              </div>
+              <div className="rounded-xl border border-border p-4">
+                <p className="mb-3 flex items-center gap-2 text-sm font-bold"><IdCard className="h-4 w-4 text-india-green" /> Payment</p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <F label="Amount" k="payment_amount" form={form} setForm={setForm} />
+                  <F label="UTR / Reference" k="payment_utr" form={form} setForm={setForm} />
+                  <F label="Method" k="payment_method" form={form} setForm={setForm} />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-2 border-t border-border pt-4">
               <Button onClick={saveEdit} disabled={savingEdit} className="bg-india-green text-white hover:bg-india-green/90">{savingEdit ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Save changes</Button>
               <Button variant="outline" onClick={() => setView(null)}><X className="h-4 w-4" /> Close</Button>
             </div>
