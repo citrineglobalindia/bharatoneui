@@ -100,7 +100,7 @@ export function JskoManager() {
             {/* Account */}
             <div className="rounded-xl border border-border bg-card/50 p-3.5">
               <p className="mb-2.5 flex items-center gap-2 text-[13px] font-bold"><IdCard className="h-4 w-4 text-india-green" /> Account</p>
-              <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
                 <F label="Username *" k="username" form={form} setForm={setForm} />
                 <F label="Full name *" k="full_name" form={form} setForm={setForm} />
                 <F label="Email" k="email" form={form} setForm={setForm} />
@@ -110,10 +110,10 @@ export function JskoManager() {
               <label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} className="h-4 w-4 accent-[oklch(0.55_0.12_150)]" /> Active (fetchable during registration)</label>
             </div>
 
-            <div className="grid gap-3 lg:grid-cols-2 items-start">
+            <div className="space-y-3">
               <div className="rounded-xl border border-border bg-card/50 p-3.5">
                 <p className="mb-2.5 flex items-center gap-2 text-[13px] font-bold"><IdCard className="h-4 w-4 text-india-green" /> Personal Information</p>
-                <div className="grid gap-2.5 sm:grid-cols-2">
+                <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
                   <F label="First Name" k="first_name" form={form} setForm={setForm} />
                   <F label="Middle Name" k="middle_name" form={form} setForm={setForm} />
                   <F label="Surname" k="surname" form={form} setForm={setForm} />
@@ -122,7 +122,7 @@ export function JskoManager() {
               </div>
               <div className="rounded-xl border border-border bg-card/50 p-3.5">
                 <p className="mb-2.5 flex items-center gap-2 text-[13px] font-bold"><IdCard className="h-4 w-4 text-india-green" /> Business Information</p>
-                <div className="grid gap-2.5 sm:grid-cols-2">
+                <div className="grid gap-2.5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
                   <F label="Shop Name" k="shop_name" form={form} setForm={setForm} />
                   <F label="Address Type" k="address_type" form={form} setForm={setForm} />
                   <F label="Building / Shop No" k="building_shop_no" form={form} setForm={setForm} />
@@ -139,7 +139,7 @@ export function JskoManager() {
               </div>
               <div className="rounded-xl border border-border bg-card/50 p-3.5">
                 <p className="mb-2.5 flex items-center gap-2 text-[13px] font-bold"><IdCard className="h-4 w-4 text-india-green" /> Bank Details</p>
-                <div className="grid gap-2.5 sm:grid-cols-2">
+                <div className="grid gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
                   <F label="Account Holder" k="bank_holder_name" form={form} setForm={setForm} />
                   <F label="Bank" k="bank_name" form={form} setForm={setForm} />
                   <F label="Account Number" k="account_number" form={form} setForm={setForm} />
@@ -149,7 +149,7 @@ export function JskoManager() {
               </div>
               <div className="rounded-xl border border-border bg-card/50 p-3.5">
                 <p className="mb-2.5 flex items-center gap-2 text-[13px] font-bold"><IdCard className="h-4 w-4 text-india-green" /> Payment</p>
-                <div className="grid gap-2.5 sm:grid-cols-2">
+                <div className="grid gap-2.5 sm:grid-cols-3">
                   <F label="Amount" k="payment_amount" form={form} setForm={setForm} />
                   <F label="UTR / Reference" k="payment_utr" form={form} setForm={setForm} />
                   <F label="Method" k="payment_method" form={form} setForm={setForm} />
