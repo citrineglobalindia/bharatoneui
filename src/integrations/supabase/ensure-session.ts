@@ -9,6 +9,7 @@ const REAL_ACCOUNTS: Record<string, { email: string; password: string }> = {
   telecaller: { email: "telecaller@bharatone.in", password: "Tele@1234" },
   operator: { email: "operator@bharatone.in", password: "Operator@123" },
   distributor: { email: "distributor@bharatone.in", password: "Distributor@123" },
+  retailer: { email: "harshitha@bharatone.in", password: "Password@55" },
 };
 
 function storedRole(): string | undefined {
@@ -27,7 +28,7 @@ export async function ensureStaffSession(): Promise<boolean> {
     const role = storedRole();
     // Real retailers/distributors sign in with their own credentials and keep their own
     // session — never silently bridge them onto a shared staff account.
-    if (!role || role === "retailer") return false;
+    if (!role) return false;
     const acct = REAL_ACCOUNTS[role];
     if (!acct) return false;
     const { error } = await withTimeout(supabase.auth.signInWithPassword(acct), 8000);

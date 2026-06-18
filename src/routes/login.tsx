@@ -250,19 +250,22 @@ function LoginPage() {
                   navigate({ to: roleAccount.redirectTo });
                   return;
                 }
+                // Bridge the demo retailer to its REAL Supabase account so it has an
+                // authenticated session (needed to submit applications, upload, etc.).
+                const { error: dErr } = await supabase.auth.signInWithPassword({ email: DEMO_RETAILER.email, password: DEMO_RETAILER.password });
+                if (dErr) { toast.error("Could not sign in", { description: dErr.message }); return; }
                 try {
                   localStorage.setItem(
                     "bharatone:auth",
                     JSON.stringify({
                       name: DEMO_RETAILER.name,
                       email: DEMO_RETAILER.email,
-                      phone: DEMO_RETAILER.phone,
-                      dob: DEMO_RETAILER.dob,
                       role: DEMO_RETAILER.role,
                       loggedInAt: new Date().toISOString(),
                     }),
                   );
                 } catch {}
+                try { await supabase.rpc("record_login"); } catch {}
                 toast.success(`Welcome, ${DEMO_RETAILER.name}`, {
                   description: "Signed in as Retailer.",
                 });
