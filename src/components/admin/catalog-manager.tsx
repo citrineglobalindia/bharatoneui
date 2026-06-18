@@ -14,6 +14,7 @@ const Pill = ({ on }: { on: boolean }) => <span className={`rounded-full px-2 py
 export function CatalogManager() {
   const [cats, setCats] = useState<Cat[]>([]);
   const [counts, setCounts] = useState<Record<string, number>>({});
+  const [opCounts, setOpCounts] = useState<Record<string, { total: number; active: number }>>({});
   const [operators, setOperators] = useState<Operator[]>([]);
   const [loading, setLoading] = useState(true);
   const [sel, setSel] = useState<Cat | null>(null);
@@ -29,10 +30,11 @@ export function CatalogManager() {
     setLoading(true);
     try {
       await ensureStaffSession();
-      const [c, s, u] = await Promise.all([
+      const [c, s, u, co] = await Promise.all([
         supabase.from("service_categories").select("id,name,is_active,sort_order,operator_id").order("sort_order").order("name"),
         supabase.from("services").select("category_id"),
         supabase.rpc("admin_list_users"),
+        supabase.from("category_operators").select("category_id,is_active"),
       ]);
       const list = (c.data as Cat[]) ?? [];
       setCats(list);
@@ -44,6 +46,9 @@ export function CatalogManager() {
       const ops = ((u.data as any[]) ?? []).filter((x) => Array.isArray(x.roles) && x.roles.includes("operator"))
         .map((x) => ({ id: x.id, name: x.display_name || x.email || "Operator" }));
       setOperators(ops);
+      const cm: Record<string, { total: number; active: number }> = {};
+      ((co.data as any[]) ?? []).forEach((r) => { const e = cm[r.category_id] ?? { total: 0, active: 0 }; e.total++; if (r.is_active) e.active++; cm[r.category_id] = e; });
+      setOpCounts(cm);
     } finally { setLoading(false); }
   }
   useEffect(() => { load(); }, []);
@@ -74,11 +79,12 @@ export function CatalogManager() {
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card p-5 shadow-soft">
           <div>
             <p className="flex items-center gap-2 font-display text-lg font-extrabold"><FolderTree className="h-5 w-5 text-india-green" /> {sel.name} <Pill on={sel.is_active} /></p>
-            <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground"><UserCog className="h-4 w-4" /> Operator: <b className="text-foreground">{opName(sel.operator_id)}</b> · {counts[sel.id] ?? 0} service(s)</p>
+            <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground"><UserCog className="h-4 w-4" /> {(opCounts[sel.id]?.active ?? 0)} active operator(s) · {counts[sel.id] ?? 0} service(s)</p>
           </div>
           <Button variant="outline" size="sm" onClick={() => startEdit(sel)}><Pencil className="h-4 w-4" /> Edit category</Button>
         </div>
         {editId === sel.id && <CatForm {...{ name, setName, active, setActive, operatorId, setOperatorId, operators, busy, saveCat, resetForm, editId }} />}
+        <CategoryOperators categoryId={sel.id} allOperators={operators} onChange={load} />
         <div>
           <p className="mb-2 text-sm font-bold">Services in this category</p>
           <p className="mb-3 text-xs text-muted-foreground">Add Inlink, API-integrated or Backend services. Set each service's total cost and commission split.</p>
@@ -93,13 +99,13 @@ export function CatalogManager() {
     <div className="space-y-5">
       <div>
         <h2 className="text-lg font-extrabold">Service Catalog</h2>
-        <p className="text-sm text-muted-foreground">Categories are the backbone — each is handled by an operator who receives its applications. Open a category to map its services (Inlink, API, Backend) and commission splits.</p>
+        <p className="text-sm text-muted-foreground">Categories are the backbone — each can be handled by one or more operators; applications are split equally among the active ones. Open a category to map its services (Inlink, API, Backend) and commission splits.</p>
       </div>
       <div className="grid gap-5 lg:grid-cols-[1fr_340px]">
         <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-soft">
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
-              <tr><th className="px-4 py-2.5">Category</th><th className="px-4 py-2.5">Operator</th><th className="px-4 py-2.5">Services</th><th className="px-4 py-2.5">Status</th><th className="px-4 py-2.5 text-right">Actions</th></tr>
+              <tr><th className="px-4 py-2.5">Category</th><th className="px-4 py-2.5">Operators</th><th className="px-4 py-2.5">Services</th><th className="px-4 py-2.5">Status</th><th className="px-4 py-2.5 text-right">Actions</th></tr>
             </thead>
             <tbody>
               {loading ? <tr><td colSpan={5} className="px-4 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr>
@@ -107,7 +113,7 @@ export function CatalogManager() {
                 : cats.map((c) => (
                 <tr key={c.id} className="border-t border-border hover:bg-muted/30">
                   <td className="px-4 py-3"><button onClick={() => setSel(c)} className="inline-flex items-center gap-1.5 font-semibold hover:text-india-green">{c.name} <ChevronRight className="h-4 w-4 text-muted-foreground" /></button></td>
-                  <td className="px-4 py-3"><span className={`inline-flex items-center gap-1 text-xs ${c.operator_id ? "text-foreground" : "text-muted-foreground"}`}><UserCog className="h-3.5 w-3.5" /> {opName(c.operator_id)}</span></td>
+                  <td className="px-4 py-3"><span className={`inline-flex items-center gap-1 text-xs ${(opCounts[c.id]?.active ?? 0) ? "text-foreground" : "text-muted-foreground"}`}><UserCog className="h-3.5 w-3.5" /> {(opCounts[c.id]?.active ?? 0) ? `${opCounts[c.id].active} operator(s)` : "Unassigned"}</span></td>
                   <td className="px-4 py-3 text-muted-foreground">{counts[c.id] ?? 0}</td>
                   <td className="px-4 py-3"><Pill on={c.is_active} /></td>
                   <td className="px-4 py-3 text-right whitespace-nowrap">
@@ -147,6 +153,92 @@ function CatForm({ name, setName, active, setActive, operatorId, setOperatorId, 
         <Button onClick={saveCat} disabled={busy} className="flex-1 bg-india-green text-white hover:bg-india-green/90">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : editId ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />} {editId ? "Save" : "Add category"}</Button>
         {editId && <Button variant="outline" onClick={resetForm}><X className="h-4 w-4" /></Button>}
       </div>
+    </div>
+  );
+}
+
+type CatOp = { operator_id: string; name: string; is_active: boolean; assigned_count: number; pending: number };
+
+function CategoryOperators({ categoryId, allOperators, onChange }: { categoryId: string; allOperators: Operator[]; onChange: () => void }) {
+  const [rows, setRows] = useState<CatOp[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [addId, setAddId] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function load() {
+    setLoading(true);
+    const { data } = await supabase.rpc("category_operators_list", { _cat: categoryId });
+    setRows((data as CatOp[]) ?? []);
+    setLoading(false);
+  }
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [categoryId]);
+
+  const addOp = async () => {
+    if (!addId) return;
+    setBusy(true);
+    const { error } = await supabase.rpc("set_category_operator", { _cat: categoryId, _op: addId, _active: true });
+    setBusy(false);
+    if (error) return toast.error("Could not add operator", { description: error.message });
+    setAddId(""); toast.success("Operator assigned"); await load(); onChange();
+  };
+  const toggle = async (op: CatOp) => {
+    const { error } = await supabase.rpc("set_category_operator", { _cat: categoryId, _op: op.operator_id, _active: !op.is_active });
+    if (error) return toast.error(error.message);
+    toast.success(op.is_active ? "Operator paused — pending work redistributed" : "Operator activated");
+    await load(); onChange();
+  };
+  const remove = async (op: CatOp) => {
+    if (!confirm(`Remove ${op.name} from this category? Their pending applications will be redistributed.`)) return;
+    const { error } = await supabase.rpc("remove_category_operator", { _cat: categoryId, _op: op.operator_id });
+    if (error) return toast.error(error.message);
+    toast.success("Operator removed"); await load(); onChange();
+  };
+
+  const unassigned = allOperators.filter((o) => !rows.some((r) => r.operator_id === o.id));
+  const activeCount = rows.filter((r) => r.is_active).length;
+
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
+      <div className="mb-1 flex items-center gap-2 text-sm font-bold"><UserCog className="h-4 w-4 text-india-green" /> Operators handling this category</div>
+      <p className="mb-4 text-xs text-muted-foreground">Applications are distributed <b>equally</b> among <b>active</b> operators. Pause one and its pending work is re-split among the rest.</p>
+
+      <div className="mb-4 flex flex-wrap items-end gap-2">
+        <div className="min-w-[220px] flex-1">
+          <label className="text-[11px] font-semibold text-muted-foreground">Add operator</label>
+          <select className={inp} value={addId} onChange={(e) => setAddId(e.target.value)}>
+            <option value="">Select an operator…</option>
+            {unassigned.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+          </select>
+        </div>
+        <Button onClick={addOp} disabled={busy || !addId} className="bg-india-green text-white hover:bg-india-green/90">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Assign</Button>
+      </div>
+
+      {loading ? <div className="py-6 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></div>
+        : rows.length === 0 ? <p className="rounded-lg border border-dashed border-border bg-muted/30 px-3 py-6 text-center text-sm text-muted-foreground">No operators assigned yet. Applications for this category won't be routed until you add one.</p>
+        : (
+        <div className="overflow-hidden rounded-xl border border-border">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
+              <tr><th className="px-3 py-2">Operator</th><th className="px-3 py-2 text-right">Total</th><th className="px-3 py-2 text-right">Pending</th><th className="px-3 py-2">Status</th><th className="px-3 py-2 text-right">Actions</th></tr>
+            </thead>
+            <tbody>
+              {rows.map((op) => (
+                <tr key={op.operator_id} className="border-t border-border">
+                  <td className="px-3 py-2 font-semibold">{op.name}</td>
+                  <td className="px-3 py-2 text-right text-muted-foreground">{op.assigned_count}</td>
+                  <td className="px-3 py-2 text-right text-muted-foreground">{op.pending}</td>
+                  <td className="px-3 py-2"><Pill on={op.is_active} /></td>
+                  <td className="px-3 py-2 text-right whitespace-nowrap">
+                    <button onClick={() => toggle(op)} className="mr-3 text-xs font-semibold text-muted-foreground hover:text-foreground">{op.is_active ? "Pause" : "Activate"}</button>
+                    <button onClick={() => remove(op)} className="text-rose-500 hover:text-rose-700"><Trash2 className="inline h-3.5 w-3.5" /></button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <p className="mt-2 text-[11px] text-muted-foreground">{activeCount} active · new applications share equally across them.</p>
     </div>
   );
 }
