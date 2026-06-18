@@ -35,8 +35,9 @@ function ServiceLauncher() {
       await ensureStaffSession();
       const { data } = await supabase.from("services").select("*").eq("id", id).maybeSingle();
       setSvc(data); setLoading(false);
-      const { data: u0 } = await supabase.auth.getUser();
-      if (u0?.user) { const { data: w } = await supabase.from("wallets").select("balance").eq("user_id", u0.user.id).maybeSingle(); setBalance(Number((w as any)?.balance ?? 0)); }
+      const { data: sess0 } = await supabase.auth.getSession();
+      const uid0 = sess0?.session?.user?.id;
+      if (uid0) { const { data: w } = await supabase.from("wallets").select("balance").eq("user_id", uid0).maybeSingle(); setBalance(Number((w as any)?.balance ?? 0)); }
       if (data?.service_type === "backend" && (!data.form_schema || data.form_schema.length === 0) && data.backend_route) navigate({ to: data.backend_route as never });
     })();
     // eslint-disable-next-line
@@ -71,8 +72,8 @@ function ServiceLauncher() {
     setSubmitting(true);
     try {
       await ensureStaffSession();
-      const { data: u } = await supabase.auth.getUser();
-      if (!u.user) { toast.error("Your session has expired", { description: "Please sign in again to submit this application.", action: { label: "Sign in", onClick: () => navigate({ to: "/login" }) } }); return; }
+      const { data: sess } = await supabase.auth.getSession();
+      if (!sess?.session) { toast.error("Your session has expired", { description: "Please sign in again to submit this application.", action: { label: "Sign in", onClick: () => navigate({ to: "/login" }) } }); return; }
       const charge = Number(svc.service_charge || 0);
       if (charge > 0 && balance != null && balance < charge) { toast.error("Insufficient wallet balance", { description: `This service costs ₹${charge.toLocaleString("en-IN")}. Add funds to your wallet to continue.`, action: { label: "Add funds", onClick: () => navigate({ to: "/wallet" }) } }); return; }
       const { data, error } = await supabase.rpc("submit_backend_application", { p_service_id: id, p_form: values });
