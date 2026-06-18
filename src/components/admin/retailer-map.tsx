@@ -56,9 +56,9 @@ export function RetailerMap({ scope }: { scope: "admin" | "distributor" }) {
       shown.forEach((p) => {
         const m = L.circleMarker([p.lat, p.lng], { radius: 8, color: "#fff", weight: 2, fillColor: tone[p.status] || "#64748b", fillOpacity: 0.9 });
         m.bindPopup(`<b>${p.name}</b><br/>${p.shop || ""}<br/>${p.district || ""}<br/>${p.mobile || ""}<br/><span style="text-transform:capitalize">${p.status.replace("_", " ")}</span>`);
-        m.addTo(layer.current); L.circle([p.lat, p.lng], { radius: radius * 1000, color: tone[p.status] || "#64748b", weight: 1, fillColor: tone[p.status] || "#64748b", fillOpacity: 0.07 }).addTo(layer.current); bounds.push([p.lat, p.lng]);
+        m.addTo(layer.current); L.circle([p.lat, p.lng], { radius: radius * 1000, color: tone[p.status] || "#64748b", weight: 2, dashArray: "6 6", fillColor: tone[p.status] || "#64748b", fillOpacity: 0.12 }).addTo(layer.current); bounds.push([p.lat, p.lng]);
       });
-      if (bounds.length) map.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 12 });
+      if (bounds.length === 1) { map.current.setView(bounds[0], 13); } else if (bounds.length) { map.current.fitBounds(bounds, { padding: [50, 50], maxZoom: 13 }); }
       setTimeout(() => map.current && map.current.invalidateSize(), 100);
     })();
     return () => { cancelled = true; };
