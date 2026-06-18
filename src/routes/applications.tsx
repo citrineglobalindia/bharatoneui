@@ -73,6 +73,7 @@ function ApplicationsPage() {
   const cols: Column<Row>[] = [
     { key: "application_no", header: "Application ID", cell: (r) => <span className="font-mono text-xs">{r.application_no}</span> },
     { key: "service_name", header: "Service", cell: (r) => <span className="font-medium">{r.service_name}</span> },
+    { key: "full_name", header: "Applicant", cell: (r) => <span className="text-sm">{r.full_name || "—"}</span> },
     { key: "charge", header: "Charge", cell: (r) => <span className="text-xs">{inr(r.service_charge)}</span> },
     { key: "commission", header: "Commission", cell: (r) => <span className="text-xs font-semibold text-india-green">{inr(r.commission_price)}</span> },
     { key: "created_at", header: "Submitted", cell: (r) => <span className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString("en-IN")}</span> },
