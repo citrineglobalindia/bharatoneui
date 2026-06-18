@@ -10,7 +10,12 @@ import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 
 type U = {
   id: string; email: string; display_name: string; department: string | null; designation: string | null;
-  employee_code: string | null; phone: string | null; skills: string | null; experience: string | null; education: string | null; is_active: boolean; created_at: string; roles: string[];
+  employee_code: string | null; phone: string | null; skills: string | null; experience: string | null; education: string | null;
+  gender: string | null; dob: string | null; alt_phone: string | null; street_address: string | null; district: string | null; state: string | null; pincode: string | null;
+  aadhaar_number: string | null; pan_number: string | null; bank_name: string | null; account_number: string | null; ifsc: string | null; upi_id: string | null;
+  salary: number | null; rate_per_call: number | null; languages: string[] | null; emergency_contact_name: string | null; emergency_contact_phone: string | null;
+  video_kyc_path: string | null; sow_path: string | null; sow_signed_date: string | null; sow_status: string | null;
+  is_active: boolean; created_at: string; roles: string[];
 };
 const ALL_ROLES = ["admin", "accountant", "qc", "operator", "telecaller", "distributor", "master-distributor", "bde", "dro", "tro", "manager", "hr_staff", "employee", "retailer"];
 const roleColor: Record<string, string> = {
@@ -106,19 +111,48 @@ export function AdminUsers() {
       await load();
     } finally { setBusy(false); }
   };
-  const [edit, setEdit] = useState<{ phone: string; skills: string; experience: string; education: string; department: string; designation: string; employee_code: string } | null>(null);
+  const [edit, setEdit] = useState<Record<string, string> | null>(null);
+  const [editLangs, setEditLangs] = useState<string[]>([]);
+  const [editKyc, setEditKyc] = useState<File | null>(null);
+  const [editSow, setEditSow] = useState<File | null>(null);
   const [savingProfile, setSavingProfile] = useState(false);
-  const openDetail = (u: U) => { setDetail(u); setEdit({ phone: u.phone ?? "", skills: u.skills ?? "", experience: u.experience ?? "", education: u.education ?? "", department: u.department ?? "", designation: u.designation ?? "", employee_code: u.employee_code ?? "" }); };
+  const openDetail = (u: U) => {
+    setDetail(u);
+    setEdit({
+      phone: u.phone ?? "", skills: u.skills ?? "", experience: u.experience ?? "", education: u.education ?? "",
+      department: u.department ?? "", designation: u.designation ?? "", employee_code: u.employee_code ?? "",
+      gender: u.gender ?? "", dob: u.dob ?? "", alt_phone: u.alt_phone ?? "", street_address: u.street_address ?? "",
+      district: u.district ?? "", state: u.state ?? "", pincode: u.pincode ?? "", aadhaar_number: u.aadhaar_number ?? "",
+      pan_number: u.pan_number ?? "", bank_name: u.bank_name ?? "", account_number: u.account_number ?? "", ifsc: u.ifsc ?? "",
+      upi_id: u.upi_id ?? "", salary: u.salary != null ? String(u.salary) : "", rate_per_call: u.rate_per_call != null ? String(u.rate_per_call) : "",
+      emergency_contact_name: u.emergency_contact_name ?? "", emergency_contact_phone: u.emergency_contact_phone ?? "",
+      sow_signed_date: u.sow_signed_date ?? "", sow_status: u.sow_status ?? "pending",
+    });
+    setEditLangs(u.languages ?? []); setEditKyc(null); setEditSow(null);
+  };
+  const viewStaffDoc = async (path: string) => { const { data } = await supabase.storage.from("staff-docs").createSignedUrl(path, 3600); if (data) window.open(data.signedUrl, "_blank"); };
   const saveProfile = async (u: U) => {
     if (!edit) return;
     setSavingProfile(true);
-    const payload = { phone: edit.phone || null, skills: edit.skills || null, experience: edit.experience || null, education: edit.education || null, department: edit.department || null, designation: edit.designation || null, employee_code: edit.employee_code || null };
-    const { error } = await supabase.from("profiles").update(payload).eq("id", u.id);
-    setSavingProfile(false);
-    if (error) return toast.error("Save failed", { description: error.message });
-    toast.success("Staff profile updated");
-    setRows((rs) => rs.map((x) => x.id === u.id ? { ...x, ...payload } : x));
-    setDetail((d) => d ? { ...d, ...payload } : d);
+    try {
+      const videoPath = editKyc ? await uploadStaffDoc(u.id, "video-kyc", editKyc) : (u.video_kyc_path ?? null);
+      const sowPath = editSow ? await uploadStaffDoc(u.id, "sow", editSow) : (u.sow_path ?? null);
+      const payload: any = {
+        phone: edit.phone || null, skills: edit.skills || null, experience: edit.experience || null, education: edit.education || null,
+        department: edit.department || null, designation: edit.designation || null, employee_code: edit.employee_code || null,
+        gender: edit.gender || null, dob: edit.dob || null, alt_phone: edit.alt_phone || null, street_address: edit.street_address || null,
+        district: edit.district || null, state: edit.state || null, pincode: edit.pincode || null, aadhaar_number: edit.aadhaar_number || null,
+        pan_number: edit.pan_number || null, bank_name: edit.bank_name || null, account_number: edit.account_number || null, ifsc: edit.ifsc || null,
+        upi_id: edit.upi_id || null, salary: edit.salary ? Number(edit.salary) : null, rate_per_call: edit.rate_per_call ? Number(edit.rate_per_call) : null,
+        languages: editLangs.length ? editLangs : null, emergency_contact_name: edit.emergency_contact_name || null, emergency_contact_phone: edit.emergency_contact_phone || null,
+        sow_signed_date: edit.sow_signed_date || null, sow_status: edit.sow_status || null, video_kyc_path: videoPath, sow_path: sowPath,
+      };
+      const { error } = await supabase.from("profiles").update(payload).eq("id", u.id);
+      if (error) return toast.error("Save failed", { description: error.message });
+      toast.success("Staff profile updated");
+      setRows((rs) => rs.map((x) => x.id === u.id ? { ...x, ...payload } : x));
+      setDetail((d) => d ? { ...d, ...payload } : d); setEditKyc(null); setEditSow(null);
+    } finally { setSavingProfile(false); }
   };
   const input = "h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-india-green/30";
 
@@ -160,7 +194,7 @@ export function AdminUsers() {
 
       {/* Detail */}
       <Dialog open={!!detail} onOpenChange={(o) => !o && setDetail(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
           <DialogHeader><DialogTitle>{detail?.display_name}</DialogTitle><DialogDescription>{detail?.email}</DialogDescription></DialogHeader>
           {detail && (
             <div className="space-y-4 text-sm">
@@ -169,18 +203,77 @@ export function AdminUsers() {
                 <Info label="Status" v={detail.is_active ? "Active" : "Inactive"} />
               </div>
               {edit && (
-                <div className="rounded-xl border border-border bg-muted/20 p-3">
-                  <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Staff Profile</p>
+                <div className="space-y-3 rounded-xl border border-border bg-muted/20 p-3">
+                  <p className="text-xs font-bold uppercase tracking-wider text-saffron">Basic Information</p>
                   <div className="grid gap-2.5 sm:grid-cols-2">
-                    <div><label className="text-[11px] font-semibold text-muted-foreground">Contact Number</label><input className={input} value={edit.phone} onChange={(e) => setEdit({ ...edit, phone: e.target.value })} placeholder="Phone number" /></div>
-                    <div><label className="text-[11px] font-semibold text-muted-foreground">Employee Code</label><input className={input} value={edit.employee_code} onChange={(e) => setEdit({ ...edit, employee_code: e.target.value })} placeholder="Code" /></div>
+                    <div><label className="text-[11px] font-semibold text-muted-foreground">Gender</label><select className={input} value={edit.gender} onChange={(e) => setEdit({ ...edit, gender: e.target.value })}><option value="">Select</option><option>Male</option><option>Female</option><option>Other</option></select></div>
+                    <div><label className="text-[11px] font-semibold text-muted-foreground">Date of Birth</label><input type="date" className={input} value={edit.dob} onChange={(e) => setEdit({ ...edit, dob: e.target.value })} /></div>
+                    <div><label className="text-[11px] font-semibold text-muted-foreground">Qualification</label><input className={input} value={edit.education} onChange={(e) => setEdit({ ...edit, education: e.target.value })} placeholder="e.g. B.Com, MBA" /></div>
+                    <div><label className="text-[11px] font-semibold text-muted-foreground">Experience</label><input className={input} value={edit.experience} onChange={(e) => setEdit({ ...edit, experience: e.target.value })} placeholder="e.g. 3 years" /></div>
+                    <div className="sm:col-span-2"><label className="text-[11px] font-semibold text-muted-foreground">Skills</label><textarea rows={2} className={input + " h-auto py-2"} value={edit.skills} onChange={(e) => setEdit({ ...edit, skills: e.target.value })} placeholder="e.g. AEPS, KYC verification" /></div>
+                  </div>
+
+                  <p className="pt-1 text-xs font-bold uppercase tracking-wider text-saffron">Contact & Address</p>
+                  <div className="grid gap-2.5 sm:grid-cols-2">
+                    <div><label className="text-[11px] font-semibold text-muted-foreground">Phone</label><input className={input} value={edit.phone} onChange={(e) => setEdit({ ...edit, phone: e.target.value })} placeholder="Phone" /></div>
+                    <div><label className="text-[11px] font-semibold text-muted-foreground">Alternate Phone</label><input className={input} value={edit.alt_phone} onChange={(e) => setEdit({ ...edit, alt_phone: e.target.value })} placeholder="Alt phone" /></div>
+                    <div className="sm:col-span-2"><label className="text-[11px] font-semibold text-muted-foreground">Street Address</label><input className={input} value={edit.street_address} onChange={(e) => setEdit({ ...edit, street_address: e.target.value })} placeholder="House/Flat, Street, Area" /></div>
+                    <div><label className="text-[11px] font-semibold text-muted-foreground">District</label><input className={input} value={edit.district} onChange={(e) => setEdit({ ...edit, district: e.target.value })} placeholder="District" /></div>
+                    <div><label className="text-[11px] font-semibold text-muted-foreground">State</label><input className={input} value={edit.state} onChange={(e) => setEdit({ ...edit, state: e.target.value })} placeholder="State" /></div>
+                    <div><label className="text-[11px] font-semibold text-muted-foreground">Pincode</label><input className={input} value={edit.pincode} onChange={(e) => setEdit({ ...edit, pincode: e.target.value })} placeholder="Pincode" /></div>
+                  </div>
+
+                  <p className="pt-1 text-xs font-bold uppercase tracking-wider text-saffron">Identity & Bank</p>
+                  <div className="grid gap-2.5 sm:grid-cols-2">
+                    <div><label className="text-[11px] font-semibold text-muted-foreground">Aadhaar Number</label><input className={input} value={edit.aadhaar_number} onChange={(e) => setEdit({ ...edit, aadhaar_number: e.target.value })} placeholder="XXXX XXXX XXXX" /></div>
+                    <div><label className="text-[11px] font-semibold text-muted-foreground">PAN Number</label><input className={input} value={edit.pan_number} onChange={(e) => setEdit({ ...edit, pan_number: e.target.value.toUpperCase() })} placeholder="ABCDE1234F" /></div>
+                    <div><label className="text-[11px] font-semibold text-muted-foreground">Bank Name</label><input className={input} value={edit.bank_name} onChange={(e) => setEdit({ ...edit, bank_name: e.target.value })} placeholder="e.g. SBI" /></div>
+                    <div><label className="text-[11px] font-semibold text-muted-foreground">Account Number</label><input className={input} value={edit.account_number} onChange={(e) => setEdit({ ...edit, account_number: e.target.value })} placeholder="Account number" /></div>
+                    <div><label className="text-[11px] font-semibold text-muted-foreground">IFSC Code</label><input className={input} value={edit.ifsc} onChange={(e) => setEdit({ ...edit, ifsc: e.target.value.toUpperCase() })} placeholder="SBIN0001234" /></div>
+                    <div><label className="text-[11px] font-semibold text-muted-foreground">UPI ID</label><input className={input} value={edit.upi_id} onChange={(e) => setEdit({ ...edit, upi_id: e.target.value })} placeholder="name@upi" /></div>
+                  </div>
+
+                  <p className="pt-1 text-xs font-bold uppercase tracking-wider text-saffron">Role & Compensation</p>
+                  <div className="grid gap-2.5 sm:grid-cols-2">
                     <div><label className="text-[11px] font-semibold text-muted-foreground">Department</label><input className={input} value={edit.department} onChange={(e) => setEdit({ ...edit, department: e.target.value })} placeholder="Department" /></div>
                     <div><label className="text-[11px] font-semibold text-muted-foreground">Designation</label><input className={input} value={edit.designation} onChange={(e) => setEdit({ ...edit, designation: e.target.value })} placeholder="Designation" /></div>
-                    <div className="sm:col-span-2"><label className="text-[11px] font-semibold text-muted-foreground">Education Qualification</label><input className={input} value={edit.education} onChange={(e) => setEdit({ ...edit, education: e.target.value })} placeholder="e.g. B.Com, MBA" /></div>
-                    <div className="sm:col-span-2"><label className="text-[11px] font-semibold text-muted-foreground">Experience</label><input className={input} value={edit.experience} onChange={(e) => setEdit({ ...edit, experience: e.target.value })} placeholder="e.g. 3 years in banking ops" /></div>
-                    <div className="sm:col-span-2"><label className="text-[11px] font-semibold text-muted-foreground">Skills</label><textarea rows={2} className={input + " h-auto py-2"} value={edit.skills} onChange={(e) => setEdit({ ...edit, skills: e.target.value })} placeholder="e.g. AEPS, KYC verification, customer support" /></div>
+                    <div><label className="text-[11px] font-semibold text-muted-foreground">Employee Code</label><input className={input} value={edit.employee_code} onChange={(e) => setEdit({ ...edit, employee_code: e.target.value })} placeholder="Code" /></div>
+                    <div><label className="text-[11px] font-semibold text-muted-foreground">Salary (₹/month)</label><input type="number" className={input} value={edit.salary} onChange={(e) => setEdit({ ...edit, salary: e.target.value })} placeholder="18000" /></div>
+                    <div><label className="text-[11px] font-semibold text-muted-foreground">Rate Per Call (₹)</label><input type="number" className={input} value={edit.rate_per_call} onChange={(e) => setEdit({ ...edit, rate_per_call: e.target.value })} placeholder="5" /></div>
                   </div>
-                  <Button size="sm" className="mt-3 bg-india-green text-white" disabled={savingProfile} onClick={() => saveProfile(detail)}>{savingProfile ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Save profile</Button>
+
+                  <p className="pt-1 text-xs font-bold uppercase tracking-wider text-saffron">Languages Known</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {LANGS.map((l) => { const on = editLangs.includes(l); return <button key={l} type="button" onClick={() => setEditLangs((pp) => on ? pp.filter((x) => x !== l) : [...pp, l])} className={`rounded-full px-3 h-8 text-xs font-semibold transition ${on ? "bg-india-green text-white" : "border border-border bg-card hover:bg-muted"}`}>{l}</button>; })}
+                  </div>
+
+                  <p className="pt-1 text-xs font-bold uppercase tracking-wider text-saffron">Emergency Contact</p>
+                  <div className="grid gap-2.5 sm:grid-cols-2">
+                    <div><label className="text-[11px] font-semibold text-muted-foreground">Contact Name</label><input className={input} value={edit.emergency_contact_name} onChange={(e) => setEdit({ ...edit, emergency_contact_name: e.target.value })} placeholder="Name (Relation)" /></div>
+                    <div><label className="text-[11px] font-semibold text-muted-foreground">Contact Phone</label><input className={input} value={edit.emergency_contact_phone} onChange={(e) => setEdit({ ...edit, emergency_contact_phone: e.target.value })} placeholder="+91 XXXXX XXXXX" /></div>
+                  </div>
+
+                  <p className="pt-1 text-xs font-bold uppercase tracking-wider text-saffron">Video KYC & SOW</p>
+                  <div className="grid gap-2.5 sm:grid-cols-2">
+                    <div>
+                      <label className="text-[11px] font-semibold text-muted-foreground">Video KYC</label>
+                      <div className="flex items-center gap-2">
+                        <label className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-border bg-card px-2.5 h-9 text-xs font-semibold hover:bg-muted">Choose<input type="file" className="hidden" onChange={(e) => setEditKyc(e.target.files?.[0] ?? null)} /></label>
+                        {editKyc ? <span className="truncate text-xs text-india-green">{editKyc.name}</span> : detail.video_kyc_path ? <button onClick={() => viewStaffDoc(detail.video_kyc_path!)} className="text-xs font-semibold text-india-green hover:underline">View current</button> : <span className="text-xs text-muted-foreground">None</span>}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-semibold text-muted-foreground">SOW Agreement</label>
+                      <div className="flex items-center gap-2">
+                        <label className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-border bg-card px-2.5 h-9 text-xs font-semibold hover:bg-muted">Choose<input type="file" className="hidden" onChange={(e) => setEditSow(e.target.files?.[0] ?? null)} /></label>
+                        {editSow ? <span className="truncate text-xs text-india-green">{editSow.name}</span> : detail.sow_path ? <button onClick={() => viewStaffDoc(detail.sow_path!)} className="text-xs font-semibold text-india-green hover:underline">View current</button> : <span className="text-xs text-muted-foreground">None</span>}
+                      </div>
+                    </div>
+                    <div><label className="text-[11px] font-semibold text-muted-foreground">SOW Signed Date</label><input type="date" className={input} value={edit.sow_signed_date} onChange={(e) => setEdit({ ...edit, sow_signed_date: e.target.value })} /></div>
+                    <div><label className="text-[11px] font-semibold text-muted-foreground">SOW Status</label><select className={input} value={edit.sow_status} onChange={(e) => setEdit({ ...edit, sow_status: e.target.value })}><option value="pending">Pending</option><option value="signed">Signed</option><option value="verified">Verified</option></select></div>
+                  </div>
+
+                  <Button size="sm" className="mt-1 bg-india-green text-white" disabled={savingProfile} onClick={() => saveProfile(detail)}>{savingProfile ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Save profile</Button>
                 </div>
               )}
               <div>
