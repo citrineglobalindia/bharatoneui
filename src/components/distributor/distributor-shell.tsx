@@ -1,6 +1,7 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
+  FileText,
   LayoutDashboard, Network, Users, Grid3x3, Coins, LogOut, Menu, X, BarChart3,
   Search, Activity, ChevronDown, ShieldCheck, Bell, UserCircle2,
   UserCog, LifeBuoy, MessageSquare, Settings as SettingsIcon,
@@ -28,6 +29,7 @@ const NAV = [
   { label: "Network Map", icon: <Network className="h-4 w-4" />, to: "/distributor/network" },
   { label: "Officers", icon: <UserCog className="h-4 w-4" />, to: "/distributor/officers" },
   { label: "Retailers", icon: <Users className="h-4 w-4" />, to: "/distributor/retailers" },
+  { label: "Applications", icon: <FileText className="h-4 w-4" />, to: "/distributor/applications" },
   { label: "Services Live", icon: <Grid3x3 className="h-4 w-4" />, to: "/distributor/services" },
   { label: "Commissions", icon: <Coins className="h-4 w-4" />, to: "/distributor/commissions" },
   { label: "Reports", icon: <FileBarChart className="h-4 w-4" />, to: "/distributor/reports" },

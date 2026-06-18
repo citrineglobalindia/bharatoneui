@@ -79,3 +79,34 @@ export function DistributorCommissionsReal() {
     </div>
   );
 }
+
+export function DistributorApplicationsReal() {
+  const [rows, setRows] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [q, setQ] = useState("");
+  const [status, setStatus] = useState("all");
+  async function load() { setLoading(true); try { await ensureStaffSession(); const { data } = await supabase.rpc("distributor_applications"); setRows((data as any[]) ?? []); } finally { setLoading(false); } }
+  useEffect(() => { load(); }, []);
+  const filtered = useMemo(() => rows.filter((r) => (status === "all" || r.status === status) && (!q || [r.application_no, r.retailer_name, r.service_name].filter(Boolean).some((v: any) => String(v).toLowerCase().includes(q.toLowerCase())))), [rows, q, status]);
+  const today = rows.filter((r) => new Date(r.created_at).toDateString() === new Date().toDateString()).length;
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-2"><div><h1 className="font-display text-2xl font-extrabold">Retailer Applications</h1><p className="text-sm text-muted-foreground">Every service your retailers apply for — live.</p></div><button onClick={load} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-10 text-sm font-semibold hover:bg-muted"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh</button></div>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Stat icon={FileText} label="Total Applications" value={rows.length} tone="bg-saffron/10 text-saffron" />
+        <Stat icon={Clock3} label="Today" value={today} tone="bg-amber-500/10 text-amber-600" />
+        <Stat icon={TrendingUp} label="Your Commission (earned)" value={inr(rows.filter((r) => ["approved","completed"].includes(r.status)).reduce((a, r) => a + Number(r.distributor_commission_amount || 0), 0))} tone="bg-india-green/10 text-india-green" />
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><input className="h-9 w-60 rounded-lg border border-border bg-background pl-8 pr-2 text-sm outline-none" placeholder="Search app, retailer, service" value={q} onChange={(e) => setQ(e.target.value)} /></div>
+        <select className="h-9 rounded-lg border border-border bg-background px-2 text-sm" value={status} onChange={(e) => setStatus(e.target.value)}><option value="all">All statuses</option>{["submitted","in_progress","approved","completed","rejected"].map((s) => <option key={s} value={s}>{s.replace("_"," ")}</option>)}</select>
+      </div>
+      <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-soft"><table className="w-full text-sm">
+        <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground"><tr><th className="px-3 py-2">Application</th><th className="px-3 py-2">Retailer</th><th className="px-3 py-2">Service</th><th className="px-3 py-2">Charge</th><th className="px-3 py-2">Your Commission</th><th className="px-3 py-2">Payment</th><th className="px-3 py-2">Status</th><th className="px-3 py-2">Date</th></tr></thead>
+        <tbody>{loading ? <tr><td colSpan={8} className="px-3 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr>
+          : filtered.length === 0 ? <tr><td colSpan={8} className="px-3 py-10 text-center text-muted-foreground">No applications from your retailers yet.</td></tr>
+          : filtered.map((r, i) => (<tr key={i} className="border-t border-border"><td className="px-3 py-2 font-mono text-xs">{r.application_no}</td><td className="px-3 py-2">{r.retailer_name}</td><td className="px-3 py-2"><div className="font-medium">{r.service_name}</div><div className="text-[11px] text-muted-foreground">{r.category_name}</div></td><td className="px-3 py-2">{inr(r.service_charge)}</td><td className="px-3 py-2 text-india-green">{inr(r.distributor_commission_amount)}</td><td className="px-3 py-2">{r.payment_verified ? <span className="text-xs font-bold text-emerald-600">Verified</span> : <span className="text-xs text-muted-foreground">Pending</span>}</td><td className="px-3 py-2"><span className={`rounded-full px-2 py-0.5 text-[11px] font-bold capitalize ${statusTone[r.status] ?? "bg-muted"}`}>{r.status.replace("_"," ")}</span></td><td className="px-3 py-2 text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString("en-IN")}</td></tr>))}</tbody>
+      </table></div>
+    </div>
+  );
+}

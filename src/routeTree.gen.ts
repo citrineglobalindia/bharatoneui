@@ -112,6 +112,7 @@ import { Route as DistributorNetworkRouteImport } from './routes/distributor.net
 import { Route as DistributorFeedbackRouteImport } from './routes/distributor.feedback'
 import { Route as DistributorDashboardRouteImport } from './routes/distributor.dashboard'
 import { Route as DistributorCommissionsRouteImport } from './routes/distributor.commissions'
+import { Route as DistributorApplicationsRouteImport } from './routes/distributor.applications'
 import { Route as BdeSupportRouteImport } from './routes/bde.support'
 import { Route as BdeSettingsRouteImport } from './routes/bde.settings'
 import { Route as BdeReportsRouteImport } from './routes/bde.reports'
@@ -663,6 +664,11 @@ const DistributorCommissionsRoute = DistributorCommissionsRouteImport.update({
   path: '/distributor/commissions',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DistributorApplicationsRoute = DistributorApplicationsRouteImport.update({
+  id: '/distributor/applications',
+  path: '/distributor/applications',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BdeSupportRoute = BdeSupportRouteImport.update({
   id: '/support',
   path: '/support',
@@ -909,6 +915,7 @@ export interface FileRoutesByFullPath {
   '/bde/reports': typeof BdeReportsRoute
   '/bde/settings': typeof BdeSettingsRoute
   '/bde/support': typeof BdeSupportRoute
+  '/distributor/applications': typeof DistributorApplicationsRoute
   '/distributor/commissions': typeof DistributorCommissionsRoute
   '/distributor/dashboard': typeof DistributorDashboardRoute
   '/distributor/feedback': typeof DistributorFeedbackRoute
@@ -1048,6 +1055,7 @@ export interface FileRoutesByTo {
   '/bde/reports': typeof BdeReportsRoute
   '/bde/settings': typeof BdeSettingsRoute
   '/bde/support': typeof BdeSupportRoute
+  '/distributor/applications': typeof DistributorApplicationsRoute
   '/distributor/commissions': typeof DistributorCommissionsRoute
   '/distributor/dashboard': typeof DistributorDashboardRoute
   '/distributor/feedback': typeof DistributorFeedbackRoute
@@ -1187,6 +1195,7 @@ export interface FileRoutesById {
   '/bde/reports': typeof BdeReportsRoute
   '/bde/settings': typeof BdeSettingsRoute
   '/bde/support': typeof BdeSupportRoute
+  '/distributor/applications': typeof DistributorApplicationsRoute
   '/distributor/commissions': typeof DistributorCommissionsRoute
   '/distributor/dashboard': typeof DistributorDashboardRoute
   '/distributor/feedback': typeof DistributorFeedbackRoute
@@ -1328,6 +1337,7 @@ export interface FileRouteTypes {
     | '/bde/reports'
     | '/bde/settings'
     | '/bde/support'
+    | '/distributor/applications'
     | '/distributor/commissions'
     | '/distributor/dashboard'
     | '/distributor/feedback'
@@ -1467,6 +1477,7 @@ export interface FileRouteTypes {
     | '/bde/reports'
     | '/bde/settings'
     | '/bde/support'
+    | '/distributor/applications'
     | '/distributor/commissions'
     | '/distributor/dashboard'
     | '/distributor/feedback'
@@ -1605,6 +1616,7 @@ export interface FileRouteTypes {
     | '/bde/reports'
     | '/bde/settings'
     | '/bde/support'
+    | '/distributor/applications'
     | '/distributor/commissions'
     | '/distributor/dashboard'
     | '/distributor/feedback'
@@ -1733,6 +1745,7 @@ export interface RootRouteChildren {
   AccountantSupportRoute: typeof AccountantSupportRoute
   AccountantWalletRequestsRoute: typeof AccountantWalletRequestsRoute
   AccountantWithdrawalsRoute: typeof AccountantWithdrawalsRoute
+  DistributorApplicationsRoute: typeof DistributorApplicationsRoute
   DistributorCommissionsRoute: typeof DistributorCommissionsRoute
   DistributorDashboardRoute: typeof DistributorDashboardRoute
   DistributorFeedbackRoute: typeof DistributorFeedbackRoute
@@ -2518,6 +2531,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DistributorCommissionsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/distributor/applications': {
+      id: '/distributor/applications'
+      path: '/distributor/applications'
+      fullPath: '/distributor/applications'
+      preLoaderRoute: typeof DistributorApplicationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/bde/support': {
       id: '/bde/support'
       path: '/support'
@@ -2929,6 +2949,7 @@ const rootRouteChildren: RootRouteChildren = {
   AccountantSupportRoute: AccountantSupportRoute,
   AccountantWalletRequestsRoute: AccountantWalletRequestsRoute,
   AccountantWithdrawalsRoute: AccountantWithdrawalsRoute,
+  DistributorApplicationsRoute: DistributorApplicationsRoute,
   DistributorCommissionsRoute: DistributorCommissionsRoute,
   DistributorDashboardRoute: DistributorDashboardRoute,
   DistributorFeedbackRoute: DistributorFeedbackRoute,
