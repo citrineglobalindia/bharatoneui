@@ -29,6 +29,7 @@ export function RetailerMap({ scope }: { scope: "admin" | "distributor" }) {
   const layer = useRef<any>(null);
   const [radius, setRadius] = useState<number>(2);
   const [radiusInput, setRadiusInput] = useState("2");
+  const [selected, setSelected] = useState<Pt | null>(null);
 
   async function load() {
     setLoading(true);
@@ -56,7 +57,7 @@ export function RetailerMap({ scope }: { scope: "admin" | "distributor" }) {
       shown.forEach((p) => {
         const m = L.circleMarker([p.lat, p.lng], { radius: 8, color: "#fff", weight: 2, fillColor: tone[p.status] || "#64748b", fillOpacity: 0.9 });
         m.bindPopup(`<b>${p.name}</b><br/>${p.shop || ""}<br/>${p.district || ""}<br/>${p.mobile || ""}<br/><span style="text-transform:capitalize">${p.status.replace("_", " ")}</span>`);
-        m.addTo(layer.current); L.circle([p.lat, p.lng], { radius: radius * 1000, color: tone[p.status] || "#64748b", weight: 2, dashArray: "6 6", fillColor: tone[p.status] || "#64748b", fillOpacity: 0.12 }).addTo(layer.current); bounds.push([p.lat, p.lng]);
+        m.on("click", () => { setSelected(p); if (map.current) map.current.setView([p.lat, p.lng], 15, { animate: true }); }); m.addTo(layer.current); L.circle([p.lat, p.lng], { radius: radius * 1000, color: tone[p.status] || "#64748b", weight: 2, dashArray: "6 6", fillColor: tone[p.status] || "#64748b", fillOpacity: 0.12 }).addTo(layer.current); bounds.push([p.lat, p.lng]);
       });
       if (bounds.length === 1) { map.current.setView(bounds[0], 13); } else if (bounds.length) { map.current.fitBounds(bounds, { padding: [50, 50], maxZoom: 13 }); }
       setTimeout(() => map.current && map.current.invalidateSize(), 100);
@@ -81,21 +82,38 @@ export function RetailerMap({ scope }: { scope: "admin" | "distributor" }) {
         {[["Approved","#138808"],["QC review","#6366f1"],["Accountant","#f59e0b"],["Telecaller","#f97316"],["Rejected","#e11d48"]].map(([l,c]) => (<span key={l} className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full" style={{background:c as string}} /> {l}</span>))}
         <span className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full border border-india-green bg-india-green/10" /> {radius} km exclusion zone</span>
       </div>
-      <div className="grid gap-4 lg:grid-cols-[1fr_300px] items-start">
-        <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-soft">
-          <div ref={mapRef} style={{ height: "62vh", width: "100%" }} className="bg-muted/30">{loading && <div className="grid h-full place-items-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>}</div>
-        </div>
+      <div className="grid gap-4 lg:grid-cols-[320px_1fr] items-start">
         <div className="rounded-2xl border border-border bg-card shadow-soft">
-          <p className="border-b border-border px-3 py-2.5 text-sm font-bold">Retailers ({shown.length})</p>
-          <div className="max-h-[58vh] overflow-y-auto">
-            {shown.length === 0 ? <p className="p-4 text-sm text-muted-foreground">No located retailers.</p>
-              : shown.map((p, i) => (
-                <button key={i} onClick={() => { if (map.current) { map.current.setView([p.lat, p.lng], 14); } }} className="flex w-full items-center gap-2 border-b border-border px-3 py-2 text-left hover:bg-muted/50">
-                  <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: tone[p.status] || "#64748b" }} />
-                  <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold">{p.name}</span><span className="block truncate text-[11px] text-muted-foreground">{p.shop || "—"} · {p.district || "—"}</span></span>
-                </button>
-              ))}
-          </div>
+          {selected ? (
+            <div className="p-4">
+              <button onClick={() => setSelected(null)} className="mb-3 text-xs font-semibold text-muted-foreground hover:text-foreground">← Back to list</button>
+              <div className="flex items-center gap-2"><span className="grid h-10 w-10 place-items-center rounded-full text-sm font-bold text-white" style={{ background: tone[selected.status] || "#64748b" }}>{selected.name.trim()[0] || "R"}</span><div className="min-w-0"><p className="truncate font-display text-base font-extrabold">{selected.name}</p><span className="rounded-full px-2 py-0.5 text-[10px] font-bold capitalize text-white" style={{ background: tone[selected.status] || "#64748b" }}>{selected.status.replace("_", " ")}</span></div></div>
+              <div className="mt-3 space-y-2 text-sm">
+                <div><p className="text-[10px] uppercase tracking-wide text-muted-foreground">Shop</p><p className="font-semibold">{selected.shop || "—"}</p></div>
+                <div><p className="text-[10px] uppercase tracking-wide text-muted-foreground">District</p><p className="font-semibold">{selected.district || "—"}</p></div>
+                <div><p className="text-[10px] uppercase tracking-wide text-muted-foreground">Mobile</p><p className="font-semibold">{selected.mobile || "—"}</p></div>
+                <div><p className="text-[10px] uppercase tracking-wide text-muted-foreground">Coordinates</p><p className="font-mono text-xs">{selected.lat.toFixed(5)}, {selected.lng.toFixed(5)}</p></div>
+              </div>
+              <a href={`https://www.google.com/maps?q=${selected.lat},${selected.lng}`} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-9 text-xs font-semibold hover:bg-muted"><MapPin className="h-3.5 w-3.5" /> Open in Google Maps</a>
+              <p className="mt-3 rounded-lg bg-muted/40 px-3 py-2 text-[11px] text-muted-foreground">Exclusion radius: <b className="text-foreground">{radius} km</b> — no new agent can register within this zone.</p>
+            </div>
+          ) : (
+            <>
+              <p className="border-b border-border px-3 py-2.5 text-sm font-bold">Retailers ({shown.length})</p>
+              <div className="max-h-[58vh] overflow-y-auto">
+                {shown.length === 0 ? <p className="p-4 text-sm text-muted-foreground">No located retailers.</p>
+                  : shown.map((p, i) => (
+                    <button key={i} onClick={() => { setSelected(p); if (map.current) map.current.setView([p.lat, p.lng], 15, { animate: true }); }} className="flex w-full items-center gap-2 border-b border-border px-3 py-2 text-left hover:bg-muted/50">
+                      <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: tone[p.status] || "#64748b" }} />
+                      <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold">{p.name}</span><span className="block truncate text-[11px] text-muted-foreground">{p.shop || "—"} · {p.district || "—"}</span></span>
+                    </button>
+                  ))}
+              </div>
+            </>
+          )}
+        </div>
+        <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-soft">
+          <div ref={mapRef} style={{ height: "64vh", width: "100%" }} className="bg-muted/30">{loading && <div className="grid h-full place-items-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>}</div>
         </div>
       </div>
     </div>
