@@ -63,22 +63,26 @@ function DashboardPage() {
   const [balance, setBalance] = useState(0);
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
+  const [kycStatus, setKycStatus] = useState<string | null>(null);
 
   useEffect(() => {
     let on = true;
     (async () => {
       const { data: u } = await supabase.auth.getUser();
       if (!u?.user) { if (on) setLoading(false); return; }
-      const [w, apps] = await Promise.all([
+      const [w, apps, reg] = await Promise.all([
         supabase.from("wallets").select("balance").eq("user_id", u.user.id).maybeSingle(),
         supabase.from("service_applications")
           .select("id,application_no,service_name,category_name,full_name,service_charge,commission_price,status,created_at")
           .eq("submitted_by", u.user.id)
           .order("created_at", { ascending: false }),
+        supabase.from("retailer_registrations").select("status").eq("auth_user_id", u.user.id)
+          .order("created_at", { ascending: false }).limit(1).maybeSingle(),
       ]);
       if (!on) return;
       setBalance(Number((w.data as any)?.balance ?? 0));
       setRows(((apps.data as Row[]) ?? []));
+      setKycStatus((reg.data as any)?.status ?? null);
       setLoading(false);
     })();
     return () => { on = false; };
@@ -170,20 +174,37 @@ function DashboardPage() {
               </div>
             </div>
           </div>
-          <Link to="/video-kyc" className="rounded-2xl border border-amber-200 bg-amber-50 p-5 hover:bg-amber-100/70 transition flex flex-col">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-amber-200/70 text-amber-700 flex items-center justify-center">
-                <Video className="h-4 w-4" />
+          {kycStatus === "approved" ? (
+            <Link to="/video-kyc" className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 hover:bg-emerald-100/70 transition flex flex-col">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-emerald-200/70 text-emerald-700 flex items-center justify-center">
+                  <ShieldCheck className="h-4 w-4" />
+                </div>
+                <p className="font-bold text-emerald-900">KYC Verified</p>
               </div>
-              <p className="font-bold text-amber-900">Complete KYC Documents</p>
-            </div>
-            <p className="text-xs text-amber-800/80 mt-2 flex-1">
-              Upload Aadhaar, PAN, address proof, bank proof, shop photo and Video KYC selfie to activate all services.
-            </p>
-            <span className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-amber-900">
-              Start KYC <ArrowUpRight className="h-3 w-3" />
-            </span>
-          </Link>
+              <p className="text-xs text-emerald-800/80 mt-2 flex-1">
+                Your documents were verified during registration. Your account is active — no further KYC needed.
+              </p>
+              <span className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-emerald-900">
+                View Documents <ArrowUpRight className="h-3 w-3" />
+              </span>
+            </Link>
+          ) : (
+            <Link to="/video-kyc" className="rounded-2xl border border-amber-200 bg-amber-50 p-5 hover:bg-amber-100/70 transition flex flex-col">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-amber-200/70 text-amber-700 flex items-center justify-center">
+                  <Video className="h-4 w-4" />
+                </div>
+                <p className="font-bold text-amber-900">KYC Documents</p>
+              </div>
+              <p className="text-xs text-amber-800/80 mt-2 flex-1">
+                Track the status of the Aadhaar, PAN, shop photo and Video KYC you submitted during registration.
+              </p>
+              <span className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-amber-900">
+                View Documents <ArrowUpRight className="h-3 w-3" />
+              </span>
+            </Link>
+          )}
         </div>
 
         {/* Charts */}
