@@ -18,6 +18,19 @@ function loadLeaflet(): Promise<any> {
   });
 }
 const tone: Record<string, string> = { approved: "#138808", completed: "#138808", qc_review: "#6366f1", accountant_review: "#f59e0b", rejected: "#e11d48", telecaller: "#f97316" };
+const GEO: Record<string, { center: [number, number]; zoom: number; districts: Record<string, [number, number]> }> = {
+  Karnataka: { center: [15.3173, 75.7139], zoom: 7, districts: {
+    "Bengaluru Urban": [12.9716, 77.5946], "Bengaluru Rural": [13.2257, 77.5750], "Mysuru": [12.2958, 76.6394], "Mandya": [12.5223, 76.8954],
+    "Hassan": [13.0072, 76.0962], "Tumakuru": [13.3379, 77.1173], "Kolar": [13.1357, 78.1326], "Chikkaballapura": [13.4355, 77.7315],
+    "Ramanagara": [12.7110, 77.2810], "Chitradurga": [14.2251, 76.3980], "Davanagere": [14.4644, 75.9218], "Shivamogga": [13.9299, 75.5681],
+    "Chikkamagaluru": [13.3161, 75.7720], "Udupi": [13.3409, 74.7421], "Dakshina Kannada": [12.8703, 75.0410], "Uttara Kannada": [14.7937, 74.6869],
+    "Belagavi": [15.8497, 74.4977], "Vijayapura": [16.8302, 75.7100], "Bagalkot": [16.1691, 75.6615], "Dharwad": [15.4589, 75.0078],
+    "Gadag": [15.4298, 75.6341], "Haveri": [14.7951, 75.4044], "Ballari": [15.1394, 76.9214], "Vijayanagara": [15.3350, 76.4620],
+    "Koppal": [15.3500, 76.1543], "Raichur": [16.2076, 77.3463], "Kalaburagi": [17.3297, 76.8343], "Yadgir": [16.7700, 77.1376],
+    "Bidar": [17.9104, 77.5199], "Kodagu": [12.3375, 75.8069], "Chamarajanagar": [11.9261, 76.9438] } },
+  Maharashtra: { center: [19.7515, 75.7139], zoom: 6, districts: { "Pune": [18.5204, 73.8567], "Mumbai": [19.0760, 72.8777], "Nagpur": [21.1458, 79.0882] } },
+  "Tamil Nadu": { center: [11.1271, 78.6569], zoom: 6, districts: { "Chennai": [13.0827, 80.2707], "Coimbatore": [11.0168, 76.9558], "Madurai": [9.9252, 78.1198] } },
+};
 
 export function RetailerMap({ scope }: { scope: "admin" | "distributor" }) {
   const [pts, setPts] = useState<Pt[]>([]);
@@ -30,6 +43,8 @@ export function RetailerMap({ scope }: { scope: "admin" | "distributor" }) {
   const [radius, setRadius] = useState<number>(2);
   const [radiusInput, setRadiusInput] = useState("2");
   const [selected, setSelected] = useState<Pt | null>(null);
+  const [geoState, setGeoState] = useState("Karnataka");
+  const [geoDist, setGeoDist] = useState("");
 
   async function load() {
     setLoading(true);
@@ -38,6 +53,9 @@ export function RetailerMap({ scope }: { scope: "admin" | "distributor" }) {
   }
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [scope]);
 
+  const flyTo = (c: [number, number], z: number) => { if (map.current) map.current.flyTo(c, z, { duration: 1.0 }); };
+  const onState = (st: string) => { setGeoState(st); setGeoDist(""); const g = GEO[st]; if (g) flyTo(g.center, g.zoom); };
+  const onDistrict = (d: string) => { setGeoDist(d); setDist(d || "all"); const c = GEO[geoState]?.districts[d]; if (c) flyTo(c, 12); };
   const saveRadius = async () => { const v = Number(radiusInput); if (!v || v <= 0) return toast.error("Enter a valid radius"); const { error } = await supabase.rpc("set_retailer_radius", { p_km: v }); if (error) return toast.error("Failed", { description: error.message }); toast.success(`Radius set to ${v} km`); setRadius(v); load(); };
   const districts = useMemo(() => Array.from(new Set(pts.map((p) => p.district).filter(Boolean))) as string[], [pts]);
   const shown = useMemo(() => pts.filter((p) => (dist === "all" || p.district === dist) && (!q || [p.name, p.shop, p.mobile, p.district].filter(Boolean).some((v) => String(v).toLowerCase().includes(q.toLowerCase())))), [pts, q, dist]);
@@ -76,6 +94,14 @@ export function RetailerMap({ scope }: { scope: "admin" | "distributor" }) {
           <button onClick={load} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-9 text-sm font-semibold hover:bg-muted"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh</button>
           {scope === "admin" && <span className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-2 h-9 text-sm"><span className="text-xs font-semibold text-muted-foreground">Radius</span><input type="number" min="0.1" step="0.1" className="h-7 w-14 rounded border border-border bg-background px-1.5 text-sm outline-none" value={radiusInput} onChange={(e) => setRadiusInput(e.target.value)} /><span className="text-xs text-muted-foreground">km</span><button onClick={saveRadius} className="ml-1 rounded bg-india-green px-2 py-1 text-[11px] font-bold text-white">Set</button></span>}
         </div>
+      </div>
+      <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-border bg-gradient-to-r from-saffron/5 via-card to-india-green/5 p-4 shadow-soft">
+        <div><label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">State</label>
+          <select className="h-10 w-48 rounded-lg border border-border bg-background px-3 text-sm font-semibold outline-none focus-visible:ring-2 focus-visible:ring-india-green/30" value={geoState} onChange={(e) => onState(e.target.value)}>{Object.keys(GEO).map((st) => <option key={st} value={st}>{st}</option>)}</select></div>
+        <div><label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">District</label>
+          <select className="h-10 w-56 rounded-lg border border-border bg-background px-3 text-sm font-semibold outline-none focus-visible:ring-2 focus-visible:ring-india-green/30" value={geoDist} onChange={(e) => onDistrict(e.target.value)}><option value="">All districts</option>{Object.keys(GEO[geoState]?.districts ?? {}).map((d) => <option key={d} value={d}>{d}</option>)}</select></div>
+        <button onClick={() => { const g = GEO[geoState]; if (g) flyTo(g.center, g.zoom); }} className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-india-green px-3 text-sm font-semibold text-white hover:bg-india-green/90"><MapPin className="h-4 w-4" /> Go to {geoState}</button>
+        <p className="ml-auto self-center text-xs text-muted-foreground">{geoDist ? `Showing ${geoDist}` : `Statewide view`}</p>
       </div>
       <div className="flex flex-wrap items-center gap-3 text-[11px] font-semibold text-muted-foreground">
         <span className="text-foreground">Legend:</span>
