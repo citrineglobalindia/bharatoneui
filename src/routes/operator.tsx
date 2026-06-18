@@ -22,6 +22,7 @@ type App = {
   service_charge: number; commission_price: number; status: string; submitter_name: string | null; created_at: string;
   result_doc_path: string | null; result_note: string | null; result_uploaded_at: string | null;
   form_data: Record<string, any> | null;
+  reupload_requested: boolean; reupload_note: string | null; reupload_path: string | null; reupload_name: string | null;
 };
 const STAGES = ["submitted", "on_process", "waiting_approval", "on_delay", "completed", "rejected"];
 const label: Record<string, string> = { submitted: "New", on_process: "On Process", in_progress: "On Process", waiting_approval: "Waiting for Approval", on_delay: "On Delay", approved: "Waiting for Approval", completed: "Completed", rejected: "Rejected" };
@@ -44,6 +45,7 @@ function OperatorPortal() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [note, setNote] = useState("");
+  const [reqNote, setReqNote] = useState("");
 
   async function load() {
     setLoading(true);
@@ -95,6 +97,16 @@ function OperatorPortal() {
     if (error || !data) { toast.error("Could not open attachment"); return; }
     window.open(data.signedUrl, "_blank");
   };
+  const requestReupload = async (a: App) => {
+    setSaving(true);
+    const { error } = await supabase.rpc("request_document_reupload", { _app: a.id, _note: reqNote || null });
+    setSaving(false);
+    if (error) return toast.error("Could not request", { description: error.message });
+    toast.success("Re-upload requested — the retailer has been notified");
+    setApps((p) => p.map((x) => x.id === a.id ? { ...x, reupload_requested: true, reupload_note: reqNote || null } : x));
+    setSel((s2) => s2 && s2.id === a.id ? { ...s2, reupload_requested: true, reupload_note: reqNote || null } : s2);
+    setReqNote("");
+  };
   const saveNote = async (a: App) => {
     const { error } = await supabase.from("service_applications").update({ result_note: note }).eq("id", a.id);
     if (error) { toast.error("Save failed", { description: error.message }); return; }
@@ -145,7 +157,7 @@ function OperatorPortal() {
                     <td className="px-3 py-2"><div className="font-medium">{a.service_name}</div><div className="text-[11px] text-muted-foreground">{a.category_name}</div></td>
                     <td className="px-3 py-2">{inr(a.service_charge)}</td>
                     <td className="px-3 py-2"><span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${tone[a.status] ?? "bg-muted"}`}>{label[a.status] ?? a.status}</span></td>
-                    <td className="px-3 py-2 text-right"><button onClick={() => { setSel(a); setNote(a.result_note ?? ""); }} className="inline-flex items-center gap-1 text-xs font-semibold text-india-green hover:underline">Open <ChevronRight className="h-3.5 w-3.5" /></button></td>
+                    <td className="px-3 py-2 text-right"><button onClick={() => { setSel(a); setNote(a.result_note ?? ""); setReqNote(""); }} className="inline-flex items-center gap-1 text-xs font-semibold text-india-green hover:underline">Open <ChevronRight className="h-3.5 w-3.5" /></button></td>
                   </tr>
                 ))}
               </tbody>
@@ -183,6 +195,20 @@ function OperatorPortal() {
             </div>
             <textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note for the retailer (optional)" className="mt-2 w-full rounded-lg border border-border bg-background p-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-india-green/30" />
             <button onClick={() => saveNote(sel)} className="mt-1 text-xs font-semibold text-india-green hover:underline">Save note</button>
+
+            <p className="mt-4 mb-1.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-muted-foreground"><Upload className="h-3.5 w-3.5" /> Document re-upload</p>
+            {sel.reupload_path && (
+              <div className="mb-2 flex items-center justify-between rounded-lg border border-india-green/30 bg-india-green/5 px-3 py-2">
+                <span className="flex items-center gap-1.5 truncate text-sm font-semibold"><Paperclip className="h-4 w-4 text-india-green shrink-0" /> <span className="truncate">{sel.reupload_name || "Re-uploaded document"}</span></span>
+                <button onClick={() => dlAppFile(sel.reupload_path!)} className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-india-green hover:underline"><Download className="h-3.5 w-3.5" /> View</button>
+              </div>
+            )}
+            {sel.reupload_requested
+              ? <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">Re-upload requested — waiting for the retailer to upload.</p>
+              : <div className="flex flex-col gap-2 sm:flex-row">
+                  <input value={reqNote} onChange={(e) => setReqNote(e.target.value)} placeholder="What should they re-upload? (optional)" className="h-9 flex-1 rounded-lg border border-border bg-background px-2.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-india-green/30" />
+                  <Button size="sm" disabled={saving} onClick={() => requestReupload(sel)} variant="outline" className="text-amber-700"><Upload className="h-4 w-4" /> Ask retailer to re-upload</Button>
+                </div>}
 
             <p className="mt-4 mb-1.5 text-xs font-bold uppercase tracking-wide text-muted-foreground">Update status</p>
             <div className="flex flex-wrap gap-2">

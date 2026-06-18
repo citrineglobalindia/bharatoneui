@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ClipboardList, Plus, Loader2, FileText, IndianRupee, TrendingUp, RefreshCw, Download, ChevronRight, X, FileDown, ImageDown, Share2, Paperclip, Phone } from "lucide-react";
+import { ClipboardList, Plus, Loader2, FileText, IndianRupee, TrendingUp, RefreshCw, Download, ChevronRight, X, FileDown, ImageDown, Share2, Paperclip, Phone, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { RetailerShell } from "@/components/retailer/retailer-shell";
 import { PageHeader, StatusBadge } from "@/components/retailer/page-header";
@@ -19,6 +19,7 @@ type Row = {
   father_name: string | null; gender: string | null; email: string | null; phone: string | null; address: string | null;
   aadhaar_number: string | null; pan_number: string | null; status: string; service_charge: number; commission_price: number;
   created_at: string; result_doc_path: string | null; result_note: string | null; form_data: any; assigned_operator: string | null;
+  reupload_requested: boolean; reupload_note: string | null; reupload_path: string | null; reupload_name: string | null;
 };
 const statusLabel: Record<string, string> = { submitted: "Pending", on_process: "On Process", in_progress: "On Process", waiting_approval: "Waiting for Approval", on_delay: "On Delay", approved: "Waiting for Approval", rejected: "Rejected", completed: "Completed" };
 const STEPS = ["submitted", "on_process", "waiting_approval", "completed"];
@@ -60,6 +61,7 @@ function ApplicationsPage() {
   const [filter, setFilter] = useState("All");
   const [sel, setSel] = useState<Row | null>(null);
   const [opContact, setOpContact] = useState<{ name: string; email: string | null; phone: string | null } | null>(null);
+  const [reuploading, setReuploading] = useState(false);
   useEffect(() => {
     if (!sel) { setOpContact(null); return; }
     let on = true;
@@ -70,7 +72,7 @@ function ApplicationsPage() {
   async function load() {
     setLoading(true);
     const { data } = await supabase.from("service_applications")
-      .select("id,application_no,service_name,category_name,full_name,father_name,gender,email,phone,address,aadhaar_number,pan_number,status,service_charge,commission_price,created_at,result_doc_path,result_note,form_data,assigned_operator")
+      .select("id,application_no,service_name,category_name,full_name,father_name,gender,email,phone,address,aadhaar_number,pan_number,status,service_charge,commission_price,created_at,result_doc_path,result_note,form_data,assigned_operator,reupload_requested,reupload_note,reupload_path,reupload_name")
       .order("created_at", { ascending: false });
     setRows((data as Row[]) ?? []);
     setLoading(false);
@@ -85,6 +87,24 @@ function ApplicationsPage() {
   }), [rows]);
   const filtered = useMemo(() => filter === "All" ? rows : rows.filter((r) => (statusLabel[r.status] ?? r.status) === filter), [rows, filter]);
 
+  const doReupload = async (r: Row, file: File) => {
+    if (file.size > 50 * 1024 * 1024) return toast.error("File too large", { description: "Maximum size is 50 MB." });
+    setReuploading(true);
+    try {
+      const { data: sess } = await supabase.auth.getSession();
+      const uid = sess?.session?.user?.id;
+      if (!uid) return toast.error("Your session has expired", { description: "Please sign in again." });
+      const ext = (file.name.split(".").pop() || "bin").toLowerCase();
+      const path = `${uid}/reupload-${crypto.randomUUID()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("application-files").upload(path, file, { upsert: false, contentType: file.type || undefined });
+      if (upErr) return toast.error("Upload failed", { description: upErr.message });
+      const { error } = await supabase.rpc("retailer_reupload_document", { _app: r.id, _path: path, _name: file.name });
+      if (error) return toast.error("Could not submit", { description: error.message });
+      toast.success("Document re-uploaded — operator notified");
+      setRows((rs) => rs.map((x) => x.id === r.id ? { ...x, reupload_path: path, reupload_name: file.name, reupload_requested: false } : x));
+      setSel((s2) => s2 && s2.id === r.id ? { ...s2, reupload_path: path, reupload_name: file.name, reupload_requested: false } : s2);
+    } finally { setReuploading(false); }
+  };
   const cols: Column<Row>[] = [
     { key: "application_no", header: "Application ID", cell: (r) => <span className="font-mono text-xs">{r.application_no}</span> },
     { key: "service_name", header: "Service", cell: (r) => <span className="font-medium">{r.service_name}</span> },
@@ -154,6 +174,20 @@ function ApplicationsPage() {
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {(sel.reupload_requested || sel.reupload_path) && (
+              <div className={`mt-3 rounded-lg border px-3 py-2.5 ${sel.reupload_requested ? "border-amber-300 bg-amber-50" : "border-border bg-muted/30"}`}>
+                <p className={`flex items-center gap-1.5 text-sm font-semibold ${sel.reupload_requested ? "text-amber-800" : "text-foreground"}`}><Upload className="h-4 w-4" /> {sel.reupload_requested ? "Operator requested a document re-upload" : "Re-uploaded document"}</p>
+                {sel.reupload_requested && sel.reupload_note && <p className="mt-1 text-xs text-amber-700">“{sel.reupload_note}”</p>}
+                {sel.reupload_path && !sel.reupload_requested && (
+                  <div className="mt-2 flex items-center justify-between"><span className="truncate text-sm">{sel.reupload_name || "Document"}</span><button onClick={() => openSubmitted(sel.reupload_path!)} className="inline-flex items-center gap-1 text-xs font-bold text-india-green hover:underline"><Download className="h-3.5 w-3.5" /> View</button></div>
+                )}
+                <label className="mt-2 inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-india-green px-3 h-9 text-sm font-semibold text-white hover:bg-india-green/90">
+                  {reuploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} {sel.reupload_path ? "Re-upload again" : "Re-upload document"}
+                  <input type="file" className="hidden" onChange={(e) => e.target.files?.[0] && doReupload(sel, e.target.files[0])} />
+                </label>
               </div>
             )}
 
