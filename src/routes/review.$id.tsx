@@ -74,7 +74,14 @@ function ReviewPage() {
   const [urls, setUrls] = useState<Record<string, string>>({});
   const [docReviews, setDocReviews] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<(typeof TABS)[number]>("Personal");
+  const [tab, setTab] = useState<(typeof TABS)[number]>("KYC Docs");
+  const [selDoc, setSelDoc] = useState<string | null>(null);
+  const [qcAction, setQcAction] = useState("");
+  const [remarks, setRemarks] = useState("");
+  const [reqOpen, setReqOpen] = useState(false);
+  const [reqMsg, setReqMsg] = useState("Not approved");
+  const REQ_DOCS = ["PAN", "KYC Front", "KYC Back", "Shop Front Image", "Education Certificate", "Cancelled Cheque / Passbook", "Police Verification Certificate (Optional)"];
+  const [reqSel, setReqSel] = useState<Record<string, boolean>>({ PAN: true, "KYC Front": true, "KYC Back": true });
   const [busy, setBusy] = useState(false);
   const [lightbox, setLightbox] = useState<{ url: string; kind: string; label: string } | null>(null);
   const [creds, setCreds] = useState<{ username: string; email: string; password: string } | null>(null);
@@ -108,6 +115,26 @@ function ReviewPage() {
     if (error) { toast.error("Failed", { description: error.message }); return; }
     setDocReviews((data as Record<string, any>) || {});
     toast.success(`Document ${status}`);
+  };
+
+  const submitQc = async () => {
+    if (!qcAction) { toast.error("Select a QC action"); return; }
+    if (qcAction === "approve_payment") { await act(() => supabase.rpc("verify_retailer_payment", { reg_id: id, received: true, notes: remarks || null }), "Approved — forwarded to QC"); return; }
+    if (qcAction === "reject_payment") { await act(() => supabase.rpc("verify_retailer_payment", { reg_id: id, received: false, notes: remarks || "Payment not received" }), "Sent to Telecaller"); return; }
+    if (qcAction === "approve_kyc") {
+      const data = await act(() => supabase.rpc("verify_retailer_qc", { reg_id: id, verified: true, notes: remarks || null }), "Approved — retailer login created", false);
+      if (data) setCreds(data as { username: string; email: string; password: string });
+      return;
+    }
+    if (qcAction === "reject_kyc") { await act(() => supabase.rpc("verify_retailer_qc", { reg_id: id, verified: false, notes: remarks || "Rejected by QC" }), "Sent to Telecaller"); return; }
+    if (qcAction === "request_docs") { setReqOpen(true); return; }
+  };
+  const submitRequestDocs = async () => {
+    const docs = REQ_DOCS.filter((d) => reqSel[d]);
+    if (docs.length === 0) { toast.error("Select at least one required document"); return; }
+    const note = `${reqMsg}. Required documents: ${docs.join(", ")}`;
+    await act(() => supabase.rpc("verify_retailer_qc", { reg_id: id, verified: false, notes: note }), "Documents requested — sent to Telecaller");
+    setReqOpen(false);
   };
 
   const act = async (fn: () => Promise<{ error: any; data?: unknown }>, msg: string, goBack = true) => {
@@ -236,51 +263,82 @@ function ReviewPage() {
           </Card>
         )}
 
-        {tab === "KYC Docs" && (
-          <div className="space-y-4">
-            {gps && (
-              <div className="flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3 text-sm shadow-soft">
-                <span className="inline-flex items-center gap-2 text-foreground"><MapPin className="h-4 w-4 text-india-green" /> GPS: <span className="font-mono">{gps}</span></span>
-                {mapUrl && <a href={mapUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-india-green hover:underline">View Map <ExternalLink className="h-3.5 w-3.5" /></a>}
+        {tab === "KYC Docs" && (() => {
+          const docs = DOCS.filter((d) => d.path);
+          const activeKey = selDoc && docs.some((d) => d.key === selDoc) ? selDoc : (docs[0]?.key ?? null);
+          const active = docs.find((d) => d.key === activeKey);
+          const aKind = fileKind(active?.path);
+          const aUrl = activeKey ? urls[activeKey] : undefined;
+          const stageAcct = reg.status === "accountant_review" && canAccountant;
+          const stageQc = reg.status === "qc_review" && canQc;
+          return (
+          <div className="grid gap-4 lg:grid-cols-[280px_1fr_320px] items-start">
+            {/* Documents list */}
+            <div className="rounded-2xl border border-border bg-card shadow-soft">
+              <p className="flex items-center gap-2 border-b border-border px-4 py-3 text-sm font-bold"><FileText className="h-4 w-4 text-india-green" /> Documents</p>
+              <div className="max-h-[60vh] overflow-y-auto p-2">
+                {docs.length === 0 ? <p className="p-4 text-sm text-muted-foreground">No documents submitted.</p>
+                  : docs.map((d) => { const st = docReviews[d.key]?.status ?? "pending"; return (
+                    <button key={d.key} onClick={() => setSelDoc(d.key)} className={`mb-1 flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition ${activeKey === d.key ? "border-india-green bg-india-green/5" : "border-transparent hover:bg-muted/50"}`}>
+                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-muted text-india-green"><FileText className="h-4 w-4" /></span>
+                      <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold">{d.label}</span><span className="text-[10px] text-muted-foreground">View document</span></span>
+                      <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase ${docPill(st)}`}>{st}</span>
+                    </button>
+                  ); })}
               </div>
-            )}
+            </div>
+
+            {/* Viewer */}
+            <div className="rounded-2xl border border-border bg-card shadow-soft">
+              <div className="flex items-center justify-between border-b border-border px-4 py-3"><p className="flex items-center gap-2 text-sm font-bold"><Maximize2 className="h-4 w-4 text-india-green" /> Viewer</p>{active && <span className="text-xs text-muted-foreground">{active.label}</span>}</div>
+              <div className="grid min-h-[420px] place-items-center bg-muted/30 p-3">
+                {!active ? <p className="text-sm text-muted-foreground">Select a document</p>
+                  : !aUrl ? <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  : aKind === "image" ? <img src={aUrl} alt={active.label} className="max-h-[60vh] max-w-full cursor-zoom-in object-contain" onClick={() => setLightbox({ url: aUrl, kind: aKind, label: active.label })} />
+                  : aKind === "video" ? <video src={aUrl} controls className="max-h-[60vh] max-w-full rounded-lg bg-black" />
+                  : <iframe src={aUrl} title={active.label} className="h-[60vh] w-full rounded-lg bg-white" />}
+              </div>
+              {active && canDocReview && (
+                <div className="flex items-center justify-between gap-2 border-t border-border px-4 py-3">
+                  <span className="text-xs text-muted-foreground">Mark this document</span>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" className="text-emerald-700" onClick={() => setDoc(active.key, "approved")}><CheckCircle2 className="h-3.5 w-3.5" /> Approve</Button>
+                    <Button size="sm" variant="outline" className="text-rose-600" onClick={() => setDoc(active.key, "rejected")}><XCircle className="h-3.5 w-3.5" /> Reject</Button>
+                    {aUrl && <a href={aUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs font-semibold hover:bg-muted"><ExternalLink className="h-3.5 w-3.5" /> Open</a>}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* QC Remarks / Action */}
             <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
-              <p className="mb-4 flex items-center gap-2 text-sm font-bold"><FileText className="h-4 w-4 text-india-green" /> Submitted Documents</p>
-              <div className="grid gap-4 sm:grid-cols-2">
-                {DOCS.filter((d) => d.path).map((d) => {
-                  const url = urls[d.key]; const kind = fileKind(d.path); const st = docReviews[d.key]?.status ?? "pending";
-                  return (
-                    <div key={d.key} className="overflow-hidden rounded-xl border border-border">
-                      <button type="button" onClick={() => url && setLightbox({ url, kind, label: d.label })} className="relative block h-48 w-full bg-muted/40">
-                        {url && kind === "image" ? <img src={url} alt={d.label} className="h-full w-full object-cover" />
-                          : url && kind === "video" ? <video src={url} className="h-full w-full object-cover" muted />
-                          : <div className="grid h-full w-full place-items-center"><FileText className="h-10 w-10 text-muted-foreground" /></div>}
-                        <span className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-lg bg-black/55 text-white"><Maximize2 className="h-4 w-4" /></span>
-                      </button>
-                      <div className="space-y-2 p-3">
-                        <div className="flex items-center justify-between">
-                          <span className="font-semibold text-foreground">{d.label}</span>
-                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${docPill(st)}`}>{st}</span>
-                        </div>
-                        {canDocReview && (
-                          <div className="grid grid-cols-2 gap-2">
-                            <Button size="sm" variant="outline" className="h-8 text-emerald-700" onClick={() => setDoc(d.key, "approved")}>
-                              <CheckCircle2 className="h-3.5 w-3.5" /> Approve
-                            </Button>
-                            <Button size="sm" variant="outline" className="h-8 text-rose-600" onClick={() => setDoc(d.key, "rejected")}>
-                              <XCircle className="h-3.5 w-3.5" /> Reject
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-                {DOCS.filter((d) => d.path).length === 0 && <p className="text-sm text-muted-foreground">No documents submitted.</p>}
+              <p className="mb-3 flex items-center gap-2 text-sm font-bold"><ShieldCheck className="h-4 w-4 text-india-green" /> KYC QC Remarks</p>
+              {!(stageAcct || stageQc) ? (
+                <div className="rounded-lg bg-muted/40 p-3 text-sm text-muted-foreground">
+                  {reg.status === "approved" ? "This application is approved." : reg.status === "rejected" ? "This application was rejected." : reg.status === "telecaller" ? "With Telecaller for follow-up." : "No action available at your role for this stage."}
+                </div>
+              ) : (
+                <>
+                  <label className="text-[11px] font-semibold text-muted-foreground">Select QC Action</label>
+                  <select className="mb-3 h-10 w-full rounded-lg border border-border bg-background px-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-india-green/30" value={qcAction} onChange={(e) => setQcAction(e.target.value)}>
+                    <option value="">Choose action…</option>
+                    {stageAcct && <><option value="approve_payment">✓ Approve Payment → QC</option><option value="reject_payment">✗ Reject (payment not received)</option></>}
+                    {stageQc && <><option value="approve_kyc">✓ Approve KYC (create login)</option><option value="reject_kyc">✗ Reject</option><option value="request_docs">⟳ Request Documents</option></>}
+                  </select>
+                  <label className="text-[11px] font-semibold text-muted-foreground">Remarks</label>
+                  <textarea rows={4} className="w-full rounded-lg border border-border bg-background p-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-india-green/30" placeholder="add remarks" value={remarks} onChange={(e) => setRemarks(e.target.value)} />
+                  <Button onClick={submitQc} disabled={busy || !qcAction} className="mt-3 w-full bg-india-green text-white hover:bg-india-green/90">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} Submit</Button>
+                </>
+              )}
+              <div className="mt-4 space-y-1.5 border-t border-border pt-3 text-xs">
+                <p className="flex items-center justify-between"><span className="text-muted-foreground">Payment</span><span className={reg.payment_verified ? "font-bold text-emerald-600" : "text-amber-600"}>{reg.payment_verified ? "Verified" : "Pending"}</span></p>
+                <p className="flex items-center justify-between"><span className="text-muted-foreground">QC</span><span className={reg.qc_verified ? "font-bold text-emerald-600" : "text-amber-600"}>{reg.qc_verified ? "Verified" : "Pending"}</span></p>
+                <p className="flex items-center justify-between"><span className="text-muted-foreground">Stage</span><span className="font-semibold capitalize">{reg.status.replace("_", " ")}</span></p>
               </div>
             </div>
           </div>
-        )}
+          );
+        })()}
 
         {tab === "Payment" && (
           <Card icon={<Banknote className="h-4 w-4" />} title="Payment">
@@ -306,43 +364,6 @@ function ReviewPage() {
         )}
       </main>
 
-      {/* Action bar */}
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-card/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-end gap-2 px-4 py-3">
-          {reg.status === "accountant_review" && canAccountant && (
-            <>
-              <Button variant="outline" className="text-rose-600" disabled={busy} onClick={() => {
-                const reason = window.prompt("Reason for rejection (sent to Telecaller):"); if (reason === null) return;
-                act(() => supabase.rpc("verify_retailer_payment", { reg_id: id, received: false, notes: reason || "Payment not received" }), "Sent to Telecaller");
-              }}><XCircle className="h-4 w-4" /> Reject</Button>
-              <Button className="bg-india-green text-white" disabled={busy} onClick={() => act(() => supabase.rpc("verify_retailer_payment", { reg_id: id, received: true, notes: null }), "Approved — forwarded to QC")}>
-                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} Approve Payment → QC
-              </Button>
-            </>
-          )}
-          {reg.status === "qc_review" && canQc && (
-            <>
-              <Button variant="outline" className="text-rose-600" disabled={busy} onClick={() => {
-                const reason = window.prompt("Reason for QC rejection (sent to Telecaller):"); if (reason === null) return;
-                act(() => supabase.rpc("verify_retailer_qc", { reg_id: id, verified: false, notes: reason || "Rejected by QC" }), "Sent to Telecaller");
-              }}><XCircle className="h-4 w-4" /> Reject</Button>
-              <Button className="bg-saffron-gradient text-white" disabled={busy} onClick={async () => {
-                const data = await act(() => supabase.rpc("verify_retailer_qc", { reg_id: id, verified: true, notes: null }), "Approved — retailer login created", false);
-                if (data) setCreds(data as { username: string; email: string; password: string });
-              }}>{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />} Approve KYC</Button>
-            </>
-          )}
-          {reg.status === "telecaller" && canTele && (
-            <Button className="bg-indigo-600 text-white" disabled={busy} onClick={() => act(() => supabase.rpc("route_to_accountant", { reg_id: id, notes: null }), "Re-sent to Accountant")}>
-              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} Re-send to Accountant
-            </Button>
-          )}
-          {(reg.status === "approved" || reg.status === "rejected") && (
-            <span className={`rounded-full px-3 py-1.5 text-sm font-bold ${statusPill(reg.status)}`}>{reg.status === "approved" ? "Approved" : "Rejected"}</span>
-          )}
-        </div>
-      </div>
-
       {/* Lightbox */}
       {lightbox && (
         <div className="fixed inset-0 z-[80] flex flex-col bg-black/90 backdrop-blur-sm" onClick={() => setLightbox(null)}>
@@ -360,6 +381,21 @@ function ReviewPage() {
           </div>
         </div>
       )}
+
+      {/* Required documents modal */}
+      <Dialog open={reqOpen} onOpenChange={setReqOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Required Document Details</DialogTitle><DialogDescription>Select the documents the retailer must re-submit. This sends the application to the Telecaller with your message.</DialogDescription></DialogHeader>
+          <div className="space-y-3 text-sm">
+            <div><label className="text-[11px] font-semibold text-muted-foreground">Message *</label><textarea rows={2} className="w-full rounded-lg border border-border bg-background p-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-india-green/30" value={reqMsg} onChange={(e) => setReqMsg(e.target.value)} /></div>
+            <div className="grid grid-cols-2 gap-2">
+              {REQ_DOCS.map((d) => (<label key={d} className="flex items-center gap-2"><input type="checkbox" checked={!!reqSel[d]} onChange={(e) => setReqSel({ ...reqSel, [d]: e.target.checked })} className="h-4 w-4 accent-[oklch(0.55_0.12_150)]" /> {d}</label>))}
+            </div>
+            <div><label className="text-[11px] font-semibold text-muted-foreground">Required Docs *</label><div className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs">{REQ_DOCS.filter((d) => reqSel[d]).join(", ") || "—"}</div></div>
+          </div>
+          <DialogFooter><Button variant="outline" onClick={() => setReqOpen(false)}>Cancel</Button><Button className="bg-india-green text-white" disabled={busy} onClick={submitRequestDocs}>{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Submit</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Credentials dialog */}
       <Dialog open={!!creds} onOpenChange={(o) => { if (!o) { setCreds(null); navigate({ to: backTo }); } }}>
