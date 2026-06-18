@@ -23,6 +23,8 @@ export function JskoManager() {
   const [form, setForm] = useState<any>({});
   const [savingEdit, setSavingEdit] = useState(false);
   const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);
+  const [docBucket, setDocBucket] = useState<Record<string, string>>({});
+  const [regStatus, setRegStatus] = useState<string | null>(null);
   const DOC_DEFS: [string, string][] = [["selfie_path","Selfie"],["shop_photo_path","Shop Photo"],["aadhaar_doc_path","Aadhaar"],["pan_doc_path","PAN Card"],["police_verification_path","Police Verification"],["video_kyc_path","Video KYC"]];
   const uploadDoc = async (key: string, file: File) => {
     if (!view) return;
@@ -37,7 +39,7 @@ export function JskoManager() {
       toast.success("Uploaded");
     } finally { setUploadingDoc(null); }
   };
-  const viewDoc = async (path: string) => { const { data } = await supabase.storage.from("jsko-docs").createSignedUrl(path, 3600); if (data) window.open(data.signedUrl, "_blank"); };
+  const viewDoc = async (path: string, bucket = "jsko-docs") => { const { data } = await supabase.storage.from(bucket).createSignedUrl(path, 3600); if (data) window.open(data.signedUrl, "_blank"); };
 
   async function load() {
     setLoading(true);
@@ -56,7 +58,38 @@ export function JskoManager() {
   };
 
   const FIELDS = ["first_name","middle_name","surname","dob","shop_name","address_type","building_shop_no","street_area","ward_number","landmark","village_name","taluk","city","district","state","pincode","bank_holder_name","bank_name","account_number","ifsc","account_type","payment_amount","payment_utr","payment_method"];
-  const openView = (r: any) => { const f: any = { username: r.username, full_name: r.full_name, email: r.email ?? "", mobile: r.mobile ?? "", legacy_password: r.legacy_password ?? "", is_active: r.is_active }; FIELDS.forEach((k) => { f[k] = r[k] ?? ""; }); setView(r); setForm(f); };
+  const openView = async (r: any) => {
+    const f: any = { username: r.username, full_name: r.full_name, email: r.email ?? "", mobile: r.mobile ?? "", legacy_password: r.legacy_password ?? "", is_active: r.is_active };
+    FIELDS.forEach((k) => { f[k] = r[k] ?? ""; });
+    DOC_DEFS.forEach(([k]) => { f[k] = (r as any)[k] ?? ""; });
+    setView(r); setForm(f); setDocBucket({}); setRegStatus(null);
+    // Pull the retailer's completed registration (saved separately) and fill any blanks
+    try {
+      const ors: string[] = [`username.eq.${r.username}`];
+      if (r.email) ors.push(`email.eq.${r.email}`);
+      if (r.mobile) ors.push(`mobile.eq.${r.mobile}`);
+      const { data: regs } = await supabase
+        .from("retailer_registrations")
+        .select("*")
+        .or(ors.join(","))
+        .order("created_at", { ascending: false })
+        .limit(1);
+      const reg = (regs as any[] | null)?.[0] ?? null;
+      if (reg) {
+        setRegStatus((reg as any).status ?? null);
+        setForm((prev: any) => {
+          const merged = { ...prev };
+          [...FIELDS].forEach((k) => { const rv = (reg as any)[k]; if (rv != null && rv !== "" && (merged[k] == null || merged[k] === "")) merged[k] = rv; });
+          if (!merged.email && (reg as any).email) merged.email = (reg as any).email;
+          if (!merged.mobile && (reg as any).mobile) merged.mobile = (reg as any).mobile;
+          const bmap: Record<string, string> = {};
+          DOC_DEFS.forEach(([k]) => { const rv = (reg as any)[k]; if (rv && (merged[k] == null || merged[k] === "")) { merged[k] = rv; bmap[k] = "retailer-kyc"; } });
+          if (Object.keys(bmap).length) setDocBucket(bmap);
+          return merged;
+        });
+      }
+    } catch { /* ignore */ }
+  };
   const saveEdit = async () => {
     if (!form.username.trim() || !form.full_name.trim()) return toast.error("Username and full name required");
     setSavingEdit(true);
@@ -95,7 +128,8 @@ export function JskoManager() {
             <span className={`ml-auto rounded-full px-2.5 py-0.5 text-xs font-bold ${form.is_active ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>{form.is_active ? "Active" : "Inactive"}</span>
           </div>
           <div className="space-y-3 p-5">
-            <p className="text-xs font-semibold text-muted-foreground">All details — edited by admin/QC, or auto-filled during Old JSKO onboarding.</p>
+            <p className="text-xs font-semibold text-muted-foreground">All details — edited by admin/QC, or auto-filled from the retailer's completed registration.</p>
+            {regStatus && <div className="rounded-lg border border-india-green/30 bg-india-green/5 px-3 py-2 text-xs font-semibold text-india-green">Linked registration found · status: {regStatus.replace(/_/g, " ")}</div>}
 
             {/* Account */}
             <div className="rounded-xl border border-border bg-card/50 p-3.5">
@@ -165,7 +199,7 @@ export function JskoManager() {
                     <p className="mb-2 text-xs font-semibold">{label}</p>
                     <div className="flex flex-wrap items-center gap-2">
                       <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 h-8 text-[11px] font-semibold hover:bg-muted">{uploadingDoc === key ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />} {form[key] ? "Replace" : "Upload"}<input type="file" accept="image/*,application/pdf,video/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadDoc(key, e.target.files[0])} /></label>
-                      {form[key] && <button onClick={() => viewDoc(form[key])} className="inline-flex items-center gap-1 text-[11px] font-semibold text-india-green hover:underline"><Download className="h-3.5 w-3.5" /> View</button>}
+                      {form[key] && <button onClick={() => viewDoc(form[key], docBucket[key] || "jsko-docs")} className="inline-flex items-center gap-1 text-[11px] font-semibold text-india-green hover:underline"><Download className="h-3.5 w-3.5" /> View</button>}
                       {form[key] ? <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700">UPLOADED</span> : <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold text-amber-700">PENDING</span>}
                     </div>
                   </div>
