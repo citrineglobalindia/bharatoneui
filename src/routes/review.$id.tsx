@@ -223,7 +223,7 @@ function ReviewPage() {
           <div className="absolute right-4 flex items-center gap-2">
             {role === "admin" && !editMode && <Button size="sm" variant="outline" onClick={() => setEditMode(true)}><Pencil className="h-4 w-4" /> Edit</Button>}
             {role === "admin" && editMode && <><Button size="sm" disabled={savingAll} className="bg-india-green text-white hover:bg-india-green/90" onClick={saveAll}>{savingAll ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} Save all</Button><Button size="sm" variant="outline" onClick={() => { setEditMode(false); setForm(reg); }}><X className="h-4 w-4" /> Cancel</Button></>}
-            {role === "admin" && !editMode && reg.status !== "qc_review" && <Button size="sm" variant="outline" disabled={busy} onClick={() => act(() => supabase.rpc("resend_to_qc", { reg_id: id, notes: null }), "Sent for re-QC verification", false)}><RefreshCw className="h-4 w-4" /> Re-QC</Button>}
+            {(role === "admin" || canQc) && !editMode && ["approved","rejected","telecaller"].includes(reg.status) && <Button size="sm" variant="outline" disabled={busy} onClick={() => act(() => supabase.rpc("resend_to_qc", { reg_id: id, notes: null }), "Sent for re-QC verification", false)}><RefreshCw className="h-4 w-4" /> Re-QC</Button>}
             {role === "admin" && !editMode && <Button size="sm" variant="outline" onClick={openAssign}><UserPlus className="h-4 w-4" /> Assign</Button>}
             <NotificationsBell />
           </div>
