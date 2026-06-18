@@ -58,7 +58,7 @@ export function JskoManager() {
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div><h2 className="flex items-center gap-2 text-lg font-extrabold"><IdCard className="h-5 w-5 text-admin" /> Old JSKO IDs</h2>
+        <div><h2 className="flex items-center gap-2 text-lg font-extrabold"><IdCard className="h-5 w-5 text-admin" /> Old JSKO IDs <span className="rounded-full bg-india-green/10 px-2 py-0.5 text-xs font-bold text-india-green">{rows.length}</span></h2>
           <p className="text-sm text-muted-foreground">Upload legacy JSKO usernames. Retailers fetch their details from here during Old JSKO onboarding.</p></div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => setShowBulk((v) => !v)}><Upload className="h-4 w-4" /> Bulk import</Button>
