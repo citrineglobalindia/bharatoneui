@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { Network, Users, FileText, IndianRupee, Wallet, Loader2, RefreshCw, Search, ChevronRight, ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 
-type Dist = { id: string; name: string; email: string; is_active: boolean; retailers: number; applications: number; commission: number; wallet: number };
+type Dist = { id: string; name: string; email: string; district: string | null; is_active: boolean; retailers: number; applications: number; commission: number; wallet: number };
 const inr = (n: number) => "₹" + Number(n || 0).toLocaleString("en-IN");
 const statusTone: Record<string, string> = { submitted: "bg-saffron/10 text-saffron", in_progress: "bg-amber-500/10 text-amber-600", approved: "bg-india-green/10 text-india-green", completed: "bg-india-green/10 text-india-green", rejected: "bg-rose-500/10 text-rose-600" };
 
@@ -20,6 +21,7 @@ export function DistributorAdmin() {
     finally { setLoading(false); }
   }
   useEffect(() => { load(); }, []);
+  const autoMap = async () => { const { data, error } = await supabase.rpc("auto_map_retailers_by_district"); if (error) return toast.error("Failed", { description: error.message }); toast.success(`Mapped ${(data as any)?.mapped ?? 0} retailer(s) by district`); load(); };
   const filtered = useMemo(() => rows.filter((r) => !q || [r.name, r.email].filter(Boolean).some((v) => String(v).toLowerCase().includes(q.toLowerCase()))), [rows, q]);
   const totals = useMemo(() => ({ count: rows.length, retailers: rows.reduce((a, r) => a + Number(r.retailers || 0), 0), apps: rows.reduce((a, r) => a + Number(r.applications || 0), 0), comm: rows.reduce((a, r) => a + Number(r.commission || 0), 0) }), [rows]);
 
@@ -29,7 +31,7 @@ export function DistributorAdmin() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div><h2 className="flex items-center gap-2 text-lg font-extrabold"><Network className="h-5 w-5 text-admin" /> Distributors</h2><p className="text-sm text-muted-foreground">All distributors, their mapped retailers, applications and commissions.</p></div>
-        <Button variant="outline" size="sm" onClick={load}><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh</Button>
+        <div className="flex gap-2"><Button variant="outline" size="sm" onClick={autoMap}><Network className="h-4 w-4" /> Auto-map by district</Button><Button variant="outline" size="sm" onClick={load}><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh</Button></div>
       </div>
       <div className="grid gap-3 sm:grid-cols-4">
         {[["Distributors", String(totals.count), Network, "bg-blue-500/10 text-blue-600"], ["Mapped Retailers", String(totals.retailers), Users, "bg-india-green/10 text-india-green"], ["Applications", String(totals.apps), FileText, "bg-saffron/10 text-saffron"], ["Commission Paid", inr(totals.comm), IndianRupee, "bg-violet-500/10 text-violet-600"]].map(([l, v, Icon, t]: any, i) => (
@@ -39,12 +41,13 @@ export function DistributorAdmin() {
       <div className="relative w-64"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><input className="h-9 w-full rounded-lg border border-border bg-background pl-8 pr-2 text-sm outline-none" placeholder="Search distributor" value={q} onChange={(e) => setQ(e.target.value)} /></div>
       <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-soft">
         <table className="w-full text-sm">
-          <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground"><tr><th className="px-3 py-2">Distributor</th><th className="px-3 py-2">Retailers</th><th className="px-3 py-2">Applications</th><th className="px-3 py-2">Commission</th><th className="px-3 py-2">Wallet</th><th className="px-3 py-2">Status</th><th className="px-3 py-2 text-right"></th></tr></thead>
+          <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground"><tr><th className="px-3 py-2">Distributor</th><th className="px-3 py-2">District</th><th className="px-3 py-2">Retailers</th><th className="px-3 py-2">Applications</th><th className="px-3 py-2">Commission</th><th className="px-3 py-2">Wallet</th><th className="px-3 py-2">Status</th><th className="px-3 py-2 text-right"></th></tr></thead>
           <tbody>
-            {loading ? <tr><td colSpan={7} className="px-3 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr>
-              : filtered.length === 0 ? <tr><td colSpan={7} className="px-3 py-10 text-center text-muted-foreground">No distributors. Create one in User Management (role: Distributor).</td></tr>
+            {loading ? <tr><td colSpan={8} className="px-3 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr>
+              : filtered.length === 0 ? <tr><td colSpan={8} className="px-3 py-10 text-center text-muted-foreground">No distributors. Create one in User Management (role: Distributor).</td></tr>
               : filtered.map((d) => (<tr key={d.id} className="border-t border-border hover:bg-muted/30">
                 <td className="px-3 py-2"><div className="font-semibold">{d.name}</div><div className="text-[11px] text-muted-foreground">{d.email}</div></td>
+                <td className="px-3 py-2">{d.district ? <span className="rounded-full bg-india-green/10 px-2 py-0.5 text-[11px] font-bold text-india-green">{d.district}</span> : <span className="text-xs text-muted-foreground">—</span>}</td>
                 <td className="px-3 py-2">{d.retailers}</td><td className="px-3 py-2">{d.applications}</td>
                 <td className="px-3 py-2 text-india-green">{inr(d.commission)}</td><td className="px-3 py-2">{inr(d.wallet)}</td>
                 <td className="px-3 py-2"><span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${d.is_active ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>{d.is_active ? "Active" : "Inactive"}</span></td>
@@ -68,7 +71,7 @@ function DistributorDetail({ dist, onBack }: { dist: Dist; onBack: () => void })
     <div className="space-y-4">
       <button onClick={onBack} className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" /> All distributors</button>
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card p-5 shadow-soft">
-        <div><p className="flex items-center gap-2 font-display text-lg font-extrabold"><Network className="h-5 w-5 text-admin" /> {dist.name}</p><p className="text-sm text-muted-foreground">{dist.email} · {dist.retailers} retailers · {dist.applications} applications · {inr(dist.commission)} commission</p></div>
+        <div><p className="flex items-center gap-2 font-display text-lg font-extrabold"><Network className="h-5 w-5 text-admin" /> {dist.name}</p><p className="text-sm text-muted-foreground">{dist.email}{dist.district ? ` · ${dist.district}` : ""} · {dist.retailers} retailers · {dist.applications} applications · {inr(dist.commission)} commission</p></div>
       </div>
       <div className="inline-flex rounded-xl border border-border bg-card p-1">
         <button onClick={() => setTab("retailers")} className={`rounded-lg px-4 h-9 text-sm font-semibold ${tab === "retailers" ? "bg-admin text-admin-foreground" : "text-muted-foreground"}`}>Retailers ({retailers.length})</button>
@@ -84,7 +87,7 @@ function DistributorDetail({ dist, onBack }: { dist: Dist; onBack: () => void })
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-soft"><table className="w-full text-sm">
           <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground"><tr><th className="px-3 py-2">Application</th><th className="px-3 py-2">Retailer</th><th className="px-3 py-2">Service</th><th className="px-3 py-2">Charge</th><th className="px-3 py-2">Dist. Commission</th><th className="px-3 py-2">Status</th><th className="px-3 py-2">Date</th></tr></thead>
-          <tbody>{apps.length === 0 ? <tr><td colSpan={7} className="px-3 py-8 text-center text-muted-foreground">No applications yet.</td></tr>
+          <tbody>{apps.length === 0 ? <tr><td colSpan={8} className="px-3 py-8 text-center text-muted-foreground">No applications yet.</td></tr>
             : apps.map((a, i) => (<tr key={i} className="border-t border-border"><td className="px-3 py-2 font-mono text-xs">{a.application_no}</td><td className="px-3 py-2">{a.retailer_name}</td><td className="px-3 py-2"><div className="font-medium">{a.service_name}</div><div className="text-[11px] text-muted-foreground">{a.category_name}</div></td><td className="px-3 py-2">{inr(a.service_charge)}</td><td className="px-3 py-2 text-india-green">{inr(a.distributor_commission_amount)}</td><td className="px-3 py-2"><span className={`rounded-full px-2 py-0.5 text-[11px] font-bold capitalize ${statusTone[a.status] ?? "bg-muted"}`}>{a.status.replace("_", " ")}</span></td><td className="px-3 py-2 text-xs text-muted-foreground">{new Date(a.created_at).toLocaleDateString("en-IN")}</td></tr>))}</tbody>
         </table></div>
       )}
