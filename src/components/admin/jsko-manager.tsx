@@ -8,7 +8,7 @@ import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 type Row = { id: string; username: string; full_name: string; email: string | null; mobile: string | null; legacy_password: string | null; is_active: boolean; created_at: string };
 const inp = "h-9 w-full rounded-lg border border-border bg-background px-2.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-india-green/30";
 function F({ label, k, form, setForm }: { label: string; k: string; form: any; setForm: (f: any) => void }) {
-  return <div><label className="text-[11px] font-semibold text-muted-foreground">{label}</label><input className={inp + " h-10"} value={form[k] ?? ""} onChange={(e) => setForm({ ...form, [k]: e.target.value })} /></div>;
+  return <div><label className="text-[11px] font-semibold text-muted-foreground">{label}</label><input className={inp + " h-9"} value={form[k] ?? ""} onChange={(e) => setForm({ ...form, [k]: e.target.value })} /></div>;
 }
 
 export function JskoManager() {
@@ -86,21 +86,21 @@ export function JskoManager() {
 
   if (view) {
     return (
-      <div className="space-y-5">
+      <div className="space-y-3">
         <button onClick={() => setView(null)} className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground"><X className="h-4 w-4 rotate-45" /> Back to list</button>
         <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-soft">
-          <div className="flex items-center gap-3 border-l-4 border-india-green bg-muted/20 p-5">
+          <div className="flex items-center gap-3 border-l-4 border-india-green bg-gradient-to-r from-india-green/5 to-transparent p-4">
             <span className="grid h-12 w-12 place-items-center rounded-xl bg-india-green/10 text-india-green"><IdCard className="h-6 w-6" /></span>
             <div><p className="font-display text-lg font-extrabold">JSKO ID Details</p><p className="text-xs text-muted-foreground">Username {view.username} · Added {new Date(view.created_at).toLocaleString("en-IN")}</p></div>
             <span className={`ml-auto rounded-full px-2.5 py-0.5 text-xs font-bold ${form.is_active ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>{form.is_active ? "Active" : "Inactive"}</span>
           </div>
-          <div className="space-y-4 p-6">
-            <p className="text-sm font-bold text-muted-foreground">All details — edited by admin/QC, or auto-filled during Old JSKO onboarding.</p>
+          <div className="space-y-3 p-5">
+            <p className="text-xs font-semibold text-muted-foreground">All details — edited by admin/QC, or auto-filled during Old JSKO onboarding.</p>
 
             {/* Account */}
-            <div className="rounded-xl border border-border p-4">
-              <p className="mb-3 flex items-center gap-2 text-sm font-bold"><IdCard className="h-4 w-4 text-india-green" /> Account</p>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="rounded-xl border border-border bg-card/50 p-3.5">
+              <p className="mb-2.5 flex items-center gap-2 text-[13px] font-bold"><IdCard className="h-4 w-4 text-india-green" /> Account</p>
+              <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
                 <F label="Username *" k="username" form={form} setForm={setForm} />
                 <F label="Full name *" k="full_name" form={form} setForm={setForm} />
                 <F label="Email" k="email" form={form} setForm={setForm} />
@@ -110,19 +110,19 @@ export function JskoManager() {
               <label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} className="h-4 w-4 accent-[oklch(0.55_0.12_150)]" /> Active (fetchable during registration)</label>
             </div>
 
-            <div className="grid gap-4 lg:grid-cols-2">
-              <div className="rounded-xl border border-border p-4">
-                <p className="mb-3 flex items-center gap-2 text-sm font-bold"><IdCard className="h-4 w-4 text-india-green" /> Personal Information</p>
-                <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3 lg:grid-cols-2">
+              <div className="rounded-xl border border-border bg-card/50 p-3.5">
+                <p className="mb-2.5 flex items-center gap-2 text-[13px] font-bold"><IdCard className="h-4 w-4 text-india-green" /> Personal Information</p>
+                <div className="grid gap-2.5 sm:grid-cols-2">
                   <F label="First Name" k="first_name" form={form} setForm={setForm} />
                   <F label="Middle Name" k="middle_name" form={form} setForm={setForm} />
                   <F label="Surname" k="surname" form={form} setForm={setForm} />
                   <F label="Date of Birth" k="dob" form={form} setForm={setForm} />
                 </div>
               </div>
-              <div className="rounded-xl border border-border p-4">
-                <p className="mb-3 flex items-center gap-2 text-sm font-bold"><IdCard className="h-4 w-4 text-india-green" /> Business Information</p>
-                <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-xl border border-border bg-card/50 p-3.5">
+                <p className="mb-2.5 flex items-center gap-2 text-[13px] font-bold"><IdCard className="h-4 w-4 text-india-green" /> Business Information</p>
+                <div className="grid gap-2.5 sm:grid-cols-2">
                   <F label="Shop Name" k="shop_name" form={form} setForm={setForm} />
                   <F label="Address Type" k="address_type" form={form} setForm={setForm} />
                   <F label="Building / Shop No" k="building_shop_no" form={form} setForm={setForm} />
@@ -137,9 +137,9 @@ export function JskoManager() {
                   <F label="Pincode" k="pincode" form={form} setForm={setForm} />
                 </div>
               </div>
-              <div className="rounded-xl border border-border p-4">
-                <p className="mb-3 flex items-center gap-2 text-sm font-bold"><IdCard className="h-4 w-4 text-india-green" /> Bank Details</p>
-                <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-xl border border-border bg-card/50 p-3.5">
+                <p className="mb-2.5 flex items-center gap-2 text-[13px] font-bold"><IdCard className="h-4 w-4 text-india-green" /> Bank Details</p>
+                <div className="grid gap-2.5 sm:grid-cols-2">
                   <F label="Account Holder" k="bank_holder_name" form={form} setForm={setForm} />
                   <F label="Bank" k="bank_name" form={form} setForm={setForm} />
                   <F label="Account Number" k="account_number" form={form} setForm={setForm} />
@@ -147,9 +147,9 @@ export function JskoManager() {
                   <F label="Account Type" k="account_type" form={form} setForm={setForm} />
                 </div>
               </div>
-              <div className="rounded-xl border border-border p-4">
-                <p className="mb-3 flex items-center gap-2 text-sm font-bold"><IdCard className="h-4 w-4 text-india-green" /> Payment</p>
-                <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-xl border border-border bg-card/50 p-3.5">
+                <p className="mb-2.5 flex items-center gap-2 text-[13px] font-bold"><IdCard className="h-4 w-4 text-india-green" /> Payment</p>
+                <div className="grid gap-2.5 sm:grid-cols-2">
                   <F label="Amount" k="payment_amount" form={form} setForm={setForm} />
                   <F label="UTR / Reference" k="payment_utr" form={form} setForm={setForm} />
                   <F label="Method" k="payment_method" form={form} setForm={setForm} />
@@ -157,9 +157,9 @@ export function JskoManager() {
               </div>
             </div>
 
-            <div className="rounded-xl border border-border p-4">
-              <p className="mb-3 flex items-center gap-2 text-sm font-bold"><FileText className="h-4 w-4 text-india-green" /> KYC Documents</p>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="rounded-xl border border-border bg-card/50 p-3.5">
+              <p className="mb-2.5 flex items-center gap-2 text-[13px] font-bold"><FileText className="h-4 w-4 text-india-green" /> KYC Documents</p>
+              <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
                 {DOC_DEFS.map(([key, label]) => (
                   <div key={key} className="rounded-lg border border-border p-3">
                     <p className="mb-2 text-xs font-semibold">{label}</p>
