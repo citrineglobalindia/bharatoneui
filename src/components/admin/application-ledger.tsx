@@ -12,8 +12,8 @@ type Row = {
   status: string; payment_verified: boolean; payment_verified_at: string | null; created_at: string;
 };
 const inr = (n: number) => "₹" + Number(n || 0).toLocaleString("en-IN");
-const statusTone: Record<string, string> = { submitted: "bg-saffron/10 text-saffron", in_progress: "bg-amber-500/10 text-amber-600", approved: "bg-india-green/10 text-india-green", completed: "bg-india-green/10 text-india-green", rejected: "bg-rose-500/10 text-rose-600" };
-const statusLabel: Record<string, string> = { submitted: "New", in_progress: "In Progress", approved: "Approved", completed: "Completed", rejected: "Rejected" };
+const statusTone: Record<string, string> = { submitted: "bg-saffron/10 text-saffron", on_process: "bg-amber-500/10 text-amber-600", in_progress: "bg-amber-500/10 text-amber-600", waiting_approval: "bg-sky-500/10 text-sky-600", on_delay: "bg-orange-600/10 text-orange-700", approved: "bg-sky-500/10 text-sky-600", completed: "bg-india-green/10 text-india-green", rejected: "bg-rose-500/10 text-rose-600" };
+const statusLabel: Record<string, string> = { submitted: "New", on_process: "On Process", in_progress: "On Process", waiting_approval: "Waiting for Approval", on_delay: "On Delay", approved: "Waiting for Approval", completed: "Completed", rejected: "Rejected" };
 
 export function ApplicationLedger() {
   const [rows, setRows] = useState<Row[]>([]);

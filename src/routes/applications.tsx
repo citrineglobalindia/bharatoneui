@@ -20,8 +20,8 @@ type Row = {
   aadhaar_number: string | null; pan_number: string | null; status: string; service_charge: number; commission_price: number;
   created_at: string; result_doc_path: string | null; result_note: string | null;
 };
-const statusLabel: Record<string, string> = { submitted: "Pending", in_progress: "Processing", approved: "Approved", rejected: "Rejected", completed: "Completed" };
-const STEPS = ["submitted", "in_progress", "approved", "completed"];
+const statusLabel: Record<string, string> = { submitted: "Pending", on_process: "On Process", in_progress: "On Process", waiting_approval: "Waiting for Approval", on_delay: "On Delay", approved: "Waiting for Approval", rejected: "Rejected", completed: "Completed" };
+const STEPS = ["submitted", "on_process", "waiting_approval", "completed"];
 const inr = (n: number) => "₹" + Number(n || 0).toLocaleString("en-IN");
 const FILTERS = ["All", "Pending", "Processing", "Approved", "Completed", "Rejected"];
 
@@ -65,8 +65,8 @@ function ApplicationsPage() {
   const totals = useMemo(() => ({
     count: rows.length,
     charges: rows.reduce((a, r) => a + Number(r.service_charge || 0), 0),
-    commission: rows.filter((r) => ["approved", "completed"].includes(r.status)).reduce((a, r) => a + Number(r.commission_price || 0), 0),
-    pending: rows.filter((r) => ["submitted", "in_progress"].includes(r.status)).length,
+    commission: rows.filter((r) => r.status === "completed").reduce((a, r) => a + Number(r.commission_price || 0), 0),
+    pending: rows.filter((r) => !["completed", "rejected"].includes(r.status)).length,
   }), [rows]);
   const filtered = useMemo(() => filter === "All" ? rows : rows.filter((r) => (statusLabel[r.status] ?? r.status) === filter), [rows, filter]);
 

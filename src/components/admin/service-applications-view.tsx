@@ -16,10 +16,11 @@ type Row = {
 };
 const tone: Record<string, string> = {
   submitted: "bg-saffron/10 text-saffron", in_progress: "bg-amber-500/10 text-amber-600",
-  approved: "bg-india-green/10 text-india-green", completed: "bg-india-green/10 text-india-green",
+  on_process: "bg-amber-500/10 text-amber-600", waiting_approval: "bg-sky-500/10 text-sky-600", on_delay: "bg-orange-600/10 text-orange-700",
+  approved: "bg-sky-500/10 text-sky-600", completed: "bg-india-green/10 text-india-green",
   rejected: "bg-rose-500/10 text-rose-600",
 };
-const label: Record<string, string> = { submitted: "New", in_progress: "In Progress", approved: "Approved", rejected: "Rejected", completed: "Completed" };
+const label: Record<string, string> = { submitted: "New", on_process: "On Process", in_progress: "On Process", waiting_approval: "Waiting for Approval", on_delay: "On Delay", approved: "Waiting for Approval", rejected: "Rejected", completed: "Completed" };
 const inr = (n: number) => "₹" + Number(n || 0).toLocaleString("en-IN");
 
 async function openDoc(path: string) {
@@ -104,7 +105,7 @@ export function ServiceApplicationsView() {
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><input className="h-9 w-60 rounded-lg border border-border bg-background pl-8 pr-2 text-sm outline-none" placeholder="Search app no, name, service, phone…" value={q} onChange={(e) => setQ(e.target.value)} /></div>
         <select className="h-9 rounded-lg border border-border bg-background px-2 text-sm" value={status} onChange={(e) => setStatus(e.target.value)}>
-          <option value="all">All statuses</option>{["submitted", "in_progress", "approved", "completed", "rejected"].map((s) => <option key={s} value={s}>{label[s]}</option>)}
+          <option value="all">All statuses</option>{["submitted", "on_process", "waiting_approval", "on_delay", "completed", "rejected"].map((s) => <option key={s} value={s}>{label[s]}</option>)}
         </select>
         <select className="h-9 rounded-lg border border-border bg-background px-2 text-sm" value={opFilter} onChange={(e) => setOpFilter(e.target.value)}>
           <option value="all">All operators</option><option value="none">Unassigned</option>

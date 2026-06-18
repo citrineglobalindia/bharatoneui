@@ -23,9 +23,9 @@ type App = {
   result_doc_path: string | null; result_note: string | null; result_uploaded_at: string | null;
   form_data: Record<string, any> | null;
 };
-const STAGES = ["submitted", "in_progress", "approved", "rejected", "completed"];
-const label: Record<string, string> = { submitted: "New", in_progress: "In Progress", approved: "Approved", rejected: "Rejected", completed: "Completed" };
-const tone: Record<string, string> = { submitted: "bg-saffron/10 text-saffron", in_progress: "bg-amber-500/10 text-amber-600", approved: "bg-india-green/10 text-india-green", completed: "bg-india-green/10 text-india-green", rejected: "bg-rose-500/10 text-rose-600" };
+const STAGES = ["submitted", "on_process", "waiting_approval", "on_delay", "completed", "rejected"];
+const label: Record<string, string> = { submitted: "New", on_process: "On Process", in_progress: "On Process", waiting_approval: "Waiting for Approval", on_delay: "On Delay", approved: "Waiting for Approval", completed: "Completed", rejected: "Rejected" };
+const tone: Record<string, string> = { submitted: "bg-saffron/10 text-saffron", on_process: "bg-amber-500/10 text-amber-600", in_progress: "bg-amber-500/10 text-amber-600", waiting_approval: "bg-sky-500/10 text-sky-600", on_delay: "bg-orange-600/10 text-orange-700", approved: "bg-sky-500/10 text-sky-600", completed: "bg-india-green/10 text-india-green", rejected: "bg-rose-500/10 text-rose-600" };
 const inr = (n: number) => "₹" + Number(n || 0).toLocaleString("en-IN");
 
 async function dlAppFile(path: string) {
@@ -59,9 +59,9 @@ function OperatorPortal() {
   const counts = useMemo(() => ({
     all: apps.length,
     submitted: apps.filter((a) => a.status === "submitted").length,
-    in_progress: apps.filter((a) => a.status === "in_progress").length,
-    done: apps.filter((a) => ["approved", "completed"].includes(a.status)).length,
-    commission: apps.filter((a) => ["approved", "completed"].includes(a.status)).reduce((s, a) => s + Number(a.commission_price || 0), 0),
+    in_progress: apps.filter((a) => ["on_process", "in_progress"].includes(a.status)).length,
+    done: apps.filter((a) => a.status === "completed").length,
+    commission: apps.filter((a) => a.status === "completed").reduce((s, a) => s + Number(a.commission_price || 0), 0),
   }), [apps]);
   const filtered = useMemo(() => filter === "all" ? apps : apps.filter((a) => a.status === filter), [apps, filter]);
 
@@ -117,13 +117,13 @@ function OperatorPortal() {
 
       <main className="mx-auto max-w-6xl space-y-5 p-5">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {[["Total", counts.all, FileSearch, "bg-blue-500/10 text-blue-600"], ["New", counts.submitted, Clock3, "bg-saffron/10 text-saffron"], ["In Progress", counts.in_progress, Loader2, "bg-amber-500/10 text-amber-600"], ["Commission Earned", inr(counts.commission), IndianRupee, "bg-india-green/10 text-india-green"]].map(([l, v, Icon, t]: any, i) => (
+          {[["Total", counts.all, FileSearch, "bg-blue-500/10 text-blue-600"], ["New", counts.submitted, Clock3, "bg-saffron/10 text-saffron"], ["On Process", counts.in_progress, Loader2, "bg-amber-500/10 text-amber-600"], ["Commission Earned", inr(counts.commission), IndianRupee, "bg-india-green/10 text-india-green"]].map(([l, v, Icon, t]: any, i) => (
             <div key={i} className="rounded-2xl border border-border bg-card p-4 shadow-soft"><div className="flex items-center gap-2"><span className={`grid h-9 w-9 place-items-center rounded-lg ${t}`}><Icon className="h-4 w-4" /></span><div><p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{l}</p><p className="text-lg font-extrabold">{v}</p></div></div></div>
           ))}
         </div>
 
         <div className="flex flex-wrap gap-1.5">
-          {[["all", "All"], ["submitted", "New"], ["in_progress", "In Progress"], ["approved", "Approved"], ["completed", "Completed"], ["rejected", "Rejected"]].map(([k, l]) => (
+          {[["all", "All"], ["submitted", "New"], ["on_process", "On Process"], ["waiting_approval", "Waiting for Approval"], ["on_delay", "On Delay"], ["completed", "Completed"], ["rejected", "Rejected"]].map(([k, l]) => (
             <button key={k} onClick={() => setFilter(k)} className={`rounded-full px-3 h-8 text-xs font-semibold transition ${filter === k ? "bg-india-green text-white" : "border border-border bg-card hover:bg-muted"}`}>{l}</button>
           ))}
         </div>
@@ -186,9 +186,10 @@ function OperatorPortal() {
 
             <p className="mt-4 mb-1.5 text-xs font-bold uppercase tracking-wide text-muted-foreground">Update status</p>
             <div className="flex flex-wrap gap-2">
-              <Button size="sm" disabled={saving} onClick={() => setStatus(sel, "in_progress")} className="bg-amber-500 text-white hover:bg-amber-600"><Loader2 className="h-4 w-4" /> In Progress</Button>
-              <Button size="sm" disabled={saving} onClick={() => setStatus(sel, "approved")} className="bg-india-green text-white hover:bg-india-green/90"><CheckCircle2 className="h-4 w-4" /> Approve</Button>
-              <Button size="sm" disabled={saving} onClick={() => setStatus(sel, "completed")} variant="outline"><CheckCircle2 className="h-4 w-4" /> Complete</Button>
+              <Button size="sm" disabled={saving} onClick={() => setStatus(sel, "on_process")} className="bg-amber-500 text-white hover:bg-amber-600"><Loader2 className="h-4 w-4" /> On Process</Button>
+              <Button size="sm" disabled={saving} onClick={() => setStatus(sel, "waiting_approval")} className="bg-sky-600 text-white hover:bg-sky-700"><Clock3 className="h-4 w-4" /> Waiting for Approval</Button>
+              <Button size="sm" disabled={saving} onClick={() => setStatus(sel, "on_delay")} className="bg-orange-600 text-white hover:bg-orange-700"><Clock3 className="h-4 w-4" /> On Delay</Button>
+              <Button size="sm" disabled={saving} onClick={() => setStatus(sel, "completed")} className="bg-india-green text-white hover:bg-india-green/90"><CheckCircle2 className="h-4 w-4" /> Completed</Button>
               <Button size="sm" disabled={saving} onClick={() => setStatus(sel, "rejected")} variant="outline" className="text-rose-600"><XCircle className="h-4 w-4" /> Reject</Button>
             </div>
             <div className="mt-4"><p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Chat with retailer</p>
