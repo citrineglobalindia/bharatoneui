@@ -27,7 +27,14 @@ export function AdminUsers() {
   const [roleFilter, setRoleFilter] = useState("all");
   const [detail, setDetail] = useState<U | null>(null);
   const [showAdd, setShowAdd] = useState(false);
-  const [add, setAdd] = useState({ email: "", password: "", name: "", role: "accountant", department: "", designation: "", employee_code: "", phone: "", skills: "", experience: "", education: "" });
+  const blankAdd = { email: "", password: "", name: "", role: "telecaller", status: "active", department: "", designation: "", employee_code: "",
+    gender: "", dob: "", qualification: "", experience: "", phone: "", alt_phone: "", street_address: "", district: "", state: "", pincode: "",
+    aadhaar_number: "", pan_number: "", bank_name: "", account_number: "", ifsc: "", upi_id: "", salary: "", rate_per_call: "",
+    emergency_contact_name: "", emergency_contact_phone: "", skills: "", sow_signed_date: "", sow_status: "pending" };
+  const [add, setAdd] = useState<Record<string, string>>({ ...blankAdd });
+  const [langs, setLangs] = useState<string[]>([]);
+  const [kycFile, setKycFile] = useState<File | null>(null);
+  const [sowFile, setSowFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function load() {
@@ -66,14 +73,36 @@ export function AdminUsers() {
     await load();
     setDetail((d) => d && d.id === u.id ? { ...d, roles: addRole ? [...new Set([...d.roles, role])] : d.roles.filter((r) => r !== role) } : d);
   };
+  const uploadStaffDoc = async (uid: string, kind: string, file: File) => {
+    const ext = (file.name.split(".").pop() || "bin").toLowerCase();
+    const path = `${uid}/${kind}-${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabase.storage.from("staff-docs").upload(path, file, { upsert: false, contentType: file.type || undefined });
+    if (error) { toast.error(`${kind} upload failed`, { description: error.message }); return null; }
+    return path;
+  };
   const createStaff = async () => {
-    if (!add.email || !add.password || !add.name) { toast.error("Email, password and name are required"); return; }
+    if (!add.email || !add.password || !add.name) { toast.error("Name, email and password are required"); return; }
     setBusy(true);
     try {
-      const { error } = await supabase.rpc("create_staff_account", { _email: add.email, _password: add.password, _name: add.name, _role: add.role, _department: add.department || null, _designation: add.designation || null, _employee_code: add.employee_code || null, _phone: add.phone || null, _skills: add.skills || null, _experience: add.experience || null, _education: add.education || null });
+      const { data, error } = await supabase.rpc("create_staff_account", { _email: add.email, _password: add.password, _name: add.name, _role: add.role, _department: add.department || null, _designation: add.designation || null, _employee_code: add.employee_code || null, _phone: add.phone || null, _skills: add.skills || null, _experience: add.experience || null, _education: add.qualification || null });
       if (error) { toast.error("Create failed", { description: error.message }); return; }
+      const uid = (data as any)?.id as string | undefined;
+      if (uid) {
+        const videoPath = kycFile ? await uploadStaffDoc(uid, "video-kyc", kycFile) : null;
+        const sowPath = sowFile ? await uploadStaffDoc(uid, "sow", sowFile) : null;
+        await supabase.from("profiles").update({
+          gender: add.gender || null, dob: add.dob || null, alt_phone: add.alt_phone || null,
+          street_address: add.street_address || null, district: add.district || null, state: add.state || null, pincode: add.pincode || null,
+          aadhaar_number: add.aadhaar_number || null, pan_number: add.pan_number || null,
+          bank_name: add.bank_name || null, account_number: add.account_number || null, ifsc: add.ifsc || null, upi_id: add.upi_id || null,
+          salary: add.salary ? Number(add.salary) : null, rate_per_call: add.rate_per_call ? Number(add.rate_per_call) : null,
+          languages: langs.length ? langs : null, emergency_contact_name: add.emergency_contact_name || null, emergency_contact_phone: add.emergency_contact_phone || null,
+          is_active: add.status !== "inactive", video_kyc_path: videoPath, sow_path: sowPath,
+          sow_signed_date: add.sow_signed_date || null, sow_status: add.sow_status || null,
+        }).eq("id", uid);
+      }
       toast.success("Staff account created");
-      setShowAdd(false); setAdd({ email: "", password: "", name: "", role: "accountant", department: "", designation: "", employee_code: "", phone: "", skills: "", experience: "", education: "" });
+      setShowAdd(false); setAdd({ ...blankAdd }); setLangs([]); setKycFile(null); setSowFile(null);
       await load();
     } finally { setBusy(false); }
   };
@@ -189,30 +218,82 @@ export function AdminUsers() {
 
       {/* Add staff */}
       <Dialog open={showAdd} onOpenChange={setShowAdd}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-india-green" /> Create staff account</DialogTitle><DialogDescription>Creates a login with the chosen role.</DialogDescription></DialogHeader>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <input className={input} placeholder="Full name *" value={add.name} onChange={(e) => setAdd({ ...add, name: e.target.value })} />
-            <input className={input} placeholder="Email *" value={add.email} onChange={(e) => setAdd({ ...add, email: e.target.value })} />
-            <div className="flex gap-2 sm:col-span-2">
-              <input className={input} placeholder="Temporary password *" value={add.password} onChange={(e) => setAdd({ ...add, password: e.target.value })} />
-              <Button type="button" variant="outline" onClick={() => setAdd({ ...add, password: genPwd() })}>Generate</Button>
+        <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><UserPlus className="h-5 w-5 text-saffron" /> Add New Staff</DialogTitle><DialogDescription>Create a login and full staff profile.</DialogDescription></DialogHeader>
+
+          <Sec title="Basic Information">
+            <F label="Full Name *"><input className={input} placeholder="Enter full name" value={add.name} onChange={(e) => setAdd({ ...add, name: e.target.value })} /></F>
+            <F label="Gender"><select className={input} value={add.gender} onChange={(e) => setAdd({ ...add, gender: e.target.value })}><option value="">Select</option><option>Male</option><option>Female</option><option>Other</option></select></F>
+            <F label="Date of Birth"><input type="date" className={input} value={add.dob} onChange={(e) => setAdd({ ...add, dob: e.target.value })} /></F>
+            <F label="Qualification"><input className={input} placeholder="e.g. B.Com, MBA" value={add.qualification} onChange={(e) => setAdd({ ...add, qualification: e.target.value })} /></F>
+            <F label="Experience"><input className={input} placeholder="e.g. 2 years" value={add.experience} onChange={(e) => setAdd({ ...add, experience: e.target.value })} /></F>
+          </Sec>
+
+          <Sec title="Account & Login">
+            <F label="Email *"><input className={input} placeholder="user@mail.com" value={add.email} onChange={(e) => setAdd({ ...add, email: e.target.value })} /></F>
+            <F label="Temporary Password *"><div className="flex gap-2"><input className={input} placeholder="Password" value={add.password} onChange={(e) => setAdd({ ...add, password: e.target.value })} /><Button type="button" variant="outline" onClick={() => setAdd({ ...add, password: genPwd() })}>Gen</Button></div></F>
+          </Sec>
+
+          <Sec title="Contact Details">
+            <F label="Phone"><input className={input} placeholder="+91 98765 XXXXX" value={add.phone} onChange={(e) => setAdd({ ...add, phone: e.target.value })} /></F>
+            <F label="Alternate Phone"><input className={input} placeholder="+91 87654 XXXXX" value={add.alt_phone} onChange={(e) => setAdd({ ...add, alt_phone: e.target.value })} /></F>
+          </Sec>
+
+          <Sec title="Address">
+            <F label="Street Address" full><input className={input} placeholder="House/Flat, Street, Area" value={add.street_address} onChange={(e) => setAdd({ ...add, street_address: e.target.value })} /></F>
+            <F label="District"><input className={input} placeholder="District" value={add.district} onChange={(e) => setAdd({ ...add, district: e.target.value })} /></F>
+            <F label="State"><input className={input} placeholder="State" value={add.state} onChange={(e) => setAdd({ ...add, state: e.target.value })} /></F>
+            <F label="Pincode"><input className={input} placeholder="110001" value={add.pincode} onChange={(e) => setAdd({ ...add, pincode: e.target.value })} /></F>
+          </Sec>
+
+          <Sec title="Identity Documents">
+            <F label="Aadhaar Number"><input className={input} placeholder="XXXX XXXX XXXX" value={add.aadhaar_number} onChange={(e) => setAdd({ ...add, aadhaar_number: e.target.value })} /></F>
+            <F label="PAN Number"><input className={input} placeholder="ABCDE1234F" value={add.pan_number} onChange={(e) => setAdd({ ...add, pan_number: e.target.value.toUpperCase() })} /></F>
+          </Sec>
+
+          <Sec title="Bank & Payment">
+            <F label="Bank Name"><input className={input} placeholder="e.g. SBI, HDFC" value={add.bank_name} onChange={(e) => setAdd({ ...add, bank_name: e.target.value })} /></F>
+            <F label="Account Number"><input className={input} placeholder="Account number" value={add.account_number} onChange={(e) => setAdd({ ...add, account_number: e.target.value })} /></F>
+            <F label="IFSC Code"><input className={input} placeholder="SBIN0001234" value={add.ifsc} onChange={(e) => setAdd({ ...add, ifsc: e.target.value.toUpperCase() })} /></F>
+            <F label="UPI ID"><input className={input} placeholder="name@upi" value={add.upi_id} onChange={(e) => setAdd({ ...add, upi_id: e.target.value })} /></F>
+          </Sec>
+
+          <Sec title="Role & Compensation">
+            <F label="Role *"><select className={input} value={add.role} onChange={(e) => setAdd({ ...add, role: e.target.value })}>{ALL_ROLES.map((r) => <option key={r} value={r}>{r}</option>)}</select></F>
+            <F label="Status"><select className={input} value={add.status} onChange={(e) => setAdd({ ...add, status: e.target.value })}><option value="active">Active</option><option value="inactive">Inactive</option></select></F>
+            <F label="Salary (₹/month)"><input className={input} type="number" placeholder="18000" value={add.salary} onChange={(e) => setAdd({ ...add, salary: e.target.value })} /></F>
+            <F label="Rate Per Call (₹)"><input className={input} type="number" placeholder="5" value={add.rate_per_call} onChange={(e) => setAdd({ ...add, rate_per_call: e.target.value })} /></F>
+            <F label="Designation"><input className={input} placeholder="Designation" value={add.designation} onChange={(e) => setAdd({ ...add, designation: e.target.value })} /></F>
+            <F label="Employee Code"><input className={input} placeholder="Code" value={add.employee_code} onChange={(e) => setAdd({ ...add, employee_code: e.target.value })} /></F>
+          </Sec>
+
+          <div className="mt-4">
+            <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Languages Known</p>
+            <div className="flex flex-wrap gap-1.5">
+              {LANGS.map((l) => { const on = langs.includes(l); return <button key={l} type="button" onClick={() => setLangs((p) => on ? p.filter((x) => x !== l) : [...p, l])} className={`rounded-full px-3 h-8 text-xs font-semibold transition ${on ? "bg-india-green text-white" : "border border-border bg-card hover:bg-muted"}`}>{l}</button>; })}
             </div>
-            <div>
-              <label className="text-[11px] font-semibold text-muted-foreground">Role *</label>
-              <select className={input} value={add.role} onChange={(e) => setAdd({ ...add, role: e.target.value })}>{ALL_ROLES.map((r) => <option key={r} value={r}>{r}</option>)}</select>
-            </div>
-            <input className={input} placeholder="Department" value={add.department} onChange={(e) => setAdd({ ...add, department: e.target.value })} />
-            <input className={input} placeholder="Designation" value={add.designation} onChange={(e) => setAdd({ ...add, designation: e.target.value })} />
-            <input className={input} placeholder="Employee / Agent code" value={add.employee_code} onChange={(e) => setAdd({ ...add, employee_code: e.target.value })} />
-            <input className={input} placeholder="Contact number" value={add.phone} onChange={(e) => setAdd({ ...add, phone: e.target.value })} />
-            <input className={input} placeholder="Education qualification" value={add.education} onChange={(e) => setAdd({ ...add, education: e.target.value })} />
-            <input className={input} placeholder="Experience (e.g. 3 years)" value={add.experience} onChange={(e) => setAdd({ ...add, experience: e.target.value })} />
-            <input className={input + " sm:col-span-2"} placeholder="Skills (comma separated)" value={add.skills} onChange={(e) => setAdd({ ...add, skills: e.target.value })} />
           </div>
-          <DialogFooter>
+
+          <Sec title="Emergency Contact">
+            <F label="Contact Name"><input className={input} placeholder="Name (Relation)" value={add.emergency_contact_name} onChange={(e) => setAdd({ ...add, emergency_contact_name: e.target.value })} /></F>
+            <F label="Contact Phone"><input className={input} placeholder="+91 XXXXX XXXXX" value={add.emergency_contact_phone} onChange={(e) => setAdd({ ...add, emergency_contact_phone: e.target.value })} /></F>
+          </Sec>
+
+          <div className="mt-4">
+            <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Video KYC & SOW Agreement</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Uploader label="Video KYC" hint="Self-recorded verification clip" file={kycFile} onPick={setKycFile} />
+              <Uploader label="SOW Agreement" hint="Signed scope of work document" file={sowFile} onPick={setSowFile} />
+            </div>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <F label="Signed Date"><input type="date" className={input} value={add.sow_signed_date} onChange={(e) => setAdd({ ...add, sow_signed_date: e.target.value })} /></F>
+              <F label="Status"><select className={input} value={add.sow_status} onChange={(e) => setAdd({ ...add, sow_status: e.target.value })}><option value="pending">Pending</option><option value="signed">Signed</option><option value="verified">Verified</option></select></F>
+            </div>
+          </div>
+
+          <DialogFooter className="mt-2">
             <Button variant="outline" onClick={() => setShowAdd(false)}><X className="h-4 w-4" /> Cancel</Button>
-            <Button className="bg-india-green text-white" onClick={createStaff} disabled={busy}>{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Create</Button>
+            <Button className="bg-india-green text-white" onClick={createStaff} disabled={busy}>{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Create staff</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -220,6 +301,29 @@ export function AdminUsers() {
   );
 }
 
+const LANGS = ["Hindi", "English", "Kannada", "Tamil", "Telugu", "Malayalam", "Marathi", "Gujarati", "Bengali", "Punjabi", "Odia", "Assamese", "Urdu"];
+
+function Sec({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="mt-4 border-t border-border pt-3 first:mt-0 first:border-0 first:pt-0">
+      <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-saffron">{title}</p>
+      <div className="grid gap-3 sm:grid-cols-2">{children}</div>
+    </div>
+  );
+}
+function F({ label, full, children }: { label: string; full?: boolean; children: React.ReactNode }) {
+  return <div className={full ? "sm:col-span-2" : ""}><label className="mb-1 block text-xs font-semibold text-foreground">{label}</label>{children}</div>;
+}
+function Uploader({ label, hint, file, onPick }: { label: string; hint: string; file: File | null; onPick: (f: File | null) => void }) {
+  return (
+    <label className="flex cursor-pointer flex-col gap-1 rounded-xl border-2 border-dashed border-border bg-card p-4 text-center hover:border-india-green">
+      <span className="text-sm font-bold text-foreground">{label}</span>
+      <span className="text-[11px] text-muted-foreground">{hint}</span>
+      <span className="mt-2 inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-india-green">{file ? file.name : "Click to upload"}</span>
+      <input type="file" className="hidden" onChange={(e) => onPick(e.target.files?.[0] ?? null)} />
+    </label>
+  );
+}
 function Info({ label, v }: { label: string; v: unknown }) {
   return <div><p className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</p><p className="font-semibold">{v ? String(v) : "—"}</p></div>;
 }
