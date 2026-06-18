@@ -27,7 +27,6 @@ export function DistributorDashboardReal() {
           <Stat icon={FileText} label="Applications" value={d?.applications ?? 0} tone="bg-saffron/10 text-saffron" />
           <Stat icon={TrendingUp} label="Commission Earned" value={inr(d?.earned ?? 0)} tone="bg-india-green/10 text-india-green" />
           <Stat icon={Clock3} label="Commission Pending" value={inr(d?.pending ?? 0)} tone="bg-amber-500/10 text-amber-600" />
-          <Stat icon={Wallet} label="Wallet Balance" value={inr(d?.wallet ?? 0)} tone="bg-violet-500/10 text-violet-600" />
         </div>
       )}
     </div>
@@ -40,16 +39,16 @@ export function DistributorRetailersReal() {
   const [q, setQ] = useState("");
   async function load() { setLoading(true); try { await ensureStaffSession(); const { data } = await supabase.rpc("distributor_retailers"); setRows((data as any[]) ?? []); } finally { setLoading(false); } }
   useEffect(() => { load(); }, []);
-  const filtered = useMemo(() => rows.filter((r) => !q || [r.name, r.email].filter(Boolean).some((v) => String(v).toLowerCase().includes(q.toLowerCase()))), [rows, q]);
+  const filtered = useMemo(() => rows.filter((r) => !q || [r.name, r.retailer_id, r.district].filter(Boolean).some((v) => String(v).toLowerCase().includes(q.toLowerCase()))), [rows, q]);
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-2"><div><h1 className="font-display text-2xl font-extrabold">My Retailers</h1><p className="text-sm text-muted-foreground">Retailers mapped to your distributorship.</p></div><button onClick={load} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-10 text-sm font-semibold hover:bg-muted"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh</button></div>
       <div className="relative w-64"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><input className="h-9 w-full rounded-lg border border-border bg-background pl-8 pr-2 text-sm outline-none" placeholder="Search retailer" value={q} onChange={(e) => setQ(e.target.value)} /></div>
       <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-soft"><table className="w-full text-sm">
-        <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground"><tr><th className="px-3 py-2">Retailer</th><th className="px-3 py-2">Email</th><th className="px-3 py-2">Wallet</th><th className="px-3 py-2">Status</th><th className="px-3 py-2">Joined</th></tr></thead>
-        <tbody>{loading ? <tr><td colSpan={5} className="px-3 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr>
-          : filtered.length === 0 ? <tr><td colSpan={5} className="px-3 py-10 text-center text-muted-foreground">No retailers assigned yet. Admin assigns retailers to you.</td></tr>
-          : filtered.map((r) => (<tr key={r.id} className="border-t border-border"><td className="px-3 py-2 font-semibold">{r.name}</td><td className="px-3 py-2 text-muted-foreground">{r.email}</td><td className="px-3 py-2">{inr(r.wallet)}</td><td className="px-3 py-2"><span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${r.is_active ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>{r.is_active ? "Active" : "Inactive"}</span></td><td className="px-3 py-2 text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString("en-IN")}</td></tr>))}</tbody>
+        <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground"><tr><th className="px-3 py-2">Retailer</th><th className="px-3 py-2">Retailer ID</th><th className="px-3 py-2">Address</th><th className="px-3 py-2">District</th><th className="px-3 py-2">Status</th><th className="px-3 py-2">Joined</th></tr></thead>
+        <tbody>{loading ? <tr><td colSpan={6} className="px-3 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr>
+          : filtered.length === 0 ? <tr><td colSpan={6} className="px-3 py-10 text-center text-muted-foreground">No retailers assigned yet. Admin assigns retailers to you.</td></tr>
+          : filtered.map((r) => (<tr key={r.id} className="border-t border-border"><td className="px-3 py-2 font-semibold">{r.name}</td><td className="px-3 py-2 font-mono text-xs">{r.retailer_id || "—"}</td><td className="px-3 py-2 max-w-[260px] text-xs text-muted-foreground"><span className="line-clamp-2">{r.address || "—"}</span></td><td className="px-3 py-2 text-xs">{r.district || "—"}</td><td className="px-3 py-2"><span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${r.is_active ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>{r.is_active ? "Active" : "Inactive"}</span></td><td className="px-3 py-2 text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString("en-IN")}</td></tr>))}</tbody>
       </table></div>
     </div>
   );
@@ -151,7 +150,7 @@ export function DistributorOfficersReal() {
     } finally { setLoading(false); }
   }
   useEffect(() => { load(); }, []);
-  const filtered = useMemo(() => rows.filter((r) => (roleF === "all" || r.role === roleF) && (!q || [r.name, r.email, r.district].filter(Boolean).some((v) => String(v).toLowerCase().includes(q.toLowerCase())))), [rows, q, roleF]);
+  const filtered = useMemo(() => rows.filter((r) => (roleF === "all" || r.role === roleF) && (!q || [r.name, r.district].filter(Boolean).some((v) => String(v).toLowerCase().includes(q.toLowerCase())))), [rows, q, roleF]);
   const rBadge: Record<string, string> = { tro: "bg-sky-100 text-sky-700", dro: "bg-violet-100 text-violet-700" };
   return (
     <div className="space-y-5">
@@ -162,7 +161,7 @@ export function DistributorOfficersReal() {
       </div>
       <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-soft"><table className="w-full text-sm">
         <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground"><tr><th className="px-3 py-2">Officer</th><th className="px-3 py-2">Role</th><th className="px-3 py-2">District</th><th className="px-3 py-2">Applications</th><th className="px-3 py-2">Commission</th><th className="px-3 py-2">Status</th></tr></thead>
-        <tbody>{loading ? <tr><td colSpan={6} className="px-3 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr> : filtered.length === 0 ? <tr><td colSpan={6} className="px-3 py-10 text-center text-muted-foreground">No TRO/DRO officers mapped yet. Admin maps them to you.</td></tr> : filtered.map((r) => <tr key={r.id} className="border-t border-border"><td className="px-3 py-2"><div className="font-semibold">{r.name}</div><div className="text-[11px] text-muted-foreground">{r.email}</div></td><td className="px-3 py-2"><span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${rBadge[r.role] || "bg-muted"}`}>{r.role}</span></td><td className="px-3 py-2">{r.district || "—"}</td><td className="px-3 py-2 font-semibold">{r.apps}</td><td className="px-3 py-2 text-india-green">{inr(r.earned)}</td><td className="px-3 py-2"><span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${r.is_active ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>{r.is_active ? "Active" : "Inactive"}</span></td></tr>)}</tbody>
+        <tbody>{loading ? <tr><td colSpan={6} className="px-3 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr> : filtered.length === 0 ? <tr><td colSpan={6} className="px-3 py-10 text-center text-muted-foreground">No TRO/DRO officers mapped yet. Admin maps them to you.</td></tr> : filtered.map((r) => <tr key={r.id} className="border-t border-border"><td className="px-3 py-2 font-semibold">{r.name}</td><td className="px-3 py-2"><span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${rBadge[r.role] || "bg-muted"}`}>{r.role}</span></td><td className="px-3 py-2">{r.district || "—"}</td><td className="px-3 py-2 font-semibold">{r.apps}</td><td className="px-3 py-2 text-india-green">{inr(r.earned)}</td><td className="px-3 py-2"><span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${r.is_active ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>{r.is_active ? "Active" : "Inactive"}</span></td></tr>)}</tbody>
       </table></div>
     </div>
   );
