@@ -110,3 +110,57 @@ export function DistributorApplicationsReal() {
     </div>
   );
 }
+
+export function DistributorSalesReal() {
+  const [d, setD] = useState<any>(null); const [loading, setLoading] = useState(true);
+  async function load() { setLoading(true); try { await ensureStaffSession(); const { data } = await supabase.rpc("distributor_sales"); setD(data ?? {}); } finally { setLoading(false); } }
+  useEffect(() => { load(); }, []);
+  const daily = (d?.daily as any[]) ?? []; const maxD = Math.max(1, ...daily.map((x) => Number(x.amount || 0)));
+  const cats = (d?.by_category as any[]) ?? []; const maxC = Math.max(1, ...cats.map((x) => Number(x.amount || 0)));
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between"><div><h1 className="font-display text-2xl font-extrabold">Sales Dashboard</h1><p className="text-sm text-muted-foreground">Your network's sales and commission trends.</p></div><button onClick={load} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-10 text-sm font-semibold hover:bg-muted"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh</button></div>
+      {loading ? <div className="flex items-center gap-2 py-10 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Loading…</div> : (<>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <Stat icon={IndianRupee} label="Gross Sales" value={inr(d?.gross)} tone="bg-saffron/10 text-saffron" />
+          <Stat icon={TrendingUp} label="Earned Commission" value={inr(d?.earned)} tone="bg-india-green/10 text-india-green" />
+          <Stat icon={Clock3} label="Pending Commission" value={inr(d?.pending)} tone="bg-amber-500/10 text-amber-600" />
+          <Stat icon={FileText} label="Applications" value={d?.apps ?? 0} tone="bg-blue-500/10 text-blue-600" />
+        </div>
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-soft"><p className="mb-3 text-sm font-bold">Daily sales (14 days)</p><div className="flex h-40 items-end gap-2">{daily.length === 0 ? <p className="text-sm text-muted-foreground">No recent activity.</p> : daily.map((x, i) => <div key={i} className="flex flex-1 flex-col items-center gap-1"><div className="w-full rounded-t bg-india-green" style={{ height: `${(Number(x.amount || 0) / maxD) * 100}%`, minHeight: "2px" }} title={inr(x.amount)} /><span className="text-[9px] text-muted-foreground">{x.d}</span></div>)}</div></div>
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-soft"><p className="mb-3 text-sm font-bold">Sales by category</p>{cats.length === 0 ? <p className="text-sm text-muted-foreground">No data.</p> : cats.map((x) => <div key={x.name} className="mb-2"><div className="mb-1 flex justify-between text-xs"><span className="text-muted-foreground">{x.name} ({x.cnt})</span><span className="font-bold">{inr(x.amount)}</span></div><div className="h-2 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-saffron" style={{ width: `${(Number(x.amount || 0) / maxC) * 100}%` }} /></div></div>)}</div>
+      </>)}
+    </div>
+  );
+}
+
+export function DistributorOfficersReal() {
+  const [rows, setRows] = useState<any[]>([]); const [loading, setLoading] = useState(true); const [q, setQ] = useState("");
+  async function load() { setLoading(true); try { await ensureStaffSession(); const { data } = await supabase.rpc("distributor_agents"); setRows((data as any[]) ?? []); } finally { setLoading(false); } }
+  useEffect(() => { load(); }, []);
+  const filtered = useMemo(() => rows.filter((r) => !q || [r.name, r.email, r.district].filter(Boolean).some((v) => String(v).toLowerCase().includes(q.toLowerCase()))), [rows, q]);
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-2"><div><h1 className="font-display text-2xl font-extrabold">Field Agents</h1><p className="text-sm text-muted-foreground">Retailers operating under your distributorship, ranked by activity.</p></div><button onClick={load} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-10 text-sm font-semibold hover:bg-muted"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh</button></div>
+      <div className="relative w-64"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><input className="h-9 w-full rounded-lg border border-border bg-background pl-8 pr-2 text-sm outline-none" placeholder="Search agent" value={q} onChange={(e) => setQ(e.target.value)} /></div>
+      <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-soft"><table className="w-full text-sm">
+        <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground"><tr><th className="px-3 py-2">Agent</th><th className="px-3 py-2">District</th><th className="px-3 py-2">Applications</th><th className="px-3 py-2">Commission</th><th className="px-3 py-2">Wallet</th><th className="px-3 py-2">Status</th></tr></thead>
+        <tbody>{loading ? <tr><td colSpan={6} className="px-3 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr> : filtered.length === 0 ? <tr><td colSpan={6} className="px-3 py-10 text-center text-muted-foreground">No agents mapped.</td></tr> : filtered.map((r) => <tr key={r.id} className="border-t border-border"><td className="px-3 py-2"><div className="font-semibold">{r.name}</div><div className="text-[11px] text-muted-foreground">{r.email}</div></td><td className="px-3 py-2">{r.district || "—"}</td><td className="px-3 py-2 font-semibold">{r.apps}</td><td className="px-3 py-2 text-india-green">{inr(r.earned)}</td><td className="px-3 py-2">{inr(r.wallet)}</td><td className="px-3 py-2"><span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${r.is_active ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>{r.is_active ? "Active" : "Inactive"}</span></td></tr>)}</tbody>
+      </table></div>
+    </div>
+  );
+}
+
+export function DistributorServicesReal() {
+  const [rows, setRows] = useState<any[]>([]); const [loading, setLoading] = useState(true); const [q, setQ] = useState("");
+  async function load() { setLoading(true); try { await ensureStaffSession(); const { data } = await supabase.from("services").select("id,name,category,service_type,service_charge,distributor_commission,is_active").eq("is_active", true).order("category").order("name"); setRows((data as any[]) ?? []); } finally { setLoading(false); } }
+  useEffect(() => { load(); }, []);
+  const filtered = useMemo(() => rows.filter((r) => !q || [r.name, r.category].filter(Boolean).some((v) => String(v).toLowerCase().includes(q.toLowerCase()))), [rows, q]);
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-2"><div><h1 className="font-display text-2xl font-extrabold">Services Live</h1><p className="text-sm text-muted-foreground">Active services your retailers can offer, with your commission %.</p></div><button onClick={load} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-10 text-sm font-semibold hover:bg-muted"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh</button></div>
+      <div className="relative w-64"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><input className="h-9 w-full rounded-lg border border-border bg-background pl-8 pr-2 text-sm outline-none" placeholder="Search service" value={q} onChange={(e) => setQ(e.target.value)} /></div>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{loading ? <div className="col-span-full py-10 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></div> : filtered.length === 0 ? <p className="col-span-full py-10 text-center text-sm text-muted-foreground">No active services.</p> : filtered.map((s) => <div key={s.id} className="rounded-2xl border border-border bg-card p-4 shadow-soft"><div className="flex items-center justify-between"><p className="font-bold">{s.name}</p><span className="rounded-full bg-india-green/10 px-2 py-0.5 text-[10px] font-bold uppercase text-india-green">{s.service_type}</span></div><p className="text-[11px] text-muted-foreground">{s.category}</p><div className="mt-2 flex items-center justify-between text-sm"><span>Charge <b>{inr(s.service_charge)}</b></span><span className="text-india-green">Dist. {s.distributor_commission}%</span></div></div>)}</div>
+    </div>
+  );
+}

@@ -1,12 +1,13 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { DistributorOfficers } from "@/components/distributor/distributor-extras";
-
+import { createFileRoute, Outlet, useMatches } from "@tanstack/react-router";
+import { DistributorShell } from "@/components/distributor/distributor-shell";
+import { DistributorOfficersReal } from "@/components/distributor/distributor-real";
 export const Route = createFileRoute("/distributor/officers")({
-  head: () => ({
-    meta: [
-      { title: "Officers — Distributor Portal" },
-      { name: "description", content: "DRO and TRO officers mapped under your distributor network." },
-    ],
-  }),
-  component: DistributorOfficers,
+  head: () => ({ meta: [{ title: "Field Agents — BharatOne Distributor" }] }),
+  component: Page,
 });
+function Page() {
+  const matches = useMatches();
+  const isChild = matches.some((m) => m.routeId.includes("officers/$id") || m.routeId.includes("officers.$id"));
+  if (isChild) return <Outlet />;
+  return (<DistributorShell><DistributorOfficersReal /></DistributorShell>);
+}

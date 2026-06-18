@@ -1,12 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { DistributorSalesDashboard } from "@/components/distributor/distributor-views";
-
+import { DistributorShell } from "@/components/distributor/distributor-shell";
+import { DistributorSalesReal } from "@/components/distributor/distributor-real";
 export const Route = createFileRoute("/distributor/sales-dashboard")({
-  head: () => ({
-    meta: [
-      { title: "Distributor Sales Dashboard — BharatOne" },
-      { name: "description", content: "Sales performance overview: transactions, business volume, commission and retailer insights." },
-    ],
-  }),
-  component: DistributorSalesDashboard,
+  head: () => ({ meta: [{ title: "Sales Dashboard — BharatOne Distributor" }] }),
+  component: () => (<DistributorShell><DistributorSalesReal /></DistributorShell>),
 });
