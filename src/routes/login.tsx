@@ -169,6 +169,7 @@ function LoginPage() {
                               : set.has("distributor")
                                 ? "/distributor/dashboard"
                                 : "/dashboard";
+                    if (dest === "/dashboard") { try { await supabase.rpc("record_login"); } catch {} }
                     toast.success("Welcome back");
                     navigate({ to: dest });
                     return;
