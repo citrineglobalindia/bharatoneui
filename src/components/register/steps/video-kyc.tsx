@@ -173,7 +173,7 @@ export function VideoKycStep() {
       <div className="rounded-xl border border-border bg-background/40 p-4">
         {previewUrl && hasVideo ? (
           <div className="flex flex-col items-center gap-3">
-            <video src={previewUrl} controls playsInline className="max-h-72 w-full rounded-lg border border-border bg-black" />
+            <video src={previewUrl} controls playsInline className="mx-auto aspect-[4/3] w-full max-w-sm rounded-xl border border-border bg-black object-cover shadow-soft" />
             <div className="flex items-center gap-2 text-sm font-medium text-[oklch(0.45_0.12_150)]">
               <CheckCircle2 className="h-4 w-4" /> Video recorded ({seconds}s)
             </div>
@@ -183,7 +183,7 @@ export function VideoKycStep() {
           </div>
         ) : recording ? (
           <div className="flex flex-col items-center gap-3">
-            <video ref={liveRef} playsInline muted className="max-h-72 w-full rounded-lg border border-border bg-black" />
+            <video ref={liveRef} playsInline muted className="mx-auto aspect-[4/3] w-full max-w-sm rounded-xl border-2 border-red-400 bg-black object-cover shadow-soft" />
             <div className="flex items-center gap-2 text-sm font-semibold text-red-600">
               <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-red-600" />
               Recording… {seconds}s {seconds < MIN_SECONDS ? `(min ${MIN_SECONDS}s)` : ""}
