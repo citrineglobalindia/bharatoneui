@@ -308,6 +308,9 @@ export function RegistrationsReview() {
                       <Eye className="h-3.5 w-3.5" /> View
                     </Button>
                     {role === "admin" && <>
+                      {r.status !== "qc_review" && <Button size="sm" variant="outline" className="h-8" disabled={busy === r.id} onClick={async () => { setBusy(r.id); const { error } = await supabase.rpc("resend_to_qc", { reg_id: r.id, notes: null }); setBusy(null); if (error) { toast.error(error.message); return; } toast.success("Sent for QC"); load(); }}>
+                        <RefreshCw className="h-3.5 w-3.5" /> Resend QC
+                      </Button>}
                       <Button size="sm" variant="outline" className="h-8 text-india-green" onClick={() => { try { localStorage.setItem("bharatone:review-intent", "edit"); } catch {} navigate({ to: "/review/$id", params: { id: r.id } }); }}>
                         <Pencil className="h-3.5 w-3.5" /> Edit
                       </Button>
