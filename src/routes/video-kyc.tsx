@@ -1,418 +1,175 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { toast } from "sonner";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import {
-  FileCheck2,
-  IdCard,
-  Landmark,
-  ScrollText,
-  Building2,
-  Camera,
-  Video,
-  Upload,
-  CheckCircle2,
-  Clock,
-  AlertTriangle,
-  RefreshCw,
-  Eye,
-  Download,
-  ShieldCheck,
-  XCircle,
-  Sparkles,
-  Lock,
-  type LucideIcon,
+  FileCheck2, IdCard, Camera, Video, CheckCircle2, Clock, AlertTriangle, ShieldCheck, XCircle,
+  Building2, FileText, Eye, Loader2, Landmark, type LucideIcon,
 } from "lucide-react";
 import { RetailerShell } from "@/components/retailer/retailer-shell";
 import { PageHeader } from "@/components/retailer/page-header";
 import { StatCard } from "@/components/retailer/stat-card";
-import { SectionCard } from "@/components/retailer/section-card";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/video-kyc")({
   head: () => ({
     meta: [
       { title: "KYC Documents — BharatOne" },
-      { name: "description", content: "Manage retailer KYC documents, selfie, and Video KYC." },
+      { name: "description", content: "View your submitted KYC documents and verification status." },
     ],
   }),
   component: KycDocsPage,
 });
 
-type Status = "Verified" | "In Review" | "Pending" | "Rejected";
-
-type Doc = {
-  id: string;
-  label: string;
-  description: string;
-  category: "Identity" | "Address" | "Business" | "Bank" | "Biometric";
-  icon: LucideIcon;
-  status: Status;
-  required: boolean;
-  number?: string;
-  file?: string;
-  uploadedAt?: string;
-  expiresAt?: string;
-  rejectionReason?: string;
-};
-
-const SEED: Doc[] = [
-  {
-    id: "aadhaar",
-    label: "Aadhaar Card",
-    description: "Front & back · masked first 8 digits",
-    category: "Identity",
-    icon: IdCard,
-    status: "Verified",
-    required: true,
-    number: "XXXX XXXX 4892",
-    file: "aadhaar_front_back.pdf",
-    uploadedAt: "12 Feb 2026",
-  },
-  {
-    id: "pan",
-    label: "PAN Card",
-    description: "Permanent Account Number issued by Income Tax",
-    category: "Identity",
-    icon: IdCard,
-    status: "Verified",
-    required: true,
-    number: "AXBPH•••7K",
-    file: "pan_card.jpg",
-    uploadedAt: "12 Feb 2026",
-  },
-  {
-    id: "selfie",
-    label: "Live Selfie",
-    description: "Face match against Aadhaar photo · liveness checked",
-    category: "Biometric",
-    icon: Camera,
-    status: "Verified",
-    required: true,
-    file: "selfie_2026-02-12.jpg",
-    uploadedAt: "12 Feb 2026",
-  },
-  {
-    id: "video-kyc",
-    label: "Video KYC",
-    description: "15s declaration video with Aadhaar/PAN held in hand",
-    category: "Biometric",
-    icon: Video,
-    status: "In Review",
-    required: true,
-    file: "video_kyc_2026-05-26.mp4",
-    uploadedAt: "26 May 2026",
-  },
-  {
-    id: "address",
-    label: "Address Proof",
-    description: "Voter ID / Driving License / Utility bill (< 3 months)",
-    category: "Address",
-    icon: ScrollText,
-    status: "Verified",
-    required: true,
-    file: "electricity_bill_apr.pdf",
-    uploadedAt: "12 Feb 2026",
-  },
-  {
-    id: "shop",
-    label: "Shop / Premises Photo",
-    description: "Geo-tagged photo of shop front with signboard",
-    category: "Business",
-    icon: Building2,
-    status: "Verified",
-    required: true,
-    file: "shop_front_geo.jpg",
-    uploadedAt: "13 Feb 2026",
-  },
-  {
-    id: "gst",
-    label: "GSTIN Certificate",
-    description: "GST registration certificate (if applicable)",
-    category: "Business",
-    icon: FileCheck2,
-    status: "Pending",
-    required: false,
-  },
-  {
-    id: "bank",
-    label: "Bank Proof",
-    description: "Cancelled cheque or first page of passbook",
-    category: "Bank",
-    icon: Landmark,
-    status: "Rejected",
-    required: true,
-    file: "cheque_sbi.jpg",
-    uploadedAt: "20 May 2026",
-    rejectionReason: "Account holder name does not match Aadhaar. Re-upload clear copy.",
-  },
+type DocDef = { key: string; pathKey: string; label: string; description: string; icon: LucideIcon };
+const DOC_DEFS: DocDef[] = [
+  { key: "aadhaar", pathKey: "aadhaar_doc_path", label: "Aadhaar Card", description: "Identity proof", icon: IdCard },
+  { key: "pan", pathKey: "pan_doc_path", label: "PAN Card", description: "Permanent Account Number", icon: IdCard },
+  { key: "selfie", pathKey: "selfie_path", label: "Live Selfie", description: "Face match & liveness", icon: Camera },
+  { key: "video", pathKey: "video_kyc_path", label: "Video KYC", description: "Declaration video", icon: Video },
+  { key: "shop", pathKey: "shop_photo_path", label: "Shop / Premises Photo", description: "Geo-tagged shop front", icon: Building2 },
+  { key: "police", pathKey: "police_verification_path", label: "Police Verification", description: "Verification certificate", icon: ShieldCheck },
 ];
 
-const STATUS_STYLE: Record<Status, { chip: string; ring: string; dot: string; icon: LucideIcon }> = {
-  Verified: { chip: "bg-emerald-100 text-emerald-700 border-emerald-200", ring: "ring-emerald-200", dot: "bg-emerald-500", icon: CheckCircle2 },
-  "In Review": { chip: "bg-sky-100 text-sky-700 border-sky-200", ring: "ring-sky-200", dot: "bg-sky-500", icon: Clock },
-  Pending: { chip: "bg-amber-100 text-amber-800 border-amber-200", ring: "ring-amber-200", dot: "bg-amber-500", icon: Upload },
-  Rejected: { chip: "bg-rose-100 text-rose-700 border-rose-200", ring: "ring-rose-200", dot: "bg-rose-500", icon: XCircle },
+type Reg = Record<string, any> | null;
+
+const kindOf = (path?: string | null) => {
+  if (!path) return "none";
+  const e = path.split(".").pop()?.toLowerCase() || "";
+  if (["jpg", "jpeg", "png", "webp", "gif"].includes(e)) return "image";
+  if (["mp4", "webm", "mov", "ogg"].includes(e)) return "video";
+  if (e === "pdf") return "pdf";
+  return "file";
 };
 
-const FILTERS = ["All", "Identity", "Address", "Business", "Bank", "Biometric"] as const;
+function statusFor(docStatus: string | undefined, regStatus: string) {
+  if (docStatus === "approved") return { label: "Verified", tone: "ok" as const };
+  if (docStatus === "rejected") return { label: "Rejected", tone: "bad" as const };
+  if (regStatus === "approved") return { label: "Verified", tone: "ok" as const };
+  if (["qc_review", "accountant_review"].includes(regStatus)) return { label: "In Review", tone: "info" as const };
+  if (["telecaller", "rejected"].includes(regStatus)) return { label: "Needs attention", tone: "warn" as const };
+  return { label: "Pending", tone: "muted" as const };
+}
+const TONE: Record<string, string> = {
+  ok: "bg-emerald-100 text-emerald-700", bad: "bg-rose-100 text-rose-700",
+  info: "bg-sky-100 text-sky-700", warn: "bg-amber-100 text-amber-700", muted: "bg-slate-100 text-slate-600",
+};
 
 function KycDocsPage() {
-  const [docs, setDocs] = useState<Doc[]>(SEED);
-  const [filter, setFilter] = useState<(typeof FILTERS)[number]>("All");
+  const [reg, setReg] = useState<Reg>(null);
+  const [urls, setUrls] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
 
-  const counts = useMemo(() => {
-    const verified = docs.filter((d) => d.status === "Verified").length;
-    const pending = docs.filter((d) => d.status === "Pending").length;
-    const review = docs.filter((d) => d.status === "In Review").length;
-    const rejected = docs.filter((d) => d.status === "Rejected").length;
-    const required = docs.filter((d) => d.required).length;
-    const completedRequired = docs.filter((d) => d.required && d.status === "Verified").length;
-    const pct = Math.round((completedRequired / required) * 100);
-    return { verified, pending, review, rejected, required, completedRequired, pct };
-  }, [docs]);
+  useEffect(() => {
+    let on = true;
+    (async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u?.user) { if (on) setLoading(false); return; }
+      const { data } = await supabase.from("retailer_registrations").select("*").eq("auth_user_id", u.user.id)
+        .order("created_at", { ascending: false }).limit(1).maybeSingle();
+      if (!on) return;
+      setReg(data as Reg);
+      if (data) {
+        const map: Record<string, string> = {};
+        await Promise.all(DOC_DEFS.map(async (d) => {
+          const p = (data as any)[d.pathKey];
+          if (!p) return;
+          const { data: su } = await supabase.storage.from("retailer-kyc").createSignedUrl(p, 3600);
+          if (su?.signedUrl) map[d.key] = su.signedUrl;
+        }));
+        if (on) setUrls(map);
+      }
+      setLoading(false);
+    })();
+    return () => { on = false; };
+  }, []);
 
-  const visible = docs.filter((d) => filter === "All" || d.category === filter);
-
-  function markUploaded(id: string) {
-    setDocs((xs) => xs.map((d) => (d.id === id ? { ...d, status: "In Review", file: `${id}_upload.pdf`, uploadedAt: "Just now", rejectionReason: undefined } : d)));
-    toast.success("Document uploaded · sent for review");
-  }
-
-  function reupload(id: string) {
-    markUploaded(id);
-  }
+  const docReviews: Record<string, any> = (reg as any)?.doc_reviews || {};
+  const regStatus: string = (reg as any)?.status || "";
+  const present = DOC_DEFS.filter((d) => !!(reg as any)?.[d.pathKey]);
+  const verified = present.filter((d) => statusFor(docReviews[d.key]?.status, regStatus).label === "Verified").length;
+  const pending = present.length - verified;
 
   return (
     <RetailerShell>
       <div className="space-y-5">
-        <PageHeader
-          icon={<FileCheck2 className="h-5 w-5" />}
-          title="KYC Documents"
-          subtitle="Identity, address, business and biometric verification for your retailer account"
-          badge={
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 text-emerald-700 px-2.5 py-0.5 text-[11px] font-semibold">
-              <ShieldCheck className="h-3 w-3" /> RBI / UIDAI compliant
-            </span>
-          }
-          actions={
-            <button
-              onClick={() => toast.success("KYC pack downloaded")}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold hover:bg-muted"
-            >
-              <Download className="h-3.5 w-3.5" /> Download KYC Pack
-            </button>
-          }
-        />
+        <PageHeader icon={<FileCheck2 className="h-5 w-5" />} title="KYC Documents" subtitle="The documents you submitted during registration and their verification status." />
 
-        {/* Progress hero */}
-        <section className="relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-soft">
-          <div className="absolute -right-12 -top-12 h-44 w-44 rounded-full bg-saffron/10 blur-3xl" />
-          <div className="relative grid lg:grid-cols-[1fr_auto] gap-5 items-center">
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-saffron" />
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">KYC Completion</p>
+        {loading ? (
+          <div className="grid place-items-center rounded-2xl border border-border bg-card p-12 text-sm text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin" /></div>
+        ) : !reg ? (
+          <div className="rounded-2xl border border-border bg-card p-8 text-center">
+            <FileCheck2 className="mx-auto h-10 w-10 text-muted-foreground" />
+            <p className="mt-3 font-bold">No registration found for this account</p>
+            <p className="mt-1 text-sm text-muted-foreground">Your KYC documents appear here once your registration is on file.</p>
+          </div>
+        ) : (
+          <>
+            {/* Overall status */}
+            <div className={`flex flex-wrap items-center gap-3 rounded-2xl border p-4 ${regStatus === "approved" ? "border-emerald-200 bg-emerald-50" : "border-amber-200 bg-amber-50"}`}>
+              <span className={`grid h-11 w-11 place-items-center rounded-xl ${regStatus === "approved" ? "bg-emerald-200/70 text-emerald-700" : "bg-amber-200/70 text-amber-700"}`}>
+                {regStatus === "approved" ? <CheckCircle2 className="h-5 w-5" /> : regStatus === "rejected" ? <XCircle className="h-5 w-5" /> : <Clock className="h-5 w-5" />}
+              </span>
+              <div className="min-w-0">
+                <p className="font-bold text-foreground">
+                  {regStatus === "approved" ? "KYC Verified" : regStatus === "rejected" ? "KYC Rejected" : "KYC Under Review"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Application {(reg as any).application_id} · {present.length} documents submitted · {verified} verified{pending ? ` · ${pending} pending` : ""}
+                </p>
               </div>
-              <p className="mt-1 font-display text-3xl font-extrabold">
-                {counts.completedRequired}<span className="text-muted-foreground">/{counts.required}</span> required documents verified
-              </p>
-              <p className="text-sm text-muted-foreground mt-1">
-                {counts.rejected > 0
-                  ? `${counts.rejected} document needs your attention.`
-                  : counts.review > 0
-                  ? `${counts.review} document under review — usually approved within 2 hours.`
-                  : "Great! Your retailer KYC is fully compliant."}
-              </p>
-
-              <div className="mt-4 h-3 rounded-full bg-muted overflow-hidden">
-                <div
-                  className="h-full bg-saffron-gradient transition-all duration-700"
-                  style={{ width: `${counts.pct}%` }}
-                />
-              </div>
-              <div className="mt-2 flex flex-wrap gap-4 text-[11px] font-semibold text-muted-foreground">
-                <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-emerald-500" /> {counts.verified} Verified</span>
-                <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-sky-500" /> {counts.review} In Review</span>
-                <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-amber-500" /> {counts.pending} Pending</span>
-                <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-rose-500" /> {counts.rejected} Rejected</span>
-              </div>
+              <span className={`ml-auto rounded-full px-3 py-1 text-xs font-bold ${regStatus === "approved" ? "bg-emerald-600 text-white" : "bg-amber-500 text-white"}`}>
+                {(regStatus || "pending").replace(/_/g, " ").toUpperCase()}
+              </span>
             </div>
 
-            <div className="flex items-center justify-center">
-              <RingProgress value={counts.pct} />
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              <StatCard label="Submitted" value={String(present.length)} icon={<FileText className="h-5 w-5" />} tone="sky" />
+              <StatCard label="Verified" value={String(verified)} icon={<CheckCircle2 className="h-5 w-5" />} tone="green" />
+              <StatCard label="Pending" value={String(pending)} icon={<Clock className="h-5 w-5" />} tone="saffron" />
+              <StatCard label="Account" value={(reg as any).status === "approved" ? "Active" : "Pending"} icon={<ShieldCheck className="h-5 w-5" />} tone="violet" />
             </div>
-          </div>
-        </section>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <StatCard label="Identity" value="2/2" icon={<IdCard className="h-5 w-5" />} tone="green" />
-          <StatCard label="Address" value="1/1" icon={<ScrollText className="h-5 w-5" />} tone="sky" />
-          <StatCard label="Business" value="1/2" icon={<Building2 className="h-5 w-5" />} tone="violet" />
-          <StatCard label="Biometric" value="1/2" icon={<Camera className="h-5 w-5" />} tone="rose" />
-        </div>
+            {/* Document grid */}
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {DOC_DEFS.map((d) => {
+                const path = (reg as any)[d.pathKey];
+                const url = urls[d.key];
+                const kind = kindOf(path);
+                const st = statusFor(docReviews[d.key]?.status, regStatus);
+                const Icon = d.icon;
+                return (
+                  <div key={d.key} className="overflow-hidden rounded-2xl border border-border bg-card shadow-soft">
+                    <div className="relative grid h-40 place-items-center bg-muted/40">
+                      {!path ? (
+                        <div className="flex flex-col items-center gap-1 text-muted-foreground"><AlertTriangle className="h-7 w-7" /><span className="text-xs">Not submitted</span></div>
+                      ) : kind === "image" && url ? (
+                        <img src={url} alt={d.label} className="h-full w-full object-cover" />
+                      ) : kind === "video" && url ? (
+                        <video src={url} className="h-full w-full object-cover" muted />
+                      ) : (
+                        <div className="flex flex-col items-center gap-1 text-muted-foreground"><FileText className="h-9 w-9" /><span className="text-xs uppercase">{kind}</span></div>
+                      )}
+                      <span className={`absolute right-2 top-2 rounded-full px-2 py-0.5 text-[10px] font-bold ${TONE[st.tone]}`}>{st.label}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 p-3">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-india-green/10 text-india-green"><Icon className="h-4 w-4" /></span>
+                        <div className="min-w-0"><p className="truncate text-sm font-bold">{d.label}</p><p className="truncate text-[11px] text-muted-foreground">{d.description}</p></div>
+                      </div>
+                      {url && <a href={url} target="_blank" rel="noreferrer" className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-border px-2.5 h-8 text-[11px] font-semibold text-india-green hover:bg-muted"><Eye className="h-3.5 w-3.5" /> View</a>}
+                    </div>
+                    {docReviews[d.key]?.notes && <p className="border-t border-border px-3 py-2 text-[11px] text-rose-600">Note: {docReviews[d.key].notes}</p>}
+                  </div>
+                );
+              })}
+            </div>
 
-        {/* Filters */}
-        <div className="flex flex-wrap gap-2">
-          {FILTERS.map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition ${
-                filter === f
-                  ? "bg-saffron-gradient text-white border-transparent"
-                  : "bg-card border-border text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {f}
-            </button>
-          ))}
-        </div>
-
-        {/* Documents grid */}
-        <div className="grid md:grid-cols-2 gap-4">
-          {visible.map((doc) => (
-            <DocCard key={doc.id} doc={doc} onUpload={() => markUploaded(doc.id)} onReupload={() => reupload(doc.id)} />
-          ))}
-        </div>
-
-        {/* Footer note */}
-        <section className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 flex items-start gap-3">
-          <Lock className="h-5 w-5 text-emerald-700 mt-0.5 shrink-0" />
-          <div>
-            <p className="text-sm font-bold text-emerald-900">Bank-grade encryption</p>
-            <p className="text-xs text-emerald-900/80 mt-0.5">
-              All documents are encrypted at rest using AES-256 and stored in audited Indian data centres in line with RBI, UIDAI and PMLA guidelines. Only verified compliance officers can access your records.
-            </p>
-          </div>
-        </section>
+            <div className="rounded-xl border border-border bg-muted/30 p-4 text-xs text-muted-foreground">
+              Need to update a document? Please contact support and our team will re-open your KYC.
+              <Link to="/support" className="ml-1 font-semibold text-india-green hover:underline">Go to Support →</Link>
+            </div>
+          </>
+        )}
       </div>
     </RetailerShell>
-  );
-}
-
-function DocCard({ doc, onUpload, onReupload }: { doc: Doc; onUpload: () => void; onReupload: () => void }) {
-  const S = STATUS_STYLE[doc.status];
-  const Icon = doc.icon;
-  return (
-    <article className={`group relative overflow-hidden rounded-2xl border border-border bg-card shadow-soft hover:shadow-elev transition`}>
-      <div className={`absolute inset-x-0 top-0 h-1 ${S.dot}`} />
-      <div className="p-4 flex gap-4">
-        <div className={`h-12 w-12 shrink-0 rounded-xl bg-saffron/10 text-saffron flex items-center justify-center ring-4 ${S.ring}`}>
-          <Icon className="h-5 w-5" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="font-bold text-sm truncate">{doc.label}</h3>
-                {doc.required && <span className="text-[10px] font-bold text-rose-600">REQUIRED</span>}
-              </div>
-              <p className="text-xs text-muted-foreground mt-0.5">{doc.description}</p>
-            </div>
-            <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold ${S.chip}`}>
-              <S.icon className="h-3 w-3" /> {doc.status}
-            </span>
-          </div>
-
-          {doc.number && (
-            <p className="mt-2 inline-flex items-center gap-1 text-[11px] font-mono bg-muted px-2 py-0.5 rounded">
-              {doc.number}
-            </p>
-          )}
-
-          {doc.file ? (
-            <div className="mt-3 rounded-lg border border-border bg-muted/30 p-2.5 flex items-center gap-2">
-              <div className="h-8 w-8 rounded-md bg-saffron-gradient text-white text-[10px] font-bold flex items-center justify-center">
-                {doc.file.split(".").pop()?.toUpperCase().slice(0, 3)}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-semibold truncate">{doc.file}</p>
-                <p className="text-[10px] text-muted-foreground">Uploaded {doc.uploadedAt}</p>
-              </div>
-              <button className="h-7 w-7 rounded-md hover:bg-muted flex items-center justify-center" title="Preview">
-                <Eye className="h-3.5 w-3.5" />
-              </button>
-              <button className="h-7 w-7 rounded-md hover:bg-muted flex items-center justify-center" title="Download">
-                <Download className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          ) : (
-            <div className="mt-3 rounded-lg border border-dashed border-border bg-muted/20 p-3 text-center">
-              <Upload className="h-4 w-4 mx-auto text-muted-foreground" />
-              <p className="text-[11px] text-muted-foreground mt-1">No file uploaded yet</p>
-            </div>
-          )}
-
-          {doc.status === "Rejected" && doc.rejectionReason && (
-            <div className="mt-2 rounded-lg border border-rose-200 bg-rose-50 p-2 flex gap-2">
-              <AlertTriangle className="h-3.5 w-3.5 text-rose-700 mt-0.5 shrink-0" />
-              <p className="text-[11px] text-rose-900">{doc.rejectionReason}</p>
-            </div>
-          )}
-
-          <div className="mt-3 flex flex-wrap gap-2">
-            {doc.status === "Pending" && (
-              <button
-                onClick={onUpload}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-saffron-gradient text-white px-3 py-1.5 text-xs font-semibold shadow-elev hover:scale-[1.02] transition"
-              >
-                <Upload className="h-3.5 w-3.5" /> {doc.id === "video-kyc" ? "Record Video" : doc.id === "selfie" ? "Capture Selfie" : "Upload"}
-              </button>
-            )}
-            {doc.status === "Rejected" && (
-              <button
-                onClick={onReupload}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-rose-600 text-white px-3 py-1.5 text-xs font-semibold hover:bg-rose-700"
-              >
-                <RefreshCw className="h-3.5 w-3.5" /> Re-upload
-              </button>
-            )}
-            {doc.status === "In Review" && (
-              <span className="text-[11px] text-sky-700 font-semibold inline-flex items-center gap-1">
-                <Clock className="h-3.5 w-3.5" /> Auto-verifying… usually under 2 hrs
-              </span>
-            )}
-            {doc.status === "Verified" && (
-              <span className="text-[11px] text-emerald-700 font-semibold inline-flex items-center gap-1">
-                <CheckCircle2 className="h-3.5 w-3.5" /> Verified by BharatOne Compliance
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-    </article>
-  );
-}
-
-function RingProgress({ value }: { value: number }) {
-  const r = 44;
-  const c = 2 * Math.PI * r;
-  const off = c - (c * value) / 100;
-  return (
-    <div className="relative h-32 w-32">
-      <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90">
-        <circle cx="50" cy="50" r={r} className="fill-none stroke-muted" strokeWidth="8" />
-        <circle
-          cx="50"
-          cy="50"
-          r={r}
-          className="fill-none"
-          stroke="url(#kyc-grad)"
-          strokeWidth="8"
-          strokeLinecap="round"
-          strokeDasharray={c}
-          strokeDashoffset={off}
-        />
-        <defs>
-          <linearGradient id="kyc-grad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#FF7A00" />
-            <stop offset="100%" stopColor="#FF3D7F" />
-          </linearGradient>
-        </defs>
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="font-display text-2xl font-extrabold">{value}%</span>
-        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Complete</span>
-      </div>
-    </div>
   );
 }

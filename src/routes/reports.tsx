@@ -1,238 +1,226 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
-  BarChart, Bar, ResponsiveContainer, XAxis, YAxis, Tooltip, LineChart, Line,
-  CartesianGrid, AreaChart, Area, PieChart, Pie, Cell, Legend,
-  RadialBarChart, RadialBar,
+  BarChart, Bar, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid,
+  AreaChart, Area, PieChart, Pie, Cell, Legend,
 } from "recharts";
-import {
-  BarChart3, Download, TrendingUp, Wallet, Receipt, Layers, Percent, CheckCircle2,
-} from "lucide-react";
+import { BarChart3, Download, TrendingUp, Wallet, Receipt, Layers, CheckCircle2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { RetailerShell } from "@/components/retailer/retailer-shell";
 import { PageHeader } from "@/components/retailer/page-header";
 import { StatCard } from "@/components/retailer/stat-card";
-import { SectionCard, GhostButton } from "@/components/retailer/section-card";
-import {
-  WEEKLY_VOLUME, MONTHLY_VOLUME, SERVICE_REPORT, COMMISSION_SPLIT, PERIOD_MULTIPLIER, inr,
-} from "@/components/retailer/mock-data";
+import { SectionCard } from "@/components/retailer/section-card";
+import { inr } from "@/components/retailer/mock-data";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/reports")({
   head: () => ({ meta: [{ title: "Reports & Analytics — BharatOne" }] }),
   component: ReportsPage,
 });
 
-const PERIODS = ["Daily", "Weekly", "Monthly"] as const;
-type Period = (typeof PERIODS)[number];
+const PERIODS = [
+  { key: "7d", label: "Last 7 days", days: 7 },
+  { key: "30d", label: "Last 30 days", days: 30 },
+  { key: "90d", label: "Last 90 days", days: 90 },
+  { key: "all", label: "All time", days: 100000 },
+] as const;
+type PeriodKey = (typeof PERIODS)[number]["key"];
+
+type App = { service_name: string | null; category_name: string | null; service_charge: number | null; commission_price: number | null; status: string; created_at: string };
+const PIE_COLORS = ["#f59e0b", "#16a34a", "#0ea5e9", "#8b5cf6", "#ef4444", "#14b8a6", "#6366f1", "#64748b"];
+const earned = (s: string) => ["approved", "completed"].includes(s);
 
 function ReportsPage() {
-  const [period, setPeriod] = useState<Period>("Monthly");
-  const m = PERIOD_MULTIPLIER[period];
+  const [apps, setApps] = useState<App[]>([]);
+  const [walletCredit, setWalletCredit] = useState(0);
+  const [walletDebit, setWalletDebit] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState<PeriodKey>("30d");
 
-  const services = useMemo(
-    () =>
-      SERVICE_REPORT.map((s) => {
-        const txns = Math.round(s.txns * m);
-        const volume = Math.round(s.volume * m);
-        const commission = Math.round(volume * (s.rate / 100));
-        return { ...s, txns, volume, commission };
-      }),
-    [m],
-  );
+  useEffect(() => {
+    let on = true;
+    (async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u?.user) { if (on) setLoading(false); return; }
+      const [a, wt] = await Promise.all([
+        supabase.from("service_applications").select("service_name,category_name,service_charge,commission_price,status,created_at").eq("submitted_by", u.user.id),
+        supabase.from("wallet_transactions").select("direction,amount,created_at").eq("user_id", u.user.id),
+      ]);
+      if (!on) return;
+      setApps((a.data as App[]) ?? []);
+      const w = (wt.data as any[]) ?? [];
+      setWalletCredit(w.filter((x) => x.direction === "credit").reduce((s, x) => s + Number(x.amount || 0), 0));
+      setWalletDebit(w.filter((x) => x.direction === "debit").reduce((s, x) => s + Number(x.amount || 0), 0));
+      setLoading(false);
+    })();
+    return () => { on = false; };
+  }, []);
 
-  const totals = useMemo(() => {
-    const volume = services.reduce((a, s) => a + s.volume, 0);
-    const txns = services.reduce((a, s) => a + s.txns, 0);
-    const commission = services.reduce((a, s) => a + s.commission, 0);
-    return { volume, txns, commission };
-  }, [services]);
+  const days = PERIODS.find((p) => p.key === period)!.days;
+  const cutoff = useMemo(() => { const d = new Date(); d.setDate(d.getDate() - days); return d; }, [days]);
+  const rows = useMemo(() => apps.filter((a) => new Date(a.created_at) >= cutoff), [apps, cutoff]);
 
-  const pending = Math.round(totals.commission * 0.14);
-  const settlementRate = Math.round(((totals.commission - pending) / Math.max(totals.commission, 1)) * 100);
+  const totals = useMemo(() => ({
+    volume: rows.reduce((s, r) => s + Number(r.service_charge || 0), 0),
+    commission: rows.filter((r) => earned(r.status)).reduce((s, r) => s + Number(r.commission_price || 0), 0),
+    count: rows.length,
+    approved: rows.filter((r) => earned(r.status)).length,
+  }), [rows]);
+
+  const trend = useMemo(() => {
+    const buckets = Math.min(days, 30);
+    const arr: { day: string; volume: number; commission: number }[] = [];
+    for (let i = buckets - 1; i >= 0; i--) {
+      const d = new Date(); d.setDate(d.getDate() - i);
+      const same = rows.filter((r) => new Date(r.created_at).toDateString() === d.toDateString());
+      arr.push({
+        day: d.toLocaleDateString("en-IN", { day: "2-digit", month: "short" }),
+        volume: same.reduce((s, r) => s + Number(r.service_charge || 0), 0),
+        commission: same.filter((r) => earned(r.status)).reduce((s, r) => s + Number(r.commission_price || 0), 0),
+      });
+    }
+    return arr;
+  }, [rows, days]);
+
+  const byService = useMemo(() => {
+    const m = new Map<string, { volume: number; commission: number; txns: number }>();
+    rows.forEach((r) => {
+      const k = r.service_name || r.category_name || "Other";
+      const e = m.get(k) || { volume: 0, commission: 0, txns: 0 };
+      e.volume += Number(r.service_charge || 0); e.txns += 1;
+      if (earned(r.status)) e.commission += Number(r.commission_price || 0);
+      m.set(k, e);
+    });
+    return Array.from(m.entries()).map(([name, v]) => ({ name, ...v })).sort((a, b) => b.volume - a.volume);
+  }, [rows]);
+
+  const byStatus = useMemo(() => {
+    const m = new Map<string, number>();
+    rows.forEach((r) => m.set(r.status, (m.get(r.status) || 0) + 1));
+    return Array.from(m.entries()).map(([name, value], i) => ({ name: name.replace(/_/g, " "), value, color: PIE_COLORS[i % PIE_COLORS.length] }));
+  }, [rows]);
+
+  const exportCsv = () => {
+    if (byService.length === 0) return toast.error("No data to export");
+    const head = ["Service", "Transactions", "Volume", "Commission"].join(",");
+    const body = byService.map((s) => [s.name, s.txns, s.volume, s.commission].map((x) => `"${x}"`).join(",")).join("\n");
+    const blob = new Blob([head + "\n" + body], { type: "text/csv" }); const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = `report-${period}.csv`; a.click(); URL.revokeObjectURL(url);
+    toast.success("Report exported");
+  };
 
   return (
     <RetailerShell>
       <div className="space-y-5">
-        <PageHeader
-          icon={<BarChart3 className="h-5 w-5" />}
-          title="Reports & Analytics"
-          subtitle="Track business performance, commissions and settlement summaries"
-          actions={
-            <GhostButton onClick={() => toast.success("Report export started")}>
-              <Download className="h-3.5 w-3.5" /> Download PDF
-            </GhostButton>
-          }
-        />
+        <PageHeader icon={<BarChart3 className="h-5 w-5" />} title="Reports & Analytics" subtitle="Your application volume, commissions and service breakdown"
+          actions={<button onClick={exportCsv} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-10 text-sm font-semibold hover:bg-muted"><Download className="h-4 w-4" /> Export CSV</button>} />
 
-        {/* Period filter */}
-        <div className="flex items-center gap-1 rounded-xl border border-border bg-card p-1 w-fit shadow-soft">
+        <div className="flex flex-wrap gap-2">
           {PERIODS.map((p) => (
-            <button
-              key={p}
-              onClick={() => setPeriod(p)}
-              className={`rounded-lg px-4 py-1.5 text-xs font-bold transition ${
-                period === p ? "bg-orange-500 text-white shadow-soft" : "text-muted-foreground hover:bg-muted"
-              }`}
-            >
-              {p}
-            </button>
+            <button key={p.key} onClick={() => setPeriod(p.key)} className={`rounded-full px-3 h-9 text-xs font-semibold transition ${period === p.key ? "bg-india-green text-white" : "border border-border bg-card hover:bg-muted"}`}>{p.label}</button>
           ))}
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <StatCard label={`${period} Volume`} value={inr(totals.volume)} icon={<TrendingUp className="h-5 w-5" />} tone="saffron" delta={{ value: "+34.2%", positive: true }} />
-          <StatCard label={`${period} Commission`} value={inr(totals.commission)} icon={<Receipt className="h-5 w-5" />} tone="green" delta={{ value: "+27.9%", positive: true }} />
-          <StatCard label={`${period} Txns`} value={totals.txns.toLocaleString("en-IN")} icon={<Layers className="h-5 w-5" />} tone="sky" delta={{ value: "+12.4%", positive: true }} />
-          <StatCard label="Settlement Pending" value={inr(pending)} icon={<Wallet className="h-5 w-5" />} tone="violet" delta={{ value: `${settlementRate}% cleared`, positive: true }} />
-        </div>
-
-        <div className="grid lg:grid-cols-2 gap-4">
-          <SectionCard title="Daily Transaction Volume" description="Last 7 days">
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={WEEKLY_VOLUME}>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                  <XAxis dataKey="day" tickLine={false} axisLine={false} className="text-xs" />
-                  <YAxis tickLine={false} axisLine={false} className="text-xs" />
-                  <Tooltip contentStyle={{ borderRadius: 8, fontSize: 12 }} formatter={(v: number) => inr(v)} />
-                  <Bar dataKey="value" fill="#f59e0b" radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+        {loading ? (
+          <div className="grid place-items-center rounded-2xl border border-border bg-card p-12 text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin" /></div>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              <StatCard label="Application Volume" value={inr(totals.volume)} icon={<TrendingUp className="h-5 w-5" />} tone="saffron" />
+              <StatCard label="Earned Commission" value={inr(totals.commission)} icon={<Receipt className="h-5 w-5" />} tone="green" />
+              <StatCard label="Applications" value={String(totals.count)} icon={<Layers className="h-5 w-5" />} tone="sky" />
+              <StatCard label="Approved / Completed" value={String(totals.approved)} icon={<CheckCircle2 className="h-5 w-5" />} tone="violet" />
             </div>
-          </SectionCard>
-          <SectionCard title="Transaction Count Trend">
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={WEEKLY_VOLUME}>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                  <XAxis dataKey="day" tickLine={false} axisLine={false} className="text-xs" />
-                  <YAxis tickLine={false} axisLine={false} className="text-xs" />
-                  <Tooltip contentStyle={{ borderRadius: 8, fontSize: 12 }} />
-                  <Line type="monotone" dataKey="txns" stroke="#10b981" strokeWidth={3} dot={{ r: 4 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </SectionCard>
-        </div>
 
-        <SectionCard title="6-Month Business Trend" description="Volume vs commission earned">
-          <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={MONTHLY_VOLUME}>
-                <defs>
-                  <linearGradient id="volGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="commGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                <XAxis dataKey="month" tickLine={false} axisLine={false} className="text-xs" />
-                <YAxis tickLine={false} axisLine={false} className="text-xs" />
-                <Tooltip contentStyle={{ borderRadius: 8, fontSize: 12 }} formatter={(v: number) => inr(v)} />
-                <Legend wrapperStyle={{ fontSize: 12 }} />
-                <Area type="monotone" dataKey="value" name="Volume" stroke="#f59e0b" strokeWidth={2} fill="url(#volGrad)" />
-                <Area type="monotone" dataKey="commission" name="Commission" stroke="#10b981" strokeWidth={2} fill="url(#commGrad)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </SectionCard>
+            <SectionCard title="Volume & Commission Trend" description={PERIODS.find((p) => p.key === period)!.label}>
+              <div className="h-64">
+                {rows.length === 0 ? <div className="grid h-full place-items-center text-sm text-muted-foreground">No applications in this period</div> : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={trend} margin={{ top: 10, right: 6, left: -10, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="v" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#f59e0b" stopOpacity={0.5} /><stop offset="100%" stopColor="#f59e0b" stopOpacity={0} /></linearGradient>
+                        <linearGradient id="cm" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#16a34a" stopOpacity={0.4} /><stop offset="100%" stopColor="#16a34a" stopOpacity={0} /></linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-border" />
+                      <XAxis dataKey="day" tickLine={false} axisLine={false} className="text-xs" minTickGap={20} />
+                      <YAxis tickLine={false} axisLine={false} className="text-xs" tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
+                      <Tooltip formatter={(v: number) => inr(v)} contentStyle={{ borderRadius: 8, fontSize: 12 }} />
+                      <Area type="monotone" dataKey="volume" name="Volume" stroke="#f59e0b" strokeWidth={2.5} fill="url(#v)" />
+                      <Area type="monotone" dataKey="commission" name="Commission" stroke="#16a34a" strokeWidth={2.5} fill="url(#cm)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+            </SectionCard>
 
-        <div className="grid lg:grid-cols-2 gap-4">
-          <SectionCard title="Service-wise Volume Share" description={`${period} contribution`}>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={services} dataKey="volume" nameKey="name" cx="50%" cy="50%" innerRadius={55} outerRadius={90} paddingAngle={3}>
-                    {services.map((s) => (
-                      <Cell key={s.name} fill={s.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip contentStyle={{ borderRadius: 8, fontSize: 12 }} formatter={(v: number) => inr(v)} />
-                  <Legend wrapperStyle={{ fontSize: 12 }} />
-                </PieChart>
-              </ResponsiveContainer>
+            <div className="grid lg:grid-cols-3 gap-3">
+              <div className="lg:col-span-2">
+                <SectionCard title="By Service" description="Volume per service">
+                  <div className="h-64">
+                    {byService.length === 0 ? <div className="grid h-full place-items-center text-sm text-muted-foreground">No data</div> : (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={byService.slice(0, 8)} margin={{ top: 8, right: 6, left: -10, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-border" />
+                          <XAxis dataKey="name" tickLine={false} axisLine={false} className="text-[10px]" interval={0} angle={-15} height={50} textAnchor="end" />
+                          <YAxis tickLine={false} axisLine={false} className="text-xs" tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
+                          <Tooltip formatter={(v: number) => inr(v)} contentStyle={{ borderRadius: 8, fontSize: 12 }} />
+                          <Bar dataKey="volume" name="Volume" fill="#f59e0b" radius={[6, 6, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    )}
+                  </div>
+                </SectionCard>
+              </div>
+              <SectionCard title="By Status" description="Application outcomes">
+                <div className="h-64">
+                  {byStatus.length === 0 ? <div className="grid h-full place-items-center text-sm text-muted-foreground">No data</div> : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={byStatus} dataKey="value" innerRadius={45} outerRadius={70} paddingAngle={2}>
+                          {byStatus.map((s) => <Cell key={s.name} fill={s.color} />)}
+                        </Pie>
+                        <Legend iconSize={8} wrapperStyle={{ fontSize: 11 }} />
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+              </SectionCard>
             </div>
-          </SectionCard>
 
-          <SectionCard title="Commission Settlement" description="Earned vs settled vs pending">
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <RadialBarChart innerRadius="30%" outerRadius="100%" data={COMMISSION_SPLIT} startAngle={90} endAngle={-270}>
-                  <RadialBar dataKey="value" cornerRadius={8} background>
-                    {COMMISSION_SPLIT.map((c) => (
-                      <Cell key={c.name} fill={c.color} />
-                    ))}
-                  </RadialBar>
-                  <Tooltip contentStyle={{ borderRadius: 8, fontSize: 12 }} formatter={(v: number) => inr(v)} />
-                  <Legend wrapperStyle={{ fontSize: 12 }} iconType="circle" />
-                </RadialBarChart>
-              </ResponsiveContainer>
-            </div>
-          </SectionCard>
-        </div>
+            <SectionCard title="Service Breakdown" description="Detailed figures">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead><tr className="border-b border-border text-left text-xs text-muted-foreground">
+                    <th className="py-2">Service</th><th className="py-2 text-right">Txns</th><th className="py-2 text-right">Volume</th><th className="py-2 text-right">Commission</th>
+                  </tr></thead>
+                  <tbody>
+                    {byService.length === 0 ? <tr><td colSpan={4} className="py-6 text-center text-muted-foreground">No applications in this period</td></tr> :
+                      byService.map((s) => (
+                        <tr key={s.name} className="border-b border-border/60">
+                          <td className="py-2 font-medium">{s.name}</td>
+                          <td className="py-2 text-right">{s.txns}</td>
+                          <td className="py-2 text-right">{inr(s.volume)}</td>
+                          <td className="py-2 text-right font-semibold text-emerald-700">+{inr(s.commission)}</td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            </SectionCard>
 
-        {/* Service-wise breakdown table */}
-        <div className="rounded-xl border border-border bg-card shadow-soft overflow-hidden">
-          <div className="flex flex-wrap items-center justify-between gap-2 p-4 pb-3 border-b border-border">
-            <div>
-              <h3 className="text-sm font-bold flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-orange-500" /> Service-wise Commission Breakdown</h3>
-              <p className="text-[11px] text-muted-foreground mt-0.5">{period} totals · Commission = Volume × Rate</p>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <div className="rounded-2xl border border-border bg-card p-4 shadow-soft flex items-center gap-3">
+                <span className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-100 text-emerald-700"><Wallet className="h-5 w-5" /></span>
+                <div><p className="text-[11px] font-semibold uppercase text-muted-foreground">Wallet Credited (all time)</p><p className="text-lg font-extrabold text-emerald-600">{inr(walletCredit)}</p></div>
+              </div>
+              <div className="rounded-2xl border border-border bg-card p-4 shadow-soft flex items-center gap-3">
+                <span className="grid h-10 w-10 place-items-center rounded-xl bg-rose-100 text-rose-600"><Wallet className="h-5 w-5" /></span>
+                <div><p className="text-[11px] font-semibold uppercase text-muted-foreground">Wallet Spent (all time)</p><p className="text-lg font-extrabold text-rose-500">{inr(walletDebit)}</p></div>
+              </div>
             </div>
-            <span className="rounded-lg border border-dashed border-border bg-muted/40 px-3 py-1.5 text-[11px] font-mono font-semibold text-slate-700">
-              Commission = Σ (Volume × Rate%)
-            </span>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/50 text-[11px] uppercase tracking-wider text-muted-foreground">
-                <tr>
-                  <th className="text-left px-4 py-2.5 font-bold">Service</th>
-                  <th className="text-right px-3 py-2.5 font-bold">Txns</th>
-                  <th className="text-right px-3 py-2.5 font-bold">Volume</th>
-                  <th className="text-right px-3 py-2.5 font-bold">Rate</th>
-                  <th className="text-right px-4 py-2.5 font-bold">Commission</th>
-                  <th className="text-right px-4 py-2.5 font-bold">% Share</th>
-                </tr>
-              </thead>
-              <tbody>
-                {services.map((s) => (
-                  <tr key={s.name} className="border-t border-border">
-                    <td className="px-4 py-2.5 font-semibold">
-                      <span className="inline-flex items-center gap-2">
-                        <span className="h-2.5 w-2.5 rounded-full" style={{ background: s.color }} />
-                        {s.name}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2.5 text-right tabular-nums">{s.txns.toLocaleString("en-IN")}</td>
-                    <td className="px-3 py-2.5 text-right tabular-nums">{inr(s.volume)}</td>
-                    <td className="px-3 py-2.5 text-right tabular-nums text-muted-foreground">{s.rate}%</td>
-                    <td className="px-4 py-2.5 text-right tabular-nums font-bold text-emerald-700">{inr(s.commission)}</td>
-                    <td className="px-4 py-2.5 text-right tabular-nums">
-                      <span className="inline-flex items-center gap-1 font-semibold">
-                        <Percent className="h-3 w-3 text-muted-foreground" />
-                        {Math.round((s.commission / Math.max(totals.commission, 1)) * 100)}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="border-t-2 border-border bg-muted/40 font-bold">
-                  <td className="px-4 py-2.5">Total</td>
-                  <td className="px-3 py-2.5 text-right tabular-nums">{totals.txns.toLocaleString("en-IN")}</td>
-                  <td className="px-3 py-2.5 text-right tabular-nums">{inr(totals.volume)}</td>
-                  <td className="px-3 py-2.5 text-right">—</td>
-                  <td className="px-4 py-2.5 text-right tabular-nums text-emerald-700">{inr(totals.commission)}</td>
-                  <td className="px-4 py-2.5 text-right tabular-nums">100</td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-        </div>
+          </>
+        )}
       </div>
     </RetailerShell>
   );
