@@ -48,18 +48,18 @@ function Field({ label, value }: { label: string; value: unknown }) {
   return (
     <div className="min-w-0">
       <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className="mt-0.5 break-words font-semibold text-foreground">{v}</p>
+      <p className="break-words text-sm font-semibold text-foreground">{v}</p>
     </div>
   );
 }
 function Card({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
-      <p className="mb-4 flex items-center gap-2 text-sm font-bold text-foreground">
-        <span className="grid h-7 w-7 place-items-center rounded-lg bg-india-green/10 text-india-green">{icon}</span>
+    <div className="rounded-2xl border border-border bg-card p-4 shadow-soft">
+      <p className="mb-3 flex items-center gap-2 text-[13px] font-bold text-foreground">
+        <span className="grid h-6 w-6 place-items-center rounded-lg bg-india-green/10 text-india-green">{icon}</span>
         {title}
       </p>
-      <div className="grid grid-cols-2 gap-x-6 gap-y-4 md:grid-cols-3">{children}</div>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 lg:grid-cols-3">{children}</div>
     </div>
   );
 }
@@ -229,7 +229,7 @@ function ReviewPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl space-y-5 px-4 py-6">
+      <main className="mx-auto max-w-6xl space-y-4 px-4 py-5">
         {/* Profile header */}
         <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
           <div className="flex flex-wrap items-start gap-4">
@@ -282,6 +282,7 @@ function ReviewPage() {
         })()}
 
         {/* All details on one page */}
+        <div className="grid gap-4 lg:grid-cols-2">
         <Card icon={<User className="h-4 w-4" />} title="Personal Information">
           {ef("First Name", "first_name")}
           {ef("Middle Name", "middle_name")}
@@ -310,7 +311,9 @@ function ReviewPage() {
           {ef("State", "state")}
           {ef("Pincode", "pincode")}
         </Card>
+        </div>
 
+        <div className="grid gap-4 lg:grid-cols-2">
         <Card icon={<Landmark className="h-4 w-4" />} title="Bank Details">
           {ef("Account Holder", "bank_holder_name")}
           {ef("Bank", "bank_name")}
@@ -327,6 +330,7 @@ function ReviewPage() {
           {ef("Payer Name", "payer_name")}
           {ef("Payer Bank", "payer_bank")}
         </Card>
+        </div>
 
         {/* KYC Documents */}
         <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
@@ -342,7 +346,7 @@ function ReviewPage() {
               const url = urls[d.key]; const kind = fileKind(d.path); const st = docReviews[d.key]?.status ?? "pending";
               return (
                 <div key={d.key} className="overflow-hidden rounded-xl border border-border">
-                  <button type="button" onClick={() => url && setLightbox({ url, kind, label: d.label })} className="relative block h-44 w-full bg-muted/40">
+                  <button type="button" onClick={() => url && setLightbox({ url, kind, label: d.label })} className="relative block h-32 w-full bg-muted/40">
                     {url && kind === "image" ? <img src={url} alt={d.label} className="h-full w-full object-cover" />
                       : url && kind === "video" ? <video src={url} className="h-full w-full object-cover" muted />
                       : <div className="grid h-full w-full place-items-center"><FileText className="h-10 w-10 text-muted-foreground" /></div>}
