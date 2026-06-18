@@ -250,156 +250,121 @@ function ReviewPage() {
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="flex flex-wrap gap-2">
-          {TABS.map((t) => (
-            <button key={t} onClick={() => setTab(t)}
-              className={`rounded-lg px-4 h-9 text-sm font-semibold transition ${tab === t ? "bg-india-green text-white" : "bg-card border border-border text-foreground hover:bg-muted"}`}>{t}</button>
-          ))}
-        </div>
-
-        {tab === "Personal" && (
-          <Card icon={<User className="h-4 w-4" />} title="Personal Information">
-            {ef("First Name", "first_name")}
-            {ef("Middle Name", "middle_name")}
-            {ef("Surname", "surname")}
-            {ef("Date of Birth", "dob")}
-            {ef("Mobile", "mobile")}
-            {ef("Email", "email")}
-            <Field label="Retailer Type" value={typeLabel(reg.registration_type)} />
-            <Field label="Agent ID" value={reg.username} />
-          </Card>
-        )}
-
-        {tab === "Business" && (
-          <Card icon={<Building2 className="h-4 w-4" />} title="Business Information">
-            {ef("Shop Name", "shop_name")}
-            {ef("Address Type", "address_type")}
-            {ef("Building / Shop No", "building_shop_no")}
-            {ef("Street / Area", "street_area")}
-            {ef("Ward Number", "ward_number")}
-            {ef("Landmark", "landmark")}
-            {ef("Village", "village_name")}
-            {ef("Gram Panchayat", "gram_panchayat")}
-            {ef("Hobli", "hobli_name")}
-            {ef("Post Office", "post_office")}
-            {ef("Taluk", "taluk")}
-            {ef("City", "city")}
-            {ef("District", "district")}
-            {ef("State", "state")}
-            {ef("Pincode", "pincode")}
-          </Card>
-        )}
-
-        {tab === "Bank" && (
-          <Card icon={<Landmark className="h-4 w-4" />} title="Bank Details">
-            {ef("Account Holder", "bank_holder_name")}
-            {ef("Bank", "bank_name")}
-            {ef("Account Number", "account_number")}
-            {ef("IFSC", "ifsc")}
-            {ef("Account Type", "account_type")}
-          </Card>
-        )}
-
-        {tab === "KYC Docs" && (() => {
-          const docs = DOCS.filter((d) => d.path);
-          const activeKey = selDoc && docs.some((d) => d.key === selDoc) ? selDoc : (docs[0]?.key ?? null);
-          const active = docs.find((d) => d.key === activeKey);
-          const aKind = fileKind(active?.path);
-          const aUrl = activeKey ? urls[activeKey] : undefined;
+        {/* QC / Accountant action — Verify or Reject with remarks */}
+        {(() => {
           const stageAcct = reg.status === "accountant_review" && canAccountant;
           const stageQc = reg.status === "qc_review" && canQc;
+          if (!stageAcct && !stageQc) return (
+            <div className="rounded-2xl border border-border bg-card p-4 text-sm text-muted-foreground shadow-soft">
+              {reg.status === "approved" ? "This application is approved." : reg.status === "rejected" ? "This application was rejected." : reg.status === "telecaller" ? "With Telecaller for follow-up." : "No verification action available at your role for this stage."}
+            </div>
+          );
           return (
-          <div className="grid gap-4 lg:grid-cols-[280px_1fr_320px] items-start">
-            {/* Documents list */}
-            <div className="rounded-2xl border border-border bg-card shadow-soft">
-              <p className="flex items-center gap-2 border-b border-border px-4 py-3 text-sm font-bold"><FileText className="h-4 w-4 text-india-green" /> Documents</p>
-              <div className="max-h-[60vh] overflow-y-auto p-2">
-                {docs.length === 0 ? <p className="p-4 text-sm text-muted-foreground">No documents submitted.</p>
-                  : docs.map((d) => { const st = docReviews[d.key]?.status ?? "pending"; return (
-                    <button key={d.key} onClick={() => setSelDoc(d.key)} className={`mb-1 flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition ${activeKey === d.key ? "border-india-green bg-india-green/5" : "border-transparent hover:bg-muted/50"}`}>
-                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-muted text-india-green"><FileText className="h-4 w-4" /></span>
-                      <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold">{d.label}</span><span className="text-[10px] text-muted-foreground">View document</span></span>
-                      <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase ${docPill(st)}`}>{st}</span>
-                    </button>
-                  ); })}
+            <div className="rounded-2xl border-2 border-india-green/30 bg-india-green/5 p-5 shadow-soft">
+              <p className="mb-3 flex items-center gap-2 text-sm font-bold"><ShieldCheck className="h-4 w-4 text-india-green" /> {stageAcct ? "Payment Verification" : "QC Verification"} — {role}</p>
+              <label className="text-[11px] font-semibold text-muted-foreground">Remarks</label>
+              <textarea rows={3} className="mb-3 w-full rounded-lg border border-border bg-background p-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-india-green/30" placeholder="Add remarks (required for reject)" value={remarks} onChange={(e) => setRemarks(e.target.value)} />
+              <div className="flex flex-wrap gap-2">
+                <Button disabled={busy} onClick={() => { setQcAction(stageAcct ? "approve_payment" : "approve_kyc"); setTimeout(submitQc, 0); }} className="bg-india-green text-white hover:bg-india-green/90">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} Verify {stageAcct ? "Payment" : "& Approve"}</Button>
+                <Button variant="outline" disabled={busy} className="text-rose-600" onClick={() => { if (!remarks.trim()) { toast.error("Add remarks before rejecting"); return; } setQcAction(stageAcct ? "reject_payment" : "reject_kyc"); setTimeout(submitQc, 0); }}><XCircle className="h-4 w-4" /> Reject</Button>
+                {stageQc && <Button variant="outline" disabled={busy} onClick={() => setReqOpen(true)}><RefreshCw className="h-4 w-4" /> Request Documents</Button>}
               </div>
             </div>
-
-            {/* Viewer */}
-            <div className="rounded-2xl border border-border bg-card shadow-soft">
-              <div className="flex items-center justify-between border-b border-border px-4 py-3"><p className="flex items-center gap-2 text-sm font-bold"><Maximize2 className="h-4 w-4 text-india-green" /> Viewer</p>{active && <span className="text-xs text-muted-foreground">{active.label}</span>}</div>
-              <div className="grid min-h-[420px] place-items-center bg-muted/30 p-3">
-                {!active ? <p className="text-sm text-muted-foreground">Select a document</p>
-                  : !aUrl ? <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                  : aKind === "image" ? <img src={aUrl} alt={active.label} className="max-h-[60vh] max-w-full cursor-zoom-in object-contain" onClick={() => setLightbox({ url: aUrl, kind: aKind, label: active.label })} />
-                  : aKind === "video" ? <video src={aUrl} controls className="max-h-[60vh] max-w-full rounded-lg bg-black" />
-                  : <iframe src={aUrl} title={active.label} className="h-[60vh] w-full rounded-lg bg-white" />}
-              </div>
-              {active && canDocReview && (
-                <div className="flex items-center justify-between gap-2 border-t border-border px-4 py-3">
-                  <span className="text-xs text-muted-foreground">Mark this document</span>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" className="text-emerald-700" onClick={() => setDoc(active.key, "approved")}><CheckCircle2 className="h-3.5 w-3.5" /> Approve</Button>
-                    <Button size="sm" variant="outline" className="text-rose-600" onClick={() => setDoc(active.key, "rejected")}><XCircle className="h-3.5 w-3.5" /> Reject</Button>
-                    {aUrl && <a href={aUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs font-semibold hover:bg-muted"><ExternalLink className="h-3.5 w-3.5" /> Open</a>}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* QC Remarks / Action */}
-            <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
-              <p className="mb-3 flex items-center gap-2 text-sm font-bold"><ShieldCheck className="h-4 w-4 text-india-green" /> KYC QC Remarks</p>
-              {!(stageAcct || stageQc) ? (
-                <div className="rounded-lg bg-muted/40 p-3 text-sm text-muted-foreground">
-                  {reg.status === "approved" ? "This application is approved." : reg.status === "rejected" ? "This application was rejected." : reg.status === "telecaller" ? "With Telecaller for follow-up." : "No action available at your role for this stage."}
-                </div>
-              ) : (
-                <>
-                  <label className="text-[11px] font-semibold text-muted-foreground">Select QC Action</label>
-                  <select className="mb-3 h-10 w-full rounded-lg border border-border bg-background px-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-india-green/30" value={qcAction} onChange={(e) => setQcAction(e.target.value)}>
-                    <option value="">Choose action…</option>
-                    {stageAcct && <><option value="approve_payment">✓ Approve Payment → QC</option><option value="reject_payment">✗ Reject (payment not received)</option></>}
-                    {stageQc && <><option value="approve_kyc">✓ Approve KYC (create login)</option><option value="reject_kyc">✗ Reject</option><option value="request_docs">⟳ Request Documents</option></>}
-                  </select>
-                  <label className="text-[11px] font-semibold text-muted-foreground">Remarks</label>
-                  <textarea rows={4} className="w-full rounded-lg border border-border bg-background p-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-india-green/30" placeholder="add remarks" value={remarks} onChange={(e) => setRemarks(e.target.value)} />
-                  <Button onClick={submitQc} disabled={busy || !qcAction} className="mt-3 w-full bg-india-green text-white hover:bg-india-green/90">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} Submit</Button>
-                </>
-              )}
-              <div className="mt-4 space-y-1.5 border-t border-border pt-3 text-xs">
-                <p className="flex items-center justify-between"><span className="text-muted-foreground">Payment</span><span className={reg.payment_verified ? "font-bold text-emerald-600" : "text-amber-600"}>{reg.payment_verified ? "Verified" : "Pending"}</span></p>
-                <p className="flex items-center justify-between"><span className="text-muted-foreground">QC</span><span className={reg.qc_verified ? "font-bold text-emerald-600" : "text-amber-600"}>{reg.qc_verified ? "Verified" : "Pending"}</span></p>
-                <p className="flex items-center justify-between"><span className="text-muted-foreground">Stage</span><span className="font-semibold capitalize">{reg.status.replace("_", " ")}</span></p>
-              </div>
-            </div>
-          </div>
           );
         })()}
 
-        {tab === "Payment" && (
-          <Card icon={<Banknote className="h-4 w-4" />} title="Payment">
-            {editMode ? ef("Amount", "payment_amount", "number") : <Field label="Amount" value={reg.payment_amount ? `₹${Number(reg.payment_amount).toLocaleString("en-IN")}` : null} />}
-            {ef("UTR / Reference", "payment_utr")}
-            {ef("Method", "payment_method")}
-            {ef("Paid On", "payment_paid_on")}
-            {ef("Payer Name", "payer_name")}
-            {ef("Payer Bank", "payer_bank")}
-          </Card>
-        )}
+        {/* All details on one page */}
+        <Card icon={<User className="h-4 w-4" />} title="Personal Information">
+          {ef("First Name", "first_name")}
+          {ef("Middle Name", "middle_name")}
+          {ef("Surname", "surname")}
+          {ef("Date of Birth", "dob")}
+          {ef("Mobile", "mobile")}
+          {ef("Email", "email")}
+          <Field label="Retailer Type" value={typeLabel(reg.registration_type)} />
+          <Field label="Agent ID" value={reg.username} />
+        </Card>
 
-        {tab === "Verification" && (
-          <Card icon={<ShieldCheck className="h-4 w-4" />} title="Verification Status">
-            <Field label="Stage" value={reg.status.replace("_", " ")} />
-            <Field label="Payment Verified" value={reg.payment_verified ? "Yes" : "No"} />
-            <Field label="Payment Notes" value={reg.payment_verification_notes} />
-            <Field label="QC Verified" value={reg.qc_verified ? "Yes" : "No"} />
-            <Field label="QC Notes" value={reg.qc_notes} />
-            <Field label="Rejection Reason" value={reg.rejection_reason} />
-            <Field label="Declaration Agreed" value={reg.declaration_agreed ? "Yes" : "No"} />
-          </Card>
-        )}
+        <Card icon={<Building2 className="h-4 w-4" />} title="Business Information">
+          {ef("Shop Name", "shop_name")}
+          {ef("Address Type", "address_type")}
+          {ef("Building / Shop No", "building_shop_no")}
+          {ef("Street / Area", "street_area")}
+          {ef("Ward Number", "ward_number")}
+          {ef("Landmark", "landmark")}
+          {ef("Village", "village_name")}
+          {ef("Gram Panchayat", "gram_panchayat")}
+          {ef("Hobli", "hobli_name")}
+          {ef("Post Office", "post_office")}
+          {ef("Taluk", "taluk")}
+          {ef("City", "city")}
+          {ef("District", "district")}
+          {ef("State", "state")}
+          {ef("Pincode", "pincode")}
+        </Card>
+
+        <Card icon={<Landmark className="h-4 w-4" />} title="Bank Details">
+          {ef("Account Holder", "bank_holder_name")}
+          {ef("Bank", "bank_name")}
+          {ef("Account Number", "account_number")}
+          {ef("IFSC", "ifsc")}
+          {ef("Account Type", "account_type")}
+        </Card>
+
+        <Card icon={<Banknote className="h-4 w-4" />} title="Payment">
+          {editMode ? ef("Amount", "payment_amount", "number") : <Field label="Amount" value={reg.payment_amount ? `\u20b9${Number(reg.payment_amount).toLocaleString("en-IN")}` : null} />}
+          {ef("UTR / Reference", "payment_utr")}
+          {ef("Method", "payment_method")}
+          {ef("Paid On", "payment_paid_on")}
+          {ef("Payer Name", "payer_name")}
+          {ef("Payer Bank", "payer_bank")}
+        </Card>
+
+        {/* KYC Documents */}
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
+          <p className="mb-4 flex items-center gap-2 text-sm font-bold"><FileText className="h-4 w-4 text-india-green" /> KYC Documents</p>
+          {gps && (
+            <div className="mb-4 flex items-center justify-between rounded-xl border border-border bg-muted/30 px-4 py-2.5 text-sm">
+              <span className="inline-flex items-center gap-2"><MapPin className="h-4 w-4 text-india-green" /> GPS: <span className="font-mono">{gps}</span></span>
+              {mapUrl && <a href={mapUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-india-green hover:underline">View Map <ExternalLink className="h-3.5 w-3.5" /></a>}
+            </div>
+          )}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {DOCS.filter((d) => d.path).map((d) => {
+              const url = urls[d.key]; const kind = fileKind(d.path); const st = docReviews[d.key]?.status ?? "pending";
+              return (
+                <div key={d.key} className="overflow-hidden rounded-xl border border-border">
+                  <button type="button" onClick={() => url && setLightbox({ url, kind, label: d.label })} className="relative block h-44 w-full bg-muted/40">
+                    {url && kind === "image" ? <img src={url} alt={d.label} className="h-full w-full object-cover" />
+                      : url && kind === "video" ? <video src={url} className="h-full w-full object-cover" muted />
+                      : <div className="grid h-full w-full place-items-center"><FileText className="h-10 w-10 text-muted-foreground" /></div>}
+                    <span className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-lg bg-black/55 text-white"><Maximize2 className="h-4 w-4" /></span>
+                  </button>
+                  <div className="space-y-2 p-3">
+                    <div className="flex items-center justify-between"><span className="font-semibold">{d.label}</span><span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${docPill(st)}`}>{st}</span></div>
+                    {canDocReview && (
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button size="sm" variant="outline" className="h-8 text-emerald-700" onClick={() => setDoc(d.key, "approved")}><CheckCircle2 className="h-3.5 w-3.5" /> Approve</Button>
+                        <Button size="sm" variant="outline" className="h-8 text-rose-600" onClick={() => setDoc(d.key, "rejected")}><XCircle className="h-3.5 w-3.5" /> Reject</Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+            {DOCS.filter((d) => d.path).length === 0 && <p className="text-sm text-muted-foreground">No documents submitted.</p>}
+          </div>
+        </div>
+
+        <Card icon={<ShieldCheck className="h-4 w-4" />} title="Verification Status">
+          <Field label="Stage" value={reg.status.replace("_", " ")} />
+          <Field label="Payment Verified" value={reg.payment_verified ? "Yes" : "No"} />
+          <Field label="Payment Notes" value={reg.payment_verification_notes} />
+          <Field label="QC Verified" value={reg.qc_verified ? "Yes" : "No"} />
+          <Field label="QC Notes" value={reg.qc_notes} />
+          <Field label="Rejection Reason" value={reg.rejection_reason} />
+        </Card>
+
       </main>
 
       {/* Lightbox */}
