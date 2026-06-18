@@ -98,6 +98,18 @@ function ServiceLauncher() {
   if (!svc) return <RetailerShell><div className="p-6">Service not found. <Link to="/services" className="text-india-green underline">Back to services</Link></div></RetailerShell>;
 
   const fields: Field[] = svc.form_schema ?? [];
+  // Standard applicant fields common to ALL backend services
+  const COMMON: Field[] = [
+    { key: "full_name", label: "Full Name", type: "text", required: true, placeholder: "Applicant full name" },
+    { key: "father_name", label: "Father/Husband Name", type: "text", required: true, placeholder: "Father's / husband's name" },
+    { key: "gender", label: "Gender", type: "select", required: true, options: ["Male", "Female", "Other"] },
+    { key: "email", label: "Email Address", type: "email", required: true, placeholder: "name@example.com" },
+    { key: "phone", label: "Phone Number", type: "tel", required: true, placeholder: "10-digit mobile" },
+    { key: "address", label: "Address", type: "textarea", required: false, placeholder: "Full address" },
+    { key: "aadhaar_number", label: "Aadhaar Number", type: "text", required: true, placeholder: "12-digit Aadhaar" },
+    { key: "pan_number", label: "PAN Number", type: "text", required: false, placeholder: "ABCDE1234F" },
+  ];
+  const allFields: Field[] = [...COMMON, ...fields];
   const input = "h-11 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-india-green/30";
 
   return (
@@ -116,7 +128,7 @@ function ServiceLauncher() {
           </div>
         )}
 
-        {svc.service_type === "backend" && fields.length > 0 && (
+        {svc.service_type === "backend" && (fields.length > 0 || !svc.backend_route) && (
           receipt ? (
             <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-8 text-center">
               <CheckCircle2 className="mx-auto h-10 w-10 text-emerald-600" />
@@ -138,7 +150,7 @@ function ServiceLauncher() {
             <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
               <PageHeader icon={<Plug className="h-5 w-5" />} title={svc.name} subtitle="Fill the form to request this service" />
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                {fields.map((f) => (
+                {allFields.map((f) => (
                   <div key={f.key} className={f.type === "textarea" ? "sm:col-span-2" : ""}>
                     <label className="text-xs font-semibold text-foreground">{f.label}{f.required && <span className="text-rose-500"> *</span>}</label>
                     {f.type === "textarea" ? (
@@ -173,7 +185,7 @@ function ServiceLauncher() {
                       <span className="text-muted-foreground">Wallet balance: <b className={low ? "text-rose-600" : "text-india-green"}>{balance == null ? "…" : `₹${balance.toLocaleString("en-IN")}`}</b></span>
                     </div>
                     {low && <p className="mt-2 flex items-center justify-between gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">Insufficient wallet balance to apply. <Link to="/wallet" className="rounded-lg bg-india-green px-3 py-1 text-white">Add funds</Link></p>}
-                    <Button onClick={() => submitForm(fields)} disabled={submitting || low} className="mt-3 bg-india-green text-white">{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Submit request</Button>
+                    <Button onClick={() => submitForm(allFields)} disabled={submitting || low} className="mt-3 bg-india-green text-white">{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Submit request</Button>
                   </>
                 );
               })()}
@@ -181,9 +193,6 @@ function ServiceLauncher() {
           )
         )}
 
-        {svc.service_type === "backend" && fields.length === 0 && !svc.backend_route && (
-          <p className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">This service has no form configured yet.</p>
-        )}
 
         {svc.service_type === "inlink" && svc.redirect_url && (
           <div className="rounded-2xl border border-border bg-card p-6 text-center shadow-soft">
