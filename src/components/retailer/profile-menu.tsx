@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useCurrentUser } from "@/lib/use-current-user";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   ChevronDown,
@@ -26,6 +27,7 @@ export function ProfileMenu() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const me = useCurrentUser();
 
   useEffect(() => {
     function onDoc(e: MouseEvent) {
@@ -43,19 +45,19 @@ export function ProfileMenu() {
         aria-haspopup="menu"
         aria-expanded={open}
       >
-        <div className="h-7 w-7 rounded-full bg-india-green text-white text-xs font-bold flex items-center justify-center">H</div>
-        <span className="hidden sm:inline text-sm font-semibold">Harshitha</span>
+        <div className="h-7 w-7 rounded-full bg-india-green text-white text-xs font-bold flex items-center justify-center">{me.initials}</div>
+        <span className="hidden sm:inline text-sm font-semibold">{me.name}</span>
         <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
 
       {open && (
         <div className="absolute right-0 mt-2 w-72 rounded-2xl border border-border bg-card shadow-xl z-50 overflow-hidden">
           <div className="px-4 py-3 border-b border-border flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-india-green text-white font-bold flex items-center justify-center">H</div>
+            <div className="h-10 w-10 rounded-full bg-india-green text-white font-bold flex items-center justify-center">{me.initials}</div>
             <div className="min-w-0">
-              <p className="text-sm font-bold truncate">Harshitha</p>
-              <p className="text-[11px] text-muted-foreground truncate">Harshitha@bharatone.in</p>
-              <span className="inline-block mt-0.5 text-[10px] font-semibold bg-india-green text-white px-1.5 py-0.5 rounded">Retailer · 9876789876</span>
+              <p className="text-sm font-bold truncate">{me.name}</p>
+              <p className="text-[11px] text-muted-foreground truncate">{me.email}</p>
+              <span className="inline-block mt-0.5 text-[10px] font-semibold bg-india-green text-white px-1.5 py-0.5 rounded">{me.role || "Retailer"}</span>
             </div>
           </div>
 

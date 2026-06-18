@@ -37,6 +37,7 @@ import { Route as HrLoginRouteImport } from './routes/hr-login'
 import { Route as GstRouteImport } from './routes/gst'
 import { Route as GovServicesRouteImport } from './routes/gov-services'
 import { Route as GetStartedRouteImport } from './routes/get-started'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as FeedbackRouteImport } from './routes/feedback'
 import { Route as DroLoginRouteImport } from './routes/dro-login'
 import { Route as DistributorLoginRouteImport } from './routes/distributor-login'
@@ -287,6 +288,11 @@ const GovServicesRoute = GovServicesRouteImport.update({
 const GetStartedRoute = GetStartedRouteImport.update({
   id: '/get-started',
   path: '/get-started',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FeedbackRoute = FeedbackRouteImport.update({
@@ -866,6 +872,7 @@ export interface FileRoutesByFullPath {
   '/distributor-login': typeof DistributorLoginRoute
   '/dro-login': typeof DroLoginRoute
   '/feedback': typeof FeedbackRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/get-started': typeof GetStartedRoute
   '/gov-services': typeof GovServicesRoute
   '/gst': typeof GstRoute
@@ -1007,6 +1014,7 @@ export interface FileRoutesByTo {
   '/distributor-login': typeof DistributorLoginRoute
   '/dro-login': typeof DroLoginRoute
   '/feedback': typeof FeedbackRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/get-started': typeof GetStartedRoute
   '/gov-services': typeof GovServicesRoute
   '/gst': typeof GstRoute
@@ -1148,6 +1156,7 @@ export interface FileRoutesById {
   '/distributor-login': typeof DistributorLoginRoute
   '/dro-login': typeof DroLoginRoute
   '/feedback': typeof FeedbackRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/get-started': typeof GetStartedRoute
   '/gov-services': typeof GovServicesRoute
   '/gst': typeof GstRoute
@@ -1291,6 +1300,7 @@ export interface FileRouteTypes {
     | '/distributor-login'
     | '/dro-login'
     | '/feedback'
+    | '/forgot-password'
     | '/get-started'
     | '/gov-services'
     | '/gst'
@@ -1432,6 +1442,7 @@ export interface FileRouteTypes {
     | '/distributor-login'
     | '/dro-login'
     | '/feedback'
+    | '/forgot-password'
     | '/get-started'
     | '/gov-services'
     | '/gst'
@@ -1572,6 +1583,7 @@ export interface FileRouteTypes {
     | '/distributor-login'
     | '/dro-login'
     | '/feedback'
+    | '/forgot-password'
     | '/get-started'
     | '/gov-services'
     | '/gst'
@@ -1714,6 +1726,7 @@ export interface RootRouteChildren {
   DistributorLoginRoute: typeof DistributorLoginRoute
   DroLoginRoute: typeof DroLoginRoute
   FeedbackRoute: typeof FeedbackRoute
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
   GetStartedRoute: typeof GetStartedRoute
   GovServicesRoute: typeof GovServicesRoute
   GstRoute: typeof GstRoute
@@ -2017,6 +2030,13 @@ declare module '@tanstack/react-router' {
       path: '/get-started'
       fullPath: '/get-started'
       preLoaderRoute: typeof GetStartedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/feedback': {
@@ -2926,6 +2946,7 @@ const rootRouteChildren: RootRouteChildren = {
   DistributorLoginRoute: DistributorLoginRoute,
   DroLoginRoute: DroLoginRoute,
   FeedbackRoute: FeedbackRoute,
+  ForgotPasswordRoute: ForgotPasswordRoute,
   GetStartedRoute: GetStartedRoute,
   GovServicesRoute: GovServicesRoute,
   GstRoute: GstRoute,
