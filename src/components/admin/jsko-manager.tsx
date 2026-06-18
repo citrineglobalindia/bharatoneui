@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Plus, Pencil, Loader2, Check, X, RefreshCw, Search, IdCard, Upload, Eye } from "lucide-react";
+import { Plus, Pencil, Loader2, Check, X, RefreshCw, Search, IdCard, Upload, Eye, Download, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
@@ -22,6 +22,22 @@ export function JskoManager() {
   const [view, setView] = useState<Row | null>(null);
   const [form, setForm] = useState<any>({});
   const [savingEdit, setSavingEdit] = useState(false);
+  const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);
+  const DOC_DEFS: [string, string][] = [["selfie_path","Selfie"],["shop_photo_path","Shop Photo"],["aadhaar_doc_path","Aadhaar"],["pan_doc_path","PAN Card"],["police_verification_path","Police Verification"],["video_kyc_path","Video KYC"]];
+  const uploadDoc = async (key: string, file: File) => {
+    if (!view) return;
+    setUploadingDoc(key);
+    try {
+      const ext = (file.name.split(".").pop() || "bin").toLowerCase();
+      const path = `${view.id}/${key}-${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage.from("jsko-docs").upload(path, file, { upsert: false, contentType: file.type || undefined });
+      if (error) { toast.error("Upload failed", { description: error.message }); return; }
+      await supabase.from("jsko_legacy_accounts").update({ [key]: path }).eq("id", view.id);
+      setForm((f: any) => ({ ...f, [key]: path }));
+      toast.success("Uploaded");
+    } finally { setUploadingDoc(null); }
+  };
+  const viewDoc = async (path: string) => { const { data } = await supabase.storage.from("jsko-docs").createSignedUrl(path, 3600); if (data) window.open(data.signedUrl, "_blank"); };
 
   async function load() {
     setLoading(true);
@@ -138,6 +154,22 @@ export function JskoManager() {
                   <F label="UTR / Reference" k="payment_utr" form={form} setForm={setForm} />
                   <F label="Method" k="payment_method" form={form} setForm={setForm} />
                 </div>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-border p-4">
+              <p className="mb-3 flex items-center gap-2 text-sm font-bold"><FileText className="h-4 w-4 text-india-green" /> KYC Documents</p>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {DOC_DEFS.map(([key, label]) => (
+                  <div key={key} className="rounded-lg border border-border p-3">
+                    <p className="mb-2 text-xs font-semibold">{label}</p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 h-8 text-[11px] font-semibold hover:bg-muted">{uploadingDoc === key ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />} {form[key] ? "Replace" : "Upload"}<input type="file" accept="image/*,application/pdf,video/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadDoc(key, e.target.files[0])} /></label>
+                      {form[key] && <button onClick={() => viewDoc(form[key])} className="inline-flex items-center gap-1 text-[11px] font-semibold text-india-green hover:underline"><Download className="h-3.5 w-3.5" /> View</button>}
+                      {form[key] ? <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700">UPLOADED</span> : <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold text-amber-700">PENDING</span>}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
