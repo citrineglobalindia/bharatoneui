@@ -45,6 +45,8 @@ export function RetailerMap({ scope }: { scope: "admin" | "distributor" }) {
   const [selected, setSelected] = useState<Pt | null>(null);
   const [geoState, setGeoState] = useState("Karnataka");
   const [geoDist, setGeoDist] = useState("");
+  const [showBorders, setShowBorders] = useState(true);
+  const borderLayer = useRef<any>(null);
 
   async function load() {
     setLoading(true);
@@ -59,6 +61,34 @@ export function RetailerMap({ scope }: { scope: "admin" | "distributor" }) {
   const saveRadius = async () => { const v = Number(radiusInput); if (!v || v <= 0) return toast.error("Enter a valid radius"); const { error } = await supabase.rpc("set_retailer_radius", { p_km: v }); if (error) return toast.error("Failed", { description: error.message }); toast.success(`Radius set to ${v} km`); setRadius(v); load(); };
   const districts = useMemo(() => Array.from(new Set(pts.map((p) => p.district).filter(Boolean))) as string[], [pts]);
   const shown = useMemo(() => pts.filter((p) => (dist === "all" || p.district === dist) && (!q || [p.name, p.shop, p.mobile, p.district].filter(Boolean).some((v) => String(v).toLowerCase().includes(q.toLowerCase())))), [pts, q, dist]);
+
+  // District boundary layer for the selected state
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const L = await loadLeaflet().catch(() => null);
+      if (!L || cancelled || !map.current) return;
+      if (borderLayer.current) { borderLayer.current.remove(); borderLayer.current = null; }
+      if (!showBorders) return;
+      const slug = geoState.toLowerCase().replace(/ /g, "-");
+      try {
+        const res = await fetch(`https://raw.githubusercontent.com/udit-001/india-maps-data/main/geojson/states/${slug}.geojson`);
+        if (!res.ok) return; const gj = await res.json(); if (cancelled || !map.current) return;
+        borderLayer.current = L.geoJSON(gj, {
+          style: () => ({ color: "#138808", weight: 1.5, fillColor: "#138808", fillOpacity: 0.03, dashArray: "4 4" }),
+          onEachFeature: (f: any, lyr: any) => {
+            const name = f.properties?.district || "District";
+            lyr.bindTooltip(name, { sticky: true, direction: "top" });
+            lyr.on("mouseover", () => lyr.setStyle({ weight: 2.5, fillOpacity: 0.12 }));
+            lyr.on("mouseout", () => lyr.setStyle({ weight: 1.5, fillOpacity: 0.03 }));
+            lyr.on("click", () => { setGeoDist(name); setDist(name); map.current.fitBounds(lyr.getBounds(), { padding: [30, 30] }); });
+          },
+        }).addTo(map.current);
+        borderLayer.current.bringToBack();
+      } catch { /* ignore */ }
+    })();
+    return () => { cancelled = true; };
+  }, [geoState, showBorders]);
 
   useEffect(() => {
     let cancelled = false;
@@ -101,6 +131,7 @@ export function RetailerMap({ scope }: { scope: "admin" | "distributor" }) {
         <div><label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">District</label>
           <select className="h-10 w-56 rounded-lg border border-border bg-background px-3 text-sm font-semibold outline-none focus-visible:ring-2 focus-visible:ring-india-green/30" value={geoDist} onChange={(e) => onDistrict(e.target.value)}><option value="">All districts</option>{Object.keys(GEO[geoState]?.districts ?? {}).map((d) => <option key={d} value={d}>{d}</option>)}</select></div>
         <button onClick={() => { const g = GEO[geoState]; if (g) flyTo(g.center, g.zoom); }} className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-india-green px-3 text-sm font-semibold text-white hover:bg-india-green/90"><MapPin className="h-4 w-4" /> Go to {geoState}</button>
+        <label className="inline-flex h-10 cursor-pointer select-none items-center gap-1.5 rounded-lg border border-border bg-card px-3 text-sm font-semibold"><input type="checkbox" checked={showBorders} onChange={(e) => setShowBorders(e.target.checked)} className="h-4 w-4 accent-[oklch(0.55_0.12_150)]" /> District layer</label>
         <p className="ml-auto self-center text-xs text-muted-foreground">{geoDist ? `Showing ${geoDist}` : `Statewide view`}</p>
       </div>
       <div className="flex flex-wrap items-center gap-3 text-[11px] font-semibold text-muted-foreground">
