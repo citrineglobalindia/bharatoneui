@@ -1,0 +1,2 @@
+-- Retailer geo-map RPCs (admin = all, distributor = their district's retailers)
+-- admin_retailer_map() and distributor_retailer_map() return name/shop/district/mobile/status/lat/lng (bodies as deployed)
