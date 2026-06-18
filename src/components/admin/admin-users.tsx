@@ -155,6 +155,7 @@ export function AdminUsers() {
     } finally { setSavingProfile(false); }
   };
   const input = "h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-india-green/30";
+  const isBasic = add.role === "distributor" || add.role === "retailer";
 
   return (
     <div className="space-y-4">
@@ -223,6 +224,7 @@ export function AdminUsers() {
                     <div><label className="text-[11px] font-semibold text-muted-foreground">Pincode</label><input className={input} value={edit.pincode} onChange={(e) => setEdit({ ...edit, pincode: e.target.value })} placeholder="Pincode" /></div>
                   </div>
 
+                  {!(detail.roles.includes("distributor") || detail.roles.includes("retailer")) && <>
                   <p className="pt-1 text-xs font-bold uppercase tracking-wider text-saffron">Identity & Bank</p>
                   <div className="grid gap-2.5 sm:grid-cols-2">
                     <div><label className="text-[11px] font-semibold text-muted-foreground">Aadhaar Number</label><input className={input} value={edit.aadhaar_number} onChange={(e) => setEdit({ ...edit, aadhaar_number: e.target.value })} placeholder="XXXX XXXX XXXX" /></div>
@@ -272,6 +274,7 @@ export function AdminUsers() {
                     <div><label className="text-[11px] font-semibold text-muted-foreground">SOW Signed Date</label><input type="date" className={input} value={edit.sow_signed_date} onChange={(e) => setEdit({ ...edit, sow_signed_date: e.target.value })} /></div>
                     <div><label className="text-[11px] font-semibold text-muted-foreground">SOW Status</label><select className={input} value={edit.sow_status} onChange={(e) => setEdit({ ...edit, sow_status: e.target.value })}><option value="pending">Pending</option><option value="signed">Signed</option><option value="verified">Verified</option></select></div>
                   </div>
+                  </>}
 
                   <Button size="sm" className="mt-1 bg-india-green text-white" disabled={savingProfile} onClick={() => saveProfile(detail)}>{savingProfile ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Save profile</Button>
                 </div>
@@ -312,14 +315,21 @@ export function AdminUsers() {
       {/* Add staff */}
       <Dialog open={showAdd} onOpenChange={setShowAdd}>
         <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><UserPlus className="h-5 w-5 text-saffron" /> Add New Staff</DialogTitle><DialogDescription>Create a login and full staff profile.</DialogDescription></DialogHeader>
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><UserPlus className="h-5 w-5 text-saffron" /> Add New User</DialogTitle><DialogDescription>Distributor & Retailer need only basic details; staff roles show the full profile.</DialogDescription></DialogHeader>
+
+          <Sec title="Role & Status">
+            <F label="Role *"><select className={input} value={add.role} onChange={(e) => setAdd({ ...add, role: e.target.value })}>{ALL_ROLES.map((r) => <option key={r} value={r}>{r}</option>)}</select></F>
+            <F label="Status"><select className={input} value={add.status} onChange={(e) => setAdd({ ...add, status: e.target.value })}><option value="active">Active</option><option value="inactive">Inactive</option></select></F>
+          </Sec>
 
           <Sec title="Basic Information">
             <F label="Full Name *"><input className={input} placeholder="Enter full name" value={add.name} onChange={(e) => setAdd({ ...add, name: e.target.value })} /></F>
+            {!isBasic && <>
             <F label="Gender"><select className={input} value={add.gender} onChange={(e) => setAdd({ ...add, gender: e.target.value })}><option value="">Select</option><option>Male</option><option>Female</option><option>Other</option></select></F>
             <F label="Date of Birth"><input type="date" className={input} value={add.dob} onChange={(e) => setAdd({ ...add, dob: e.target.value })} /></F>
             <F label="Qualification"><input className={input} placeholder="e.g. B.Com, MBA" value={add.qualification} onChange={(e) => setAdd({ ...add, qualification: e.target.value })} /></F>
             <F label="Experience"><input className={input} placeholder="e.g. 2 years" value={add.experience} onChange={(e) => setAdd({ ...add, experience: e.target.value })} /></F>
+            </>}
           </Sec>
 
           <Sec title="Account & Login">
@@ -339,40 +349,38 @@ export function AdminUsers() {
             <F label="Pincode"><input className={input} placeholder="110001" value={add.pincode} onChange={(e) => setAdd({ ...add, pincode: e.target.value })} /></F>
           </Sec>
 
-          <Sec title="Identity Documents">
+          {!isBasic && <Sec title="Identity Documents">
             <F label="Aadhaar Number"><input className={input} placeholder="XXXX XXXX XXXX" value={add.aadhaar_number} onChange={(e) => setAdd({ ...add, aadhaar_number: e.target.value })} /></F>
             <F label="PAN Number"><input className={input} placeholder="ABCDE1234F" value={add.pan_number} onChange={(e) => setAdd({ ...add, pan_number: e.target.value.toUpperCase() })} /></F>
-          </Sec>
+          </Sec>}
 
-          <Sec title="Bank & Payment">
+          {!isBasic && <Sec title="Bank & Payment">
             <F label="Bank Name"><input className={input} placeholder="e.g. SBI, HDFC" value={add.bank_name} onChange={(e) => setAdd({ ...add, bank_name: e.target.value })} /></F>
             <F label="Account Number"><input className={input} placeholder="Account number" value={add.account_number} onChange={(e) => setAdd({ ...add, account_number: e.target.value })} /></F>
             <F label="IFSC Code"><input className={input} placeholder="SBIN0001234" value={add.ifsc} onChange={(e) => setAdd({ ...add, ifsc: e.target.value.toUpperCase() })} /></F>
             <F label="UPI ID"><input className={input} placeholder="name@upi" value={add.upi_id} onChange={(e) => setAdd({ ...add, upi_id: e.target.value })} /></F>
-          </Sec>
+          </Sec>}
 
-          <Sec title="Role & Compensation">
-            <F label="Role *"><select className={input} value={add.role} onChange={(e) => setAdd({ ...add, role: e.target.value })}>{ALL_ROLES.map((r) => <option key={r} value={r}>{r}</option>)}</select></F>
-            <F label="Status"><select className={input} value={add.status} onChange={(e) => setAdd({ ...add, status: e.target.value })}><option value="active">Active</option><option value="inactive">Inactive</option></select></F>
+          {!isBasic && <Sec title="Compensation">
             <F label="Salary (₹/month)"><input className={input} type="number" placeholder="18000" value={add.salary} onChange={(e) => setAdd({ ...add, salary: e.target.value })} /></F>
             <F label="Rate Per Call (₹)"><input className={input} type="number" placeholder="5" value={add.rate_per_call} onChange={(e) => setAdd({ ...add, rate_per_call: e.target.value })} /></F>
             <F label="Designation"><input className={input} placeholder="Designation" value={add.designation} onChange={(e) => setAdd({ ...add, designation: e.target.value })} /></F>
             <F label="Employee Code"><input className={input} placeholder="Code" value={add.employee_code} onChange={(e) => setAdd({ ...add, employee_code: e.target.value })} /></F>
-          </Sec>
+          </Sec>}
 
-          <div className="mt-4">
+          {!isBasic && <div className="mt-4">
             <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Languages Known</p>
             <div className="flex flex-wrap gap-1.5">
               {LANGS.map((l) => { const on = langs.includes(l); return <button key={l} type="button" onClick={() => setLangs((p) => on ? p.filter((x) => x !== l) : [...p, l])} className={`rounded-full px-3 h-8 text-xs font-semibold transition ${on ? "bg-india-green text-white" : "border border-border bg-card hover:bg-muted"}`}>{l}</button>; })}
             </div>
-          </div>
+          </div>}
 
-          <Sec title="Emergency Contact">
+          {!isBasic && <Sec title="Emergency Contact">
             <F label="Contact Name"><input className={input} placeholder="Name (Relation)" value={add.emergency_contact_name} onChange={(e) => setAdd({ ...add, emergency_contact_name: e.target.value })} /></F>
             <F label="Contact Phone"><input className={input} placeholder="+91 XXXXX XXXXX" value={add.emergency_contact_phone} onChange={(e) => setAdd({ ...add, emergency_contact_phone: e.target.value })} /></F>
-          </Sec>
+          </Sec>}
 
-          <div className="mt-4">
+          {!isBasic && <div className="mt-4">
             <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Video KYC & SOW Agreement</p>
             <div className="grid gap-3 sm:grid-cols-2">
               <Uploader label="Video KYC" hint="Self-recorded verification clip" file={kycFile} onPick={setKycFile} />
@@ -382,11 +390,11 @@ export function AdminUsers() {
               <F label="Signed Date"><input type="date" className={input} value={add.sow_signed_date} onChange={(e) => setAdd({ ...add, sow_signed_date: e.target.value })} /></F>
               <F label="Status"><select className={input} value={add.sow_status} onChange={(e) => setAdd({ ...add, sow_status: e.target.value })}><option value="pending">Pending</option><option value="signed">Signed</option><option value="verified">Verified</option></select></F>
             </div>
-          </div>
+          </div>}
 
           <DialogFooter className="mt-2">
             <Button variant="outline" onClick={() => setShowAdd(false)}><X className="h-4 w-4" /> Cancel</Button>
-            <Button className="bg-india-green text-white" onClick={createStaff} disabled={busy}>{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Create staff</Button>
+            <Button className="bg-india-green text-white" onClick={createStaff} disabled={busy}>{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Create user</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
