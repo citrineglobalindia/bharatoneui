@@ -5,13 +5,13 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 
-type Row = { id: string; username: string; full_name: string; email: string | null; mobile: string | null; is_active: boolean; created_at: string };
+type Row = { id: string; username: string; full_name: string; email: string | null; mobile: string | null; legacy_password: string | null; is_active: boolean; created_at: string };
 const inp = "h-9 w-full rounded-lg border border-border bg-background px-2.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-india-green/30";
 
 export function JskoManager() {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
-  const [add, setAdd] = useState({ username: "", full_name: "", email: "", mobile: "", is_active: true });
+  const [add, setAdd] = useState({ username: "", full_name: "", email: "", mobile: "", legacy_password: "", is_active: true });
   const [busy, setBusy] = useState(false);
   const [q, setQ] = useState("");
   const [bulk, setBulk] = useState("");
@@ -30,17 +30,17 @@ export function JskoManager() {
   const addNew = async () => {
     if (!add.username.trim() || !add.full_name.trim()) return toast.error("Username and full name are required");
     setBusy(true);
-    const { error } = await supabase.from("jsko_legacy_accounts").insert({ username: add.username.trim(), full_name: add.full_name.trim(), email: add.email || null, mobile: add.mobile || null, is_active: add.is_active });
+    const { error } = await supabase.from("jsko_legacy_accounts").insert({ username: add.username.trim(), full_name: add.full_name.trim(), email: add.email || null, mobile: add.mobile || null, legacy_password: add.legacy_password || null, is_active: add.is_active });
     setBusy(false);
     if (error) return toast.error("Add failed", { description: error.message });
-    toast.success("JSKO ID added"); setAdd({ username: "", full_name: "", email: "", mobile: "", is_active: true }); load();
+    toast.success("JSKO ID added"); setAdd({ username: "", full_name: "", email: "", mobile: "", legacy_password: "", is_active: true }); load();
   };
 
-  const openView = (r: Row) => { setView(r); setForm({ username: r.username, full_name: r.full_name, email: r.email ?? "", mobile: r.mobile ?? "", is_active: r.is_active }); };
+  const openView = (r: Row) => { setView(r); setForm({ username: r.username, full_name: r.full_name, email: r.email ?? "", mobile: r.mobile ?? "", legacy_password: r.legacy_password ?? "", is_active: r.is_active }); };
   const saveEdit = async () => {
     if (!form.username.trim() || !form.full_name.trim()) return toast.error("Username and full name required");
     setSavingEdit(true);
-    const { error } = await supabase.from("jsko_legacy_accounts").update({ username: form.username.trim(), full_name: form.full_name.trim(), email: form.email || null, mobile: form.mobile || null, is_active: form.is_active }).eq("id", view!.id);
+    const { error } = await supabase.from("jsko_legacy_accounts").update({ username: form.username.trim(), full_name: form.full_name.trim(), email: form.email || null, mobile: form.mobile || null, legacy_password: form.legacy_password || null, is_active: form.is_active }).eq("id", view!.id);
     setSavingEdit(false);
     if (error) return toast.error("Save failed", { description: error.message });
     toast.success("Saved");
@@ -87,6 +87,7 @@ export function JskoManager() {
           <div><label className="text-[11px] font-semibold text-muted-foreground">Full name *</label><input className={inp} value={add.full_name} onChange={(e) => setAdd({ ...add, full_name: e.target.value })} placeholder="Ramesh Kumar" /></div>
           <div><label className="text-[11px] font-semibold text-muted-foreground">Email</label><input className={inp} value={add.email} onChange={(e) => setAdd({ ...add, email: e.target.value })} placeholder="name@example.com" /></div>
           <div><label className="text-[11px] font-semibold text-muted-foreground">Mobile</label><input className={inp} value={add.mobile} onChange={(e) => setAdd({ ...add, mobile: e.target.value.replace(/\D/g, "") })} maxLength={10} placeholder="10-digit" /></div>
+          <div><label className="text-[11px] font-semibold text-muted-foreground">Password</label><input className={inp} value={add.legacy_password} onChange={(e) => setAdd({ ...add, legacy_password: e.target.value })} placeholder="Legacy password" /></div>
         </div>
         <label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={add.is_active} onChange={(e) => setAdd({ ...add, is_active: e.target.checked })} className="h-4 w-4 accent-[oklch(0.55_0.12_150)]" /> Active</label>
         <div className="mt-3"><Button onClick={addNew} disabled={busy} className="bg-india-green text-white hover:bg-india-green/90">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Add</Button></div>
@@ -97,17 +98,18 @@ export function JskoManager() {
       <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-soft">
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
-            <tr><th className="px-3 py-2">Username</th><th className="px-3 py-2">Full name</th><th className="px-3 py-2">Email</th><th className="px-3 py-2">Mobile</th><th className="px-3 py-2">Status</th><th className="px-3 py-2 text-right">Actions</th></tr>
+            <tr><th className="px-3 py-2">Username</th><th className="px-3 py-2">Full name</th><th className="px-3 py-2">Email</th><th className="px-3 py-2">Mobile</th><th className="px-3 py-2">Password</th><th className="px-3 py-2">Status</th><th className="px-3 py-2 text-right">Actions</th></tr>
           </thead>
           <tbody>
-            {loading ? <tr><td colSpan={6} className="px-3 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr>
-              : filtered.length === 0 ? <tr><td colSpan={6} className="px-3 py-10 text-center text-muted-foreground">No JSKO IDs found.</td></tr>
+            {loading ? <tr><td colSpan={7} className="px-3 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr>
+              : filtered.length === 0 ? <tr><td colSpan={7} className="px-3 py-10 text-center text-muted-foreground">No JSKO IDs found.</td></tr>
               : filtered.map((r) => (
                 <tr key={r.id} className="border-t border-border hover:bg-muted/30">
                   <td className="px-3 py-2 font-mono font-semibold">{r.username}</td>
                   <td className="px-3 py-2">{r.full_name}</td>
                   <td className="px-3 py-2 text-muted-foreground">{r.email || "—"}</td>
                   <td className="px-3 py-2 text-muted-foreground">{r.mobile || "—"}</td>
+                  <td className="px-3 py-2 font-mono text-xs text-muted-foreground">{r.legacy_password || "—"}</td>
                   <td className="px-3 py-2"><span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${r.is_active ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>{r.is_active ? "Active" : "Inactive"}</span></td>
                   <td className="px-3 py-2 text-right whitespace-nowrap">
                     <button onClick={() => toggle(r)} className="mr-3 text-xs font-semibold text-muted-foreground hover:text-foreground">{r.is_active ? "Deactivate" : "Activate"}</button>
@@ -128,6 +130,7 @@ export function JskoManager() {
               <div><label className="text-[11px] font-semibold text-muted-foreground">Full name *</label><input className={inp + " h-10"} value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} /></div>
               <div><label className="text-[11px] font-semibold text-muted-foreground">Email</label><input className={inp + " h-10"} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
               <div><label className="text-[11px] font-semibold text-muted-foreground">Mobile</label><input className={inp + " h-10"} value={form.mobile} onChange={(e) => setForm({ ...form, mobile: e.target.value.replace(/\D/g, "") })} maxLength={10} /></div>
+              <div className="sm:col-span-2"><label className="text-[11px] font-semibold text-muted-foreground">Password (legacy)</label><input className={inp + " h-10"} value={form.legacy_password} onChange={(e) => setForm({ ...form, legacy_password: e.target.value })} /></div>
             </div>
             <label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} className="h-4 w-4 accent-[oklch(0.55_0.12_150)]" /> Active (fetchable during registration)</label>
             <div className="mt-4 flex gap-2">
