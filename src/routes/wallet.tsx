@@ -6,6 +6,7 @@ import { RetailerShell } from "@/components/retailer/retailer-shell";
 import { PageHeader } from "@/components/retailer/page-header";
 import { SectionCard, Field, Input, Select, PrimaryButton } from "@/components/retailer/section-card";
 import { supabase } from "@/integrations/supabase/client";
+import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 
 export const Route = createFileRoute("/wallet")({
   head: () => ({ meta: [{ title: "Wallet — BharatOne" }] }),
@@ -52,11 +53,15 @@ function WalletPage() {
   useEffect(() => { load(); }, []);
 
   const uploadReceipt = async (file: File) => {
+    if (file.size > 50 * 1024 * 1024) { toast.error("File too large", { description: "Maximum size is 50 MB." }); return; }
     setUploadingRcpt(true);
     try {
-      const { data: u } = await supabase.auth.getUser();
-      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
-      const path = `${u.user?.id}/${crypto.randomUUID()}.${ext}`;
+      await ensureStaffSession();
+      const { data: sess } = await supabase.auth.getSession();
+      const uid = sess?.session?.user?.id;
+      if (!uid) { toast.error("Your session has expired", { description: "Please sign in again to upload the receipt." }); return; }
+      const ext = (file.name.split(".").pop() || "bin").toLowerCase();
+      const path = `${uid}/${crypto.randomUUID()}.${ext}`;
       const { error } = await supabase.storage.from("wallet-receipts").upload(path, file, { upsert: false, contentType: file.type || undefined });
       if (error) { toast.error("Upload failed", { description: error.message }); return; }
       setReceiptPath(path); setReceiptName(file.name); toast.success("Receipt uploaded");
@@ -112,7 +117,7 @@ function WalletPage() {
               <Field label="Reference / UTR"><Input value={reference} onChange={(e) => setReference(e.target.value)} placeholder="Txn ref (optional)" /></Field>
               <div className="sm:col-span-2"><Field label="Transaction Receipt *">
                 <div className="flex flex-wrap items-center gap-2">
-                  <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-card px-3 h-10 text-sm font-semibold hover:bg-muted">{uploadingRcpt ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} {receiptPath ? "Replace receipt" : "Upload receipt"}<input type="file" accept="image/*,application/pdf" className="hidden" onChange={(e) => e.target.files?.[0] && uploadReceipt(e.target.files[0])} /></label>
+                  <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-card px-3 h-10 text-sm font-semibold hover:bg-muted">{uploadingRcpt ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} {receiptPath ? "Replace receipt" : "Upload receipt"}<input type="file" accept="*/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadReceipt(e.target.files[0])} /></label>
                   {receiptName && <span className="truncate max-w-[180px] text-xs font-medium text-india-green">{receiptName}</span>}
                 </div>
               </Field></div>
