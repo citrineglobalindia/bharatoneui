@@ -7,6 +7,7 @@ import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 
 type Row = { id: string; username: string; full_name: string; email: string | null; mobile: string | null; legacy_password: string | null; is_active: boolean; created_at: string };
 const inp = "h-9 w-full rounded-lg border border-border bg-background px-2.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-india-green/30";
+const docKind = (p?: string) => { if (!p) return "none"; const e = (p.split(".").pop() || "").toLowerCase(); if (["jpg","jpeg","png","webp","gif"].includes(e)) return "image"; if (["mp4","webm","mov","ogg"].includes(e)) return "video"; if (e === "pdf") return "pdf"; return "file"; };
 function F({ label, k, form, setForm }: { label: string; k: string; form: any; setForm: (f: any) => void }) {
   return <div><label className="text-[11px] font-semibold text-muted-foreground">{label}</label><input className={inp + " h-9"} value={form[k] ?? ""} onChange={(e) => setForm({ ...form, [k]: e.target.value })} /></div>;
 }
@@ -24,6 +25,7 @@ export function JskoManager() {
   const [savingEdit, setSavingEdit] = useState(false);
   const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);
   const [docBucket, setDocBucket] = useState<Record<string, string>>({});
+  const [docUrls, setDocUrls] = useState<Record<string, string>>({});
   const [regStatus, setRegStatus] = useState<string | null>(null);
   const DOC_DEFS: [string, string][] = [["selfie_path","Selfie"],["shop_photo_path","Shop Photo"],["aadhaar_doc_path","Aadhaar"],["pan_doc_path","PAN Card"],["police_verification_path","Police Verification"],["video_kyc_path","Video KYC"]];
   const uploadDoc = async (key: string, file: File) => {
@@ -36,6 +38,9 @@ export function JskoManager() {
       if (error) { toast.error("Upload failed", { description: error.message }); return; }
       await supabase.from("jsko_legacy_accounts").update({ [key]: path }).eq("id", view.id);
       setForm((f: any) => ({ ...f, [key]: path }));
+      setDocBucket((b) => { const n = { ...b }; delete n[key]; return n; }); // now lives in jsko-docs
+      const { data: su } = await supabase.storage.from("jsko-docs").createSignedUrl(path, 3600);
+      if (su?.signedUrl) setDocUrls((u) => ({ ...u, [key]: su.signedUrl }));
       toast.success("Uploaded");
     } finally { setUploadingDoc(null); }
   };
@@ -90,6 +95,24 @@ export function JskoManager() {
       }
     } catch { /* ignore */ }
   };
+  // Build signed-URL previews for every uploaded KYC document.
+  useEffect(() => {
+    if (!view) { setDocUrls({}); return; }
+    let on = true;
+    (async () => {
+      const map: Record<string, string> = {};
+      await Promise.all(DOC_DEFS.map(async ([k]) => {
+        const path = form[k]; if (!path) return;
+        const bucket = docBucket[k] || "jsko-docs";
+        const { data } = await supabase.storage.from(bucket).createSignedUrl(path, 3600);
+        if (data?.signedUrl) map[k] = data.signedUrl;
+      }));
+      if (on) setDocUrls(map);
+    })();
+    return () => { on = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, DOC_DEFS.map(([k]) => (form[k]||"")+"|"+(docBucket[k]||"")).join(",")]);
+
   const saveEdit = async () => {
     if (!form.username.trim() || !form.full_name.trim()) return toast.error("Username and full name required");
     setSavingEdit(true);
@@ -195,9 +218,17 @@ export function JskoManager() {
               <p className="mb-2.5 flex items-center gap-2 text-[13px] font-bold"><FileText className="h-4 w-4 text-india-green" /> KYC Documents</p>
               <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
                 {DOC_DEFS.map(([key, label]) => (
-                  <div key={key} className="rounded-lg border border-border p-3">
-                    <p className="mb-2 text-xs font-semibold">{label}</p>
-                    <div className="flex flex-wrap items-center gap-2">
+                  <div key={key} className="overflow-hidden rounded-lg border border-border">
+                    {(() => { const url = docUrls[key]; const kind = docKind(form[key]); return (
+                      <button type="button" onClick={() => form[key] && viewDoc(form[key], docBucket[key] || "jsko-docs")} className="relative grid h-28 w-full place-items-center bg-muted/40">
+                        {!form[key] ? <span className="text-[11px] text-muted-foreground">Not uploaded</span>
+                          : kind === "image" && url ? <img src={url} alt={label} className="h-full w-full object-cover" />
+                          : kind === "video" && url ? <video src={url} className="h-full w-full object-cover" muted />
+                          : <span className="flex flex-col items-center gap-1 text-muted-foreground"><FileText className="h-7 w-7" /><span className="text-[10px] uppercase">{kind === "none" ? "" : kind}</span></span>}
+                      </button>
+                    ); })()}
+                    <p className="mt-2 px-3 text-xs font-semibold">{label}</p>
+                    <div className="flex flex-wrap items-center gap-2 px-3 pb-3 pt-2">
                       <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 h-8 text-[11px] font-semibold hover:bg-muted">{uploadingDoc === key ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />} {form[key] ? "Replace" : "Upload"}<input type="file" accept="image/*,application/pdf,video/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadDoc(key, e.target.files[0])} /></label>
                       {form[key] && <button onClick={() => viewDoc(form[key], docBucket[key] || "jsko-docs")} className="inline-flex items-center gap-1 text-[11px] font-semibold text-india-green hover:underline"><Download className="h-3.5 w-3.5" /> View</button>}
                       {form[key] ? <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700">UPLOADED</span> : <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold text-amber-700">PENDING</span>}
