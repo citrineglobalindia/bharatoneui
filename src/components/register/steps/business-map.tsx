@@ -5,6 +5,8 @@ import L from "leaflet";
 import { Navigation, MapPin } from "lucide-react";
 import { inputCls } from "../field";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { AlertTriangle, CheckCircle2 } from "lucide-react";
 
 const icon = L.icon({
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
@@ -21,7 +23,16 @@ function ClickPicker({ onPick }: { onPick: (lat: number, lng: number) => void })
 
 export default function BusinessMap({ onChange }: { onChange?: (lat: number, lng: number) => void }) {
   const [coords, setCoords] = useState({ lat: 12.937917, lng: 77.476868 });
+  const [prox, setProx] = useState<any>(null);
+  const [checking, setChecking] = useState(false);
   useEffect(() => { onChange?.(coords.lat, coords.lng); }, [coords.lat, coords.lng]);
+  useEffect(() => {
+    let on = true; setChecking(true);
+    const t = setTimeout(async () => {
+      try { const { data } = await supabase.rpc("check_retailer_location", { p_lat: coords.lat, p_lng: coords.lng }); if (on) setProx(data); } finally { if (on) setChecking(false); }
+    }, 600);
+    return () => { on = false; clearTimeout(t); };
+  }, [coords.lat, coords.lng]);
 
   const useGPS = () => {
     if (!navigator.geolocation) return;
@@ -68,6 +79,10 @@ export default function BusinessMap({ onChange }: { onChange?: (lat: number, lng
       <p className="flex items-center gap-1.5 text-xs font-medium text-primary">
         <MapPin className="h-3.5 w-3.5" /> Coordinates: {coords.lat}, {coords.lng}
       </p>
+      {prox && (prox.allowed
+        ? <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700"><CheckCircle2 className="h-4 w-4" /> Location available{prox.nearest_km != null ? ` — nearest agent ${prox.nearest_km} km away` : ""} (min {prox.radius_km} km).</div>
+        : <div className="flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" /> This location already has an existing agent ({prox.nearest_name?.trim() || "nearby"}) within {prox.radius_km} km. Please choose another location to register.</div>)}
+      {checking && <p className="text-[11px] text-muted-foreground">Checking location availability…</p>}
     </div>
   );
 }

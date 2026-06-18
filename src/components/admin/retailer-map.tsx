@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MapPin, Loader2, RefreshCw, Search } from "lucide-react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 
@@ -26,14 +27,17 @@ export function RetailerMap({ scope }: { scope: "admin" | "distributor" }) {
   const mapRef = useRef<HTMLDivElement>(null);
   const map = useRef<any>(null);
   const layer = useRef<any>(null);
+  const [radius, setRadius] = useState<number>(2);
+  const [radiusInput, setRadiusInput] = useState("2");
 
   async function load() {
     setLoading(true);
-    try { await ensureStaffSession(); const { data } = await supabase.rpc(scope === "admin" ? "admin_retailer_map" : "distributor_retailer_map"); setPts(((data as Pt[]) ?? []).filter((p) => p.lat && p.lng)); }
+    try { await ensureStaffSession(); const [m, r] = await Promise.all([supabase.rpc(scope === "admin" ? "admin_retailer_map" : "distributor_retailer_map"), supabase.from("app_settings").select("value").eq("key","retailer_radius_km").maybeSingle()]); setPts(((m.data as Pt[]) ?? []).filter((p) => p.lat && p.lng)); const rk = Number((r.data as any)?.value ?? 2); setRadius(rk); setRadiusInput(String(rk)); }
     finally { setLoading(false); }
   }
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [scope]);
 
+  const saveRadius = async () => { const v = Number(radiusInput); if (!v || v <= 0) return toast.error("Enter a valid radius"); const { error } = await supabase.rpc("set_retailer_radius", { p_km: v }); if (error) return toast.error("Failed", { description: error.message }); toast.success(`Radius set to ${v} km`); setRadius(v); load(); };
   const districts = useMemo(() => Array.from(new Set(pts.map((p) => p.district).filter(Boolean))) as string[], [pts]);
   const shown = useMemo(() => pts.filter((p) => (dist === "all" || p.district === dist) && (!q || [p.name, p.shop, p.mobile, p.district].filter(Boolean).some((v) => String(v).toLowerCase().includes(q.toLowerCase())))), [pts, q, dist]);
 
@@ -52,13 +56,13 @@ export function RetailerMap({ scope }: { scope: "admin" | "distributor" }) {
       shown.forEach((p) => {
         const m = L.circleMarker([p.lat, p.lng], { radius: 8, color: "#fff", weight: 2, fillColor: tone[p.status] || "#64748b", fillOpacity: 0.9 });
         m.bindPopup(`<b>${p.name}</b><br/>${p.shop || ""}<br/>${p.district || ""}<br/>${p.mobile || ""}<br/><span style="text-transform:capitalize">${p.status.replace("_", " ")}</span>`);
-        m.addTo(layer.current); bounds.push([p.lat, p.lng]);
+        m.addTo(layer.current); if (p.status === "approved") L.circle([p.lat, p.lng], { radius: radius * 1000, color: tone[p.status] || "#64748b", weight: 1, fillColor: tone[p.status] || "#64748b", fillOpacity: 0.06 }).addTo(layer.current); bounds.push([p.lat, p.lng]);
       });
       if (bounds.length) map.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 12 });
       setTimeout(() => map.current && map.current.invalidateSize(), 100);
     })();
     return () => { cancelled = true; };
-  }, [shown]);
+  }, [shown, radius]);
 
   return (
     <div className="space-y-4">
@@ -69,7 +73,13 @@ export function RetailerMap({ scope }: { scope: "admin" | "distributor" }) {
           <div className="relative"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><input className="h-9 w-52 rounded-lg border border-border bg-background pl-8 pr-2 text-sm outline-none" placeholder="Search retailer" value={q} onChange={(e) => setQ(e.target.value)} /></div>
           <select className="h-9 rounded-lg border border-border bg-background px-2 text-sm" value={dist} onChange={(e) => setDist(e.target.value)}><option value="all">All districts</option>{districts.map((d) => <option key={d} value={d}>{d}</option>)}</select>
           <button onClick={load} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-9 text-sm font-semibold hover:bg-muted"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh</button>
+          {scope === "admin" && <span className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-2 h-9 text-sm"><span className="text-xs font-semibold text-muted-foreground">Radius</span><input type="number" min="0.1" step="0.1" className="h-7 w-14 rounded border border-border bg-background px-1.5 text-sm outline-none" value={radiusInput} onChange={(e) => setRadiusInput(e.target.value)} /><span className="text-xs text-muted-foreground">km</span><button onClick={saveRadius} className="ml-1 rounded bg-india-green px-2 py-1 text-[11px] font-bold text-white">Set</button></span>}
         </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-3 text-[11px] font-semibold text-muted-foreground">
+        <span className="text-foreground">Legend:</span>
+        {[["Approved","#138808"],["QC review","#6366f1"],["Accountant","#f59e0b"],["Telecaller","#f97316"],["Rejected","#e11d48"]].map(([l,c]) => (<span key={l} className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full" style={{background:c as string}} /> {l}</span>))}
+        <span className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full border border-india-green bg-india-green/10" /> {radius} km exclusion zone</span>
       </div>
       <div className="grid gap-4 lg:grid-cols-[1fr_300px] items-start">
         <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-soft">

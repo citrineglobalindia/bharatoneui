@@ -216,7 +216,7 @@ function RegisterFlow() {
         "submit_retailer_registration",
         { payload },
       );
-      if (rpcErr) throw new Error(rpcErr.message);
+      if (rpcErr) { if (String(rpcErr.message).includes("LOCATION_TOO_CLOSE")) throw new Error("This location already has an existing agent nearby. Please change your shop location and try again."); throw new Error(rpcErr.message); }
       const r = res as unknown as { application_id: string; transaction_id: string };
 
       setSubmission({
