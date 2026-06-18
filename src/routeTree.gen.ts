@@ -71,6 +71,7 @@ import { Route as QcReviewersRouteImport } from './routes/qc.reviewers'
 import { Route as QcReportsRouteImport } from './routes/qc.reports'
 import { Route as QcProfileRouteImport } from './routes/qc.profile'
 import { Route as QcKycQueueRouteImport } from './routes/qc.kyc-queue'
+import { Route as QcJskoRouteImport } from './routes/qc.jsko'
 import { Route as QcFlaggedRouteImport } from './routes/qc.flagged'
 import { Route as QcFeedbackRouteImport } from './routes/qc.feedback'
 import { Route as QcDocumentSearchRouteImport } from './routes/qc.document-search'
@@ -456,6 +457,11 @@ const QcProfileRoute = QcProfileRouteImport.update({
 const QcKycQueueRoute = QcKycQueueRouteImport.update({
   id: '/qc/kyc-queue',
   path: '/qc/kyc-queue',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QcJskoRoute = QcJskoRouteImport.update({
+  id: '/qc/jsko',
+  path: '/qc/jsko',
   getParentRoute: () => rootRouteImport,
 } as any)
 const QcFlaggedRoute = QcFlaggedRouteImport.update({
@@ -957,6 +963,7 @@ export interface FileRoutesByFullPath {
   '/qc/document-search': typeof QcDocumentSearchRoute
   '/qc/feedback': typeof QcFeedbackRoute
   '/qc/flagged': typeof QcFlaggedRoute
+  '/qc/jsko': typeof QcJskoRoute
   '/qc/kyc-queue': typeof QcKycQueueRoute
   '/qc/profile': typeof QcProfileRoute
   '/qc/reports': typeof QcReportsRoute
@@ -1096,6 +1103,7 @@ export interface FileRoutesByTo {
   '/qc/document-search': typeof QcDocumentSearchRoute
   '/qc/feedback': typeof QcFeedbackRoute
   '/qc/flagged': typeof QcFlaggedRoute
+  '/qc/jsko': typeof QcJskoRoute
   '/qc/kyc-queue': typeof QcKycQueueRoute
   '/qc/profile': typeof QcProfileRoute
   '/qc/reports': typeof QcReportsRoute
@@ -1237,6 +1245,7 @@ export interface FileRoutesById {
   '/qc/document-search': typeof QcDocumentSearchRoute
   '/qc/feedback': typeof QcFeedbackRoute
   '/qc/flagged': typeof QcFlaggedRoute
+  '/qc/jsko': typeof QcJskoRoute
   '/qc/kyc-queue': typeof QcKycQueueRoute
   '/qc/profile': typeof QcProfileRoute
   '/qc/reports': typeof QcReportsRoute
@@ -1379,6 +1388,7 @@ export interface FileRouteTypes {
     | '/qc/document-search'
     | '/qc/feedback'
     | '/qc/flagged'
+    | '/qc/jsko'
     | '/qc/kyc-queue'
     | '/qc/profile'
     | '/qc/reports'
@@ -1518,6 +1528,7 @@ export interface FileRouteTypes {
     | '/qc/document-search'
     | '/qc/feedback'
     | '/qc/flagged'
+    | '/qc/jsko'
     | '/qc/kyc-queue'
     | '/qc/profile'
     | '/qc/reports'
@@ -1658,6 +1669,7 @@ export interface FileRouteTypes {
     | '/qc/document-search'
     | '/qc/feedback'
     | '/qc/flagged'
+    | '/qc/jsko'
     | '/qc/kyc-queue'
     | '/qc/profile'
     | '/qc/reports'
@@ -1787,6 +1799,7 @@ export interface RootRouteChildren {
   QcDocumentSearchRoute: typeof QcDocumentSearchRoute
   QcFeedbackRoute: typeof QcFeedbackRoute
   QcFlaggedRoute: typeof QcFlaggedRoute
+  QcJskoRoute: typeof QcJskoRoute
   QcKycQueueRoute: typeof QcKycQueueRoute
   QcProfileRoute: typeof QcProfileRoute
   QcReportsRoute: typeof QcReportsRoute
@@ -2242,6 +2255,13 @@ declare module '@tanstack/react-router' {
       path: '/qc/kyc-queue'
       fullPath: '/qc/kyc-queue'
       preLoaderRoute: typeof QcKycQueueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/qc/jsko': {
+      id: '/qc/jsko'
+      path: '/qc/jsko'
+      fullPath: '/qc/jsko'
+      preLoaderRoute: typeof QcJskoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/qc/flagged': {
@@ -2991,6 +3011,7 @@ const rootRouteChildren: RootRouteChildren = {
   QcDocumentSearchRoute: QcDocumentSearchRoute,
   QcFeedbackRoute: QcFeedbackRoute,
   QcFlaggedRoute: QcFlaggedRoute,
+  QcJskoRoute: QcJskoRoute,
   QcKycQueueRoute: QcKycQueueRoute,
   QcProfileRoute: QcProfileRoute,
   QcReportsRoute: QcReportsRoute,

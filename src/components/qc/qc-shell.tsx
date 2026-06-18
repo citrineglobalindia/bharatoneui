@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 import { useCurrentUser } from "@/lib/use-current-user";
 import {
+  IdCard,
   Receipt,
   LayoutDashboard,
   ClipboardCheck,
@@ -57,6 +58,7 @@ const NAV: NavSection[] = [
     items: [
       { label: "Review Queue", icon: <ClipboardCheck className="h-4 w-4" />, to: "/qc/kyc-queue", badge: "12" },
       { label: "Document Search", icon: <FileSearch className="h-4 w-4" />, to: "/qc/document-search" },
+      { label: "Old JSKO IDs", icon: <IdCard className="h-4 w-4" />, to: "/qc/jsko" },
       { label: "Flagged Cases", icon: <AlertTriangle className="h-4 w-4" />, to: "/qc/flagged", badge: "3" },
       { label: "Approved", icon: <ShieldCheck className="h-4 w-4" />, to: "/qc/approved" },
     ],

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Plus, Trash2, Pencil, Loader2, Check, X, RefreshCw, Search, IdCard, Upload } from "lucide-react";
+import { Plus, Pencil, Loader2, Check, X, RefreshCw, Search, IdCard, Upload, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
@@ -16,9 +16,8 @@ export function JskoManager() {
   const [q, setQ] = useState("");
   const [bulk, setBulk] = useState("");
   const [showBulk, setShowBulk] = useState(false);
-  // inline edit
-  const [editId, setEditId] = useState<string | null>(null);
-  const [edit, setEdit] = useState<any>({});
+  const [view, setView] = useState<Row | null>(null);
+  const [form, setForm] = useState<any>({});
   const [savingEdit, setSavingEdit] = useState(false);
 
   async function load() {
@@ -37,17 +36,16 @@ export function JskoManager() {
     toast.success("JSKO ID added"); setAdd({ username: "", full_name: "", email: "", mobile: "", is_active: true }); load();
   };
 
-  const startEdit = (r: Row) => { setEditId(r.id); setEdit({ username: r.username, full_name: r.full_name, email: r.email ?? "", mobile: r.mobile ?? "", is_active: r.is_active }); };
-  const saveEdit = async (id: string) => {
-    if (!edit.username.trim() || !edit.full_name.trim()) return toast.error("Username and full name required");
+  const openView = (r: Row) => { setView(r); setForm({ username: r.username, full_name: r.full_name, email: r.email ?? "", mobile: r.mobile ?? "", is_active: r.is_active }); };
+  const saveEdit = async () => {
+    if (!form.username.trim() || !form.full_name.trim()) return toast.error("Username and full name required");
     setSavingEdit(true);
-    const { error } = await supabase.from("jsko_legacy_accounts").update({ username: edit.username.trim(), full_name: edit.full_name.trim(), email: edit.email || null, mobile: edit.mobile || null, is_active: edit.is_active }).eq("id", id);
+    const { error } = await supabase.from("jsko_legacy_accounts").update({ username: form.username.trim(), full_name: form.full_name.trim(), email: form.email || null, mobile: form.mobile || null, is_active: form.is_active }).eq("id", view!.id);
     setSavingEdit(false);
     if (error) return toast.error("Save failed", { description: error.message });
-    toast.success("Updated"); setEditId(null);
-    setRows((p) => p.map((x) => x.id === id ? { ...x, ...edit } : x));
+    toast.success("Saved");
+    setRows((p) => p.map((x) => x.id === view!.id ? { ...x, ...form } : x)); setView(null);
   };
-  const del = async (id: string) => { if (!confirm("Delete this JSKO ID?")) return; const { error } = await supabase.from("jsko_legacy_accounts").delete().eq("id", id); if (error) return toast.error(error.message); toast.success("Deleted"); setRows((p) => p.filter((x) => x.id !== id)); };
   const toggle = async (r: Row) => { const { error } = await supabase.from("jsko_legacy_accounts").update({ is_active: !r.is_active }).eq("id", r.id); if (error) return toast.error(error.message); setRows((p) => p.map((x) => x.id === r.id ? { ...x, is_active: !r.is_active } : x)); };
 
   const importBulk = async () => {
@@ -104,19 +102,7 @@ export function JskoManager() {
           <tbody>
             {loading ? <tr><td colSpan={6} className="px-3 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr>
               : filtered.length === 0 ? <tr><td colSpan={6} className="px-3 py-10 text-center text-muted-foreground">No JSKO IDs found.</td></tr>
-              : filtered.map((r) => editId === r.id ? (
-                <tr key={r.id} className="border-t-2 border-india-green bg-india-green/5 ring-1 ring-india-green/30">
-                  <td className="px-3 py-2"><input className={inp} value={edit.username} onChange={(e) => setEdit({ ...edit, username: e.target.value })} /></td>
-                  <td className="px-3 py-2"><input className={inp} value={edit.full_name} onChange={(e) => setEdit({ ...edit, full_name: e.target.value })} /></td>
-                  <td className="px-3 py-2"><input className={inp} value={edit.email} onChange={(e) => setEdit({ ...edit, email: e.target.value })} /></td>
-                  <td className="px-3 py-2"><input className={inp} value={edit.mobile} onChange={(e) => setEdit({ ...edit, mobile: e.target.value.replace(/\D/g, "") })} maxLength={10} /></td>
-                  <td className="px-3 py-2"><label className="inline-flex items-center gap-1.5 text-xs font-semibold"><input type="checkbox" checked={edit.is_active} onChange={(e) => setEdit({ ...edit, is_active: e.target.checked })} className="h-4 w-4 accent-[oklch(0.55_0.12_150)]" /> Active</label></td>
-                  <td className="px-3 py-2 text-right whitespace-nowrap">
-                    <Button size="sm" disabled={savingEdit} onClick={() => saveEdit(r.id)} className="mr-2 bg-india-green text-white hover:bg-india-green/90">{savingEdit ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />} Save</Button>
-                    <Button size="sm" variant="outline" onClick={() => setEditId(null)}><X className="h-3.5 w-3.5" /> Cancel</Button>
-                  </td>
-                </tr>
-              ) : (
+              : filtered.map((r) => (
                 <tr key={r.id} className="border-t border-border hover:bg-muted/30">
                   <td className="px-3 py-2 font-mono font-semibold">{r.username}</td>
                   <td className="px-3 py-2">{r.full_name}</td>
@@ -125,14 +111,32 @@ export function JskoManager() {
                   <td className="px-3 py-2"><span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${r.is_active ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>{r.is_active ? "Active" : "Inactive"}</span></td>
                   <td className="px-3 py-2 text-right whitespace-nowrap">
                     <button onClick={() => toggle(r)} className="mr-3 text-xs font-semibold text-muted-foreground hover:text-foreground">{r.is_active ? "Deactivate" : "Activate"}</button>
-                    <button onClick={() => startEdit(r)} className="mr-3 inline-flex items-center gap-1 text-xs font-semibold text-india-green hover:underline"><Pencil className="h-3.5 w-3.5" /> Edit</button>
-                    <button onClick={() => del(r.id)} className="text-rose-500 hover:text-rose-700"><Trash2 className="h-3.5 w-3.5" /></button>
+                    <button onClick={() => openView(r)} className="inline-flex items-center gap-1 text-xs font-semibold text-india-green hover:underline"><Eye className="h-3.5 w-3.5" /> View / Edit</button>
                   </td>
                 </tr>
               ))}
           </tbody>
         </table>
       </div>
+
+      {view && (
+        <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/40 p-4" onClick={() => setView(null)}>
+          <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-5 shadow-elev" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between"><div><p className="flex items-center gap-2 font-display text-lg font-extrabold"><IdCard className="h-5 w-5 text-india-green" /> JSKO ID Details</p><p className="text-xs text-muted-foreground">Added {new Date(view.created_at).toLocaleString("en-IN")}</p></div><button onClick={() => setView(null)}><X className="h-5 w-5 text-muted-foreground" /></button></div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div><label className="text-[11px] font-semibold text-muted-foreground">Username *</label><input className={inp + " h-10"} value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} /></div>
+              <div><label className="text-[11px] font-semibold text-muted-foreground">Full name *</label><input className={inp + " h-10"} value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} /></div>
+              <div><label className="text-[11px] font-semibold text-muted-foreground">Email</label><input className={inp + " h-10"} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
+              <div><label className="text-[11px] font-semibold text-muted-foreground">Mobile</label><input className={inp + " h-10"} value={form.mobile} onChange={(e) => setForm({ ...form, mobile: e.target.value.replace(/\D/g, "") })} maxLength={10} /></div>
+            </div>
+            <label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} className="h-4 w-4 accent-[oklch(0.55_0.12_150)]" /> Active (fetchable during registration)</label>
+            <div className="mt-4 flex gap-2">
+              <Button onClick={saveEdit} disabled={savingEdit} className="bg-india-green text-white hover:bg-india-green/90">{savingEdit ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Save changes</Button>
+              <Button variant="outline" onClick={() => setView(null)}><X className="h-4 w-4" /> Close</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
