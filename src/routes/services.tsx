@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Wrench, Banknote, ArrowLeftRight, Smartphone, Receipt, FileText, IdCard, Building2, Globe, CheckCircle2, ExternalLink, Search, Layers, Cpu, Server, FolderTree } from "lucide-react";
+import { Wrench, Banknote, ArrowLeftRight, Smartphone, Receipt, FileText, IdCard, Building2, Globe, CheckCircle2, ExternalLink, Search, Layers, Cpu, FolderTree } from "lucide-react";
 import { RetailerShell } from "@/components/retailer/retailer-shell";
 import { PageHeader } from "@/components/retailer/page-header";
 import { supabase } from "@/integrations/supabase/client";
@@ -53,14 +53,14 @@ function ServiceTile({ s }: { s: Service }) {
 function ServicesPage() {
   const [services, setServices] = useState<Service[]>([]);
   const [q, setQ] = useState("");
-  const [type, setType] = useState<"all" | "inlink" | "api" | "backend">("all");
+  const [type, setType] = useState<"all" | "inlink" | "api">("all");
   const [cat, setCat] = useState("all");
 
   useEffect(() => {
     let on = true;
     (async () => {
       const { data } = await supabase.from("services").select("id,name,logo_url,redirect_url,backend_route,service_type,category")
-        .eq("is_active", true).order("sort_order").order("name");
+        .eq("is_active", true).in("service_type", ["inlink", "api"]).order("sort_order").order("name");
       if (on) setServices((data as Service[]) ?? []);
     })();
     return () => { on = false; };
@@ -70,11 +70,10 @@ function ServicesPage() {
     { key: "all" as const, label: "All", icon: Layers },
     { key: "inlink" as const, label: "Redirect", icon: Globe },
     { key: "api" as const, label: "API Integrated", icon: Cpu },
-    { key: "backend" as const, label: "Backend", icon: Server },
   ];
 
   const typeCounts = useMemo(() => {
-    const m: Record<string, number> = { all: services.length, inlink: 0, api: 0, backend: 0 };
+    const m: Record<string, number> = { all: services.length, inlink: 0, api: 0 };
     services.forEach((s) => { if (m[s.service_type] != null) m[s.service_type]++; });
     return m;
   }, [services]);
@@ -119,7 +118,7 @@ function ServicesPage() {
         {services.length > 0 && (
           <div className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="font-display text-lg font-extrabold text-foreground">Partner Services</h2>
+              <h2 className="font-display text-lg font-extrabold text-foreground">Partner Services <span className="ml-1 text-xs font-semibold text-muted-foreground">Redirect &amp; API services</span></h2>
               <div className="relative w-60"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><input className="h-9 w-full rounded-lg border border-border bg-background pl-8 pr-2 text-sm outline-none" placeholder="Search service" value={q} onChange={(e) => setQ(e.target.value)} /></div>
             </div>
 
