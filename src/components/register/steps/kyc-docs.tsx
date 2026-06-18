@@ -1,3 +1,4 @@
+import { toast } from "sonner";
 import { Upload, FileText, Eye, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { Field, inputCls, StepHeader } from "../field";
@@ -21,6 +22,7 @@ function UploadBox({
   const [url, setUrl] = useState<string | null>(existing ? URL.createObjectURL(existing) : null);
   const [isImg, setIsImg] = useState<boolean>(!!existing && existing.type.startsWith("image/"));
   const onPick = (f?: File) => {
+    if (f && f.size > 50 * 1024 * 1024) { toast.error("File too large", { description: "Maximum size is 50 MB." }); return; }
     if (url) URL.revokeObjectURL(url);
     setName(f?.name ?? null); setFile(fileKey, f);
     setUrl(f ? URL.createObjectURL(f) : null); setIsImg(!!f && f.type.startsWith("image/"));
@@ -50,7 +52,7 @@ function UploadBox({
           <Upload className="h-4 w-4" /> Click to upload
         </button>
       )}
-      <input ref={ref} type="file" accept="image/*,application/pdf" className="hidden" onChange={(e) => onPick(e.target.files?.[0])} />
+      <input ref={ref} type="file" accept="*/*" className="hidden" onChange={(e) => onPick(e.target.files?.[0])} />
     </div>
   );
 }

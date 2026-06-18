@@ -47,6 +47,7 @@ function ServiceLauncher() {
   };
 
   const uploadFile = async (key: string, file: File) => {
+    if (file.size > 50 * 1024 * 1024) { toast.error("File too large", { description: "Maximum size is 50 MB." }); return; }
     setUploadingKey(key);
     try {
       const ext = (file.name.split(".").pop() || "bin").toLowerCase();

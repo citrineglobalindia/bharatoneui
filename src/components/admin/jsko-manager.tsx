@@ -229,7 +229,7 @@ export function JskoManager() {
                     ); })()}
                     <p className="mt-2 px-3 text-xs font-semibold">{label}</p>
                     <div className="flex flex-wrap items-center gap-2 px-3 pb-3 pt-2">
-                      <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 h-8 text-[11px] font-semibold hover:bg-muted">{uploadingDoc === key ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />} {form[key] ? "Replace" : "Upload"}<input type="file" accept="image/*,application/pdf,video/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadDoc(key, e.target.files[0])} /></label>
+                      <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 h-8 text-[11px] font-semibold hover:bg-muted">{uploadingDoc === key ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />} {form[key] ? "Replace" : "Upload"}<input type="file" accept="*/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadDoc(key, e.target.files[0])} /></label>
                       {form[key] && <button onClick={() => viewDoc(form[key], docBucket[key] || "jsko-docs")} className="inline-flex items-center gap-1 text-[11px] font-semibold text-india-green hover:underline"><Download className="h-3.5 w-3.5" /> View</button>}
                       {form[key] ? <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700">UPLOADED</span> : <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold text-amber-700">PENDING</span>}
                     </div>
