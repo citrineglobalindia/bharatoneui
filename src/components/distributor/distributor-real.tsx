@@ -153,14 +153,31 @@ export function DistributorOfficersReal() {
 
 export function DistributorServicesReal() {
   const [rows, setRows] = useState<any[]>([]); const [loading, setLoading] = useState(true); const [q, setQ] = useState("");
-  async function load() { setLoading(true); try { await ensureStaffSession(); const { data } = await supabase.from("services").select("id,name,category,service_type,service_charge,distributor_commission,is_active").eq("is_active", true).order("category").order("name"); setRows((data as any[]) ?? []); } finally { setLoading(false); } }
+  async function load() { setLoading(true); try { await ensureStaffSession(); const { data } = await supabase.from("services").select("id,name,category,service_type,service_charge,distributor_commission,logo_url,is_active").eq("is_active", true).order("category").order("name"); setRows((data as any[]) ?? []); } finally { setLoading(false); } }
   useEffect(() => { load(); }, []);
   const filtered = useMemo(() => rows.filter((r) => !q || [r.name, r.category].filter(Boolean).some((v) => String(v).toLowerCase().includes(q.toLowerCase()))), [rows, q]);
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-2"><div><h1 className="font-display text-2xl font-extrabold">Services Live</h1><p className="text-sm text-muted-foreground">Active services your retailers can offer, with your commission %.</p></div><button onClick={load} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-10 text-sm font-semibold hover:bg-muted"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh</button></div>
       <div className="relative w-64"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><input className="h-9 w-full rounded-lg border border-border bg-background pl-8 pr-2 text-sm outline-none" placeholder="Search service" value={q} onChange={(e) => setQ(e.target.value)} /></div>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{loading ? <div className="col-span-full py-10 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></div> : filtered.length === 0 ? <p className="col-span-full py-10 text-center text-sm text-muted-foreground">No active services.</p> : filtered.map((s) => <div key={s.id} className="rounded-2xl border border-border bg-card p-4 shadow-soft"><div className="flex items-center justify-between"><p className="font-bold">{s.name}</p><span className="rounded-full bg-india-green/10 px-2 py-0.5 text-[10px] font-bold uppercase text-india-green">{s.service_type}</span></div><p className="text-[11px] text-muted-foreground">{s.category}</p><div className="mt-2 flex items-center justify-between text-sm"><span>Charge <b>{inr(s.service_charge)}</b></span><span className="text-india-green">Dist. {s.distributor_commission}%</span></div></div>)}</div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{loading ? <div className="col-span-full py-10 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></div> : filtered.length === 0 ? <p className="col-span-full py-10 text-center text-sm text-muted-foreground">No active services.</p> : filtered.map((s) => {
+        const palette = ["from-sky-500 to-blue-600","from-emerald-500 to-india-green","from-orange-500 to-saffron","from-violet-500 to-fuchsia-600","from-rose-500 to-pink-600","from-amber-500 to-orange-600"];
+        const g = palette[(s.name?.charCodeAt(0) || 0) % palette.length];
+        const tBadge: Record<string,string> = { inlink: "bg-sky-100 text-sky-700", api: "bg-violet-100 text-violet-700", backend: "bg-emerald-100 text-emerald-700" };
+        return (
+        <div key={s.id} className="group overflow-hidden rounded-2xl border border-border bg-card shadow-soft transition hover:-translate-y-0.5 hover:shadow-elev">
+          <div className="flex items-center gap-3 border-b border-border p-4">
+            {s.logo_url ? <img src={s.logo_url} alt={s.name} className="h-12 w-12 rounded-xl border border-border bg-white object-contain p-1" />
+              : <span className={`grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-gradient-to-br ${g} text-lg font-extrabold text-white shadow-soft`}>{(s.name?.[0] || "S").toUpperCase()}</span>}
+            <div className="min-w-0"><p className="truncate font-bold leading-tight">{s.name}</p><p className="truncate text-[11px] text-muted-foreground">{s.category || "—"}</p></div>
+          </div>
+          <div className="space-y-2 p-4">
+            <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${tBadge[s.service_type] || "bg-muted text-muted-foreground"}`}>{s.service_type}</span>
+            <div className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2 text-sm"><span className="text-muted-foreground">Charge</span><b>{inr(s.service_charge)}</b></div>
+            <div className="flex items-center justify-between rounded-lg bg-india-green/5 px-3 py-2 text-sm"><span className="text-muted-foreground">Your commission</span><b className="text-india-green">{s.distributor_commission}%</b></div>
+          </div>
+        </div>
+      ); })}</div>
     </div>
   );
 }
