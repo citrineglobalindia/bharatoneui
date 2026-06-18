@@ -56,10 +56,9 @@ const NAV: NavSection[] = [
   {
     heading: "KYC Operations",
     items: [
-      { label: "Review Queue", icon: <ClipboardCheck className="h-4 w-4" />, to: "/qc/kyc-queue", badge: "12" },
+      { label: "Review Queue", icon: <ClipboardCheck className="h-4 w-4" />, to: "/qc/kyc-queue" },
       { label: "Document Search", icon: <FileSearch className="h-4 w-4" />, to: "/qc/document-search" },
       { label: "Old JSKO IDs", icon: <IdCard className="h-4 w-4" />, to: "/qc/jsko" },
-      { label: "Flagged Cases", icon: <AlertTriangle className="h-4 w-4" />, to: "/qc/flagged", badge: "3" },
       { label: "Approved", icon: <ShieldCheck className="h-4 w-4" />, to: "/qc/approved" },
     ],
   },
@@ -92,6 +91,8 @@ const NAV: NavSection[] = [
 
 function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
   const navigate = useNavigate();
+  const [qcCount, setQcCount] = useState(0);
+  useEffect(() => { (async () => { try { await ensureStaffSession(); const { data } = await supabase.rpc("qc_dashboard"); setQcCount(Number((data as any)?.qc_pending || 0)); } catch {} })(); }, []);
   return (
     <div className="flex h-full flex-col bg-slate-900 text-slate-100">
       <div className="relative px-4 py-4 border-b border-white/10 overflow-hidden">
@@ -143,10 +144,8 @@ function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: 
                       >
                         <span className={active ? "text-indigo-300" : "text-slate-400"}>{it.icon}</span>
                         <span className="truncate flex-1">{it.label}</span>
-                        {it.badge && (
-                          <span className="text-[10px] font-bold bg-indigo-500 text-white px-1.5 py-0.5 rounded-full">
-                            {it.badge}
-                          </span>
+                        {(it.to === "/qc/kyc-queue" && qcCount > 0) && (
+                          <span className="text-[10px] font-bold bg-indigo-500 text-white px-1.5 py-0.5 rounded-full">{qcCount}</span>
                         )}
                       </Link>
                     )}
