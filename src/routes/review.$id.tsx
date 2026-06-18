@@ -232,152 +232,126 @@ function ReviewPage() {
 
       <main className="mx-auto max-w-6xl space-y-4 px-4 py-5">
         {/* Profile header */}
-        <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
-          <div className="flex flex-wrap items-start gap-4">
-            <div className="grid h-16 w-16 shrink-0 place-items-center rounded-full bg-saffron-gradient text-2xl font-extrabold text-white shadow-elev">
-              {(reg.first_name?.[0] ?? "") + (reg.surname?.[0] ?? "")}
-            </div>
+        <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-soft">
+          <div className="flex flex-wrap items-center gap-4 border-l-4 border-india-green p-5">
+            <div className="grid h-16 w-16 shrink-0 place-items-center rounded-full bg-saffron-gradient text-2xl font-extrabold text-white shadow-elev">{(reg.first_name?.[0] ?? "") + (reg.surname?.[0] ?? "")}</div>
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="font-display text-2xl font-extrabold leading-tight">{fullName}</h1>
+                <h1 className="font-display text-xl font-extrabold leading-tight">{fullName}</h1>
                 <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${statusPill(reg.status)}`}>{reg.status.replace("_", " ")}</span>
-                <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200">🟢 {typeLabel(reg.registration_type)}</span>
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200">● {typeLabel(reg.registration_type)}</span>
               </div>
-              <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm text-muted-foreground">
+              <div className="mt-1.5 flex flex-wrap gap-x-5 gap-y-1 text-[13px] text-muted-foreground">
                 <span className="inline-flex items-center gap-1.5"><Phone className="h-3.5 w-3.5" /> {reg.mobile}</span>
                 <span className="inline-flex items-center gap-1.5"><Mail className="h-3.5 w-3.5" /> {reg.email}</span>
-                <span className="inline-flex items-center gap-1.5"><Building2 className="h-3.5 w-3.5" /> {reg.shop_name}</span>
+                <span className="inline-flex items-center gap-1.5"><Building2 className="h-3.5 w-3.5" /> Shop: {reg.shop_name}</span>
                 <span className="font-mono font-semibold text-saffron">#{reg.application_id}</span>
-                {reg.username && <span className="font-mono font-semibold text-india-green">#{reg.username}</span>}
-                {reg.assigned_name && <span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2 py-0.5 text-[11px] font-bold text-indigo-700"><UserPlus className="h-3 w-3" /> {reg.assigned_name}</span>}
+              </div>
+              <div className="mt-1 flex flex-wrap gap-x-5 gap-y-1 text-[12px] text-muted-foreground">
+                <span>Agent ID: {reg.username || "—"}</span><span>DOB: {reg.dob || "—"}</span><span>Submitted: {reg.created_at ? new Date(reg.created_at).toLocaleDateString("en-IN") : "—"}</span>
               </div>
             </div>
             <div className="text-right">
-              <p className="font-display text-2xl font-extrabold">{reg.payment_amount ? `₹${Number(reg.payment_amount).toLocaleString("en-IN")}` : "—"}</p>
+              <p className="font-display text-2xl font-extrabold">{reg.payment_amount ? `\u20b9${Number(reg.payment_amount).toLocaleString("en-IN")}` : "—"}</p>
               <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Registration Fee</p>
+              {reg.payment_verified && <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-700">● Payment OK</span>}
             </div>
           </div>
         </div>
 
-        {/* QC / Accountant action — Verify or Reject with remarks */}
+        {editMode ? (
+          <div className="space-y-4">
+            <div className="grid gap-4 lg:grid-cols-2">
+              <Card icon={<User className="h-4 w-4" />} title="Personal Information">{ef("First Name","first_name")}{ef("Middle Name","middle_name")}{ef("Surname","surname")}{ef("Date of Birth","dob")}{ef("Mobile","mobile")}{ef("Email","email")}</Card>
+              <Card icon={<Building2 className="h-4 w-4" />} title="Business Information">{ef("Shop Name","shop_name")}{ef("Address Type","address_type")}{ef("Building / Shop No","building_shop_no")}{ef("Street / Area","street_area")}{ef("Ward Number","ward_number")}{ef("Landmark","landmark")}{ef("Village","village_name")}{ef("Taluk","taluk")}{ef("City","city")}{ef("District","district")}{ef("State","state")}{ef("Pincode","pincode")}</Card>
+              <Card icon={<Landmark className="h-4 w-4" />} title="Bank Details">{ef("Account Holder","bank_holder_name")}{ef("Bank","bank_name")}{ef("Account Number","account_number")}{ef("IFSC","ifsc")}{ef("Account Type","account_type")}</Card>
+              <Card icon={<Banknote className="h-4 w-4" />} title="Payment">{ef("Amount","payment_amount","number")}{ef("UTR / Reference","payment_utr")}{ef("Method","payment_method")}{ef("Paid On","payment_paid_on")}{ef("Payer Name","payer_name")}{ef("Payer Bank","payer_bank")}</Card>
+            </div>
+            <div className="flex gap-2"><Button disabled={savingAll} className="bg-india-green text-white hover:bg-india-green/90" onClick={saveAll}>{savingAll ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} Save all</Button><Button variant="outline" onClick={() => { setEditMode(false); setForm(reg); }}><X className="h-4 w-4" /> Cancel</Button></div>
+          </div>
+        ) : (
+        <>
+        {/* Decision bar */}
         {(() => {
           const stageAcct = reg.status === "accountant_review" && canAccountant;
           const stageQc = reg.status === "qc_review" && canQc;
           if (!stageAcct && !stageQc) return (
-            <div className="rounded-2xl border border-border bg-card p-4 text-sm text-muted-foreground shadow-soft">
-              {reg.status === "approved" ? "This application is approved." : reg.status === "rejected" ? "This application was rejected." : reg.status === "telecaller" ? "With Telecaller for follow-up." : "No verification action available at your role for this stage."}
-            </div>
+            <div className="rounded-2xl border border-border bg-card p-4 text-sm text-muted-foreground shadow-soft">{reg.status === "approved" ? "This application is approved." : reg.status === "rejected" ? "This application was rejected." : reg.status === "telecaller" ? "With Telecaller for follow-up." : "No action at your role for this stage."}</div>
           );
           return (
-            <div className="rounded-2xl border-2 border-india-green/30 bg-india-green/5 p-5 shadow-soft">
-              <p className="mb-3 flex items-center gap-2 text-sm font-bold"><ShieldCheck className="h-4 w-4 text-india-green" /> {stageAcct ? "Payment Verification" : "QC Verification"} — {role}</p>
-              <label className="text-[11px] font-semibold text-muted-foreground">Remarks</label>
-              <textarea rows={3} className="mb-3 w-full rounded-lg border border-border bg-background p-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-india-green/30" placeholder="Add remarks (required for reject)" value={remarks} onChange={(e) => setRemarks(e.target.value)} />
-              <div className="flex flex-wrap gap-2">
-                <Button disabled={busy} onClick={() => { setQcAction(stageAcct ? "approve_payment" : "approve_kyc"); setTimeout(submitQc, 0); }} className="bg-india-green text-white hover:bg-india-green/90">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} Verify {stageAcct ? "Payment" : "& Approve"}</Button>
-                <Button variant="outline" disabled={busy} className="text-rose-600" onClick={() => { if (!remarks.trim()) { toast.error("Add remarks before rejecting"); return; } setQcAction(stageAcct ? "reject_payment" : "reject_kyc"); setTimeout(submitQc, 0); }}><XCircle className="h-4 w-4" /> Reject</Button>
-                {stageQc && <Button variant="outline" disabled={busy} onClick={() => setReqOpen(true)}><RefreshCw className="h-4 w-4" /> Request Documents</Button>}
-              </div>
+          <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
+            <p className="flex items-center gap-2 text-base font-extrabold"><span className="grid h-6 w-6 place-items-center rounded-full bg-emerald-100 text-emerald-600"><CheckCircle2 className="h-4 w-4" /></span> {stageAcct ? "Payment Verification Decision" : "QC Verification Decision"}</p>
+            <p className="mb-3 mt-1 text-xs text-muted-foreground">Review all documents below, then choose an action. Remarks are required to reject.</p>
+            <div className="flex flex-wrap items-center gap-3">
+              <input className="h-11 flex-1 min-w-[240px] rounded-xl border border-border bg-background px-4 text-sm outline-none focus-visible:ring-2 focus-visible:ring-india-green/30" placeholder="Add remarks (required for reject)…" value={remarks} onChange={(e) => setRemarks(e.target.value)} />
+              <Button disabled={busy} className="h-11 bg-india-green text-white hover:bg-india-green/90" onClick={() => { setQcAction(stageAcct ? "approve_payment" : "approve_kyc"); setTimeout(submitQc, 0); }}>{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} Verify &amp; Approve</Button>
+              <Button variant="outline" disabled={busy} className="h-11 text-rose-600" onClick={() => { if (!remarks.trim()) { toast.error("Add remarks before rejecting"); return; } setQcAction(stageAcct ? "reject_payment" : "reject_kyc"); setTimeout(submitQc, 0); }}><XCircle className="h-4 w-4" /> Reject</Button>
+              {stageQc && <Button variant="outline" disabled={busy} className="h-11" onClick={() => setReqOpen(true)}><RefreshCw className="h-4 w-4" /> Request Documents</Button>}
             </div>
+          </div>
           );
         })()}
 
-        {/* All details on one page */}
-        <div className="grid gap-4 lg:grid-cols-2">
-        <Card icon={<User className="h-4 w-4" />} title="Personal Information">
-          {ef("First Name", "first_name")}
-          {ef("Middle Name", "middle_name")}
-          {ef("Surname", "surname")}
-          {ef("Date of Birth", "dob")}
-          {ef("Mobile", "mobile")}
-          {ef("Email", "email")}
-          <Field label="Retailer Type" value={typeLabel(reg.registration_type)} />
-          <Field label="Agent ID" value={reg.username} />
-        </Card>
-
-        <Card icon={<Building2 className="h-4 w-4" />} title="Business Information">
-          {ef("Shop Name", "shop_name")}
-          {ef("Address Type", "address_type")}
-          {ef("Building / Shop No", "building_shop_no")}
-          {ef("Street / Area", "street_area")}
-          {ef("Ward Number", "ward_number")}
-          {ef("Landmark", "landmark")}
-          {ef("Village", "village_name")}
-          {ef("Gram Panchayat", "gram_panchayat")}
-          {ef("Hobli", "hobli_name")}
-          {ef("Post Office", "post_office")}
-          {ef("Taluk", "taluk")}
-          {ef("City", "city")}
-          {ef("District", "district")}
-          {ef("State", "state")}
-          {ef("Pincode", "pincode")}
-        </Card>
-        </div>
-
-        <div className="grid gap-4 lg:grid-cols-2">
-        <Card icon={<Landmark className="h-4 w-4" />} title="Bank Details">
-          {ef("Account Holder", "bank_holder_name")}
-          {ef("Bank", "bank_name")}
-          {ef("Account Number", "account_number")}
-          {ef("IFSC", "ifsc")}
-          {ef("Account Type", "account_type")}
-        </Card>
-
-        <Card icon={<Banknote className="h-4 w-4" />} title="Payment">
-          {editMode ? ef("Amount", "payment_amount", "number") : <Field label="Amount" value={reg.payment_amount ? `\u20b9${Number(reg.payment_amount).toLocaleString("en-IN")}` : null} />}
-          {ef("UTR / Reference", "payment_utr")}
-          {ef("Method", "payment_method")}
-          {ef("Paid On", "payment_paid_on")}
-          {ef("Payer Name", "payer_name")}
-          {ef("Payer Bank", "payer_bank")}
-        </Card>
-        </div>
-
-        {/* KYC Documents */}
-        <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
-          <p className="mb-4 flex items-center gap-2 text-sm font-bold"><FileText className="h-4 w-4 text-india-green" /> KYC Documents</p>
-          {gps && (
-            <div className="mb-4 flex items-center justify-between rounded-xl border border-border bg-muted/30 px-4 py-2.5 text-sm">
-              <span className="inline-flex items-center gap-2"><MapPin className="h-4 w-4 text-india-green" /> GPS: <span className="font-mono">{gps}</span></span>
-              {mapUrl && <a href={mapUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-india-green hover:underline">View Map <ExternalLink className="h-3.5 w-3.5" /></a>}
-            </div>
-          )}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {DOCS.filter((d) => d.path).map((d) => {
-              const url = urls[d.key]; const kind = fileKind(d.path); const st = docReviews[d.key]?.status ?? "pending";
-              return (
-                <div key={d.key} className="overflow-hidden rounded-xl border border-border">
-                  <button type="button" onClick={() => url && setLightbox({ url, kind, label: d.label })} className="relative block h-32 w-full bg-muted/40">
-                    {url && kind === "image" ? <img src={url} alt={d.label} className="h-full w-full object-cover" />
-                      : url && kind === "video" ? <video src={url} className="h-full w-full object-cover" muted />
-                      : <div className="grid h-full w-full place-items-center"><FileText className="h-10 w-10 text-muted-foreground" /></div>}
-                    <span className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-lg bg-black/55 text-white"><Maximize2 className="h-4 w-4" /></span>
-                  </button>
-                  <div className="space-y-2 p-3">
-                    <div className="flex items-center justify-between"><span className="font-semibold">{d.label}</span><span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${docPill(st)}`}>{st}</span></div>
-                    {canDocReview && (
-                      <div className="grid grid-cols-2 gap-2">
-                        <Button size="sm" variant="outline" className="h-8 text-emerald-700" onClick={() => setDoc(d.key, "approved")}><CheckCircle2 className="h-3.5 w-3.5" /> Approve</Button>
-                        <Button size="sm" variant="outline" className="h-8 text-rose-600" onClick={() => setDoc(d.key, "rejected")}><XCircle className="h-3.5 w-3.5" /> Reject</Button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-            {DOCS.filter((d) => d.path).length === 0 && <p className="text-sm text-muted-foreground">No documents submitted.</p>}
+        {/* Four info cards */}
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-2xl border border-border bg-card p-4 shadow-soft">
+            <p className="mb-3 flex items-center gap-2 text-sm font-bold"><span className="grid h-6 w-6 place-items-center rounded-lg bg-blue-500/10 text-blue-600"><User className="h-4 w-4" /></span> Personal Info</p>
+            <div className="space-y-2.5"><Field label="Full Name" value={fullName} /><Field label="Date of Birth" value={reg.dob} /><Field label="Mobile" value={reg.mobile} /></div>
+          </div>
+          <div className="rounded-2xl border border-border bg-card p-4 shadow-soft">
+            <p className="mb-3 flex items-center gap-2 text-sm font-bold"><span className="grid h-6 w-6 place-items-center rounded-lg bg-india-green/10 text-india-green"><Building2 className="h-4 w-4" /></span> Business Info</p>
+            <div className="space-y-2.5"><Field label="Shop Name" value={[reg.shop_name, reg.address_type].filter(Boolean).join(" · ")} /><Field label="Street / Area" value={reg.street_area} /><Field label="Ward / Shop No" value={[reg.ward_number, reg.landmark].filter(Boolean).join(" · ")} /></div>
+          </div>
+          <div className="rounded-2xl border border-border bg-card p-4 shadow-soft">
+            <p className="mb-3 flex items-center gap-2 text-sm font-bold"><span className="grid h-6 w-6 place-items-center rounded-lg bg-violet-500/10 text-violet-600"><Landmark className="h-4 w-4" /></span> Bank Details</p>
+            <div className="space-y-2.5"><Field label="Account Holder" value={reg.bank_holder_name} /><Field label="Bank · Type" value={[reg.bank_name, reg.account_type].filter(Boolean).join(" · ")} /><Field label="Account No · IFSC" value={[reg.account_number, reg.ifsc].filter(Boolean).join(" · ")} /></div>
+          </div>
+          <div className="rounded-2xl border border-border bg-card p-4 shadow-soft">
+            <p className="mb-3 flex items-center justify-between text-sm font-bold"><span className="flex items-center gap-2"><span className="grid h-6 w-6 place-items-center rounded-lg bg-saffron/10 text-saffron"><Banknote className="h-4 w-4" /></span> Payment</span>{reg.payment_verified && <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">VERIFIED</span>}</p>
+            <div className="space-y-2.5"><Field label="Amount · Method" value={[reg.payment_amount ? `\u20b9${Number(reg.payment_amount).toLocaleString("en-IN")}` : null, reg.payment_method].filter(Boolean).join(" · ")} /><Field label="UTR / Reference" value={reg.payment_utr} /><Field label="Paid On · Payer" value={[reg.payment_paid_on, reg.payer_name].filter(Boolean).join(" · ")} /></div>
           </div>
         </div>
 
-        <Card icon={<ShieldCheck className="h-4 w-4" />} title="Verification Status">
-          <Field label="Stage" value={reg.status.replace("_", " ")} />
-          <Field label="Payment Verified" value={reg.payment_verified ? "Yes" : "No"} />
-          <Field label="Payment Notes" value={reg.payment_verification_notes} />
-          <Field label="QC Verified" value={reg.qc_verified ? "Yes" : "No"} />
-          <Field label="QC Notes" value={reg.qc_notes} />
-          <Field label="Rejection Reason" value={reg.rejection_reason} />
-        </Card>
+        {/* KYC documents */}
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+            <p className="flex items-center gap-2 text-sm font-bold"><span className="grid h-6 w-6 place-items-center rounded-lg bg-india-green/10 text-india-green"><FileText className="h-4 w-4" /></span> KYC Documents {(() => { const pend = DOCS.filter((d) => d.path && (docReviews[d.key]?.status ?? "pending") === "pending").length; return pend ? <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-700">{pend} PENDING</span> : null; })()}</p>
+            {gps && <span className="flex items-center gap-3 text-xs"><span className="inline-flex items-center gap-1 text-muted-foreground"><MapPin className="h-3.5 w-3.5 text-india-green" /> GPS: <span className="font-mono">{gps}</span></span>{mapUrl && <a href={mapUrl} target="_blank" rel="noreferrer" className="font-semibold text-india-green hover:underline">View Map ↗</a>}</span>}
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+            {DOCS.filter((d) => d.path).map((d) => { const url = urls[d.key]; const kind = fileKind(d.path); const st = docReviews[d.key]?.status ?? "pending"; return (
+              <div key={d.key} className="overflow-hidden rounded-xl border border-border">
+                <button type="button" onClick={() => url && setLightbox({ url, kind, label: d.label })} className="relative block h-28 w-full bg-muted/40">
+                  {url && kind === "image" ? <img src={url} alt={d.label} className="h-full w-full object-cover" /> : url && kind === "video" ? <video src={url} className="h-full w-full object-cover" muted /> : <div className="grid h-full w-full place-items-center"><FileText className="h-8 w-8 text-muted-foreground" /></div>}
+                  <span className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-lg bg-black/55 text-white"><Maximize2 className="h-3.5 w-3.5" /></span>
+                </button>
+                <div className="space-y-1.5 p-2.5">
+                  <div className="flex items-center justify-between"><span className="text-xs font-bold">{d.label}</span></div>
+                  <span className={`inline-block rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${docPill(st)}`}>{st}</span>
+                  {canDocReview && (st === "pending" ? (
+                    <div className="grid grid-cols-2 gap-1.5 pt-0.5"><button onClick={() => setDoc(d.key, "approved")} className="rounded-md bg-emerald-50 py-1 text-[11px] font-bold text-emerald-700 hover:bg-emerald-100">Approve</button><button onClick={() => setDoc(d.key, "rejected")} className="rounded-md bg-rose-50 py-1 text-[11px] font-bold text-rose-700 hover:bg-rose-100">Reject</button></div>
+                  ) : (
+                    <button onClick={() => setDoc(d.key, "pending" as any)} className="pt-0.5 text-[11px] font-semibold text-muted-foreground hover:text-foreground">Re-open ↗</button>
+                  ))}
+                </div>
+              </div>
+            ); })}
+            {DOCS.filter((d) => d.path).length === 0 && <p className="text-sm text-muted-foreground">No documents submitted.</p>}
+          </div>
+        </div>
+        </>
+        )}
 
+        {/* Status strip */}
+        {(() => { const done = [reg.payment_verified, reg.qc_verified, reg.status === "approved"].filter(Boolean).length; return (
+        <div className="flex flex-wrap items-center gap-6 rounded-2xl border-l-4 border-india-green bg-card p-4 text-sm shadow-soft">
+          <div><p className="text-[10px] uppercase tracking-wide text-muted-foreground">Stage</p><p className="font-bold capitalize">{reg.status.replace("_", " ")}</p></div>
+          <div><p className="text-[10px] uppercase tracking-wide text-muted-foreground">Payment Verified</p><p className={`font-bold ${reg.payment_verified ? "text-india-green" : "text-amber-600"}`}>{reg.payment_verified ? "Yes" : "Pending"}</p></div>
+          <div><p className="text-[10px] uppercase tracking-wide text-muted-foreground">QC Verified</p><p className={`font-bold ${reg.qc_verified ? "text-india-green" : "text-amber-600"}`}>{reg.qc_verified ? "Yes" : "Pending"}</p></div>
+          <div className="min-w-[120px]"><p className="text-[10px] uppercase tracking-wide text-muted-foreground">Rejection Reason</p><p className="font-bold">{reg.rejection_reason || "—"}</p></div>
+          <div className="ml-auto min-w-[160px]"><p className="text-right text-[11px] font-semibold text-muted-foreground">{done} of 3 stages complete</p><div className="mt-1 h-2 w-40 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-india-green" style={{ width: `${(done / 3) * 100}%` }} /></div></div>
+        </div>
+        ); })()}
       </main>
 
       {/* Lightbox */}
