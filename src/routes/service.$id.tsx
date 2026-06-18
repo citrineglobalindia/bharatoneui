@@ -1,11 +1,12 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2, Plug, ExternalLink, Play, CheckCircle2, Send, FileDown, ImageDown, Share2, Upload } from "lucide-react";
+import { ArrowLeft, Loader2, Plug, ExternalLink, Play, CheckCircle2, Send, FileDown, ImageDown, Share2, Upload, Wallet } from "lucide-react";
 import { RetailerShell } from "@/components/retailer/retailer-shell";
 import { PageHeader } from "@/components/retailer/page-header";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 import { downloadReceiptPDF, downloadReceiptPNG, shareReceipt, type AppReceipt } from "@/lib/application-receipt";
 import { toast as _toast } from "sonner";
 
@@ -27,11 +28,15 @@ function ServiceLauncher() {
   const [submitting, setSubmitting] = useState(false);
   const [uploadingKey, setUploadingKey] = useState<string | null>(null);
   const [receipt, setReceipt] = useState<AppReceipt | null>(null);
+  const [balance, setBalance] = useState<number | null>(null);
 
   useEffect(() => {
     (async () => {
+      await ensureStaffSession();
       const { data } = await supabase.from("services").select("*").eq("id", id).maybeSingle();
       setSvc(data); setLoading(false);
+      const { data: u0 } = await supabase.auth.getUser();
+      if (u0?.user) { const { data: w } = await supabase.from("wallets").select("balance").eq("user_id", u0.user.id).maybeSingle(); setBalance(Number((w as any)?.balance ?? 0)); }
       if (data?.service_type === "backend" && (!data.form_schema || data.form_schema.length === 0) && data.backend_route) navigate({ to: data.backend_route as never });
     })();
     // eslint-disable-next-line
@@ -65,8 +70,11 @@ function ServiceLauncher() {
     }
     setSubmitting(true);
     try {
+      await ensureStaffSession();
       const { data: u } = await supabase.auth.getUser();
-      if (!u.user) { toast.error("Please sign in to submit."); return; }
+      if (!u.user) { toast.error("Your session has expired", { description: "Please sign in again to submit this application.", action: { label: "Sign in", onClick: () => navigate({ to: "/login" }) } }); return; }
+      const charge = Number(svc.service_charge || 0);
+      if (charge > 0 && balance != null && balance < charge) { toast.error("Insufficient wallet balance", { description: `This service costs ₹${charge.toLocaleString("en-IN")}. Add funds to your wallet to continue.`, action: { label: "Add funds", onClick: () => navigate({ to: "/wallet" }) } }); return; }
       const { data, error } = await supabase.rpc("submit_backend_application", { p_service_id: id, p_form: values });
       if (error) { if (String(error.message).includes("ONLY_RETAILER")) { toast.error("Only retailer accounts can apply for services."); return; }
       if (String(error.message).includes("INSUFFICIENT_FUNDS")) { toast.error("Insufficient wallet balance", { description: "Please add funds to your wallet before applying." }); return; } toast.error("Submit failed", { description: error.message }); return; }
@@ -79,6 +87,7 @@ function ServiceLauncher() {
         category_name: svc.category, service_name: svc.name,
         service_charge: svc.service_charge, commission_price: Math.round((Number(svc.service_charge||0)*Number(svc.retailer_commission||0)/100)*100)/100,
       });
+      if (balance != null) setBalance(balance - Number(svc.service_charge || 0));
       toast.success("Application submitted", { description: res.application_no ? `Reference ${res.application_no}` : undefined });
     } finally { setSubmitting(false); }
   };
@@ -152,7 +161,20 @@ function ServiceLauncher() {
                   </div>
                 ))}
               </div>
-              <Button onClick={() => submitForm(fields)} disabled={submitting} className="mt-5 bg-india-green text-white">{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Submit request</Button>
+              {(() => {
+                const charge = Number(svc.service_charge || 0);
+                const low = charge > 0 && balance != null && balance < charge;
+                return (
+                  <>
+                    <div className="mt-5 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-muted/40 px-4 py-3 text-sm">
+                      <span className="inline-flex items-center gap-1.5 text-muted-foreground"><Wallet className="h-4 w-4 text-india-green" /> Service charge <b className="text-foreground">₹{charge.toLocaleString("en-IN")}</b></span>
+                      <span className="text-muted-foreground">Wallet balance: <b className={low ? "text-rose-600" : "text-india-green"}>{balance == null ? "…" : `₹${balance.toLocaleString("en-IN")}`}</b></span>
+                    </div>
+                    {low && <p className="mt-2 flex items-center justify-between gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">Insufficient wallet balance to apply. <Link to="/wallet" className="rounded-lg bg-india-green px-3 py-1 text-white">Add funds</Link></p>}
+                    <Button onClick={() => submitForm(fields)} disabled={submitting || low} className="mt-3 bg-india-green text-white">{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Submit request</Button>
+                  </>
+                );
+              })()}
             </div>
           )
         )}
