@@ -82,6 +82,9 @@ function ReviewPage() {
   const [reqMsg, setReqMsg] = useState("Not approved");
   const REQ_DOCS = ["PAN", "KYC Front", "KYC Back", "Shop Front Image", "Education Certificate", "Cancelled Cheque / Passbook", "Police Verification Certificate (Optional)"];
   const [reqSel, setReqSel] = useState<Record<string, boolean>>({ PAN: true, "KYC Front": true, "KYC Back": true });
+  const DOC_KEYS: { key: string; label: string }[] = [{ key: "pan", label: "PAN Card" }, { key: "aadhaar", label: "Aadhaar Card" }, { key: "selfie", label: "Selfie" }, { key: "shop", label: "Shop Photo" }, { key: "police", label: "Police Verification" }, { key: "video", label: "Video KYC" }];
+  const [reqKeys, setReqKeys] = useState<Record<string, boolean>>({ pan: true, aadhaar: true });
+  const [events, setEvents] = useState<any[]>([]);
   const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState<any>({});
   const [savingAll, setSavingAll] = useState(false);
@@ -112,7 +115,8 @@ function ReviewPage() {
       setUrls(u);
     } finally { setLoading(false); }
   }
-  useEffect(() => { load(); ensureStaffSession().then((ok) => { if (ok) load(); }); /* eslint-disable-next-line */ }, [id]);
+  const loadEvents = async () => { const { data } = await supabase.rpc("registration_events_list", { reg_id: id }); setEvents((data as any[]) ?? []); };
+  useEffect(() => { load(); loadEvents(); ensureStaffSession().then((ok) => { if (ok) { load(); loadEvents(); } }); /* eslint-disable-next-line */ }, [id]);
   useEffect(() => {
     try { const intent = localStorage.getItem("bharatone:review-intent"); if (intent) { localStorage.removeItem("bharatone:review-intent"); if (intent === "edit") setTimeout(() => setEditMode(true), 300); if (intent === "assign") setTimeout(() => openAssign(), 300); } } catch {}
   }, []);
@@ -168,11 +172,21 @@ function ReviewPage() {
     if (qcAction === "request_docs") { setReqOpen(true); return; }
   };
   const submitRequestDocs = async () => {
-    const docs = REQ_DOCS.filter((d) => reqSel[d]);
-    if (docs.length === 0) { toast.error("Select at least one required document"); return; }
-    const note = `${reqMsg}. Required documents: ${docs.join(", ")}`;
-    await act(() => supabase.rpc("verify_retailer_qc", { reg_id: id, verified: false, notes: note }), "Documents requested — sent to Telecaller");
-    setReqOpen(false);
+    const keys = DOC_KEYS.filter((d) => reqKeys[d.key]).map((d) => d.key);
+    if (keys.length === 0) { toast.error("Select at least one document to re-request"); return; }
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.rpc("qc_request_doc_reupload", { reg_id: id, _keys: keys, _note: reqMsg || null });
+      if (error) { toast.error("Failed", { description: error.message }); return; }
+      const res = data as any;
+      const link = `${window.location.origin}/reupload-docs/${res.token}`;
+      const labels = DOC_KEYS.filter((d) => reqKeys[d.key]).map((d) => d.label);
+      try {
+        await supabase.functions.invoke("send-doc-request", { body: { email: res.email, name: res.name, link, docs: labels, note: reqMsg || "" } });
+        toast.success("Re-upload link emailed to the retailer");
+      } catch { toast.message("Saved. Email could not be sent — share the link manually.", { description: link }); }
+      setReqOpen(false); setReqMsg("Not approved"); await load(); await loadEvents();
+    } finally { setBusy(false); }
   };
 
   const act = async (fn: () => Promise<{ error: any; data?: unknown }>, msg: string, goBack = true) => {
@@ -339,6 +353,26 @@ function ReviewPage() {
             {DOCS.filter((d) => d.path).length === 0 && <p className="text-sm text-muted-foreground">No documents submitted.</p>}
           </div>
         </div>
+
+        {/* Activity log / timeline */}
+        <div className="rounded-2xl border border-border bg-card p-4 shadow-soft">
+          <p className="mb-3 flex items-center gap-2 text-sm font-bold"><span className="grid h-6 w-6 place-items-center rounded-lg bg-india-green/10 text-india-green"><RefreshCw className="h-4 w-4" /></span> Document & Review Log</p>
+          {events.length === 0 ? <p className="text-sm text-muted-foreground">No activity yet.</p> : (
+            <ol className="relative space-y-3 border-l border-border pl-4">
+              {events.map((e) => {
+                const tone = e.action === "docs_requested" ? "bg-amber-500" : e.action === "doc_reuploaded" ? "bg-sky-500" : e.action === "resubmitted_to_qc" ? "bg-india-green" : "bg-muted-foreground";
+                return (
+                  <li key={e.id} className="relative">
+                    <span className={`absolute -left-[21px] top-1 h-3 w-3 rounded-full ${tone} ring-2 ring-card`} />
+                    <p className="text-sm font-semibold capitalize">{String(e.action).replace(/_/g, " ")}</p>
+                    {e.detail && <p className="text-xs text-muted-foreground">{e.detail}</p>}
+                    <p className="text-[11px] text-muted-foreground">{e.actor_name ? e.actor_name + " · " : ""}{e.actor_role || ""} · {new Date(e.created_at).toLocaleString("en-IN")}</p>
+                  </li>
+                );
+              })}
+            </ol>
+          )}
+        </div>
         </>
         )}
 
@@ -384,13 +418,13 @@ function ReviewPage() {
       {/* Required documents modal */}
       <Dialog open={reqOpen} onOpenChange={setReqOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Required Document Details</DialogTitle><DialogDescription>Select the documents the retailer must re-submit. This sends the application to the Telecaller with your message.</DialogDescription></DialogHeader>
+          <DialogHeader><DialogTitle>Request Document Re-upload</DialogTitle><DialogDescription>Select which documents the retailer must re-upload. They get an email with a secure upload link; once re-uploaded it returns to QC for approval.</DialogDescription></DialogHeader>
           <div className="space-y-3 text-sm">
             <div><label className="text-[11px] font-semibold text-muted-foreground">Message *</label><textarea rows={2} className="w-full rounded-lg border border-border bg-background p-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-india-green/30" value={reqMsg} onChange={(e) => setReqMsg(e.target.value)} /></div>
             <div className="grid grid-cols-2 gap-2">
-              {REQ_DOCS.map((d) => (<label key={d} className="flex items-center gap-2"><input type="checkbox" checked={!!reqSel[d]} onChange={(e) => setReqSel({ ...reqSel, [d]: e.target.checked })} className="h-4 w-4 accent-[oklch(0.55_0.12_150)]" /> {d}</label>))}
+              {DOC_KEYS.map((d) => (<label key={d.key} className="flex items-center gap-2"><input type="checkbox" checked={!!reqKeys[d.key]} onChange={(e) => setReqKeys({ ...reqKeys, [d.key]: e.target.checked })} className="h-4 w-4 accent-[oklch(0.55_0.12_150)]" /> {d.label}</label>))}
             </div>
-            <div><label className="text-[11px] font-semibold text-muted-foreground">Required Docs *</label><div className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs">{REQ_DOCS.filter((d) => reqSel[d]).join(", ") || "—"}</div></div>
+            <div><label className="text-[11px] font-semibold text-muted-foreground">Selected *</label><div className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs">{DOC_KEYS.filter((d) => reqKeys[d.key]).map((d) => d.label).join(", ") || "—"}</div></div>
           </div>
           <DialogFooter><Button variant="outline" onClick={() => setReqOpen(false)}>Cancel</Button><Button className="bg-india-green text-white" disabled={busy} onClick={submitRequestDocs}>{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Submit</Button></DialogFooter>
         </DialogContent>

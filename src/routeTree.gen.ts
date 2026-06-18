@@ -66,6 +66,7 @@ import { Route as TroAttendanceRouteImport } from './routes/tro.attendance'
 import { Route as TelecallerRegistrationsRouteImport } from './routes/telecaller.registrations'
 import { Route as ServiceIdRouteImport } from './routes/service.$id'
 import { Route as ReviewIdRouteImport } from './routes/review.$id'
+import { Route as ReuploadDocsTokenRouteImport } from './routes/reupload-docs.$token'
 import { Route as QcSupportRouteImport } from './routes/qc.support'
 import { Route as QcSettingsRouteImport } from './routes/qc.settings'
 import { Route as QcReviewersRouteImport } from './routes/qc.reviewers'
@@ -433,6 +434,11 @@ const ServiceIdRoute = ServiceIdRouteImport.update({
 const ReviewIdRoute = ReviewIdRouteImport.update({
   id: '/review/$id',
   path: '/review/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReuploadDocsTokenRoute = ReuploadDocsTokenRouteImport.update({
+  id: '/reupload-docs/$token',
+  path: '/reupload-docs/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const QcSupportRoute = QcSupportRouteImport.update({
@@ -977,6 +983,7 @@ export interface FileRoutesByFullPath {
   '/qc/reviewers': typeof QcReviewersRoute
   '/qc/settings': typeof QcSettingsRoute
   '/qc/support': typeof QcSupportRoute
+  '/reupload-docs/$token': typeof ReuploadDocsTokenRoute
   '/review/$id': typeof ReviewIdRoute
   '/service/$id': typeof ServiceIdRoute
   '/telecaller/registrations': typeof TelecallerRegistrationsRoute
@@ -1118,6 +1125,7 @@ export interface FileRoutesByTo {
   '/qc/reviewers': typeof QcReviewersRoute
   '/qc/settings': typeof QcSettingsRoute
   '/qc/support': typeof QcSupportRoute
+  '/reupload-docs/$token': typeof ReuploadDocsTokenRoute
   '/review/$id': typeof ReviewIdRoute
   '/service/$id': typeof ServiceIdRoute
   '/telecaller/registrations': typeof TelecallerRegistrationsRoute
@@ -1261,6 +1269,7 @@ export interface FileRoutesById {
   '/qc/reviewers': typeof QcReviewersRoute
   '/qc/settings': typeof QcSettingsRoute
   '/qc/support': typeof QcSupportRoute
+  '/reupload-docs/$token': typeof ReuploadDocsTokenRoute
   '/review/$id': typeof ReviewIdRoute
   '/service/$id': typeof ServiceIdRoute
   '/telecaller/registrations': typeof TelecallerRegistrationsRoute
@@ -1405,6 +1414,7 @@ export interface FileRouteTypes {
     | '/qc/reviewers'
     | '/qc/settings'
     | '/qc/support'
+    | '/reupload-docs/$token'
     | '/review/$id'
     | '/service/$id'
     | '/telecaller/registrations'
@@ -1546,6 +1556,7 @@ export interface FileRouteTypes {
     | '/qc/reviewers'
     | '/qc/settings'
     | '/qc/support'
+    | '/reupload-docs/$token'
     | '/review/$id'
     | '/service/$id'
     | '/telecaller/registrations'
@@ -1688,6 +1699,7 @@ export interface FileRouteTypes {
     | '/qc/reviewers'
     | '/qc/settings'
     | '/qc/support'
+    | '/reupload-docs/$token'
     | '/review/$id'
     | '/service/$id'
     | '/telecaller/registrations'
@@ -1819,6 +1831,7 @@ export interface RootRouteChildren {
   QcReviewersRoute: typeof QcReviewersRoute
   QcSettingsRoute: typeof QcSettingsRoute
   QcSupportRoute: typeof QcSupportRoute
+  ReuploadDocsTokenRoute: typeof ReuploadDocsTokenRoute
   ReviewIdRoute: typeof ReviewIdRoute
   ServiceIdRoute: typeof ServiceIdRoute
   TroAttendanceRoute: typeof TroAttendanceRoute
@@ -2233,6 +2246,13 @@ declare module '@tanstack/react-router' {
       path: '/review/$id'
       fullPath: '/review/$id'
       preLoaderRoute: typeof ReviewIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reupload-docs/$token': {
+      id: '/reupload-docs/$token'
+      path: '/reupload-docs/$token'
+      fullPath: '/reupload-docs/$token'
+      preLoaderRoute: typeof ReuploadDocsTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/qc/support': {
@@ -3039,6 +3059,7 @@ const rootRouteChildren: RootRouteChildren = {
   QcReviewersRoute: QcReviewersRoute,
   QcSettingsRoute: QcSettingsRoute,
   QcSupportRoute: QcSupportRoute,
+  ReuploadDocsTokenRoute: ReuploadDocsTokenRoute,
   ReviewIdRoute: ReviewIdRoute,
   ServiceIdRoute: ServiceIdRoute,
   TroAttendanceRoute: TroAttendanceRoute,
