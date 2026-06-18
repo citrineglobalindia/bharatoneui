@@ -22,6 +22,8 @@ export function DistributorDashboardReal() {
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <Stat icon={Users} label="My Retailers" value={d?.retailers ?? 0} tone="bg-blue-500/10 text-blue-600" />
           <Stat icon={Users} label="Active Retailers" value={d?.active_retailers ?? 0} tone="bg-india-green/10 text-india-green" />
+          <Stat icon={Users} label="TRO Officers" value={d?.tro ?? 0} tone="bg-sky-500/10 text-sky-600" />
+          <Stat icon={Users} label="DRO Officers" value={d?.dro ?? 0} tone="bg-violet-500/10 text-violet-600" />
           <Stat icon={FileText} label="Applications" value={d?.applications ?? 0} tone="bg-saffron/10 text-saffron" />
           <Stat icon={TrendingUp} label="Commission Earned" value={inr(d?.earned ?? 0)} tone="bg-india-green/10 text-india-green" />
           <Stat icon={Clock3} label="Commission Pending" value={inr(d?.pending ?? 0)} tone="bg-amber-500/10 text-amber-600" />
@@ -136,16 +138,31 @@ export function DistributorSalesReal() {
 
 export function DistributorOfficersReal() {
   const [rows, setRows] = useState<any[]>([]); const [loading, setLoading] = useState(true); const [q, setQ] = useState("");
-  async function load() { setLoading(true); try { await ensureStaffSession(); const { data } = await supabase.rpc("distributor_agents"); setRows((data as any[]) ?? []); } finally { setLoading(false); } }
+  const [roleF, setRoleF] = useState<"all" | "tro" | "dro">("all");
+  async function load() {
+    setLoading(true);
+    try {
+      await ensureStaffSession();
+      const [tro, dro] = await Promise.all([
+        supabase.rpc("distributor_team", { _role: "tro" }),
+        supabase.rpc("distributor_team", { _role: "dro" }),
+      ]);
+      setRows([...((tro.data as any[]) ?? []), ...((dro.data as any[]) ?? [])]);
+    } finally { setLoading(false); }
+  }
   useEffect(() => { load(); }, []);
-  const filtered = useMemo(() => rows.filter((r) => !q || [r.name, r.email, r.district].filter(Boolean).some((v) => String(v).toLowerCase().includes(q.toLowerCase()))), [rows, q]);
+  const filtered = useMemo(() => rows.filter((r) => (roleF === "all" || r.role === roleF) && (!q || [r.name, r.email, r.district].filter(Boolean).some((v) => String(v).toLowerCase().includes(q.toLowerCase())))), [rows, q, roleF]);
+  const rBadge: Record<string, string> = { tro: "bg-sky-100 text-sky-700", dro: "bg-violet-100 text-violet-700" };
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-2"><div><h1 className="font-display text-2xl font-extrabold">Field Agents</h1><p className="text-sm text-muted-foreground">Retailers operating under your distributorship, ranked by activity.</p></div><button onClick={load} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-10 text-sm font-semibold hover:bg-muted"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh</button></div>
-      <div className="relative w-64"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><input className="h-9 w-full rounded-lg border border-border bg-background pl-8 pr-2 text-sm outline-none" placeholder="Search agent" value={q} onChange={(e) => setQ(e.target.value)} /></div>
+      <div className="flex flex-wrap items-center justify-between gap-2"><div><h1 className="font-display text-2xl font-extrabold">TRO / DRO Officers</h1><p className="text-sm text-muted-foreground">Taluk &amp; District officers mapped under your distributorship.</p></div><button onClick={load} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-10 text-sm font-semibold hover:bg-muted"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh</button></div>
+      <div className="flex flex-wrap items-center gap-2">
+        {([["all","All"],["tro","TRO"],["dro","DRO"]] as const).map(([k,l]) => <button key={k} onClick={() => setRoleF(k)} className={`rounded-full px-3 h-9 text-xs font-semibold transition ${roleF === k ? "bg-india-green text-white" : "border border-border bg-card hover:bg-muted"}`}>{l}</button>)}
+        <div className="relative ml-auto w-64"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><input className="h-9 w-full rounded-lg border border-border bg-background pl-8 pr-2 text-sm outline-none" placeholder="Search officer" value={q} onChange={(e) => setQ(e.target.value)} /></div>
+      </div>
       <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-soft"><table className="w-full text-sm">
-        <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground"><tr><th className="px-3 py-2">Agent</th><th className="px-3 py-2">District</th><th className="px-3 py-2">Applications</th><th className="px-3 py-2">Commission</th><th className="px-3 py-2">Wallet</th><th className="px-3 py-2">Status</th></tr></thead>
-        <tbody>{loading ? <tr><td colSpan={6} className="px-3 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr> : filtered.length === 0 ? <tr><td colSpan={6} className="px-3 py-10 text-center text-muted-foreground">No agents mapped.</td></tr> : filtered.map((r) => <tr key={r.id} className="border-t border-border"><td className="px-3 py-2"><div className="font-semibold">{r.name}</div><div className="text-[11px] text-muted-foreground">{r.email}</div></td><td className="px-3 py-2">{r.district || "—"}</td><td className="px-3 py-2 font-semibold">{r.apps}</td><td className="px-3 py-2 text-india-green">{inr(r.earned)}</td><td className="px-3 py-2">{inr(r.wallet)}</td><td className="px-3 py-2"><span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${r.is_active ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>{r.is_active ? "Active" : "Inactive"}</span></td></tr>)}</tbody>
+        <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground"><tr><th className="px-3 py-2">Officer</th><th className="px-3 py-2">Role</th><th className="px-3 py-2">District</th><th className="px-3 py-2">Applications</th><th className="px-3 py-2">Commission</th><th className="px-3 py-2">Status</th></tr></thead>
+        <tbody>{loading ? <tr><td colSpan={6} className="px-3 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr> : filtered.length === 0 ? <tr><td colSpan={6} className="px-3 py-10 text-center text-muted-foreground">No TRO/DRO officers mapped yet. Admin maps them to you.</td></tr> : filtered.map((r) => <tr key={r.id} className="border-t border-border"><td className="px-3 py-2"><div className="font-semibold">{r.name}</div><div className="text-[11px] text-muted-foreground">{r.email}</div></td><td className="px-3 py-2"><span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${rBadge[r.role] || "bg-muted"}`}>{r.role}</span></td><td className="px-3 py-2">{r.district || "—"}</td><td className="px-3 py-2 font-semibold">{r.apps}</td><td className="px-3 py-2 text-india-green">{inr(r.earned)}</td><td className="px-3 py-2"><span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${r.is_active ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>{r.is_active ? "Active" : "Inactive"}</span></td></tr>)}</tbody>
       </table></div>
     </div>
   );

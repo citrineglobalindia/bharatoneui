@@ -290,9 +290,9 @@ export function AdminUsers() {
                   })}
                 </div>
               </div>
-              {detail.roles.includes("retailer") && (
+              {(detail.roles.includes("retailer") || detail.roles.includes("tro") || detail.roles.includes("dro")) && (
                 <div>
-                  <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Assign to Distributor</p>
+                  <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Map to Distributor (Retailer / TRO / DRO)</p>
                   <div className="flex gap-2">
                     <select className="h-9 flex-1 rounded-lg border border-border bg-background px-2 text-sm" value={distId} onChange={(e) => setDistId(e.target.value)}>
                       <option value="">Select distributor</option>
