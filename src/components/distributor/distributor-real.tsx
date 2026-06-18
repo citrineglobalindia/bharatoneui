@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Users, IndianRupee, FileText, Wallet, TrendingUp, Clock3, Loader2, RefreshCw, Search, Download } from "lucide-react";
+import { Users, IndianRupee, FileText, Wallet, TrendingUp, Clock3, Loader2, RefreshCw, Search, Download, Layers, Globe, Cpu, Server, FolderTree, Percent } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 
@@ -154,22 +154,25 @@ export function DistributorOfficersReal() {
 export function DistributorServicesReal() {
   const [rows, setRows] = useState<any[]>([]); const [loading, setLoading] = useState(true); const [q, setQ] = useState("");
   const [type, setType] = useState<"all" | "inlink" | "api" | "backend">("all");
+  const [cat, setCat] = useState<string>("all");
   async function load() { setLoading(true); try { await ensureStaffSession(); const { data } = await supabase.from("services").select("id,name,category,service_type,service_charge,distributor_commission,logo_url,is_active").eq("is_active", true).order("category").order("name"); setRows((data as any[]) ?? []); } finally { setLoading(false); } }
   useEffect(() => { load(); }, []);
 
   const TYPE_LABEL: Record<string, string> = { inlink: "Redirect", api: "API Integrated", backend: "Backend" };
+  const TYPE_ICON: Record<string, any> = { inlink: Globe, api: Cpu, backend: Server };
   const TYPES = [
-    { key: "all" as const, label: "All" },
-    { key: "inlink" as const, label: "Redirect" },
-    { key: "api" as const, label: "API Integrated" },
-    { key: "backend" as const, label: "Backend" },
+    { key: "all" as const, label: "All", icon: Layers },
+    { key: "inlink" as const, label: "Redirect", icon: Globe },
+    { key: "api" as const, label: "API Integrated", icon: Cpu },
+    { key: "backend" as const, label: "Backend", icon: Server },
   ];
   const tBadge: Record<string, string> = { inlink: "bg-sky-100 text-sky-700", api: "bg-violet-100 text-violet-700", backend: "bg-emerald-100 text-emerald-700" };
 
   const filtered = useMemo(() => rows.filter((r) =>
     (type === "all" || r.service_type === type) &&
+    (cat === "all" || (r.category || "Uncategorised") === cat) &&
     (!q || [r.name, r.category].filter(Boolean).some((v) => String(v).toLowerCase().includes(q.toLowerCase())))
-  ), [rows, q, type]);
+  ), [rows, q, type, cat]);
 
   const typeCounts = useMemo(() => {
     const m: Record<string, number> = { all: rows.length, inlink: 0, api: 0, backend: 0 };
@@ -177,17 +180,31 @@ export function DistributorServicesReal() {
     return m;
   }, [rows]);
 
-  // Group filtered services by category (category-wise distribution)
+  const categories = useMemo(() => {
+    const m = new Map<string, number>();
+    rows.forEach((r) => { const k = r.category || "Uncategorised"; m.set(k, (m.get(k) || 0) + 1); });
+    return Array.from(m.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [rows]);
+
   const byCategory = useMemo(() => {
     const m = new Map<string, any[]>();
-    filtered.forEach((s) => { const k = s.category || "Uncategorised"; if (!m.has(k)) m.set(k, []); m.get(k)!.push(s); });
+    filtered.forEach((sv) => { const k = sv.category || "Uncategorised"; if (!m.has(k)) m.set(k, []); m.get(k)!.push(sv); });
     return Array.from(m.entries()).sort((a, b) => a[0].localeCompare(b[0]));
   }, [filtered]);
 
-  const palette = ["from-sky-500 to-blue-600","from-emerald-500 to-green-600","from-orange-500 to-amber-600","from-violet-500 to-fuchsia-600","from-rose-500 to-pink-600","from-cyan-500 to-teal-600"];
+  const palette = ["from-sky-500 to-blue-600","from-emerald-500 to-green-600","from-orange-500 to-amber-600","from-violet-500 to-fuchsia-600","from-rose-500 to-pink-600","from-cyan-500 to-teal-600","from-indigo-500 to-blue-600","from-teal-500 to-emerald-600"];
+  const catGrad = (name: string) => palette[(name.charCodeAt(0) + name.length) % palette.length];
+
+  const Stat = ({ icon: Icon, label, value, tone }: any) => (
+    <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-soft">
+      <span className={`grid h-10 w-10 place-items-center rounded-xl ${tone}`}><Icon className="h-5 w-5" /></span>
+      <div><p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p><p className="text-xl font-extrabold leading-tight">{value}</p></div>
+    </div>
+  );
 
   const Card = ({ s }: { s: any }) => {
     const g = palette[(s.name?.charCodeAt(0) || 0) % palette.length];
+    const TIcon = TYPE_ICON[s.service_type] || Layers;
     return (
       <div className="group overflow-hidden rounded-2xl border border-border bg-card shadow-soft transition hover:-translate-y-0.5 hover:shadow-elev">
         <div className="flex items-center gap-3 border-b border-border p-4">
@@ -196,9 +213,9 @@ export function DistributorServicesReal() {
           <div className="min-w-0"><p className="truncate font-bold leading-tight">{s.name}</p><p className="truncate text-[11px] text-muted-foreground">{s.category || "—"}</p></div>
         </div>
         <div className="space-y-2 p-4">
-          <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${tBadge[s.service_type] || "bg-muted text-muted-foreground"}`}>{TYPE_LABEL[s.service_type] || s.service_type}</span>
+          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${tBadge[s.service_type] || "bg-muted text-muted-foreground"}`}><TIcon className="h-3 w-3" /> {TYPE_LABEL[s.service_type] || s.service_type}</span>
           <div className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2 text-sm"><span className="text-muted-foreground">Charge</span><b>{inr(s.service_charge)}</b></div>
-          <div className="flex items-center justify-between rounded-lg bg-india-green/5 px-3 py-2 text-sm"><span className="text-muted-foreground">Your commission</span><b className="text-india-green">{s.distributor_commission}%</b></div>
+          <div className="flex items-center justify-between rounded-lg bg-india-green/5 px-3 py-2 text-sm"><span className="inline-flex items-center gap-1 text-muted-foreground"><Percent className="h-3.5 w-3.5" /> Your commission</span><b className="text-india-green">{s.distributor_commission}%</b></div>
         </div>
       </div>
     );
@@ -206,28 +223,59 @@ export function DistributorServicesReal() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-2"><div><h1 className="font-display text-2xl font-extrabold">Services Live</h1><p className="text-sm text-muted-foreground">Active services your retailers can offer, grouped by category and type, with your commission %.</p></div><button onClick={load} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-10 text-sm font-semibold hover:bg-muted"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh</button></div>
+      <div className="flex flex-wrap items-center justify-between gap-2"><div><h1 className="font-display text-2xl font-extrabold">Services Live</h1><p className="text-sm text-muted-foreground">All active services your retailers can offer — organised clearly by category and type.</p></div><button onClick={load} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-10 text-sm font-semibold hover:bg-muted"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh</button></div>
 
+      {/* Summary */}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+        <Stat icon={Layers} label="Total Services" value={rows.length} tone="bg-india-green/10 text-india-green" />
+        <Stat icon={FolderTree} label="Categories" value={categories.length} tone="bg-orange-100 text-orange-600" />
+        <Stat icon={Globe} label="Redirect" value={typeCounts.inlink} tone="bg-sky-100 text-sky-600" />
+        <Stat icon={Cpu} label="API Integrated" value={typeCounts.api} tone="bg-violet-100 text-violet-600" />
+        <Stat icon={Server} label="Backend" value={typeCounts.backend} tone="bg-emerald-100 text-emerald-600" />
+      </div>
+
+      {/* Type tabs + search */}
       <div className="flex flex-wrap items-center gap-2">
         {TYPES.map((t) => (
           <button key={t.key} onClick={() => setType(t.key)} className={`inline-flex items-center gap-1.5 rounded-full px-3 h-9 text-xs font-semibold transition ${type === t.key ? "bg-india-green text-white shadow-soft" : "border border-border bg-card hover:bg-muted"}`}>
-            {t.label}<span className={`rounded-full px-1.5 text-[10px] font-bold ${type === t.key ? "bg-white/25" : "bg-muted text-muted-foreground"}`}>{typeCounts[t.key] ?? 0}</span>
+            <t.icon className="h-3.5 w-3.5" />{t.label}<span className={`rounded-full px-1.5 text-[10px] font-bold ${type === t.key ? "bg-white/25" : "bg-muted text-muted-foreground"}`}>{typeCounts[t.key] ?? 0}</span>
           </button>
         ))}
         <div className="relative ml-auto w-64"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><input className="h-9 w-full rounded-lg border border-border bg-background pl-8 pr-2 text-sm outline-none" placeholder="Search service" value={q} onChange={(e) => setQ(e.target.value)} /></div>
       </div>
 
+      {/* Category filter chips */}
+      <div className="flex flex-wrap items-center gap-2">
+        <button onClick={() => setCat("all")} className={`rounded-full px-3 h-8 text-xs font-semibold transition ${cat === "all" ? "bg-foreground text-background" : "border border-border bg-card hover:bg-muted"}`}>All categories</button>
+        {categories.map(([name, n]) => (
+          <button key={name} onClick={() => setCat(name)} className={`inline-flex items-center gap-1.5 rounded-full px-3 h-8 text-xs font-semibold transition ${cat === name ? "bg-foreground text-background" : "border border-border bg-card hover:bg-muted"}`}>
+            {name}<span className={`rounded-full px-1.5 text-[10px] font-bold ${cat === name ? "bg-background/25" : "bg-muted text-muted-foreground"}`}>{n}</span>
+          </button>
+        ))}
+      </div>
+
       {loading ? <div className="py-10 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></div>
-        : byCategory.length === 0 ? <p className="py-10 text-center text-sm text-muted-foreground">No active services{type !== "all" ? ` of type "${TYPE_LABEL[type]}"` : ""}.</p>
-        : <div className="space-y-6">{byCategory.map(([cat, list]) => (
-            <section key={cat}>
-              <div className="mb-3 flex items-center gap-2">
-                <h2 className="font-display text-base font-extrabold">{cat}</h2>
-                <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-bold text-muted-foreground">{list.length}</span>
+        : byCategory.length === 0 ? <p className="py-10 text-center text-sm text-muted-foreground">No services match your filters.</p>
+        : <div className="space-y-5">{byCategory.map(([cn, list]) => {
+            const counts = { inlink: 0, api: 0, backend: 0 } as Record<string, number>;
+            list.forEach((x) => { if (counts[x.service_type] != null) counts[x.service_type]++; });
+            return (
+            <section key={cn} className="overflow-hidden rounded-2xl border border-border bg-card shadow-soft">
+              <div className={`flex flex-wrap items-center gap-3 bg-gradient-to-r ${catGrad(cn)} p-4 text-white`}>
+                <span className="grid h-11 w-11 place-items-center rounded-xl bg-white/20 text-lg font-extrabold">{cn[0]?.toUpperCase() || "?"}</span>
+                <div className="min-w-0 flex-1">
+                  <p className="font-display text-lg font-extrabold leading-tight">{cn}</p>
+                  <p className="text-xs text-white/85">{list.length} service{list.length !== 1 ? "s" : ""}</p>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {(["inlink","api","backend"] as const).filter((k) => counts[k] > 0).map((k) => (
+                    <span key={k} className="inline-flex items-center gap-1 rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold">{TYPE_LABEL[k]}: {counts[k]}</span>
+                  ))}
+                </div>
               </div>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{list.map((s) => <Card key={s.id} s={s} />)}</div>
+              <div className="grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{list.map((sv) => <Card key={sv.id} s={sv} />)}</div>
             </section>
-          ))}</div>}
+          ); })}</div>}
     </div>
   );
 }
