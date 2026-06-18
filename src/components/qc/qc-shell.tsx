@@ -225,7 +225,7 @@ export function QcShell({ children }: { children: React.ReactNode }) {
     setNotifications((xs: any[]) => xs.map((n) => ({ ...n, read: true })));
     try { await supabase.from("notifications").update({ read: true }).eq("read", false); } catch { /* ignore */ }
   };
-  const onNotifClick = (n: any) => { markNotifRead(n.id); if (n.link) navigate({ to: n.link as any }); };
+  const onNotifClick = (n: any) => { markNotifRead(n.id); if (n.link && String(n.link).startsWith("/qc")) navigate({ to: n.link as any }); };
 
   return (
     <div className="h-screen overflow-hidden bg-slate-50 flex">
