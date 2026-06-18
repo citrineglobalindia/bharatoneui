@@ -64,6 +64,8 @@ export function OldPortalStep() {
   const [mobileVerified, setMobileVerified] = useState(false);
   const [verifyingEmail, setVerifyingEmail] = useState(false);
   const [verifyingMobile, setVerifyingMobile] = useState(false);
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [sendingMobile, setSendingMobile] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const [mobileSent, setMobileSent] = useState(false);
   const [emailCooldown, setEmailCooldown] = useState(0);
@@ -129,23 +131,34 @@ export function OldPortalStep() {
   const sendOtp = async (ch: Channel) => {
     if (ch === "email") {
       if (!user?.email) { setEmailError("No email on record for this JSKO ID."); return; }
+      if (sendingEmail) return;
       setEmailError(null);
-      const { data, error } = await supabase.functions.invoke("send-otp", { body: { channel: "email", target: user.email } });
-      if (error) {
-        let msg = "Could not send the code. Please try again in a moment.";
-        try { const ctx = (error as { context?: Response }).context; const body = ctx ? await ctx.json() : null; if (body?.error) msg = String(body.error); } catch { /* ignore */ }
-        setEmailError(msg); return;
+      setSendingEmail(true);
+      try {
+        const { data, error } = await supabase.functions.invoke("send-otp", { body: { channel: "email", target: user.email } });
+        if (error) {
+          let msg = "Could not send the code. Please try again in a moment.";
+          try { const ctx = (error as { context?: Response }).context; const body = ctx ? await ctx.json() : null; if (body?.error) msg = String(body.error); } catch { /* ignore */ }
+          setEmailError(msg); return;
+        }
+        if ((data as { error?: string } | null)?.error) { setEmailError(String((data as { error?: string }).error)); return; }
+        const devCode = (data as { dev_code?: string } | null)?.dev_code;
+        if (devCode && /^[0-9]{6}$/.test(devCode)) setEmailOtp(devCode.split("")); else setEmailOtp(Array(6).fill(""));
+        setEmailSent(true);
+        setEmailCooldown(RESEND_COOLDOWN);
+        setTimeout(() => emailInputsRef.current[0]?.focus(), 50);
+      } catch (e) {
+        setEmailError(e instanceof Error ? e.message : "Could not send the code. Please try again.");
+      } finally {
+        setSendingEmail(false);
       }
-      const devCode = (data as { dev_code?: string } | null)?.dev_code;
-      if (devCode && /^[0-9]{6}$/.test(devCode)) setEmailOtp(devCode.split("")); else setEmailOtp(Array(6).fill(""));
-      setEmailSent(true);
-      setEmailCooldown(RESEND_COOLDOWN);
-      setTimeout(() => emailInputsRef.current[0]?.focus(), 50);
     } else {
+      setSendingMobile(true);
       setMobileOtp(Array(6).fill(""));
       setMobileError(null);
       setMobileSent(true);
       setMobileCooldown(RESEND_COOLDOWN);
+      setSendingMobile(false);
       setTimeout(() => mobileInputsRef.current[0]?.focus(), 50);
     }
   };
@@ -326,6 +339,7 @@ export function OldPortalStep() {
               verified={emailVerified}
               verifying={verifyingEmail}
               sent={emailSent}
+              sending={sendingEmail}
               cooldown={emailCooldown}
               onSend={() => sendOtp("email")}
               onVerify={() => verifyChannel("email")}
@@ -343,6 +357,7 @@ export function OldPortalStep() {
               verified={mobileVerified}
               verifying={verifyingMobile}
               sent={mobileSent}
+              sending={sendingMobile}
               cooldown={mobileCooldown}
               onSend={() => sendOtp("mobile")}
               onVerify={() => verifyChannel("mobile")}
@@ -485,6 +500,7 @@ function OtpCard({
   onSend,
   onVerify,
   inputsRef,
+  sending,
 }: {
   channel: Channel;
   icon: React.ReactNode;
@@ -497,6 +513,7 @@ function OtpCard({
   verified: boolean;
   verifying: boolean;
   sent: boolean;
+  sending?: boolean;
   cooldown: number;
   onSend: () => void;
   onVerify: () => void;
@@ -564,12 +581,20 @@ function OtpCard({
       </div>
 
       {!verified && !sent && (
-        <Button
-          onClick={onSend}
-          className="mt-4 h-11 w-full bg-india-green text-white hover:bg-india-green/90 shadow-elev"
-        >
-          <KeyRound className="h-4 w-4" /> Send OTP to {channel === "email" ? "Email" : "Mobile"}
-        </Button>
+        <>
+          <Button
+            onClick={onSend}
+            disabled={!!sending}
+            className="mt-4 h-11 w-full bg-india-green text-white hover:bg-india-green/90 shadow-elev"
+          >
+            {sending ? <><Loader2 className="h-4 w-4 animate-spin" /> Sending…</> : <><KeyRound className="h-4 w-4" /> Send OTP to {channel === "email" ? "Email" : "Mobile"}</>}
+          </Button>
+          {error && (
+            <p className="mt-2 flex items-center justify-center gap-1.5 text-xs font-semibold text-red-600">
+              <XCircle className="h-3.5 w-3.5" /> {error}
+            </p>
+          )}
+        </>
       )}
 
       {!verified && sent && (
