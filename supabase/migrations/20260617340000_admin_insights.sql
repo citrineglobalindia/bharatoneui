@@ -1,0 +1,2 @@
+-- admin_revenue(), admin_settlements(), admin_risk(), admin_live_feed(), set_app_setting() — bodies as deployed
+-- plus seeded app_settings: platform_name, support_email, support_phone, registration_fee
