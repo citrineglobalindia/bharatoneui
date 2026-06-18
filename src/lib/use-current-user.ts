@@ -35,7 +35,7 @@ export function useCurrentUser(): CurrentUser {
       setInfo({ name, email: u.user.email || "", role });
       try {
         const a = JSON.parse(localStorage.getItem("bharatone:auth") || "{}");
-        localStorage.setItem("bharatone:auth", JSON.stringify({ ...a, name, email: u.user.email, role: a.role || role }));
+        localStorage.setItem("bharatone:auth", JSON.stringify({ ...a, name, email: u.user.email, role: role || a.role }));
       } catch {}
     })();
     return () => { on = false; };

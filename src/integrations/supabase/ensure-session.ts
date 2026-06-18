@@ -25,7 +25,10 @@ export async function ensureStaffSession(): Promise<boolean> {
     const { data } = await withTimeout(supabase.auth.getSession(), 6000);
     if (data?.session) return true;
     const role = storedRole();
-    const acct = role ? REAL_ACCOUNTS[role] : undefined;
+    // Real retailers/distributors sign in with their own credentials and keep their own
+    // session — never silently bridge them onto a shared staff account.
+    if (!role || role === "retailer") return false;
+    const acct = REAL_ACCOUNTS[role];
     if (!acct) return false;
     const { error } = await withTimeout(supabase.auth.signInWithPassword(acct), 8000);
     return !error;

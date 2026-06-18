@@ -145,7 +145,7 @@ function LoginPage() {
                   toast.error("Captcha does not match");
                   return;
                 }
-                try { await supabase.auth.signOut(); } catch { /* clear any stale session */ }
+                try { await supabase.auth.signOut(); localStorage.removeItem("bharatone:auth"); } catch { /* clear any stale session */ }
                 const realId = identifier.trim();
                 if (realId.includes("@")) {
                   const { data: sb, error: sbErr } = await supabase.auth.signInWithPassword({
@@ -153,22 +153,35 @@ function LoginPage() {
                     password,
                   });
                   if (!sbErr && sb?.session && sb.user) {
-                    const { data: rr } = await supabase
-                      .from("user_roles").select("role").eq("user_id", sb.user.id);
+                    const [{ data: rr }, { data: prof }] = await Promise.all([
+                      supabase.from("user_roles").select("role").eq("user_id", sb.user.id),
+                      supabase.from("profiles").select("display_name").eq("id", sb.user.id).maybeSingle(),
+                    ]);
                     const set = new Set((rr ?? []).map((x) => x.role as string));
-                    const dest = set.has("admin")
-                      ? "/admin/registrations"
-                      : set.has("accountant")
-                        ? "/accountant/registrations"
-                        : set.has("qc")
-                          ? "/qc/kyc-queue"
-                          : set.has("telecaller")
-                            ? "/telecaller/registrations"
-                            : set.has("operator")
-                              ? "/operator"
-                              : set.has("distributor")
-                                ? "/distributor/dashboard"
-                                : "/dashboard";
+                    const primary = set.has("admin") ? "admin"
+                      : set.has("accountant") ? "accountant"
+                      : set.has("qc") ? "qc"
+                      : set.has("telecaller") ? "telecaller"
+                      : set.has("operator") ? "operator"
+                      : set.has("distributor") ? "distributor"
+                      : set.has("master-distributor") ? "master-distributor"
+                      : "retailer";
+                    const dest = primary === "admin" ? "/admin/registrations"
+                      : primary === "accountant" ? "/accountant/registrations"
+                      : primary === "qc" ? "/qc/kyc-queue"
+                      : primary === "telecaller" ? "/telecaller/registrations"
+                      : primary === "operator" ? "/operator"
+                      : primary === "distributor" ? "/distributor/dashboard"
+                      : "/dashboard";
+                    // Persist the REAL identity so useCurrentUser/ensureStaffSession never fall back to a stale role.
+                    try {
+                      localStorage.setItem("bharatone:auth", JSON.stringify({
+                        name: (prof as any)?.display_name || sb.user.email?.split("@")[0] || "User",
+                        email: sb.user.email,
+                        role: primary,
+                        loggedInAt: new Date().toISOString(),
+                      }));
+                    } catch {}
                     if (dest === "/dashboard") { try { await supabase.rpc("record_login"); } catch {} }
                     toast.success("Welcome back");
                     navigate({ to: dest });
