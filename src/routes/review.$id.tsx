@@ -153,7 +153,15 @@ function ReviewPage() {
     if (qcAction === "reject_payment") { await act(() => supabase.rpc("verify_retailer_payment", { reg_id: id, received: false, notes: remarks || "Payment not received" }), "Sent to Telecaller"); return; }
     if (qcAction === "approve_kyc") {
       const data = await act(() => supabase.rpc("verify_retailer_qc", { reg_id: id, verified: true, notes: remarks || null }), "Approved — retailer login created", false);
-      if (data) setCreds(data as { username: string; email: string; password: string });
+      if (data) {
+        const c = data as { username: string; email: string; password: string };
+        setCreds(c);
+        try {
+          const origin = typeof window !== "undefined" ? window.location.origin : "";
+          const { error: mailErr } = await supabase.functions.invoke("send-credentials", { body: { email: c.email, name: fullName, username: c.username, password: c.password, loginUrl: origin + "/login" } });
+          if (mailErr) toast.error("Login email could not be sent", { description: mailErr.message }); else toast.success("Login details emailed to retailer");
+        } catch (e) { toast.error("Login email failed", { description: e instanceof Error ? e.message : String(e) }); }
+      }
       return;
     }
     if (qcAction === "reject_kyc") { await act(() => supabase.rpc("verify_retailer_qc", { reg_id: id, verified: false, notes: remarks || "Rejected by QC" }), "Sent to Telecaller"); return; }
