@@ -126,10 +126,18 @@ export function OldPortalStep() {
     setStage("otp");
   };
 
-  const sendOtp = (ch: Channel) => {
+  const sendOtp = async (ch: Channel) => {
     if (ch === "email") {
-      setEmailOtp(Array(6).fill(""));
+      if (!user?.email) { setEmailError("No email on record for this JSKO ID."); return; }
       setEmailError(null);
+      const { data, error } = await supabase.functions.invoke("send-otp", { body: { channel: "email", target: user.email } });
+      if (error) {
+        let msg = "Could not send the code. Please try again in a moment.";
+        try { const ctx = (error as { context?: Response }).context; const body = ctx ? await ctx.json() : null; if (body?.error) msg = String(body.error); } catch { /* ignore */ }
+        setEmailError(msg); return;
+      }
+      const devCode = (data as { dev_code?: string } | null)?.dev_code;
+      if (devCode && /^[0-9]{6}$/.test(devCode)) setEmailOtp(devCode.split("")); else setEmailOtp(Array(6).fill(""));
       setEmailSent(true);
       setEmailCooldown(RESEND_COOLDOWN);
       setTimeout(() => emailInputsRef.current[0]?.focus(), 50);
@@ -150,9 +158,9 @@ export function OldPortalStep() {
         return;
       }
       setVerifyingEmail(true);
-      await new Promise((r) => setTimeout(r, 700));
+      const { data: vd, error: ve } = await supabase.rpc("verify_registration_otp", { _target: user!.email, _channel: "email", _code: code });
       setVerifyingEmail(false);
-      if (code === MOCK_OTP) {
+      if (!ve && (vd as { verified?: boolean } | null)?.verified === true) {
         setEmailVerified(true);
         setEmailError(null);
         if (mobileVerified) {
