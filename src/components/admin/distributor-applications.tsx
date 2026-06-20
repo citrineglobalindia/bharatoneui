@@ -85,6 +85,9 @@ export function DistributorApplications() {
   const [formUrl, setFormUrl] = useState<string | null>(null);
   const [rejecting, setRejecting] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
+  const [creds, setCreds] = useState<{ username: string; email: string; password: string } | null>(
+    null,
+  );
 
   async function load() {
     setLoading(true);
@@ -128,13 +131,29 @@ export function DistributorApplications() {
   const approve = async (id: string) => {
     setBusy(id);
     try {
-      const { error } = await supabase.rpc("approve_distributor_registration", { reg_id: id });
+      const { data, error } = await supabase.rpc("approve_distributor_registration", {
+        reg_id: id,
+      });
       if (error) {
         toast.error("Approve failed", { description: error.message });
         return;
       }
-      toast.success("Distributor approved");
+      const res = data as unknown as {
+        username?: string;
+        email?: string;
+        password?: string | null;
+      };
       setDetail(null);
+      if (res?.password) {
+        // fallback case: a temporary password was generated — surface it to copy
+        setCreds({ username: res.username ?? "", email: res.email ?? "", password: res.password });
+      } else {
+        toast.success("Distributor approved", {
+          description: res?.username
+            ? `Login ID ${res.username} — they sign in with their registered password.`
+            : undefined,
+        });
+      }
       load();
     } finally {
       setBusy(null);
@@ -451,6 +470,56 @@ export function DistributorApplications() {
                   </DialogFooter>
                 </>
               )}
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!creds} onOpenChange={(o) => !o && setCreds(null)}>
+        <DialogContent className="max-w-md">
+          {creds && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <CheckCircle2 className="h-5 w-5 text-emerald-600" /> Distributor approved
+                </DialogTitle>
+                <DialogDescription>
+                  A temporary password was generated. Share these credentials securely — they won't
+                  be shown again.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-2">
+                {[
+                  { label: "Login ID", value: creds.username },
+                  { label: "Email", value: creds.email },
+                  { label: "Temporary password", value: creds.password },
+                ].map((c) => (
+                  <div
+                    key={c.label}
+                    className="flex items-center justify-between gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                        {c.label}
+                      </p>
+                      <p className="truncate font-mono text-sm text-foreground">{c.value}</p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        navigator.clipboard?.writeText(c.value);
+                        toast.success(`${c.label} copied`);
+                      }}
+                    >
+                      Copy
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              <DialogFooter>
+                <Button onClick={() => setCreds(null)}>Done</Button>
+              </DialogFooter>
             </>
           )}
         </DialogContent>
