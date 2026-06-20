@@ -139,6 +139,7 @@ import { Route as AccountantProfileRouteImport } from './routes/accountant.profi
 import { Route as AccountantMainRechargeRouteImport } from './routes/accountant.main-recharge'
 import { Route as AccountantLedgerRouteImport } from './routes/accountant.ledger'
 import { Route as AccountantFeedbackRouteImport } from './routes/accountant.feedback'
+import { Route as AccountantDistributorApplicationsRouteImport } from './routes/accountant.distributor-applications'
 import { Route as AccountantDashboardRouteImport } from './routes/accountant.dashboard'
 import { Route as AccountantChangePasswordRouteImport } from './routes/accountant.change-password'
 import { Route as AccountantApplicationsRouteImport } from './routes/accountant.applications'
@@ -804,6 +805,12 @@ const AccountantFeedbackRoute = AccountantFeedbackRouteImport.update({
   path: '/accountant/feedback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountantDistributorApplicationsRoute =
+  AccountantDistributorApplicationsRouteImport.update({
+    id: '/accountant/distributor-applications',
+    path: '/accountant/distributor-applications',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AccountantDashboardRoute = AccountantDashboardRouteImport.update({
   id: '/accountant/dashboard',
   path: '/accountant/dashboard',
@@ -911,6 +918,7 @@ export interface FileRoutesByFullPath {
   '/accountant/applications': typeof AccountantApplicationsRoute
   '/accountant/change-password': typeof AccountantChangePasswordRoute
   '/accountant/dashboard': typeof AccountantDashboardRoute
+  '/accountant/distributor-applications': typeof AccountantDistributorApplicationsRoute
   '/accountant/feedback': typeof AccountantFeedbackRoute
   '/accountant/ledger': typeof AccountantLedgerRoute
   '/accountant/main-recharge': typeof AccountantMainRechargeRoute
@@ -1054,6 +1062,7 @@ export interface FileRoutesByTo {
   '/accountant/applications': typeof AccountantApplicationsRoute
   '/accountant/change-password': typeof AccountantChangePasswordRoute
   '/accountant/dashboard': typeof AccountantDashboardRoute
+  '/accountant/distributor-applications': typeof AccountantDistributorApplicationsRoute
   '/accountant/feedback': typeof AccountantFeedbackRoute
   '/accountant/ledger': typeof AccountantLedgerRoute
   '/accountant/main-recharge': typeof AccountantMainRechargeRoute
@@ -1197,6 +1206,7 @@ export interface FileRoutesById {
   '/accountant/applications': typeof AccountantApplicationsRoute
   '/accountant/change-password': typeof AccountantChangePasswordRoute
   '/accountant/dashboard': typeof AccountantDashboardRoute
+  '/accountant/distributor-applications': typeof AccountantDistributorApplicationsRoute
   '/accountant/feedback': typeof AccountantFeedbackRoute
   '/accountant/ledger': typeof AccountantLedgerRoute
   '/accountant/main-recharge': typeof AccountantMainRechargeRoute
@@ -1342,6 +1352,7 @@ export interface FileRouteTypes {
     | '/accountant/applications'
     | '/accountant/change-password'
     | '/accountant/dashboard'
+    | '/accountant/distributor-applications'
     | '/accountant/feedback'
     | '/accountant/ledger'
     | '/accountant/main-recharge'
@@ -1485,6 +1496,7 @@ export interface FileRouteTypes {
     | '/accountant/applications'
     | '/accountant/change-password'
     | '/accountant/dashboard'
+    | '/accountant/distributor-applications'
     | '/accountant/feedback'
     | '/accountant/ledger'
     | '/accountant/main-recharge'
@@ -1627,6 +1639,7 @@ export interface FileRouteTypes {
     | '/accountant/applications'
     | '/accountant/change-password'
     | '/accountant/dashboard'
+    | '/accountant/distributor-applications'
     | '/accountant/feedback'
     | '/accountant/ledger'
     | '/accountant/main-recharge'
@@ -1771,6 +1784,7 @@ export interface RootRouteChildren {
   AccountantApplicationsRoute: typeof AccountantApplicationsRoute
   AccountantChangePasswordRoute: typeof AccountantChangePasswordRoute
   AccountantDashboardRoute: typeof AccountantDashboardRoute
+  AccountantDistributorApplicationsRoute: typeof AccountantDistributorApplicationsRoute
   AccountantFeedbackRoute: typeof AccountantFeedbackRoute
   AccountantLedgerRoute: typeof AccountantLedgerRoute
   AccountantMainRechargeRoute: typeof AccountantMainRechargeRoute
@@ -2759,6 +2773,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountantFeedbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/accountant/distributor-applications': {
+      id: '/accountant/distributor-applications'
+      path: '/accountant/distributor-applications'
+      fullPath: '/accountant/distributor-applications'
+      preLoaderRoute: typeof AccountantDistributorApplicationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/accountant/dashboard': {
       id: '/accountant/dashboard'
       path: '/accountant/dashboard'
@@ -2999,6 +3020,8 @@ const rootRouteChildren: RootRouteChildren = {
   AccountantApplicationsRoute: AccountantApplicationsRoute,
   AccountantChangePasswordRoute: AccountantChangePasswordRoute,
   AccountantDashboardRoute: AccountantDashboardRoute,
+  AccountantDistributorApplicationsRoute:
+    AccountantDistributorApplicationsRoute,
   AccountantFeedbackRoute: AccountantFeedbackRoute,
   AccountantLedgerRoute: AccountantLedgerRoute,
   AccountantMainRechargeRoute: AccountantMainRechargeRoute,
