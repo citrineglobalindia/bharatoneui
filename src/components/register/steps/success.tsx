@@ -1,5 +1,4 @@
 import {
-  CheckCircle2,
   Copy,
   Download,
   Share2,
@@ -55,17 +54,30 @@ export function buildSubmission(utr: string, plan: string, amount = 4999): Submi
 }
 
 function buildReceiptCanvas(info: SubmissionInfo): HTMLCanvasElement {
-  const W = 920, H = 1120;
+  const W = 920,
+    H = 1120;
   const c = document.createElement("canvas");
-  c.width = W; c.height = H;
+  c.width = W;
+  c.height = H;
   const ctx = c.getContext("2d")!;
-  ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, W, H);
-  ctx.fillStyle = "#FF9933"; ctx.fillRect(0, 0, W / 3, 14);
-  ctx.fillStyle = "#138808"; ctx.fillRect((2 * W) / 3, 0, W / 3, 14);
-  ctx.fillStyle = "#9A3412"; ctx.font = "bold 30px Arial"; ctx.fillText("BharatOne \u2014 Official Receipt", 56, 92);
-  ctx.fillStyle = "#6b7280"; ctx.font = "18px Arial"; ctx.fillText("KYC Submission \u00b7 BharatOne", 56, 124);
-  ctx.strokeStyle = "#E5E7EB"; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(56, 150); ctx.lineTo(W - 56, 150); ctx.stroke();
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = "#FF9933";
+  ctx.fillRect(0, 0, W / 3, 14);
+  ctx.fillStyle = "#138808";
+  ctx.fillRect((2 * W) / 3, 0, W / 3, 14);
+  ctx.fillStyle = "#9A3412";
+  ctx.font = "bold 30px Arial";
+  ctx.fillText("BharatOne \u2014 Official Receipt", 56, 92);
+  ctx.fillStyle = "#6b7280";
+  ctx.font = "18px Arial";
+  ctx.fillText("KYC Submission \u00b7 BharatOne", 56, 124);
+  ctx.strokeStyle = "#E5E7EB";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(56, 150);
+  ctx.lineTo(W - 56, 150);
+  ctx.stroke();
   const rows: [string, string][] = [
     ["Application ID", info.applicationId],
     ["Transaction ID", info.transactionId],
@@ -77,11 +89,16 @@ function buildReceiptCanvas(info: SubmissionInfo): HTMLCanvasElement {
   ];
   let y = 220;
   for (const [k, v] of rows) {
-    ctx.fillStyle = "#9ca3af"; ctx.font = "14px Arial"; ctx.fillText(k.toUpperCase(), 56, y);
-    ctx.fillStyle = "#111827"; ctx.font = "bold 26px Arial"; ctx.fillText(String(v), 56, y + 34);
+    ctx.fillStyle = "#9ca3af";
+    ctx.font = "14px Arial";
+    ctx.fillText(k.toUpperCase(), 56, y);
+    ctx.fillStyle = "#111827";
+    ctx.font = "bold 26px Arial";
+    ctx.fillText(String(v), 56, y + 34);
     y += 92;
   }
-  ctx.fillStyle = "#6b7280"; ctx.font = "16px Arial";
+  ctx.fillStyle = "#6b7280";
+  ctx.font = "16px Arial";
   ctx.fillText("Thank you for choosing BharatOne \u00b7 support@bharatone.com", 56, H - 60);
   return c;
 }
@@ -90,6 +107,18 @@ export function SuccessStep({ info }: { info: SubmissionInfo }) {
   const [copied, setCopied] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const receiptRef = useRef<HTMLDivElement>(null);
+
+  // Confetti pieces — generated once; this step only renders client-side post-submit.
+  const confetti = useMemo(() => {
+    const colors = ["#FF9933", "#138808", "#2563EB", "#F59E0B", "#10B981", "#EF4444"];
+    return Array.from({ length: 22 }, (_, i) => ({
+      left: Math.round(Math.random() * 100),
+      x: Math.round((Math.random() - 0.5) * 220),
+      rot: Math.round(180 + Math.random() * 540),
+      delay: Math.round(Math.random() * 250),
+      color: colors[i % colors.length],
+    }));
+  }, []);
 
   const copy = async (label: string, val: string) => {
     try {
@@ -115,7 +144,7 @@ export function SuccessStep({ info }: { info: SubmissionInfo }) {
         "Support        : support@bharatone.com",
         "Website        : https://bharatone.com",
       ].join("\n"),
-    [info]
+    [info],
   );
 
   const shareMessage = [
@@ -150,13 +179,20 @@ export function SuccessStep({ info }: { info: SubmissionInfo }) {
       const JsPDF = mod.jsPDF ?? mod.default;
       const pdf = new JsPDF({ unit: "pt", format: "a4" });
       const W = pdf.internal.pageSize.getWidth();
-      pdf.setFillColor(255, 153, 51); pdf.rect(0, 0, W / 3, 8, "F");
-      pdf.setFillColor(19, 136, 8); pdf.rect((2 * W) / 3, 0, W / 3, 8, "F");
-      pdf.setTextColor(154, 52, 18); pdf.setFont("helvetica", "bold"); pdf.setFontSize(18);
+      pdf.setFillColor(255, 153, 51);
+      pdf.rect(0, 0, W / 3, 8, "F");
+      pdf.setFillColor(19, 136, 8);
+      pdf.rect((2 * W) / 3, 0, W / 3, 8, "F");
+      pdf.setTextColor(154, 52, 18);
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(18);
       pdf.text("BharatOne - Official Receipt", 40, 60);
-      pdf.setTextColor(107, 114, 128); pdf.setFont("helvetica", "normal"); pdf.setFontSize(11);
+      pdf.setTextColor(107, 114, 128);
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(11);
       pdf.text("KYC Submission - BharatOne", 40, 78);
-      pdf.setDrawColor(229, 231, 235); pdf.line(40, 95, W - 40, 95);
+      pdf.setDrawColor(229, 231, 235);
+      pdf.line(40, 95, W - 40, 95);
       const rows: [string, string][] = [
         ["Application ID", info.applicationId],
         ["Transaction ID", info.transactionId],
@@ -168,18 +204,30 @@ export function SuccessStep({ info }: { info: SubmissionInfo }) {
       ];
       let y = 130;
       for (const [k, v] of rows) {
-        pdf.setTextColor(156, 163, 175); pdf.setFont("helvetica", "normal"); pdf.setFontSize(9);
+        pdf.setTextColor(156, 163, 175);
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(9);
         pdf.text(k.toUpperCase(), 40, y);
-        pdf.setTextColor(17, 24, 39); pdf.setFont("helvetica", "bold"); pdf.setFontSize(14);
+        pdf.setTextColor(17, 24, 39);
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(14);
         pdf.text(String(v), 40, y + 18);
         y += 48;
       }
-      pdf.setTextColor(107, 114, 128); pdf.setFont("helvetica", "normal"); pdf.setFontSize(10);
+      pdf.setTextColor(107, 114, 128);
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(10);
       pdf.text("Thank you for choosing BharatOne - support@bharatone.com", 40, y + 24);
       pdf.save(`BharatOne-Receipt-${info.applicationId}.pdf`);
     } catch (e) {
       console.error(e);
-      try { (await import("sonner")).toast.error("Could not generate PDF", { description: e instanceof Error ? e.message : String(e) }); } catch { /* ignore */ }
+      try {
+        (await import("sonner")).toast.error("Could not generate PDF", {
+          description: e instanceof Error ? e.message : String(e),
+        });
+      } catch {
+        /* ignore */
+      }
     } finally {
       setBusy(null);
     }
@@ -187,7 +235,11 @@ export function SuccessStep({ info }: { info: SubmissionInfo }) {
 
   const shareWhatsApp = () => window.open(`https://wa.me/?text=${enc}`, "_blank", "noopener");
   const shareTelegram = () =>
-    window.open(`https://t.me/share/url?url=${encodeURIComponent("https://bharatone.com")}&text=${enc}`, "_blank", "noopener");
+    window.open(
+      `https://t.me/share/url?url=${encodeURIComponent("https://bharatone.com")}&text=${enc}`,
+      "_blank",
+      "noopener",
+    );
   const shareEmail = () => {
     window.location.href = `mailto:?subject=${encodeURIComponent("BharatOne Submission Receipt - " + info.applicationId)}&body=${enc}`;
   };
@@ -196,9 +248,12 @@ export function SuccessStep({ info }: { info: SubmissionInfo }) {
   };
   const nativeShare = async () => {
     try {
-      if (navigator.share) await navigator.share({ title: "BharatOne Submission Receipt", text: shareMessage });
+      if (navigator.share)
+        await navigator.share({ title: "BharatOne Submission Receipt", text: shareMessage });
       else await copy("share", shareMessage);
-    } catch { /* user cancelled */ }
+    } catch {
+      /* user cancelled */
+    }
   };
 
   const copyReceipt = () => copy("receipt", receiptText);
@@ -221,7 +276,7 @@ export function SuccessStep({ info }: { info: SubmissionInfo }) {
   );
 
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=4&data=${encodeURIComponent(
-    `BharatOne|${info.applicationId}|${info.transactionId}|${info.utr}|${info.amount}`
+    `BharatOne|${info.applicationId}|${info.transactionId}|${info.utr}|${info.amount}`,
   )}`;
 
   return (
@@ -229,11 +284,38 @@ export function SuccessStep({ info }: { info: SubmissionInfo }) {
       <div className="pointer-events-none absolute -left-16 -top-16 h-56 w-56 rounded-full bg-saffron-gradient opacity-20 blur-3xl" />
       <div className="pointer-events-none absolute -right-10 top-20 h-48 w-48 rounded-full bg-[oklch(0.7_0.15_150)] opacity-15 blur-3xl" />
 
+      {/* Confetti burst (CSS-only, fires once on mount) */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 mx-auto flex h-0 max-w-[460px] justify-center">
+        {confetti.map((c, i) => (
+          <span
+            key={i}
+            className="bo-confetti-piece"
+            style={{
+              left: `${c.left}%`,
+              background: c.color,
+              animationDelay: `${c.delay}ms`,
+              ["--bo-x" as string]: `${c.x}px`,
+              ["--bo-r" as string]: `${c.rot}deg`,
+            }}
+          />
+        ))}
+      </div>
+
       <div className="relative flex flex-col items-center text-center">
         <div className="relative">
           <div className="absolute inset-0 animate-ping rounded-full bg-[oklch(0.75_0.15_150)] opacity-40" />
-          <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-[oklch(0.95_0.06_150)] text-[oklch(0.45_0.15_150)] shadow-elev">
-            <CheckCircle2 className="h-10 w-10" />
+          <div className="bo-check-pop relative flex h-20 w-20 items-center justify-center rounded-full bg-[oklch(0.95_0.06_150)] text-[oklch(0.45_0.15_150)] shadow-elev">
+            <svg viewBox="0 0 52 52" className="h-10 w-10" aria-hidden="true">
+              <path
+                className="bo-check-tick"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={5}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M14 27l8 8 16-18"
+              />
+            </svg>
           </div>
         </div>
         <div className="mt-5 inline-flex items-center gap-1.5 rounded-full bg-accent/60 px-3 py-1 text-[11px] font-semibold text-foreground">
@@ -243,7 +325,8 @@ export function SuccessStep({ info }: { info: SubmissionInfo }) {
           Application Submitted
         </h2>
         <p className="mt-2 max-w-md text-sm text-muted-foreground">
-          Your BharatOne onboarding has been received. Save the transaction details below — our team will verify your KYC and notify you on your registered email and mobile.
+          Your BharatOne onboarding has been received. Save the transaction details below — our team
+          will verify your KYC and notify you on your registered email and mobile.
         </p>
       </div>
 
@@ -269,8 +352,7 @@ export function SuccessStep({ info }: { info: SubmissionInfo }) {
           <div
             className="flex items-center justify-between gap-3 px-6 py-5"
             style={{
-              background:
-                "linear-gradient(135deg, #FFF7ED 0%, #FFFFFF 50%, #ECFDF5 100%)",
+              background: "linear-gradient(135deg, #FFF7ED 0%, #FFFFFF 50%, #ECFDF5 100%)",
             }}
           >
             <div className="flex items-center gap-3">
@@ -291,9 +373,7 @@ export function SuccessStep({ info }: { info: SubmissionInfo }) {
               <p className="text-[9px] font-semibold uppercase tracking-wider text-[#166534]">
                 Paid
               </p>
-              <p className="font-mono text-sm font-bold text-[#14532D]">
-                {info.amount}
-              </p>
+              <p className="font-mono text-sm font-bold text-[#14532D]">{info.amount}</p>
             </div>
           </div>
 
@@ -337,9 +417,7 @@ export function SuccessStep({ info }: { info: SubmissionInfo }) {
                   <p className="text-xs font-bold text-[#78350F]">Under Review</p>
                 </div>
               </div>
-              <p className="text-[10px] text-neutral-500">
-                support@bharatone.com
-              </p>
+              <p className="text-[10px] text-neutral-500">support@bharatone.com</p>
             </div>
           </div>
 
@@ -347,8 +425,7 @@ export function SuccessStep({ info }: { info: SubmissionInfo }) {
           <div
             className="h-3 w-full"
             style={{
-              backgroundImage:
-                "radial-gradient(circle at 6px 6px, #E5E7EB 2px, transparent 2.5px)",
+              backgroundImage: "radial-gradient(circle at 6px 6px, #E5E7EB 2px, transparent 2.5px)",
               backgroundSize: "12px 12px",
               backgroundPosition: "0 -3px",
             }}
@@ -381,8 +458,8 @@ export function SuccessStep({ info }: { info: SubmissionInfo }) {
               {busy === "pdf"
                 ? "Generating PDF…"
                 : busy === "png"
-                ? "Generating Image…"
-                : "Download Receipt"}
+                  ? "Generating Image…"
+                  : "Download Receipt"}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="center" className="w-56">
@@ -445,25 +522,13 @@ export function SuccessStep({ info }: { info: SubmissionInfo }) {
   );
 }
 
-function ReceiptLine({
-  label,
-  value,
-  mono,
-}: {
-  label: string;
-  value: string;
-  mono?: boolean;
-}) {
+function ReceiptLine({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
     <div>
       <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-neutral-500">
         {label}
       </p>
-      <p
-        className={`mt-0.5 text-[12px] font-semibold text-neutral-900 ${
-          mono ? "font-mono" : ""
-        }`}
-      >
+      <p className={`mt-0.5 text-[12px] font-semibold text-neutral-900 ${mono ? "font-mono" : ""}`}>
         {value}
       </p>
     </div>

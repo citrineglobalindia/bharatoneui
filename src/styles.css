@@ -248,6 +248,35 @@
 .nav-scroll::-webkit-scrollbar-thumb { background-color: rgba(255, 255, 255, 0.18); border-radius: 9999px; }
 .nav-scroll:hover::-webkit-scrollbar-thumb { background-color: rgba(255, 255, 255, 0.32); }
 
+/* Success celebration — drawn-in tick + confetti burst (CSS only) */
+@keyframes bo-check-pop {
+  0% { transform: scale(0); }
+  60% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+@keyframes bo-check-draw {
+  to { stroke-dashoffset: 0; }
+}
+@keyframes bo-confetti-fall {
+  0% { transform: translate3d(0, -8px, 0) rotate(0deg); opacity: 1; }
+  100% { transform: translate3d(var(--bo-x, 0), 260px, 0) rotate(var(--bo-r, 360deg)); opacity: 0; }
+}
+.bo-check-pop { animation: bo-check-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.bo-check-tick {
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  animation: bo-check-draw 0.5s 0.25s ease-out forwards;
+}
+.bo-confetti-piece {
+  position: absolute;
+  top: 0;
+  width: 8px;
+  height: 12px;
+  border-radius: 1px;
+  opacity: 0;
+  animation: bo-confetti-fall 1.15s ease-in forwards;
+}
+
 /* Respect users who prefer reduced motion: neutralize animations & transitions */
 @media (prefers-reduced-motion: reduce) {
   *,
