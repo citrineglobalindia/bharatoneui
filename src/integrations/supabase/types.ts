@@ -14,6 +14,111 @@ export type Database = {
   }
   public: {
     Tables: {
+      distributor_registrations: {
+        Row: {
+          id: string
+          application_id: string
+          transaction_id: string | null
+          status: string
+          distributor_name: string
+          proprietor_name: string | null
+          company_name: string | null
+          gst_number: string | null
+          dob: string | null
+          gender: string | null
+          mobile: string
+          alt_mobile: string | null
+          email: string
+          pan_number: string | null
+          ifsc: string | null
+          bank_name: string | null
+          account_number: string | null
+          address_line: string | null
+          state: string | null
+          district: string | null
+          group_name: string | null
+          form_doc_path: string | null
+          password_hash: string | null
+          reviewed_by: string | null
+          reviewed_at: string | null
+          review_notes: string | null
+          rejection_reason: string | null
+          approved_by: string | null
+          approved_at: string | null
+          auth_user_id: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          application_id: string
+          transaction_id?: string | null
+          status?: string
+          distributor_name: string
+          proprietor_name?: string | null
+          company_name?: string | null
+          gst_number?: string | null
+          dob?: string | null
+          gender?: string | null
+          mobile: string
+          alt_mobile?: string | null
+          email: string
+          pan_number?: string | null
+          ifsc?: string | null
+          bank_name?: string | null
+          account_number?: string | null
+          address_line?: string | null
+          state?: string | null
+          district?: string | null
+          group_name?: string | null
+          form_doc_path?: string | null
+          password_hash?: string | null
+          reviewed_by?: string | null
+          reviewed_at?: string | null
+          review_notes?: string | null
+          rejection_reason?: string | null
+          approved_by?: string | null
+          approved_at?: string | null
+          auth_user_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          application_id?: string
+          transaction_id?: string | null
+          status?: string
+          distributor_name?: string
+          proprietor_name?: string | null
+          company_name?: string | null
+          gst_number?: string | null
+          dob?: string | null
+          gender?: string | null
+          mobile?: string
+          alt_mobile?: string | null
+          email?: string
+          pan_number?: string | null
+          ifsc?: string | null
+          bank_name?: string | null
+          account_number?: string | null
+          address_line?: string | null
+          state?: string | null
+          district?: string | null
+          group_name?: string | null
+          form_doc_path?: string | null
+          password_hash?: string | null
+          reviewed_by?: string | null
+          reviewed_at?: string | null
+          review_notes?: string | null
+          rejection_reason?: string | null
+          approved_by?: string | null
+          approved_at?: string | null
+          auth_user_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       admin_audit_logs: {
         Row: {
           action: string
@@ -393,6 +498,18 @@ export type Database = {
     Functions: {
       submit_retailer_registration: {
         Args: { payload: Json }
+        Returns: Json
+      }
+      submit_distributor_registration: {
+        Args: { payload: Json }
+        Returns: Json
+      }
+      approve_distributor_registration: {
+        Args: { reg_id: string }
+        Returns: Json
+      }
+      reject_distributor_registration: {
+        Args: { reg_id: string; reason: string }
         Returns: Json
       }
       approve_retailer_registration: {

@@ -36,10 +36,10 @@ import { BusinessStep } from "@/components/register/steps/business";
 import { KycDocsStep } from "@/components/register/steps/kyc-docs";
 import { VideoKycStep } from "@/components/register/steps/video-kyc";
 import { SelfieStep } from "@/components/register/steps/selfie";
-import { SuccessStep, buildSubmission, type SubmissionInfo } from "@/components/register/steps/success";
+import { SuccessStep, type SubmissionInfo } from "@/components/register/steps/success";
 import { PaymentStep } from "@/components/register/steps/payment";
 import { DistributorEntityStep } from "@/components/register/steps/distributor-entity";
-import { DistributorSinglePage } from "@/components/register/distributor-single";
+import { DistributorSinglePage, type DistributorFormData } from "@/components/register/distributor-single";
 import {
   RegistrationProvider,
   useRegistration,
@@ -132,13 +132,63 @@ function RegisterFlow() {
   const next = () => setCurrent((c) => Math.min(c + 1, steps.length - 1));
   const prev = () => setCurrent((c) => Math.max(c - 1, 0));
 
-  const submit = async () => {
-    // Distributor flow is not persisted yet — keep the local receipt.
-    if (type === "distributor") {
-      setSubmission(buildSubmission(data.payment.utr, heading, amount ?? 0));
+  const submitDistributor = async (d: DistributorFormData, formFile: File) => {
+    setSubmitting(true);
+    setError(null);
+    try {
+      const folder =
+        "distributor/" +
+        (typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : String(Date.now()));
+      const formDocPath = await uploadFile(folder, "onboarding-form", formFile);
+
+      const payload = {
+        distributor_name: d.distributorName,
+        proprietor_name: d.proprietorName,
+        company_name: d.companyName,
+        gst_number: d.gstNumber,
+        dob: d.dob,
+        gender: d.gender,
+        mobile: d.mobile,
+        alt_mobile: d.altMobile,
+        email: d.email,
+        pan_number: d.panNumber,
+        ifsc: d.ifsc,
+        bank_name: d.bankName,
+        account_number: d.accountNumber,
+        address_line: d.addressLine,
+        state: d.state,
+        district: d.district,
+        group_name: d.groupName,
+        form_doc_path: formDocPath,
+        password: d.password,
+      };
+
+      const { data: res, error: rpcErr } = await supabase.rpc(
+        "submit_distributor_registration",
+        { payload },
+      );
+      if (rpcErr) throw new Error(rpcErr.message);
+      const r = res as unknown as { application_id: string; transaction_id: string };
+
+      setSubmission({
+        applicationId: r.application_id,
+        transactionId: r.transaction_id,
+        utr: "—",
+        amount: amount != null ? `₹${amount.toLocaleString("en-IN")}` : "—",
+        submittedAt: new Date().toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }),
+        plan: heading,
+      });
       setDone(true);
-      return;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Submission failed. Please try again.");
+    } finally {
+      setSubmitting(false);
     }
+  };
+
+  const submit = async () => {
     setSubmitting(true);
     setError(null);
     try {
@@ -363,7 +413,7 @@ function RegisterFlow() {
           {done && submission ? (
             <SuccessStep info={submission} />
           ) : type === "distributor" ? (
-            <DistributorSinglePage onSubmit={submit} />
+            <DistributorSinglePage onSubmit={submitDistributor} submitting={submitting} error={error} />
           ) : (
             <>
               {StepBody}
