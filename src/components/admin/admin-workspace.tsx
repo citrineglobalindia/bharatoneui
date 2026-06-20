@@ -6,7 +6,6 @@ import {
   ArrowUpRight,
   BadgeIndianRupee,
   BarChart3,
-  Bell,
   Building2,
   ChevronDown,
   CircleCheckBig,
@@ -95,6 +94,7 @@ import {
 import { downloadCsv } from "@/lib/admin-actions";
 import { cn } from "@/lib/utils";
 import { RegistrationsReview } from "@/components/registrations/registrations-review";
+import { NotificationsBell } from "@/components/retailer/notifications-bell";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 import { useCurrentUser } from "@/lib/use-current-user";
@@ -606,18 +606,7 @@ export function AdminWorkspace() {
               All systems operational
             </span>
           </div>
-          <Button
-            variant="outline"
-            size="icon"
-            className="relative"
-            onClick={() => setActive("Risk & Fraud")}
-            aria-label="Open risk alerts"
-          >
-            <Bell />
-            <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-admin-danger px-1 text-[8px] font-bold text-admin-danger-foreground">
-              8
-            </span>
-          </Button>
+          <NotificationsBell />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="h-10 gap-2 px-2">

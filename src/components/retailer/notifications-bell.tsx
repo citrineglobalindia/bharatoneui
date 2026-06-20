@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 
 type Notif = {
   id: string;
@@ -122,6 +123,7 @@ export function NotificationsBell() {
   async function load() {
     let data: any[] | null = null;
     try {
+      await ensureStaffSession();
       const res = await supabase
         .from("notifications")
         .select("id, type, title, body, link, read, created_at")
