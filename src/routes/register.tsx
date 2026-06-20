@@ -39,11 +39,11 @@ import { SelfieStep } from "@/components/register/steps/selfie";
 import { SuccessStep, type SubmissionInfo } from "@/components/register/steps/success";
 import { PaymentStep } from "@/components/register/steps/payment";
 import { DistributorEntityStep } from "@/components/register/steps/distributor-entity";
-import { DistributorSinglePage, type DistributorFormData } from "@/components/register/distributor-single";
 import {
-  RegistrationProvider,
-  useRegistration,
-} from "@/components/register/registration-context";
+  DistributorSinglePage,
+  type DistributorFormData,
+} from "@/components/register/distributor-single";
+import { RegistrationProvider, useRegistration } from "@/components/register/registration-context";
 import { validateBankDetails } from "@/components/register/bank-details";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -165,10 +165,9 @@ function RegisterFlow() {
         password: d.password,
       };
 
-      const { data: res, error: rpcErr } = await supabase.rpc(
-        "submit_distributor_registration",
-        { payload },
-      );
+      const { data: res, error: rpcErr } = await supabase.rpc("submit_distributor_registration", {
+        payload,
+      });
       if (rpcErr) throw new Error(rpcErr.message);
       const r = res as unknown as { application_id: string; transaction_id: string };
 
@@ -177,7 +176,10 @@ function RegisterFlow() {
         transactionId: r.transaction_id,
         utr: "—",
         amount: amount != null ? `₹${amount.toLocaleString("en-IN")}` : "—",
-        submittedAt: new Date().toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }),
+        submittedAt: new Date().toLocaleString("en-IN", {
+          dateStyle: "medium",
+          timeStyle: "short",
+        }),
         plan: heading,
       });
       setDone(true);
@@ -193,18 +195,19 @@ function RegisterFlow() {
     setError(null);
     try {
       const folder =
-        (typeof crypto !== "undefined" && "randomUUID" in crypto
+        typeof crypto !== "undefined" && "randomUUID" in crypto
           ? crypto.randomUUID()
-          : String(Date.now()));
-      const [pan, aadhaar, shopPhoto, police, selfie, paymentScreenshot, videoKyc] = await Promise.all([
-        uploadFile(folder, "pan", files.pan),
-        uploadFile(folder, "aadhaar", files.aadhaar),
-        uploadFile(folder, "shop-photo", files.shopPhoto),
-        uploadFile(folder, "police", files.police),
-        uploadFile(folder, "selfie", files.selfie),
-        uploadFile(folder, "payment-screenshot", files.paymentScreenshot),
-        uploadFile(folder, "video-kyc", files.video),
-      ]);
+          : String(Date.now());
+      const [pan, aadhaar, shopPhoto, police, selfie, paymentScreenshot, videoKyc] =
+        await Promise.all([
+          uploadFile(folder, "pan", files.pan),
+          uploadFile(folder, "aadhaar", files.aadhaar),
+          uploadFile(folder, "shop-photo", files.shopPhoto),
+          uploadFile(folder, "police", files.police),
+          uploadFile(folder, "selfie", files.selfie),
+          uploadFile(folder, "payment-screenshot", files.paymentScreenshot),
+          uploadFile(folder, "video-kyc", files.video),
+        ]);
 
       const payload = {
         registration_type: type,
@@ -262,11 +265,16 @@ function RegisterFlow() {
         payment_screenshot_path: paymentScreenshot,
       };
 
-      const { data: res, error: rpcErr } = await supabase.rpc(
-        "submit_retailer_registration",
-        { payload },
-      );
-      if (rpcErr) { if (String(rpcErr.message).includes("LOCATION_TOO_CLOSE")) throw new Error("This location already has an existing agent nearby. Please change your shop location and try again."); throw new Error(rpcErr.message); }
+      const { data: res, error: rpcErr } = await supabase.rpc("submit_retailer_registration", {
+        payload,
+      });
+      if (rpcErr) {
+        if (String(rpcErr.message).includes("LOCATION_TOO_CLOSE"))
+          throw new Error(
+            "This location already has an existing agent nearby. Please change your shop location and try again.",
+          );
+        throw new Error(rpcErr.message);
+      }
       const r = res as unknown as { application_id: string; transaction_id: string };
 
       setSubmission({
@@ -274,7 +282,10 @@ function RegisterFlow() {
         transactionId: r.transaction_id,
         utr: data.payment.utr || "—",
         amount: amount != null ? `₹${amount.toLocaleString("en-IN")}` : "—",
-        submittedAt: new Date().toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }),
+        submittedAt: new Date().toLocaleString("en-IN", {
+          dateStyle: "medium",
+          timeStyle: "short",
+        }),
         plan: heading,
       });
       setDone(true);
@@ -392,8 +403,12 @@ function RegisterFlow() {
 
         <div className="mt-5 sm:mt-8 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <h2 className="font-display text-base sm:text-xl font-bold text-foreground leading-tight">{heading}</h2>
-            <p className="mt-1 text-[13px] sm:text-sm leading-relaxed text-muted-foreground">{subheading}</p>
+            <h2 className="font-display text-base sm:text-xl font-bold text-foreground leading-tight">
+              {heading}
+            </h2>
+            <p className="mt-1 text-[13px] sm:text-sm leading-relaxed text-muted-foreground">
+              {subheading}
+            </p>
           </div>
           <Button
             variant="outline"
@@ -409,16 +424,31 @@ function RegisterFlow() {
           {type !== "distributor" && <Stepper steps={steps} current={current} />}
         </div>
 
-        <div className={type === "distributor" ? "mt-4 sm:mt-6" : "mt-4 sm:mt-6 rounded-2xl border border-border bg-card p-4 sm:p-6 md:p-8 shadow-elev"}>
+        <div
+          className={
+            type === "distributor"
+              ? "mt-4 sm:mt-6"
+              : "mt-4 sm:mt-6 rounded-2xl border border-border bg-card p-4 sm:p-6 md:p-8 shadow-elev"
+          }
+        >
           {done && submission ? (
             <SuccessStep info={submission} />
           ) : type === "distributor" ? (
-            <DistributorSinglePage onSubmit={submitDistributor} submitting={submitting} error={error} />
+            <DistributorSinglePage
+              onSubmit={submitDistributor}
+              submitting={submitting}
+              error={error}
+            />
           ) : (
             <>
-              {StepBody}
+              <div
+                key={currentKey}
+                className="animate-in fade-in slide-in-from-right-3 duration-300"
+              >
+                {StepBody}
+              </div>
               {error && (
-                <div className="mt-5 flex items-start gap-2 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
+                <div className="mt-5 flex items-start gap-2 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700 animate-in fade-in slide-in-from-top-1 duration-200">
                   <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                   <span>{error}</span>
                 </div>
@@ -443,18 +473,20 @@ function RegisterFlow() {
                       className="h-12 rounded-xl bg-saffron-gradient text-[15px] font-semibold shadow-elev hover:opacity-95 disabled:opacity-50 disabled:cursor-not-allowed sm:h-10 sm:text-sm sm:w-auto"
                     >
                       {submitting ? (
-                        <><Loader2 className="h-4 w-4 animate-spin" /> Submitting…</>
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" /> Submitting…
+                        </>
                       ) : (
-                        <>Submit <CheckCircle2 className="h-4 w-4" /></>
+                        <>
+                          Submit <CheckCircle2 className="h-4 w-4" />
+                        </>
                       )}
                     </Button>
                   </div>
                 ) : (
                   <div className="flex flex-col items-end gap-1 sm:flex-row sm:items-center">
                     {blockNext && (
-                      <span className="text-[11px] font-medium text-amber-700">
-                        {blockMsg}
-                      </span>
+                      <span className="text-[11px] font-medium text-amber-700">{blockMsg}</span>
                     )}
                     <Button
                       onClick={next}
@@ -478,4 +510,15 @@ function RegisterFlow() {
 }
 
 // Re-export icons used across steps (avoid tree-shaking issues in dev)
-export { Mail, Phone, Search, AlertTriangle, ShieldCheck, Eye, EyeOff, MapPin, Navigation, FileText };
+export {
+  Mail,
+  Phone,
+  Search,
+  AlertTriangle,
+  ShieldCheck,
+  Eye,
+  EyeOff,
+  MapPin,
+  Navigation,
+  FileText,
+};

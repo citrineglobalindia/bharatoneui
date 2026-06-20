@@ -247,3 +247,15 @@
 .nav-scroll::-webkit-scrollbar-track { background: transparent; }
 .nav-scroll::-webkit-scrollbar-thumb { background-color: rgba(255, 255, 255, 0.18); border-radius: 9999px; }
 .nav-scroll:hover::-webkit-scrollbar-thumb { background-color: rgba(255, 255, 255, 0.32); }
+
+/* Respect users who prefer reduced motion: neutralize animations & transitions */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

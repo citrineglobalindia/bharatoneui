@@ -158,7 +158,9 @@ export function DistributorSinglePage({
 
   const err = (key: keyof typeof errors) =>
     attempted && errors[key] ? (
-      <span className="mt-1 block text-[11px] font-medium text-red-600">{errors[key]}</span>
+      <span className="animate-in fade-in slide-in-from-top-0.5 mt-1 block text-[11px] font-medium text-red-600 duration-200">
+        {errors[key]}
+      </span>
     ) : null;
 
   return (
@@ -423,13 +425,13 @@ export function DistributorSinglePage({
         </div>
 
         {error && (
-          <div className="mt-4 flex items-start gap-2 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="mt-4 flex items-start gap-2 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700 animate-in fade-in slide-in-from-top-1 duration-200">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
             <span>{error}</span>
           </div>
         )}
         {attempted && !isValid && !error && (
-          <div className="mt-4 flex items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-[13px] text-amber-800">
+          <div className="mt-4 flex items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-[13px] text-amber-800 animate-in fade-in slide-in-from-top-1 duration-200">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
             <span>Please correct the highlighted fields before submitting.</span>
           </div>

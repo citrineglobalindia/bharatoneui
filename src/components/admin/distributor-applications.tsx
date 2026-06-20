@@ -28,6 +28,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession, withTimeout } from "@/integrations/supabase/ensure-session";
 import { useAuth } from "@/hooks/use-auth";
@@ -276,11 +277,30 @@ export function DistributorApplications() {
             </thead>
             <tbody className="divide-y divide-border">
               {loading ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-10 text-center text-sm text-muted-foreground">
-                    <Loader2 className="mx-auto h-5 w-5 animate-spin" />
-                  </td>
-                </tr>
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={`sk-${i}`}>
+                    <td className="px-4 py-3.5">
+                      <Skeleton className="h-4 w-24" />
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <Skeleton className="h-4 w-28" />
+                      <Skeleton className="mt-1.5 h-3 w-20" />
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <Skeleton className="h-4 w-32" />
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="mt-1.5 h-3 w-36" />
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <Skeleton className="h-5 w-16 rounded-full" />
+                    </td>
+                    <td className="px-4 py-3.5 text-right">
+                      <Skeleton className="ml-auto h-7 w-14" />
+                    </td>
+                  </tr>
+                ))
               ) : filtered.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-4 py-10 text-center text-sm text-muted-foreground">
@@ -288,8 +308,15 @@ export function DistributorApplications() {
                   </td>
                 </tr>
               ) : (
-                filtered.map((r) => (
-                  <tr key={r.id} className="text-[13px] transition hover:bg-muted/30">
+                filtered.map((r, i) => (
+                  <tr
+                    key={r.id}
+                    className="animate-in fade-in slide-in-from-bottom-1 text-[13px] transition-colors duration-300 hover:bg-muted/30"
+                    style={{
+                      animationDelay: `${Math.min(i, 8) * 35}ms`,
+                      animationFillMode: "backwards",
+                    }}
+                  >
                     <td className="px-4 py-3 font-mono font-semibold">{r.application_id}</td>
                     <td className="px-4 py-3">
                       <p className="font-semibold">{r.distributor_name}</p>
