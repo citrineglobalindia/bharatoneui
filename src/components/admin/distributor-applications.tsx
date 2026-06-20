@@ -17,6 +17,7 @@ import {
   Landmark,
   IdCard,
   Hash,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -83,6 +84,7 @@ export function DistributorApplications() {
   const [busy, setBusy] = useState<string | null>(null);
   const [detail, setDetail] = useState<DistRow | null>(null);
   const [formUrl, setFormUrl] = useState<string | null>(null);
+  const [formState, setFormState] = useState<"none" | "loading" | "ready" | "error">("none");
   const [rejecting, setRejecting] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [creds, setCreds] = useState<{ username: string; email: string; password: string } | null>(
@@ -120,11 +122,23 @@ export function DistributorApplications() {
     setFormUrl(null);
     setRejecting(false);
     setRejectReason("");
-    if (r.form_doc_path) {
-      const { data: su } = await supabase.storage
+    if (!r.form_doc_path) {
+      setFormState("none");
+      return;
+    }
+    setFormState("loading");
+    try {
+      const { data: su, error } = await supabase.storage
         .from("retailer-kyc")
         .createSignedUrl(r.form_doc_path, 3600);
-      if (su?.signedUrl) setFormUrl(su.signedUrl);
+      if (error || !su?.signedUrl) {
+        setFormState("error");
+        return;
+      }
+      setFormUrl(su.signedUrl);
+      setFormState("ready");
+    } catch {
+      setFormState("error");
     }
   };
 
@@ -382,22 +396,25 @@ export function DistributorApplications() {
 
               <div className="mt-1 rounded-xl border border-border bg-muted/30 p-3">
                 <p className="text-xs font-semibold text-foreground">Onboarding Form</p>
-                {detail.form_doc_path ? (
-                  formUrl ? (
-                    <a
-                      href={formUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="mt-1 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
-                    >
-                      <FileText className="h-4 w-4" /> View submitted PDF{" "}
-                      <ExternalLink className="h-3 w-3" />
-                    </a>
-                  ) : (
-                    <p className="mt-1 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <Loader2 className="h-3 w-3 animate-spin" /> Generating secure link…
-                    </p>
-                  )
+                {formState === "ready" && formUrl ? (
+                  <a
+                    href={formUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-1 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                  >
+                    <FileText className="h-4 w-4" /> View submitted PDF{" "}
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                ) : formState === "loading" ? (
+                  <p className="mt-1 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Loader2 className="h-3 w-3 animate-spin" /> Generating secure link…
+                  </p>
+                ) : formState === "error" ? (
+                  <p className="mt-1 inline-flex items-center gap-1.5 text-xs text-rose-600">
+                    <AlertTriangle className="h-3 w-3" /> Form file unavailable — it may not have
+                    been uploaded or has been removed.
+                  </p>
                 ) : (
                   <p className="mt-1 text-xs text-muted-foreground">No form uploaded.</p>
                 )}
