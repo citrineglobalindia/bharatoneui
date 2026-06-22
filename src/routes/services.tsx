@@ -144,13 +144,13 @@ function ServicesPage() {
             ) : (
               <div className="space-y-5">
                 {byCategory.map(([cn, list]) => (
-                  <section key={cn} className="overflow-hidden rounded-2xl border border-border bg-card shadow-soft">
-                    <div className={`flex items-center gap-2.5 bg-gradient-to-r ${catGrad(cn)} px-4 py-2.5 text-white`}>
-                      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-white/25 text-xs font-bold">{cn[0]?.toUpperCase() || "?"}</span>
-                      <p className="flex-1 truncate font-display text-sm font-bold uppercase tracking-wide">{cn}</p>
-                      <span className="shrink-0 rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-semibold">{list.length} service{list.length !== 1 ? "s" : ""}</span>
+                  <section key={cn} className="rounded-2xl border border-border bg-card p-4 shadow-soft">
+                    <div className={`mb-3 inline-flex items-center gap-2 rounded-full bg-gradient-to-r ${catGrad(cn)} pl-1.5 pr-3 py-1 text-white shadow-soft`}>
+                      <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-white/25 text-[11px] font-bold">{cn[0]?.toUpperCase() || "?"}</span>
+                      <span className="font-display text-sm font-bold uppercase tracking-wide">{cn}</span>
+                      <span className="rounded-full bg-white/25 px-1.5 text-[11px] font-semibold">{list.length}</span>
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 p-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                       {list.map((s) => <ServiceTile key={s.id} s={s} />)}
                     </div>
                   </section>
