@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { OtpSuccessDialog, type OtpSuccessChannel } from "../otp-success-dialog";
 import { useRegistration } from "../registration-context";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 type Stage = "lookup" | "fetched" | "otp" | "verified";
 type Channel = "email" | "mobile";
@@ -51,6 +52,7 @@ export function OldPortalStep() {
   const { set: setReg } = useRegistration();
   const [stage, setStage] = useState<Stage>("lookup");
   const [username, setUsername] = useState("");
+  const [jskoPassword, setJskoPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [user, setUser] = useState<FetchedUser | null>(null);
@@ -104,12 +106,18 @@ export function OldPortalStep() {
       setLookupError("Please enter a valid JSKO Username (min 3 characters).");
       return;
     }
+    if (!jskoPassword.trim()) { setLookupError("Please enter your JSKO password."); return; }
     setLoading(true);
-    const { data, error } = await supabase.rpc("fetch_jsko_account", { p_username: username.trim() });
+    const { data, error } = await supabase.rpc("fetch_jsko_account", { p_username: username.trim(), p_password: jskoPassword });
     setLoading(false);
     const res = (data as any) ?? {};
     if (error || !res.found) {
       setLookupError("No JSKO record found for this username. Please check with admin.");
+      return;
+    }
+    if (res.password_ok === false) {
+      setLookupError("Wrong Password. Please check your JSKO password and try again.");
+      toast.error("Wrong Password", { description: "The password does not match this JSKO ID." });
       return;
     }
     const fetchedName = res.full_name as string;
@@ -270,6 +278,19 @@ export function OldPortalStep() {
                   className={`${inputCls} pl-10 uppercase`}
                   placeholder="e.g. JSKO101"
                   autoFocus
+                />
+              </div>
+            </Field>
+            <Field label="JSKO Password" required className="flex-1">
+              <div className="relative">
+                <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-india-green" />
+                <input
+                  type="password"
+                  value={jskoPassword}
+                  onChange={(e) => setJskoPassword(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleFetch()}
+                  className={`${inputCls} pl-10`}
+                  placeholder="Enter JSKO password"
                 />
               </div>
             </Field>
