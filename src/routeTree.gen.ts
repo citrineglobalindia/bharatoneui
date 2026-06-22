@@ -53,6 +53,7 @@ import { Route as AdminLoginRouteImport } from './routes/admin-login'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AccountantLoginRouteImport } from './routes/accountant-login'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as WalletIndexRouteImport } from './routes/wallet.index'
 import { Route as WalletRefundsRouteImport } from './routes/wallet.refunds'
 import { Route as WalletRechargesRouteImport } from './routes/wallet.recharges'
 import { Route as WalletMandatoryRecoveriesRouteImport } from './routes/wallet.mandatory-recoveries'
@@ -376,6 +377,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const WalletIndexRoute = WalletIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => WalletRoute,
 } as any)
 const WalletRefundsRoute = WalletRefundsRouteImport.update({
   id: '/refunds',
@@ -1041,6 +1047,7 @@ export interface FileRoutesByFullPath {
   '/wallet/mandatory-recoveries': typeof WalletMandatoryRecoveriesRoute
   '/wallet/recharges': typeof WalletRechargesRoute
   '/wallet/refunds': typeof WalletRefundsRoute
+  '/wallet/': typeof WalletIndexRoute
   '/distributor/officers/$id': typeof DistributorOfficersIdRoute
   '/distributor/retailers/$id': typeof DistributorRetailersIdRoute
   '/distributor/services/$key': typeof DistributorServicesKeyRoute
@@ -1093,7 +1100,6 @@ export interface FileRoutesByTo {
   '/transactions': typeof TransactionsRoute
   '/tro-login': typeof TroLoginRoute
   '/video-kyc': typeof VideoKycRoute
-  '/wallet': typeof WalletRouteWithChildren
   '/accountant/app-ledger': typeof AccountantAppLedgerRoute
   '/accountant/applications': typeof AccountantApplicationsRoute
   '/accountant/change-password': typeof AccountantChangePasswordRoute
@@ -1189,6 +1195,7 @@ export interface FileRoutesByTo {
   '/wallet/mandatory-recoveries': typeof WalletMandatoryRecoveriesRoute
   '/wallet/recharges': typeof WalletRechargesRoute
   '/wallet/refunds': typeof WalletRefundsRoute
+  '/wallet': typeof WalletIndexRoute
   '/distributor/officers/$id': typeof DistributorOfficersIdRoute
   '/distributor/retailers/$id': typeof DistributorRetailersIdRoute
   '/distributor/services/$key': typeof DistributorServicesKeyRoute
@@ -1339,6 +1346,7 @@ export interface FileRoutesById {
   '/wallet/mandatory-recoveries': typeof WalletMandatoryRecoveriesRoute
   '/wallet/recharges': typeof WalletRechargesRoute
   '/wallet/refunds': typeof WalletRefundsRoute
+  '/wallet/': typeof WalletIndexRoute
   '/distributor/officers/$id': typeof DistributorOfficersIdRoute
   '/distributor/retailers/$id': typeof DistributorRetailersIdRoute
   '/distributor/services/$key': typeof DistributorServicesKeyRoute
@@ -1490,6 +1498,7 @@ export interface FileRouteTypes {
     | '/wallet/mandatory-recoveries'
     | '/wallet/recharges'
     | '/wallet/refunds'
+    | '/wallet/'
     | '/distributor/officers/$id'
     | '/distributor/retailers/$id'
     | '/distributor/services/$key'
@@ -1542,7 +1551,6 @@ export interface FileRouteTypes {
     | '/transactions'
     | '/tro-login'
     | '/video-kyc'
-    | '/wallet'
     | '/accountant/app-ledger'
     | '/accountant/applications'
     | '/accountant/change-password'
@@ -1638,6 +1646,7 @@ export interface FileRouteTypes {
     | '/wallet/mandatory-recoveries'
     | '/wallet/recharges'
     | '/wallet/refunds'
+    | '/wallet'
     | '/distributor/officers/$id'
     | '/distributor/retailers/$id'
     | '/distributor/services/$key'
@@ -1787,6 +1796,7 @@ export interface FileRouteTypes {
     | '/wallet/mandatory-recoveries'
     | '/wallet/recharges'
     | '/wallet/refunds'
+    | '/wallet/'
     | '/distributor/officers/$id'
     | '/distributor/retailers/$id'
     | '/distributor/services/$key'
@@ -2231,6 +2241,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/wallet/': {
+      id: '/wallet/'
+      path: '/'
+      fullPath: '/wallet/'
+      preLoaderRoute: typeof WalletIndexRouteImport
+      parentRoute: typeof WalletRoute
     }
     '/wallet/refunds': {
       id: '/wallet/refunds'
@@ -3014,6 +3031,7 @@ interface WalletRouteChildren {
   WalletMandatoryRecoveriesRoute: typeof WalletMandatoryRecoveriesRoute
   WalletRechargesRoute: typeof WalletRechargesRoute
   WalletRefundsRoute: typeof WalletRefundsRoute
+  WalletIndexRoute: typeof WalletIndexRoute
 }
 
 const WalletRouteChildren: WalletRouteChildren = {
@@ -3022,6 +3040,7 @@ const WalletRouteChildren: WalletRouteChildren = {
   WalletMandatoryRecoveriesRoute: WalletMandatoryRecoveriesRoute,
   WalletRechargesRoute: WalletRechargesRoute,
   WalletRefundsRoute: WalletRefundsRoute,
+  WalletIndexRoute: WalletIndexRoute,
 }
 
 const WalletRouteWithChildren =
