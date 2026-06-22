@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
-import { Lock, Loader2, Save, LogOut, Bell, Mail, ShieldCheck, Zap } from "lucide-react";
+import { Lock, Loader2, Save, LogOut, Bell, Mail, ShieldCheck, Zap, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { isPasswordValid } from "@/components/register/password-field";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,6 +17,7 @@ export function AccountSettings() {
   const [devCode, setDevCode] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showPw, setShowPw] = useState(false);
   const [prefs, setPrefs] = useState(() => { try { return JSON.parse(localStorage.getItem("bharatone:notif-prefs") || '{"inapp":true,"email":true}'); } catch { return { inapp: true, email: true }; } });
 
   useEffect(() => { (async () => { const { data } = await supabase.auth.getUser(); setEmail(data?.user?.email || ""); })(); }, []);
@@ -89,8 +90,8 @@ export function AccountSettings() {
         )}
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <div><label className="text-xs font-semibold text-muted-foreground">New password</label><input type="password" className={input} value={pwd} onChange={(e) => setPwd(e.target.value)} placeholder="New password" autoComplete="new-password" /></div>
-          <div><label className="text-xs font-semibold text-muted-foreground">Confirm password</label><input type="password" className={input} value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="Re-enter" autoComplete="new-password" /></div>
+          <div><label className="text-xs font-semibold text-muted-foreground">New password</label><div className="relative"><input type={showPw ? "text" : "password"} className={input + " pr-10"} value={pwd} onChange={(e) => setPwd(e.target.value)} placeholder="New password" autoComplete="new-password" /><button type="button" onClick={() => setShowPw((v) => !v)} aria-label={showPw ? "Hide password" : "Show password"} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">{showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button></div></div>
+          <div><label className="text-xs font-semibold text-muted-foreground">Confirm password</label><div className="relative"><input type={showPw ? "text" : "password"} className={input + " pr-10"} value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="Re-enter" autoComplete="new-password" /><button type="button" onClick={() => setShowPw((v) => !v)} aria-label={showPw ? "Hide password" : "Show password"} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">{showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button></div></div>
         </div>
         <p className="mt-2 text-[11px] text-muted-foreground">Must include uppercase, lowercase, a number and a special character (8+ chars).</p>
 
