@@ -12,6 +12,7 @@ export const Route = createFileRoute("/wallet/ledger")({
 
 type Tx = { id: string; direction: "credit" | "debit"; amount: number; balance_after: number; reason: string | null; ref_type: string | null; created_at: string };
 const inr = (n: number) => "₹" + Number(n || 0).toLocaleString("en-IN");
+const svcName = (reason: string | null) => (reason || "").replace(/^Application\s+\S+\s*[-·]\s*/i, "").trim();
 const svcOf = (t: Tx) => t.ref_type === "topup" ? "Wallet Credit" : t.ref_type === "application" ? "Service" : (t.ref_type || "Other");
 
 function LedgerPage() {
@@ -60,7 +61,7 @@ function LedgerPage() {
                 : filtered.map((r) => (
                   <tr key={r.id} className="border-t border-border">
                     <td className="px-3 py-2.5 text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString("en-IN")}</td>
-                    <td className="px-3 py-2.5"><span className="font-medium">{svcOf(r)}</span>{r.reason && <span className="block text-[11px] text-muted-foreground truncate max-w-[280px]">{r.reason}</span>}</td>
+                    <td className="px-3 py-2.5"><span className="font-medium">{svcOf(r)}</span>{r.reason && <span className="block text-[11px] text-muted-foreground truncate max-w-[280px]">{svcName(r.reason) || r.reason}</span>}</td>
                     <td className="px-3 py-2.5 text-right font-semibold text-emerald-600">{r.direction === "credit" ? inr(r.amount) : "—"}</td>
                     <td className="px-3 py-2.5 text-right font-semibold text-rose-500">{r.direction === "debit" ? inr(r.amount) : "—"}</td>
                     <td className="px-3 py-2.5 text-right">{inr(r.balance_after)}</td>

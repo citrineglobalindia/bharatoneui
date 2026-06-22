@@ -12,6 +12,7 @@ export const Route = createFileRoute("/wallet/deductions")({
 
 type Tx = { id: string; amount: number; reason: string | null; ref_type: string | null; created_at: string };
 const inr = (n: number) => "₹" + Number(n || 0).toLocaleString("en-IN");
+const svcName = (reason: string | null) => (reason || "").replace(/^Application\s+\S+\s*[-·]\s*/i, "").trim();
 const catOf = (t: Tx) => t.ref_type === "application" ? "Service Charge" : t.ref_type === "withdrawal" ? "Withdrawal" : t.ref_type === "recovery" ? "Recovery" : (t.ref_type || "Other");
 
 function DeductionsPage() {
@@ -57,7 +58,7 @@ function DeductionsPage() {
                   <tr key={r.id} className="border-t border-border">
                     <td className="px-3 py-2.5 text-muted-foreground">{i + 1}</td>
                     <td className="px-3 py-2.5"><span className="rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-700">{catOf(r)}</span></td>
-                    <td className="px-3 py-2.5 text-xs text-muted-foreground truncate max-w-[320px]">{r.reason || "—"}</td>
+                    <td className="px-3 py-2.5 text-xs text-muted-foreground truncate max-w-[320px]">{svcName(r.reason) || "—"}</td>
                     <td className="px-3 py-2.5 text-right font-semibold text-rose-500">-{inr(r.amount)}</td>
                     <td className="px-3 py-2.5 text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString("en-IN")}</td>
                   </tr>
