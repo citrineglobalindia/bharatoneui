@@ -14,6 +14,8 @@ export const Route = createFileRoute("/wallet/")({
 });
 
 type Tx = { id: string; direction: "credit" | "debit"; amount: number; balance_after: number; reason: string | null; created_at: string };
+const appIdOf = (reason: string | null) => (reason || "").match(/\b(APP\d+)\b/)?.[1] ?? "";
+const svcNameOf = (reason: string | null) => (reason || "").replace(/^Application\s+\S+\s*[-·]\s*/i, "").trim();
 type Topup = { id: string; amount: number; method: string | null; reference: string | null; status: string; created_at: string };
 const inr = (n: number) => "₹" + Number(n || 0).toLocaleString("en-IN");
 const statusTone: Record<string, string> = { pending: "bg-amber-100 text-amber-700", verified: "bg-emerald-100 text-emerald-700", paid: "bg-emerald-100 text-emerald-700", rejected: "bg-rose-100 text-rose-700" };
@@ -155,13 +157,16 @@ function WalletPage() {
           {loading ? <div className="py-6 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></div>
             : txns.length === 0 ? <p className="py-6 text-center text-sm text-muted-foreground">No transactions yet.</p>
             : <div className="overflow-x-auto"><table className="w-full text-sm">
-                <thead className="text-left text-[11px] uppercase tracking-wide text-muted-foreground"><tr><th className="py-2">Date</th><th className="py-2">Details</th><th className="py-2 text-right">Amount</th><th className="py-2 text-right">Balance</th></tr></thead>
-                <tbody>{txns.map((t) => (<tr key={t.id} className="border-t border-border">
-                  <td className="py-2 text-xs text-muted-foreground whitespace-nowrap">{new Date(t.created_at).toLocaleString("en-IN")}</td>
-                  <td className="py-2"><span className="inline-flex items-center gap-1.5">{t.direction === "credit" ? <ArrowDownToLine className="h-3.5 w-3.5 text-emerald-600" /> : <ArrowUpFromLine className="h-3.5 w-3.5 text-rose-500" />}{t.reason ?? (t.direction === "credit" ? "Credit" : "Debit")}</span></td>
-                  <td className={`py-2 text-right font-semibold ${t.direction === "credit" ? "text-emerald-600" : "text-rose-500"}`}>{t.direction === "credit" ? "+" : "−"}{inr(t.amount)}</td>
+                <thead className="text-left text-[11px] uppercase tracking-wide text-muted-foreground"><tr><th className="py-2 pr-3">Date</th><th className="py-2 pr-3">Time</th><th className="py-2 pr-3">Application ID</th><th className="py-2 pr-3">Service Name</th><th className="py-2 pr-3 text-right">Wallet Amount</th><th className="py-2 pr-3 text-right">Deducted Amount</th><th className="py-2 text-right">Balance</th></tr></thead>
+                <tbody>{txns.map((t) => { const appId = appIdOf(t.reason); const svc = svcNameOf(t.reason) || (t.direction === "credit" ? "Wallet Credit" : "Debit"); const d = new Date(t.created_at); return (<tr key={t.id} className="border-t border-border">
+                  <td className="py-2 pr-3 text-xs text-muted-foreground whitespace-nowrap">{d.toLocaleDateString("en-IN")}</td>
+                  <td className="py-2 pr-3 text-xs text-muted-foreground whitespace-nowrap">{d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</td>
+                  <td className="py-2 pr-3 font-mono text-xs">{appId || "—"}</td>
+                  <td className="py-2 pr-3">{svc}</td>
+                  <td className="py-2 pr-3 text-right font-semibold text-emerald-600">{t.direction === "credit" ? "+" + inr(t.amount) : "—"}</td>
+                  <td className="py-2 pr-3 text-right font-semibold text-rose-500">{t.direction === "debit" ? "−" + inr(t.amount) : "—"}</td>
                   <td className="py-2 text-right text-muted-foreground">{inr(t.balance_after)}</td>
-                </tr>))}</tbody>
+                </tr>); })}</tbody>
               </table></div>}
         </SectionCard>
       </div>

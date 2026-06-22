@@ -12,6 +12,8 @@ export const Route = createFileRoute("/transactions")({
 
 type Tx = { id: string; direction: "credit" | "debit"; amount: number; balance_after: number; reason: string | null; ref_type: string | null; created_at: string };
 const inr = (n: number) => "₹" + Number(n || 0).toLocaleString("en-IN");
+const appIdOf = (reason: string | null) => (reason || "").match(/\b(APP\d+)\b/)?.[1] ?? "";
+const svcNameOf = (reason: string | null) => (reason || "").replace(/^Application\s+\S+\s*[-·]\s*/i, "").trim();
 
 function TxnPage() {
   const [rows, setRows] = useState<Tx[]>([]);
@@ -60,16 +62,19 @@ function TxnPage() {
 
         <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-soft">
           <table className="w-full text-sm">
-            <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground"><tr><th className="px-3 py-2">Date</th><th className="px-3 py-2">Details</th><th className="px-3 py-2 text-right">Amount</th><th className="px-3 py-2 text-right">Balance</th></tr></thead>
+            <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground"><tr><th className="px-3 py-2">Date</th><th className="px-3 py-2">Time</th><th className="px-3 py-2">Application ID</th><th className="px-3 py-2">Service Name</th><th className="px-3 py-2 text-right">Wallet Amount</th><th className="px-3 py-2 text-right">Deducted Amount</th><th className="px-3 py-2 text-right">Balance</th></tr></thead>
             <tbody>
-              {loading ? <tr><td colSpan={4} className="px-3 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr>
-                : filtered.length === 0 ? <tr><td colSpan={4} className="px-3 py-10 text-center text-muted-foreground">No transactions found.</td></tr>
-                : filtered.map((r) => (<tr key={r.id} className="border-t border-border">
-                  <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">{new Date(r.created_at).toLocaleString("en-IN")}</td>
-                  <td className="px-3 py-2"><span className="inline-flex items-center gap-1.5">{r.direction === "credit" ? <ArrowDownToLine className="h-3.5 w-3.5 text-emerald-600" /> : <ArrowUpFromLine className="h-3.5 w-3.5 text-rose-500" />}{r.reason ?? r.direction}</span></td>
-                  <td className={`px-3 py-2 text-right font-semibold ${r.direction === "credit" ? "text-emerald-600" : "text-rose-500"}`}>{r.direction === "credit" ? "+" : "−"}{inr(r.amount)}</td>
+              {loading ? <tr><td colSpan={7} className="px-3 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr>
+                : filtered.length === 0 ? <tr><td colSpan={7} className="px-3 py-10 text-center text-muted-foreground">No transactions found.</td></tr>
+                : filtered.map((r) => { const appId = appIdOf(r.reason); const svc = svcNameOf(r.reason) || (r.direction === "credit" ? "Wallet Credit" : "Debit"); const d = new Date(r.created_at); return (<tr key={r.id} className="border-t border-border">
+                  <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">{d.toLocaleDateString("en-IN")}</td>
+                  <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">{d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</td>
+                  <td className="px-3 py-2 font-mono text-xs">{appId || "—"}</td>
+                  <td className="px-3 py-2">{svc}</td>
+                  <td className="px-3 py-2 text-right font-semibold text-emerald-600">{r.direction === "credit" ? "+" + inr(r.amount) : "—"}</td>
+                  <td className="px-3 py-2 text-right font-semibold text-rose-500">{r.direction === "debit" ? "−" + inr(r.amount) : "—"}</td>
                   <td className="px-3 py-2 text-right text-muted-foreground">{inr(r.balance_after)}</td>
-                </tr>))}
+                </tr>); })}
             </tbody>
           </table>
         </div>
