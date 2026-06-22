@@ -2,12 +2,12 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   FileCheck2, IdCard, Camera, Video, CheckCircle2, Clock, AlertTriangle, ShieldCheck, XCircle,
-  Building2, FileText, Eye, Loader2, Landmark, type LucideIcon,
-} from "lucide-react";
+  Building2, FileText, Eye, Loader2, Landmark, type LucideIcon, Upload } from "lucide-react";
 import { RetailerShell } from "@/components/retailer/retailer-shell";
 import { PageHeader } from "@/components/retailer/page-header";
 import { StatCard } from "@/components/retailer/stat-card";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/video-kyc")({
   head: () => ({
@@ -57,6 +57,9 @@ function KycDocsPage() {
   const [reg, setReg] = useState<Reg>(null);
   const [urls, setUrls] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+  const [policeUrl, setPoliceUrl] = useState<string | null>(null);
+  const [policePath, setPolicePath] = useState<string | null>(null);
+  const [uploadingPolice, setUploadingPolice] = useState(false);
 
   useEffect(() => {
     let on = true;
@@ -67,6 +70,8 @@ function KycDocsPage() {
         .order("created_at", { ascending: false }).limit(1).maybeSingle();
       if (!on) return;
       setReg(data as Reg);
+      const { data: pv } = await supabase.rpc("my_police_verification");
+      if (on && pv) { setPolicePath(pv as string); const { data: su } = await supabase.storage.from("retailer-kyc").createSignedUrl(pv as string, 3600); if (su?.signedUrl) setPoliceUrl(su.signedUrl); }
       if (data) {
         const map: Record<string, string> = {};
         await Promise.all(DOC_DEFS.map(async (d) => {
@@ -87,6 +92,25 @@ function KycDocsPage() {
   const present = DOC_DEFS.filter((d) => !!(reg as any)?.[d.pathKey]);
   const verified = present.filter((d) => statusFor(docReviews[d.key]?.status, regStatus).label === "Verified").length;
   const pending = present.length - verified;
+
+  const uploadPolice = async (file: File) => {
+    if (file.size > 50 * 1024 * 1024) return toast.error("File too large", { description: "Maximum size is 50 MB." });
+    setUploadingPolice(true);
+    try {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u?.user) return toast.error("Please sign in again");
+      const ext = (file.name.split(".").pop() || "bin").toLowerCase();
+      const path = `${u.user.id}/police-${crypto.randomUUID()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("retailer-kyc").upload(path, file, { upsert: false, contentType: file.type || undefined });
+      if (upErr) return toast.error("Upload failed", { description: upErr.message });
+      const { error } = await supabase.rpc("upload_police_verification", { _path: path });
+      if (error) return toast.error("Could not save", { description: error.message });
+      setPolicePath(path);
+      const { data: su } = await supabase.storage.from("retailer-kyc").createSignedUrl(path, 3600);
+      setPoliceUrl(su?.signedUrl ?? null);
+      toast.success("Police Verification uploaded");
+    } finally { setUploadingPolice(false); }
+  };
 
   return (
     <RetailerShell>
@@ -169,6 +193,26 @@ function KycDocsPage() {
             </div>
           </>
         )}
+
+        {/* Police Verification — always available to upload/update */}
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <span className="grid h-11 w-11 place-items-center rounded-xl bg-india-green/10 text-india-green"><ShieldCheck className="h-5 w-5" /></span>
+              <div>
+                <p className="font-bold text-foreground">Police Verification</p>
+                <p className="text-xs text-muted-foreground">{policePath ? "Uploaded — you can replace it anytime." : "Upload your Police Verification certificate (any format, up to 50 MB)."}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {policeUrl && <a href={policeUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-9 text-xs font-semibold text-india-green hover:bg-muted"><Eye className="h-3.5 w-3.5" /> View</a>}
+              <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-india-green px-3 h-9 text-sm font-semibold text-white hover:bg-india-green/90">
+                {uploadingPolice ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} {policePath ? "Replace" : "Upload"}
+                <input type="file" className="hidden" onChange={(e) => e.target.files?.[0] && uploadPolice(e.target.files[0])} />
+              </label>
+            </div>
+          </div>
+        </div>
       </div>
     </RetailerShell>
   );
