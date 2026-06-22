@@ -167,22 +167,8 @@ function DashboardPage() {
           <StatCard label="Applications" value={loading ? "…" : String(kpi.total)} icon={<ClipboardCheck className="h-5 w-5" />} tone="violet" delta={{ value: `${kpi.pending} pending`, positive: kpi.pending === 0 }} />
         </div>
 
-        {/* Wallet + KYC banner */}
-        <div className="grid lg:grid-cols-3 gap-3">
-          <div className="lg:col-span-2 rounded-2xl bg-saffron-gradient text-white p-5 shadow-elev relative overflow-hidden">
-            <div className="absolute -right-12 -top-12 h-44 w-44 rounded-full bg-white/10" />
-            <div className="absolute right-6 bottom-2 h-24 w-24 rounded-full bg-white/10" />
-            <div className="relative">
-              <p className="text-[11px] font-bold uppercase tracking-wider opacity-90">Wallet Balance</p>
-              <p className="font-display text-4xl font-extrabold mt-1">{loading ? "…" : inr(balance)}</p>
-              <p className="text-xs opacity-90">Available for services · Updated just now</p>
-              <div className="grid grid-cols-3 gap-2 mt-4 max-w-md">
-                <Link to="/wallet" className="rounded-lg bg-white/15 hover:bg-white/25 border border-white/20 py-2 text-xs font-semibold transition text-center">View Ledger</Link>
-                <Link to="/transactions" className="rounded-lg bg-white/15 hover:bg-white/25 border border-white/20 py-2 text-xs font-semibold transition text-center">Transactions</Link>
-                <Link to="/applications" className="rounded-lg bg-white/15 hover:bg-white/25 border border-white/20 py-2 text-xs font-semibold transition text-center">Applications</Link>
-              </div>
-            </div>
-          </div>
+        {/* KYC banner */}
+        <div className="grid gap-3">
           {kycStatus === "approved" ? (
             <Link to="/video-kyc" className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 hover:bg-emerald-100/70 transition flex flex-col">
               <div className="flex items-center gap-3">
