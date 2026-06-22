@@ -63,6 +63,9 @@ function DashboardPage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [kycStatus, setKycStatus] = useState<string | null>(null);
+  const [period, setPeriod] = useState("month");
+  const [cFrom, setCFrom] = useState("");
+  const [cTo, setCTo] = useState("");
 
   useEffect(() => {
     let on = true;
@@ -100,6 +103,33 @@ function DashboardPage() {
       commission: rows.filter((r) => earned(r.status)).reduce((a, r) => a + Number(r.commission_price || 0), 0),
     };
   }, [rows]);
+
+  const periodBounds = useMemo(() => {
+    const now = new Date();
+    const sod = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    if (period === "today") return { from: sod(now), to: null as Date | null };
+    if (period === "week") { const f = sod(now); f.setDate(f.getDate() - 6); return { from: f, to: null as Date | null }; }
+    if (period === "month") return { from: new Date(now.getFullYear(), now.getMonth(), 1), to: null as Date | null };
+    if (period === "30d") { const f = sod(now); f.setDate(f.getDate() - 29); return { from: f, to: null as Date | null }; }
+    if (period === "custom") return { from: cFrom ? new Date(cFrom + "T00:00:00") : null, to: cTo ? new Date(cTo + "T23:59:59") : null };
+    return { from: null as Date | null, to: null as Date | null };
+  }, [period, cFrom, cTo]);
+
+  const filtered = useMemo(() => {
+    const inRange = rows.filter((r) => {
+      const d = new Date(r.created_at);
+      if (periodBounds.from && d < periodBounds.from) return false;
+      if (periodBounds.to && d > periodBounds.to) return false;
+      return true;
+    });
+    return {
+      total: inRange.length,
+      pending: inRange.filter((r) => ["submitted", "in_progress"].includes(r.status)).length,
+      commission: inRange.filter((r) => earned(r.status)).reduce((a, r) => a + Number(r.commission_price || 0), 0),
+    };
+  }, [rows, periodBounds]);
+
+  const periodLabel: Record<string, string> = { today: "Today", week: "Last 7 days", month: "This month", "30d": "Last 30 days", all: "All time", custom: "Custom range" };
 
   const weekly = useMemo(() => {
     const days: { day: string; value: number }[] = [];
@@ -160,11 +190,29 @@ function DashboardPage() {
         />
 
         {/* KPI grid */}
+        <div className="flex items-center justify-end gap-2 flex-wrap">
+          <span className="text-xs font-medium text-muted-foreground">Commission & Applications:</span>
+          <select value={period} onChange={(e) => setPeriod(e.target.value)} className="h-9 rounded-lg border border-border bg-card px-2.5 text-sm font-medium">
+            <option value="today">Today</option>
+            <option value="week">Last 7 days</option>
+            <option value="month">This month</option>
+            <option value="30d">Last 30 days</option>
+            <option value="all">All time</option>
+            <option value="custom">Custom range</option>
+          </select>
+          {period === "custom" && (
+            <>
+              <input type="date" value={cFrom} onChange={(e) => setCFrom(e.target.value)} className="h-9 rounded-lg border border-border bg-card px-2 text-sm" />
+              <span className="text-xs text-muted-foreground">to</span>
+              <input type="date" value={cTo} onChange={(e) => setCTo(e.target.value)} className="h-9 rounded-lg border border-border bg-card px-2 text-sm" />
+            </>
+          )}
+        </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <StatCard label="Wallet Balance" value={loading ? "…" : inr(balance)} icon={<Wallet className="h-5 w-5" />} tone="saffron" delta={{ value: balance > 0 ? "Available" : "Top up to begin", positive: true }} />
           <StatCard label="Today's Volume" value={loading ? "…" : inr(kpi.todayVolume)} icon={<TrendingUp className="h-5 w-5" />} tone="green" delta={{ value: `${rows.filter((r) => new Date(r.created_at).toDateString() === todayStr).length} today`, positive: true }} />
-          <StatCard label="Earned Commission" value={loading ? "…" : inr(kpi.commission)} icon={<Receipt className="h-5 w-5" />} tone="sky" delta={{ value: "Approved + completed", positive: true }} />
-          <StatCard label="Applications" value={loading ? "…" : String(kpi.total)} icon={<ClipboardCheck className="h-5 w-5" />} tone="violet" delta={{ value: `${kpi.pending} pending`, positive: kpi.pending === 0 }} />
+          <StatCard label="Earned Commission" value={loading ? "…" : inr(filtered.commission)} icon={<Receipt className="h-5 w-5" />} tone="sky" delta={{ value: periodLabel[period] || "Approved + completed", positive: true }} />
+          <StatCard label="Applications" value={loading ? "…" : String(filtered.total)} icon={<ClipboardCheck className="h-5 w-5" />} tone="violet" delta={{ value: `${filtered.pending} pending`, positive: filtered.pending === 0 }} />
         </div>
 
         {/* KYC banner */}
