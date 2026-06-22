@@ -332,16 +332,6 @@ function TrackApplicationPage() {
               </div>
             )}
 
-            {/* Help footer */}
-            <div className="mt-6 flex items-start gap-3 rounded-xl border border-dashed border-border bg-muted/40 p-3">
-              <HelpCircle className="h-4 w-4 mt-0.5 text-india-green shrink-0" />
-              <p className="text-xs text-muted-foreground">
-                Need help finding your Application Number?{" "}
-                <a href="mailto:support@mybharatone.com" className="font-semibold text-india-green hover:underline">
-                  Contact support
-                </a>
-              </p>
-            </div>
           </div>
 
           {/* Contact support */}
