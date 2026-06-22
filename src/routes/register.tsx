@@ -198,13 +198,14 @@ function RegisterFlow() {
         typeof crypto !== "undefined" && "randomUUID" in crypto
           ? crypto.randomUUID()
           : String(Date.now());
-      const [pan, aadhaar, shopPhoto, police, selfie, paymentScreenshot, videoKyc] =
+      const [pan, aadhaar, shopPhoto, police, selfie, passport, paymentScreenshot, videoKyc] =
         await Promise.all([
           uploadFile(folder, "pan", files.pan),
           uploadFile(folder, "aadhaar", files.aadhaar),
           uploadFile(folder, "shop-photo", files.shopPhoto),
           uploadFile(folder, "police", files.police),
           uploadFile(folder, "selfie", files.selfie),
+          uploadFile(folder, "passport", files.passport),
           uploadFile(folder, "payment-screenshot", files.paymentScreenshot),
           uploadFile(folder, "video-kyc", files.video),
         ]);
@@ -250,6 +251,7 @@ function RegisterFlow() {
         shop_photo_path: shopPhoto,
         police_verification_path: police,
         selfie_path: selfie,
+        passport_photo_path: passport,
         declaration_agreed: data.declarationAgreed,
         video_kyc_path: videoKyc,
         video_kyc_lat: data.videoLat,
@@ -356,7 +358,7 @@ function RegisterFlow() {
     personal: data.personalValid,
     business: !!data.shopName.trim() && addrOk && bankOk,
     kyc: !!files.pan && !!files.aadhaar && !!files.shopPhoto && panOk && aadhaarOk,
-    video: data.declarationAgreed && !!files.video,
+    video: data.declarationAgreed && data.termsAgreed && !!files.video,
     payment: data.payment.utr.trim().length > 0 && !!files.paymentScreenshot,
     selfie: !!files.selfie,
   };

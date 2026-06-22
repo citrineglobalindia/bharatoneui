@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useMemo, useRef, useState } from "react";
 import logoUrl from "@/assets/bharatone-logo.png";
+import { useRegistration } from "@/components/register/registration-context";
 
 export type SubmissionInfo = {
   applicationId: string;
@@ -99,11 +100,13 @@ function buildReceiptCanvas(info: SubmissionInfo): HTMLCanvasElement {
   }
   ctx.fillStyle = "#6b7280";
   ctx.font = "16px Arial";
-  ctx.fillText("Thank you for choosing BharatOne \u00b7 support@bharatone.com", 56, H - 60);
+  ctx.fillText("Thank you for choosing BharatOne \u00b7 info@mybharatone.com", 56, H - 60);
   return c;
 }
 
 export function SuccessStep({ info }: { info: SubmissionInfo }) {
+  const { files } = useRegistration();
+  const passportUrl = useMemo(() => (files.passport ? URL.createObjectURL(files.passport) : null), [files.passport]);
   const [copied, setCopied] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const receiptRef = useRef<HTMLDivElement>(null);
@@ -141,8 +144,8 @@ export function SuccessStep({ info }: { info: SubmissionInfo }) {
         `Submitted At   : ${info.submittedAt}`,
         "",
         "Status         : Under Review",
-        "Support        : support@bharatone.com",
-        "Website        : https://bharatone.com",
+        "Support        : info@mybharatone.com",
+        "Website        : https://mybharatone.com",
       ].join("\n"),
     [info],
   );
@@ -217,7 +220,7 @@ export function SuccessStep({ info }: { info: SubmissionInfo }) {
       pdf.setTextColor(107, 114, 128);
       pdf.setFont("helvetica", "normal");
       pdf.setFontSize(10);
-      pdf.text("Thank you for choosing BharatOne - support@bharatone.com", 40, y + 24);
+      pdf.text("Thank you for choosing BharatOne - info@mybharatone.com", 40, y + 24);
       pdf.save(`BharatOne-Receipt-${info.applicationId}.pdf`);
     } catch (e) {
       console.error(e);
@@ -236,7 +239,7 @@ export function SuccessStep({ info }: { info: SubmissionInfo }) {
   const shareWhatsApp = () => window.open(`https://wa.me/?text=${enc}`, "_blank", "noopener");
   const shareTelegram = () =>
     window.open(
-      `https://t.me/share/url?url=${encodeURIComponent("https://bharatone.com")}&text=${enc}`,
+      `https://t.me/share/url?url=${encodeURIComponent("https://mybharatone.com")}&text=${enc}`,
       "_blank",
       "noopener",
     );
@@ -379,6 +382,15 @@ export function SuccessStep({ info }: { info: SubmissionInfo }) {
 
           {/* Body */}
           <div className="px-6 py-5">
+            {passportUrl && (
+              <div className="mb-4 flex items-center gap-3 rounded-xl border border-neutral-200 bg-neutral-50 p-3">
+                <img src={passportUrl} alt="Passport photo" className="h-24 w-20 shrink-0 rounded-md border border-neutral-300 object-cover" />
+                <div className="text-left">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">Passport Photo</p>
+                  <p className="text-xs text-neutral-600">Submitted with your KYC documents</p>
+                </div>
+              </div>
+            )}
             <div className="grid grid-cols-[1fr_auto] gap-4">
               <div className="space-y-3 text-left">
                 <ReceiptLine label="Application ID" value={info.applicationId} mono />
@@ -417,7 +429,7 @@ export function SuccessStep({ info }: { info: SubmissionInfo }) {
                   <p className="text-xs font-bold text-[#78350F]">Under Review</p>
                 </div>
               </div>
-              <p className="text-[10px] text-neutral-500">support@bharatone.com</p>
+              <p className="text-[10px] text-neutral-500">info@mybharatone.com</p>
             </div>
           </div>
 

@@ -9,6 +9,7 @@ export type RegFileKey =
   | "police"
   | "video"
   | "selfie"
+  | "passport"
   | "paymentScreenshot";
 
 export type RegFiles = Partial<Record<RegFileKey, File>>;
@@ -51,6 +52,7 @@ export type RegData = {
   aadhaarNumber: string;
   // video kyc
   declarationAgreed: boolean;
+  termsAgreed: boolean;
   videoLat: number | null;
   videoLng: number | null;
   // payment
@@ -90,6 +92,7 @@ const defaultData: RegData = {
   panNumber: "",
   aadhaarNumber: "",
   declarationAgreed: false,
+  termsAgreed: false,
   videoLat: null,
   videoLng: null,
   payment: { utr: "" },

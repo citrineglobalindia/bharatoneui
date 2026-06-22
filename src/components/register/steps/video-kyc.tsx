@@ -10,6 +10,8 @@ export function VideoKycStep() {
   const { data, set, files, setFile } = useRegistration();
   const agree = data.declarationAgreed;
   const setAgree = (v: boolean) => set({ declarationAgreed: v });
+  const terms = data.termsAgreed;
+  const setTerms = (v: boolean) => set({ termsAgreed: v });
   const fullName = [data.firstName, data.middleName, data.surname].filter(Boolean).join(" ") || "[Your Name]";
   const fullAddress = [data.buildingShopNo, data.streetArea, data.landmark, data.villageName, data.city, data.taluk, data.district, data.state, data.pincode].filter(Boolean).join(", ") || "[Address from your form]";
 
@@ -150,6 +152,28 @@ export function VideoKycStep() {
           <li>Gallery upload is <b>not allowed</b></li>
         </ul>
       </Notice>
+
+      {/* Terms & Conditions — mandatory */}
+      <div className="rounded-xl border border-border bg-background/40 p-5">
+        <h3 className="text-sm font-bold text-foreground">📜 Terms &amp; Conditions <span className="text-primary">*</span></h3>
+        <p className="mt-1 text-[11px] text-muted-foreground">Please read the full terms below. You must read and accept them to continue.</p>
+        <div className="mt-3 max-h-44 overflow-auto rounded-md border border-border bg-card p-3 text-[12px] leading-relaxed text-muted-foreground space-y-2">
+          <p><b className="text-foreground">1. Nature of Services:</b> BharatOne offers assistance in accessing government schemes, subsidies, certifications and application services. We are not a government agency; all services are consultancy/support-based and do not guarantee approval.</p>
+          <p><b className="text-foreground">2. Eligibility:</b> You must be at least 18 years old and legally capable of entering into binding contracts.</p>
+          <p><b className="text-foreground">3. Acceptable Use:</b> Use the platform only for lawful purposes; do not misrepresent your identity, provide false information, or attempt unauthorized/fraudulent activity.</p>
+          <p><b className="text-foreground">4. Payments &amp; Refunds:</b> Applicable charges are disclosed before payment. Payments are non-refundable once a service has been initiated.</p>
+          <p><b className="text-foreground">5. Intellectual Property:</b> All content is the property of BharatOne and protected by law; no copying or distribution without written permission.</p>
+          <p><b className="text-foreground">6. Disclaimer &amp; Liability:</b> Services are best-effort; we do not guarantee completeness/accuracy of information or results, and are not liable for indirect or consequential damages.</p>
+          <p><b className="text-foreground">7. Data &amp; Privacy:</b> Your personal data is handled per our Privacy Policy and used only to provide the requested services.</p>
+          <p><b className="text-foreground">8. Termination &amp; Changes:</b> Access may be suspended for breach; terms may be updated and continued use constitutes acceptance.</p>
+          <p><b className="text-foreground">9. Governing Law:</b> These terms are governed by the laws of India; disputes are subject to courts in Karnataka, India.</p>
+          <p>Full Terms &amp; Conditions: <a href="/terms-and-conditions" target="_blank" rel="noreferrer" className="font-semibold text-india-green hover:underline">read here</a>.</p>
+        </div>
+        <label className="mt-3 flex items-start gap-3 cursor-pointer">
+          <input type="checkbox" checked={terms} onChange={(e) => setTerms(e.target.checked)} className="mt-0.5 h-4 w-4 accent-[oklch(0.55_0.12_150)]" />
+          <span className="text-sm text-foreground">I have <b>read and agree</b> to the BharatOne Terms &amp; Conditions. <span className="text-primary">*</span></span>
+        </label>
+      </div>
 
       <label className="flex items-start gap-3 rounded-lg border border-border bg-background/40 px-4 py-3 cursor-pointer">
         <input

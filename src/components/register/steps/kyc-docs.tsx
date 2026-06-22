@@ -66,6 +66,7 @@ export function KycDocsStep() {
         title="KYC Documents"
         description="Upload clear Aadhaar, PAN, and supporting documents manually. Max 5MB per file."
       />
+      <UploadBox title="Passport Size Photo" required subtitle="Recent passport-size photo · plain background, face clearly visible" fileKey="passport" />
       <div className="grid gap-4 sm:grid-cols-2">
         <UploadBox title="PAN Card" required subtitle="Front side clearly visible" fileKey="pan" />
         <UploadBox title="Aadhaar Card" required subtitle="Front & back or e-Aadhaar" fileKey="aadhaar" />
