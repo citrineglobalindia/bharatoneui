@@ -12,8 +12,49 @@ export const Route = createFileRoute("/wallet/recharges")({
 
 type Row = { id: string; amount: number; method: string | null; reference: string | null; status: string; created_at: string };
 const inr = (n: number) => "₹" + Number(n || 0).toLocaleString("en-IN");
-const tone: Record<string, string> = { verified: "bg-emerald-100 text-emerald-700", pending: "bg-amber-100 text-amber-700", rejected: "bg-rose-100 text-rose-700" };
-const label: Record<string, string> = { verified: "Success", pending: "Pending", rejected: "Rejected" };
+// Full payment-transaction status set (CCAvenue-style)
+const norm = (raw: string) => {
+  const v = (raw || "").toLowerCase().replace(/[\s/-]+/g, "_");
+  if (["verified", "success", "successful", "shipped"].includes(v)) return "success";
+  if (v === "successful_system_refund") return "system_refund";
+  if (v === "auto_cancelled") return "auto_cancelled";
+  if (v === "auto_reversed") return "auto_reversed";
+  return v;
+};
+const META: Record<string, { label: string; tone: string }> = {
+  success: { label: "Success", tone: "bg-emerald-100 text-emerald-700" },
+  pending: { label: "Pending", tone: "bg-amber-100 text-amber-700" },
+  awaited: { label: "Awaited", tone: "bg-amber-100 text-amber-700" },
+  initiated: { label: "Initiated", tone: "bg-sky-100 text-sky-700" },
+  refunded: { label: "Refunded", tone: "bg-sky-100 text-sky-700" },
+  system_refund: { label: "Successful system refund", tone: "bg-sky-100 text-sky-700" },
+  aborted: { label: "Aborted", tone: "bg-rose-100 text-rose-700" },
+  auto_cancelled: { label: "Auto-cancelled", tone: "bg-rose-100 text-rose-700" },
+  cancelled: { label: "Cancelled", tone: "bg-rose-100 text-rose-700" },
+  auto_reversed: { label: "Auto-reversed", tone: "bg-orange-100 text-orange-700" },
+  invalid: { label: "Invalid", tone: "bg-slate-100 text-slate-600" },
+  fraud: { label: "Fraud", tone: "bg-red-200 text-red-800" },
+  unsuccessful: { label: "Unsuccessful", tone: "bg-rose-100 text-rose-700" },
+  rejected: { label: "Rejected", tone: "bg-rose-100 text-rose-700" },
+};
+const STATUS_OPTIONS: { v: string; label: string }[] = [
+  { v: "all", label: "All status" },
+  { v: "success", label: "Success / Successful / Shipped" },
+  { v: "pending", label: "Pending" },
+  { v: "awaited", label: "Awaited" },
+  { v: "initiated", label: "Initiated" },
+  { v: "refunded", label: "Refunded" },
+  { v: "system_refund", label: "Successful system refund" },
+  { v: "aborted", label: "Aborted" },
+  { v: "auto_cancelled", label: "Auto-cancelled" },
+  { v: "cancelled", label: "Cancelled" },
+  { v: "auto_reversed", label: "Auto-reversed" },
+  { v: "invalid", label: "Invalid" },
+  { v: "fraud", label: "Fraud" },
+  { v: "unsuccessful", label: "Unsuccessful" },
+  { v: "rejected", label: "Rejected" },
+];
+const metaOf = (raw: string) => META[norm(raw)] ?? { label: raw || "—", tone: "bg-muted text-foreground" };
 
 function RechargesPage() {
   const [rows, setRows] = useState<Row[]>([]);
@@ -28,17 +69,17 @@ function RechargesPage() {
   useEffect(() => { load(); }, []);
 
   const filtered = useMemo(() => rows.filter((r) => {
-    if (st !== "all" && r.status !== st) return false;
+    if (st !== "all" && norm(r.status) !== st) return false;
     if (from && new Date(r.created_at) < new Date(from)) return false;
     if (to && new Date(r.created_at) > new Date(to + "T23:59:59")) return false;
     if (q && !((r.reference ?? "") + (r.method ?? "")).toLowerCase().includes(q.toLowerCase())) return false;
     return true;
   }), [rows, q, from, to, st]);
-  const total = filtered.filter((r) => r.status === "verified").reduce((a, r) => a + Number(r.amount || 0), 0);
+  const total = filtered.filter((r) => norm(r.status) === "success").reduce((a, r) => a + Number(r.amount || 0), 0);
 
   const exportCsv = () => {
     const head = ["Order ID", "Date", "Method", "Reference", "Amount", "Status"].join(",");
-    const body = filtered.map((r) => [r.id.slice(0, 8), new Date(r.created_at).toLocaleString("en-IN"), r.method ?? "", r.reference ?? "", r.amount, label[r.status] ?? r.status].map((x) => `"${x}"`).join(",")).join("\n");
+    const body = filtered.map((r) => [r.id.slice(0, 8), new Date(r.created_at).toLocaleString("en-IN"), r.method ?? "", r.reference ?? "", r.amount, metaOf(r.status).label].map((x) => `"${x}"`).join(",")).join("\n");
     const blob = new Blob([head + "\n" + body], { type: "text/csv" }); const u = URL.createObjectURL(blob);
     const a = document.createElement("a"); a.href = u; a.download = "recharges.csv"; a.click(); URL.revokeObjectURL(u);
   };
@@ -52,13 +93,13 @@ function RechargesPage() {
         <div className="grid gap-3 sm:grid-cols-3">
           <div className="rounded-2xl border border-border bg-card p-4 shadow-soft"><p className="text-[11px] font-semibold uppercase text-muted-foreground">Total Recharged</p><p className="text-lg font-extrabold text-emerald-600">{inr(total)}</p></div>
           <div className="rounded-2xl border border-border bg-card p-4 shadow-soft"><p className="text-[11px] font-semibold uppercase text-muted-foreground">Requests</p><p className="text-lg font-extrabold">{filtered.length}</p></div>
-          <div className="rounded-2xl border border-border bg-card p-4 shadow-soft"><p className="text-[11px] font-semibold uppercase text-muted-foreground">Pending</p><p className="text-lg font-extrabold text-amber-600">{filtered.filter((r) => r.status === "pending").length}</p></div>
+          <div className="rounded-2xl border border-border bg-card p-4 shadow-soft"><p className="text-[11px] font-semibold uppercase text-muted-foreground">Pending</p><p className="text-lg font-extrabold text-amber-600">{filtered.filter((r) => norm(r.status) === "pending").length}</p></div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
           <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="h-9 rounded-lg border border-border bg-background px-2 text-sm" />
           <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="h-9 rounded-lg border border-border bg-background px-2 text-sm" />
-          <select value={st} onChange={(e) => setSt(e.target.value)} className="h-9 rounded-lg border border-border bg-card px-2 text-sm"><option value="all">All status</option><option value="verified">Success</option><option value="pending">Pending</option><option value="rejected">Rejected</option></select>
+          <select value={st} onChange={(e) => setSt(e.target.value)} className="h-9 rounded-lg border border-border bg-card px-2 text-sm">{STATUS_OPTIONS.map((o) => <option key={o.v} value={o.v}>{o.label}</option>)}</select>
           <div className="relative"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><input className="h-9 w-56 rounded-lg border border-border bg-background pl-8 pr-2 text-sm outline-none" placeholder="Reference / method…" value={q} onChange={(e) => setQ(e.target.value)} /></div>
           <button onClick={load} className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-9 text-xs font-semibold hover:bg-muted"><RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} /> Refresh</button>
         </div>
@@ -76,7 +117,7 @@ function RechargesPage() {
                     <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{r.reference || "—"}</td>
                     <td className="px-3 py-2.5 text-right font-semibold">{inr(r.amount)}</td>
                     <td className="px-3 py-2.5 text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString("en-IN")}</td>
-                    <td className="px-3 py-2.5"><span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${tone[r.status] ?? "bg-muted"}`}>{label[r.status] ?? r.status}</span></td>
+                    <td className="px-3 py-2.5"><span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${tone[r.status] ?? "bg-muted"}`}>{metaOf(r.status).label}</span></td>
                   </tr>
                 ))}
             </tbody>
