@@ -388,7 +388,7 @@ function LoginPage() {
                   <UserPlus className="h-4 w-4" />
                 </div>
                 <div className="text-left">
-                  <p className="text-sm font-bold text-foreground">Create new JSKO account</p>
+                  <p className="text-sm font-bold text-foreground">Create New JSKO Account</p>
                   <p className="text-[11px] text-muted-foreground">Retailer · Distributor · JSKO</p>
                 </div>
               </div>
@@ -404,7 +404,7 @@ function LoginPage() {
                   <Search className="h-4 w-4" />
                 </div>
                 <div className="text-left">
-                  <p className="text-sm font-bold text-foreground">Track your application</p>
+                  <p className="text-sm font-bold text-foreground">Track Your JSKO Application</p>
                   <p className="text-[11px] text-muted-foreground">Check registration status</p>
                 </div>
               </div>

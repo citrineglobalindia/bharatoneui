@@ -95,7 +95,7 @@ function TrackApplicationPage() {
               Back to Login
             </a>
 
-            <div className="mt-5 flex flex-col items-start gap-4 lg:gap-5">
+            <div className="mt-5 flex flex-col items-center gap-4 text-center lg:gap-5">
               <div className="rounded-2xl bg-white/80 backdrop-blur border border-border p-3 lg:p-4 shadow-soft">
                 <BharatOneLogo size="lg" />
               </div>
@@ -105,7 +105,7 @@ function TrackApplicationPage() {
                   Real-time Tracking
                 </span>
                 <h1 className="mt-3 font-display text-2xl lg:text-3xl font-bold leading-tight text-foreground">
-                  Track Your <span className="text-india-green">Application</span>
+                  Track Your JSKO <span className="text-india-green">Application</span>
                 </h1>
                 <p className="mt-2 text-xs lg:text-sm text-muted-foreground leading-relaxed">
                   Get instant updates on your BharatOne registration — from document
@@ -141,7 +141,7 @@ function TrackApplicationPage() {
             </a>
             <BharatOneLogo size="md" />
             <div className="ml-auto">
-              <p className="text-xs font-semibold text-india-green">Track Application</p>
+              <p className="text-xs font-semibold text-india-green">Track JSKO Application</p>
             </div>
           </div>
 
