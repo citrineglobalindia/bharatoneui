@@ -76,12 +76,10 @@ function NewRequestPage() {
           <div className="space-y-5">
             {byCategory.map(([cn, list]) => (
               <section key={cn} className="overflow-hidden rounded-2xl border border-border bg-card shadow-soft">
-                <div className={`flex items-center gap-3 bg-gradient-to-r ${catGrad(cn)} p-4 text-white`}>
-                  <span className="grid h-10 w-10 place-items-center rounded-xl bg-white/20 text-base font-extrabold">{cn[0]?.toUpperCase() || "?"}</span>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-display text-base font-extrabold leading-tight">{cn}</p>
-                    <p className="text-xs text-white/85">{list.length} service{list.length !== 1 ? "s" : ""}</p>
-                  </div>
+                <div className={`flex items-center gap-2.5 bg-gradient-to-r ${catGrad(cn)} px-4 py-2.5 text-white`}>
+                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-white/25 text-xs font-bold">{cn[0]?.toUpperCase() || "?"}</span>
+                  <p className="flex-1 truncate font-display text-sm font-bold uppercase tracking-wide">{cn}</p>
+                  <span className="shrink-0 rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-semibold">{list.length} service{list.length !== 1 ? "s" : ""}</span>
                 </div>
                 <div className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3">
                   {list.map((s) => {
