@@ -8,6 +8,7 @@ import {
   Lock,
   FileText,
   MessageCircle,
+  Phone,
   Copyright,
   Globe,
   Server,
@@ -101,7 +102,7 @@ function PrivacyPolicyPage() {
 
       {/* Header */}
       <header className="sticky top-0 z-30 border-b border-border bg-card/80 backdrop-blur-md">
-        <div className="relative mx-auto flex h-16 max-w-5xl items-center justify-center px-4 sm:px-6">
+        <div className="relative mx-auto flex min-h-20 max-w-5xl items-center justify-center px-4 sm:px-6 py-3">
           <Link
             to="/login"
             aria-label="Go back"
@@ -187,9 +188,14 @@ function PrivacyPolicyPage() {
             <p className="mt-2 text-sm text-muted-foreground">
               If you have any questions or concerns about this Privacy Policy, please contact us.
             </p>
+            <div className="mt-4 grid gap-2 sm:grid-cols-3 sm:max-w-xl sm:mx-auto">
+              <a href="tel:+919071100311" className="flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-3 py-2.5 text-sm font-semibold text-foreground shadow-soft hover:bg-muted transition"><Phone className="h-4 w-4 text-india-green" /> +91 90711 00311</a>
+              <a href="mailto:info@mybharatone.com" className="flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-3 py-2.5 text-sm font-semibold text-foreground shadow-soft hover:bg-muted transition"><Mail className="h-4 w-4 text-india-green" /> info@mybharatone.com</a>
+              <a href="mailto:support@mybharatone.com" className="flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-3 py-2.5 text-sm font-semibold text-foreground shadow-soft hover:bg-muted transition"><Mail className="h-4 w-4 text-india-green" /> support@mybharatone.com</a>
+            </div>
             <div className="mt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
               <a
-                href="mailto:support@bharatone.in"
+                href="mailto:support@mybharatone.com"
                 className="inline-flex items-center gap-2 rounded-lg bg-india-green px-5 py-2.5 text-sm font-semibold text-white shadow-elev hover:bg-india-green/90 transition-all"
               >
                 <MessageCircle className="h-4 w-4" /> Contact Support
