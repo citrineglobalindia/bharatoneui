@@ -93,13 +93,11 @@ function LoginPage() {
       />
 
       <div className="relative w-full max-w-6xl flex flex-col rounded-2xl border border-border bg-card shadow-elev overflow-hidden animate-in fade-in zoom-in-95 duration-500">
-        <div className="relative grid md:grid-cols-2 min-h-0">
-          {/* Digital India — centered between the two sections */}
-          <div className="pointer-events-none absolute left-1/2 top-1/2 z-20 hidden -translate-x-1/2 -translate-y-1/2 md:block">
-            <div className="rounded-xl border border-border bg-white/95 px-4 py-2.5 shadow-elev backdrop-blur">
-              <DigitalIndiaLogo className="h-12 w-auto" />
-            </div>
-          </div>
+        {/* Digital India — top band, centered across both sections */}
+        <div className="flex items-center justify-center border-b border-border bg-white/60 px-4 py-3">
+          <DigitalIndiaLogo className="h-11 w-auto sm:h-12" />
+        </div>
+        <div className="grid md:grid-cols-2 min-h-0">
           {/* Left — Welcome */}
           <div className="relative p-4 sm:p-5 lg:p-6 bg-gradient-to-br from-orange-50 via-white to-emerald-50 text-center">
             <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground leading-tight">
