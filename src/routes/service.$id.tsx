@@ -77,10 +77,10 @@ function ServiceLauncher() {
       const { data: sess } = await supabase.auth.getSession();
       if (!sess?.session) { toast.error("Your session has expired", { description: "Please sign in again to submit this application.", action: { label: "Sign in", onClick: () => navigate({ to: "/login" }) } }); return; }
       const charge = Number(svc.service_charge || 0);
-      if (charge > 0 && balance != null && balance < charge) { toast.error("Insufficient wallet balance", { description: `This service costs ₹${charge.toLocaleString("en-IN")}. Add funds to your wallet to continue.`, action: { label: "Add funds", onClick: () => navigate({ to: "/wallet" }) } }); return; }
+      if (charge > 0 && balance != null && balance - charge < 1000) { toast.error("Minimum balance required", { description: `Retailers must maintain at least ₹1,000 in the wallet. This service costs ₹${charge.toLocaleString("en-IN")}, so you need ₹${(charge + 1000).toLocaleString("en-IN")} available. Add funds to continue.`, action: { label: "Add funds", onClick: () => navigate({ to: "/wallet" }) } }); return; }
       const { data, error } = await supabase.rpc("submit_backend_application", { p_service_id: id, p_form: values });
       if (error) { if (String(error.message).includes("ONLY_RETAILER")) { toast.error("Only retailer accounts can apply for services."); return; }
-      if (String(error.message).includes("INSUFFICIENT_FUNDS")) { toast.error("Insufficient wallet balance", { description: "Please add funds to your wallet before applying." }); return; } toast.error("Submit failed", { description: error.message }); return; }
+      if (String(error.message).includes("MIN_BALANCE") || String(error.message).includes("INSUFFICIENT_FUNDS")) { toast.error("Minimum balance required", { description: "Retailers must maintain at least ₹1,000 in the wallet. Please add funds before applying." }); return; } toast.error("Submit failed", { description: error.message }); return; }
       const res = (data as any) ?? {};
       const pick = (re: RegExp) => { const k = Object.keys(values).find((x) => re.test(x.toLowerCase()) && typeof values[x] !== "object"); return k ? String(values[k]) : undefined; };
       setReceipt({

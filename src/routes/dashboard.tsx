@@ -209,11 +209,21 @@ function DashboardPage() {
           )}
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <StatCard label="Wallet Balance" value={loading ? "…" : inr(balance)} icon={<Wallet className="h-5 w-5" />} tone="saffron" delta={{ value: balance > 0 ? "Available" : "Top up to begin", positive: true }} />
+          <StatCard label="Wallet Balance" value={loading ? "…" : inr(balance)} icon={<Wallet className="h-5 w-5" />} tone="saffron" delta={{ value: loading ? "…" : balance < 1000 ? "Below ₹1,000 minimum" : "Above ₹1,000 minimum", positive: balance >= 1000 }} />
           <StatCard label="Today's Volume" value={loading ? "…" : inr(kpi.todayVolume)} icon={<TrendingUp className="h-5 w-5" />} tone="green" delta={{ value: `${rows.filter((r) => new Date(r.created_at).toDateString() === todayStr).length} today`, positive: true }} />
           <StatCard label="Earned Commission" value={loading ? "…" : inr(filtered.commission)} icon={<Receipt className="h-5 w-5" />} tone="sky" delta={{ value: periodLabel[period] || "Approved + completed", positive: true }} />
           <StatCard label="Applications" value={loading ? "…" : String(filtered.total)} icon={<ClipboardCheck className="h-5 w-5" />} tone="violet" delta={{ value: `${filtered.pending} pending`, positive: filtered.pending === 0 }} />
         </div>
+
+        {!loading && balance < 1000 && (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            <div className="flex items-center gap-2.5">
+              <Wallet className="h-5 w-5 shrink-0" />
+              <span><span className="font-bold">Low wallet balance.</span> Retailers must maintain a minimum balance of ₹1,000. Top up to keep applying for services.</span>
+            </div>
+            <Link to="/wallet" className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 h-9 text-sm font-semibold text-white hover:bg-red-700">Add funds</Link>
+          </div>
+        )}
 
         {/* KYC banner */}
         <div className="grid gap-3">
