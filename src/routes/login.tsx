@@ -41,7 +41,6 @@ import { supabase } from "@/integrations/supabase/client";
 const MORE_SERVICES = [
   { label: "Shreerakshe Health Care", icon: HeartPulse, tone: "text-rose-500 bg-rose-50" },
   { label: "BharatOne Rural E-Mobility", icon: Bike, tone: "text-emerald-600 bg-emerald-50" },
-  { label: "BharatOne Tours & Travels", icon: Plane, tone: "text-sky-600 bg-sky-50" },
   { label: "BharatOne Kisan Yojana", icon: Sprout, tone: "text-green-600 bg-green-50" },
   { label: "BharatOne Architectural Services", icon: Ruler, tone: "text-amber-600 bg-amber-50" },
   { label: "BharatOne Legal & Liaison", icon: Scale, tone: "text-slate-700 bg-slate-100" },
