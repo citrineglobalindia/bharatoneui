@@ -212,6 +212,19 @@ function KycDocsPage() {
               </label>
             </div>
           </div>
+          <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-[13px] text-red-700">
+            <p className="font-bold">Important notes:</p>
+            <ul className="mt-1.5 list-disc space-y-1 pl-5">
+              <li>
+                A document can be resubmitted if:
+                <ul className="mt-1 list-[circle] space-y-1 pl-5">
+                  <li>It has been rejected by the zonal incharge</li>
+                  <li>It has not been `attended/verified` by the zonal incharge</li>
+                  <li>It has been expired (based on the validity date in the document)</li>
+                </ul>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
     </RetailerShell>
