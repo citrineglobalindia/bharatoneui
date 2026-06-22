@@ -131,9 +131,6 @@ function TermsPage() {
       <main className="relative mx-auto max-w-3xl px-4 sm:px-6 py-8 sm:py-14">
         {/* Title Section */}
         <div className="text-center animate-in fade-in slide-in-from-bottom-3 duration-500">
-          <div className="inline-flex items-center gap-2 rounded-full border border-accent bg-white/80 backdrop-blur px-3 py-1.5 text-xs font-semibold text-saffron shadow-soft mb-4">
-            <FileText className="h-3.5 w-3.5" /> Legal
-          </div>
           <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-foreground leading-[1.05]">
             Terms and{" "}
             <span className="bg-saffron-gradient bg-clip-text text-transparent">
@@ -205,10 +202,10 @@ function TermsPage() {
             <p className="mt-2 text-sm text-muted-foreground">
               If you have any questions or concerns about these Terms and Conditions, please contact us.
             </p>
-            <div className="mt-4 grid gap-2 sm:grid-cols-3 sm:max-w-xl sm:mx-auto">
-              <a href="tel:+919071100311" className="flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-3 py-2.5 text-sm font-semibold text-foreground shadow-soft hover:bg-muted transition"><Phone className="h-4 w-4 text-india-green" /> +91 90711 00311</a>
-              <a href="mailto:info@mybharatone.com" className="flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-3 py-2.5 text-sm font-semibold text-foreground shadow-soft hover:bg-muted transition"><Mail className="h-4 w-4 text-india-green" /> info@mybharatone.com</a>
-              <a href="mailto:support@mybharatone.com" className="flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-3 py-2.5 text-sm font-semibold text-foreground shadow-soft hover:bg-muted transition"><Mail className="h-4 w-4 text-india-green" /> support@mybharatone.com</a>
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+              <a href="tel:+919071100311" className="inline-flex max-w-full items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-xs sm:text-sm font-semibold text-foreground shadow-soft hover:bg-muted transition"><Phone className="h-4 w-4 shrink-0 text-india-green" /> +91 90711 00311</a>
+              <a href="mailto:info@mybharatone.com" className="inline-flex max-w-full items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-xs sm:text-sm font-semibold text-foreground shadow-soft hover:bg-muted transition"><Mail className="h-4 w-4 shrink-0 text-india-green" /> <span className="truncate">info@mybharatone.com</span></a>
+              <a href="mailto:support@mybharatone.com" className="inline-flex max-w-full items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-xs sm:text-sm font-semibold text-foreground shadow-soft hover:bg-muted transition"><Mail className="h-4 w-4 shrink-0 text-india-green" /> <span className="truncate">support@mybharatone.com</span></a>
             </div>
             <div className="mt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
               <a
