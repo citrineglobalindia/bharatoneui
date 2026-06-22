@@ -1,4 +1,6 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
+import { CheckCircle2, AlertTriangle, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { Building2, MapPin } from "lucide-react";
 import { ClientOnly } from "@tanstack/react-router";
 import { Field, inputCls, SectionCard, StepHeader } from "../field";
@@ -15,9 +17,50 @@ const MapFallback = (
 
 const DISTRICTS = ["Bengaluru Urban", "Bengaluru Rural", "Hassan", "Mysuru"];
 
+type PinInfo = { found: boolean; state?: string; district?: string; districts?: string[] };
+
 export function BusinessStep() {
   const { data, set } = useRegistration();
   const addrType = data.addressType;
+  const [pinInfo, setPinInfo] = useState<PinInfo | null>(null);
+  const [pinChecking, setPinChecking] = useState(false);
+
+  useEffect(() => {
+    const pin = (data.pincode || "").trim();
+    if (pin.length !== 6) { setPinInfo(null); return; }
+    let on = true;
+    setPinChecking(true);
+    (async () => {
+      const { data: res } = await supabase.rpc("lookup_pincode", { p_pincode: pin });
+      if (!on) return;
+      const info = (res as PinInfo) ?? { found: false };
+      setPinInfo(info); setPinChecking(false);
+      if (info.found) {
+        // auto-fill empty fields from the verified pincode
+        if (!data.state) set({ state: info.state });
+        if (!data.district && info.district) set({ district: info.district });
+      }
+    })();
+    return () => { on = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data.pincode]);
+
+  const applyPin = () => { if (pinInfo?.found) set({ state: pinInfo.state, district: pinInfo.district }); };
+  const districtOptions = Array.from(new Set([...DISTRICTS, ...(pinInfo?.districts ?? []), pinInfo?.district].filter(Boolean))) as string[];
+  const stateMatch = !pinInfo?.found || !data.state || data.state.trim().toLowerCase() === (pinInfo.state ?? "").toLowerCase();
+  const districtMatch = !pinInfo?.found || !data.district || (pinInfo.districts ?? []).map((d) => d.toLowerCase()).includes(data.district.trim().toLowerCase());
+  const PinVerify = () => {
+    if (pinChecking) return <p className="mt-1.5 flex items-center gap-1.5 text-[11px] text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" /> Verifying pincode…</p>;
+    if (!pinInfo) return null;
+    if (!pinInfo.found) return <p className="mt-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-rose-600"><AlertTriangle className="h-3 w-3" /> PIN code not recognised. Please check.</p>;
+    if (stateMatch && districtMatch) return <p className="mt-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-emerald-600"><CheckCircle2 className="h-3 w-3" /> Verified · {pinInfo.district}, {pinInfo.state}</p>;
+    return (
+      <div className="mt-1.5 flex flex-wrap items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-[11px] font-semibold text-amber-800">
+        <AlertTriangle className="h-3 w-3 shrink-0" /> This PIN belongs to <b>{pinInfo.district}, {pinInfo.state}</b>.
+        <button type="button" onClick={applyPin} className="rounded-md bg-india-green px-2 py-0.5 text-white">Apply</button>
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -76,7 +119,7 @@ export function BusinessStep() {
             <Field label="District" required>
               <select className={inputCls} autoComplete="off" value={data.district} onChange={(e) => set({ district: e.target.value })}>
                 <option value="">Select district</option>
-                {DISTRICTS.map((d) => <option key={d} value={d}>{d}</option>)}
+                {districtOptions.map((d) => <option key={d} value={d}>{d}</option>)}
               </select>
             </Field>
             <Field label="State" required>
@@ -85,6 +128,7 @@ export function BusinessStep() {
             <Field label="Pincode" required>
               <input className={inputCls} autoComplete="off" placeholder="6 digit pincode" maxLength={6}
                 value={data.pincode} onChange={(e) => set({ pincode: e.target.value.replace(/\D/g, "") })} />
+              <PinVerify />
             </Field>
           </div>
         ) : (
@@ -116,6 +160,7 @@ export function BusinessStep() {
             <Field label="PIN Code" required>
               <input className={inputCls} autoComplete="off" placeholder="6 digit pincode" maxLength={6}
                 value={data.pincode} onChange={(e) => set({ pincode: e.target.value.replace(/\D/g, "") })} />
+              <PinVerify />
             </Field>
             <Field label="Taluk" required>
               <input className={inputCls} autoComplete="off" placeholder="Taluk"
@@ -124,7 +169,7 @@ export function BusinessStep() {
             <Field label="District" required>
               <select className={inputCls} autoComplete="off" value={data.district} onChange={(e) => set({ district: e.target.value })}>
                 <option value="">Select district</option>
-                {DISTRICTS.map((d) => <option key={d} value={d}>{d}</option>)}
+                {districtOptions.map((d) => <option key={d} value={d}>{d}</option>)}
               </select>
             </Field>
             <Field label="State" required>
