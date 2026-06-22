@@ -174,7 +174,7 @@ function ServiceLauncher() {
                       (() => {
                         const isPhone = /phone|mobile/i.test(f.key);
                         const isAadhaar = /aadhaar|aadhar/i.test(f.key);
-                        const isPan = /\bpan\b/i.test(f.key);
+                        const isPan = /pan/i.test(f.key);
                         const ml = isPhone || isAadhaar ? (isAadhaar ? 12 : 10) : isPan ? 10 : undefined;
                         const clean = (val: string) => isPhone ? sanitizeMobile(val) : isAadhaar ? val.replace(/\D/g, "").slice(0, 12) : isPan ? val.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 10) : val;
                         return <input type={f.type} inputMode={isPhone || isAadhaar ? "numeric" : undefined} maxLength={ml} className={input} placeholder={f.placeholder} value={values[f.key] ?? ""} onChange={(e) => setValues({ ...values, [f.key]: clean(e.target.value) })} />;
