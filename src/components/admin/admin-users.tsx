@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { sanitizeMobile } from "@/lib/phone";
 import { toast } from "sonner";
 import { Users, Search, Loader2, RefreshCw, UserPlus, Eye, X, Check, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -216,8 +217,8 @@ export function AdminUsers() {
 
                   <p className="pt-1 text-xs font-bold uppercase tracking-wider text-saffron">Contact & Address</p>
                   <div className="grid gap-2.5 sm:grid-cols-2">
-                    <div><label className="text-[11px] font-semibold text-muted-foreground">Phone</label><input className={input} value={edit.phone} onChange={(e) => setEdit({ ...edit, phone: e.target.value })} placeholder="Phone" /></div>
-                    <div><label className="text-[11px] font-semibold text-muted-foreground">Alternate Phone</label><input className={input} value={edit.alt_phone} onChange={(e) => setEdit({ ...edit, alt_phone: e.target.value })} placeholder="Alt phone" /></div>
+                    <div><label className="text-[11px] font-semibold text-muted-foreground">Phone</label><input className={input} value={edit.phone} onChange={(e) => setEdit({ ...edit, phone: sanitizeMobile(e.target.value) })} inputMode="numeric" maxLength={10} placeholder="Phone" /></div>
+                    <div><label className="text-[11px] font-semibold text-muted-foreground">Alternate Phone</label><input className={input} value={edit.alt_phone} onChange={(e) => setEdit({ ...edit, alt_phone: sanitizeMobile(e.target.value) })} inputMode="numeric" maxLength={10} placeholder="Alt phone" /></div>
                     <div className="sm:col-span-2"><label className="text-[11px] font-semibold text-muted-foreground">Street Address</label><input className={input} value={edit.street_address} onChange={(e) => setEdit({ ...edit, street_address: e.target.value })} placeholder="House/Flat, Street, Area" /></div>
                     <div><label className="text-[11px] font-semibold text-muted-foreground">District</label><input className={input} value={edit.district} onChange={(e) => setEdit({ ...edit, district: e.target.value })} placeholder="District" /></div>
                     <div><label className="text-[11px] font-semibold text-muted-foreground">State</label><input className={input} value={edit.state} onChange={(e) => setEdit({ ...edit, state: e.target.value })} placeholder="State" /></div>
@@ -252,7 +253,7 @@ export function AdminUsers() {
                   <p className="pt-1 text-xs font-bold uppercase tracking-wider text-saffron">Emergency Contact</p>
                   <div className="grid gap-2.5 sm:grid-cols-2">
                     <div><label className="text-[11px] font-semibold text-muted-foreground">Contact Name</label><input className={input} value={edit.emergency_contact_name} onChange={(e) => setEdit({ ...edit, emergency_contact_name: e.target.value })} placeholder="Name (Relation)" /></div>
-                    <div><label className="text-[11px] font-semibold text-muted-foreground">Contact Phone</label><input className={input} value={edit.emergency_contact_phone} onChange={(e) => setEdit({ ...edit, emergency_contact_phone: e.target.value })} placeholder="+91 XXXXX XXXXX" /></div>
+                    <div><label className="text-[11px] font-semibold text-muted-foreground">Contact Phone</label><input className={input} value={edit.emergency_contact_phone} onChange={(e) => setEdit({ ...edit, emergency_contact_phone: sanitizeMobile(e.target.value) })} inputMode="numeric" maxLength={10} placeholder="+91 XXXXX XXXXX" /></div>
                   </div>
 
                   <p className="pt-1 text-xs font-bold uppercase tracking-wider text-saffron">Video KYC & SOW</p>
@@ -338,8 +339,8 @@ export function AdminUsers() {
           </Sec>
 
           <Sec title="Contact Details">
-            <F label="Phone"><input className={input} placeholder="+91 98765 XXXXX" value={add.phone} onChange={(e) => setAdd({ ...add, phone: e.target.value })} /></F>
-            <F label="Alternate Phone"><input className={input} placeholder="+91 87654 XXXXX" value={add.alt_phone} onChange={(e) => setAdd({ ...add, alt_phone: e.target.value })} /></F>
+            <F label="Phone"><input className={input} placeholder="+91 98765 XXXXX" value={add.phone} onChange={(e) => setAdd({ ...add, phone: sanitizeMobile(e.target.value) })} inputMode="numeric" maxLength={10} /></F>
+            <F label="Alternate Phone"><input className={input} placeholder="+91 87654 XXXXX" value={add.alt_phone} onChange={(e) => setAdd({ ...add, alt_phone: sanitizeMobile(e.target.value) })} inputMode="numeric" maxLength={10} /></F>
           </Sec>
 
           <Sec title="Address">
@@ -377,7 +378,7 @@ export function AdminUsers() {
 
           {!isBasic && <Sec title="Emergency Contact">
             <F label="Contact Name"><input className={input} placeholder="Name (Relation)" value={add.emergency_contact_name} onChange={(e) => setAdd({ ...add, emergency_contact_name: e.target.value })} /></F>
-            <F label="Contact Phone"><input className={input} placeholder="+91 XXXXX XXXXX" value={add.emergency_contact_phone} onChange={(e) => setAdd({ ...add, emergency_contact_phone: e.target.value })} /></F>
+            <F label="Contact Phone"><input className={input} placeholder="+91 XXXXX XXXXX" value={add.emergency_contact_phone} onChange={(e) => setAdd({ ...add, emergency_contact_phone: sanitizeMobile(e.target.value) })} inputMode="numeric" maxLength={10} /></F>
           </Sec>}
 
           {!isBasic && <div className="mt-4">

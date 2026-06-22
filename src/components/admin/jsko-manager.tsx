@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { sanitizeMobile } from "@/lib/phone";
 import { toast } from "sonner";
 import { Plus, Pencil, Loader2, Check, X, RefreshCw, Search, IdCard, Upload, Eye, Download, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -273,7 +274,7 @@ export function JskoManager() {
           <div><label className="text-[11px] font-semibold text-muted-foreground">Username *</label><input className={inp} value={add.username} onChange={(e) => setAdd({ ...add, username: e.target.value })} placeholder="JSKO101" /></div>
           <div><label className="text-[11px] font-semibold text-muted-foreground">Full name *</label><input className={inp} value={add.full_name} onChange={(e) => setAdd({ ...add, full_name: e.target.value })} placeholder="Ramesh Kumar" /></div>
           <div><label className="text-[11px] font-semibold text-muted-foreground">Email</label><input className={inp} value={add.email} onChange={(e) => setAdd({ ...add, email: e.target.value })} placeholder="name@example.com" /></div>
-          <div><label className="text-[11px] font-semibold text-muted-foreground">Mobile</label><input className={inp} value={add.mobile} onChange={(e) => setAdd({ ...add, mobile: e.target.value.replace(/\D/g, "") })} maxLength={10} placeholder="10-digit" /></div>
+          <div><label className="text-[11px] font-semibold text-muted-foreground">Mobile</label><input className={inp} value={add.mobile} onChange={(e) => setAdd({ ...add, mobile: sanitizeMobile(e.target.value) })} maxLength={10} placeholder="10-digit" /></div>
           <div><label className="text-[11px] font-semibold text-muted-foreground">Password</label><input className={inp} value={add.legacy_password} onChange={(e) => setAdd({ ...add, legacy_password: e.target.value })} placeholder="Legacy password" /></div>
         </div>
         <label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={add.is_active} onChange={(e) => setAdd({ ...add, is_active: e.target.checked })} className="h-4 w-4 accent-[oklch(0.55_0.12_150)]" /> Active</label>

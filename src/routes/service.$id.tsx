@@ -6,6 +6,7 @@ import { RetailerShell } from "@/components/retailer/retailer-shell";
 import { PageHeader } from "@/components/retailer/page-header";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { sanitizeMobile } from "@/lib/phone";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 import { downloadReceiptPDF, downloadReceiptPNG, shareReceipt, type AppReceipt } from "@/lib/application-receipt";
 import { toast as _toast } from "sonner";
@@ -170,7 +171,7 @@ function ServiceLauncher() {
                         {values[f.key]?.name && <span className="text-xs text-india-green font-medium truncate max-w-[200px]">{values[f.key].name}</span>}
                       </div>
                     ) : (
-                      <input type={f.type} className={input} placeholder={f.placeholder} value={values[f.key] ?? ""} onChange={(e) => setValues({ ...values, [f.key]: e.target.value })} />
+                      <input type={f.type} inputMode={/phone|mobile/i.test(f.key) ? "numeric" : undefined} maxLength={/phone|mobile/i.test(f.key) ? 10 : undefined} className={input} placeholder={f.placeholder} value={values[f.key] ?? ""} onChange={(e) => setValues({ ...values, [f.key]: /phone|mobile/i.test(f.key) ? sanitizeMobile(e.target.value) : e.target.value })} />
                     )}
                   </div>
                 ))}

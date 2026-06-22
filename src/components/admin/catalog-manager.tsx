@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { sanitizeMobile } from "@/lib/phone";
 import { toast } from "sonner";
 import { Plus, Trash2, Pencil, Loader2, Check, X, FolderTree, ChevronRight, UserCog, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -231,7 +232,7 @@ function CategoryOperators({ categoryId, allOperators, onChange }: { categoryId:
               {rows.map((op) => (
                 <tr key={op.operator_id} className="border-t border-border">
                   <td className="px-3 py-2 font-semibold">{op.name}</td>
-                  <td className="px-3 py-2"><input defaultValue={op.phone ?? ""} placeholder="Phone" onBlur={(e) => { const v = e.target.value.trim(); if (v !== (op.phone ?? "")) savePhone(op, v); }} className="h-8 w-32 rounded-lg border border-border bg-background px-2 text-xs outline-none focus-visible:ring-2 focus-visible:ring-india-green/30" /></td>
+                  <td className="px-3 py-2"><input defaultValue={op.phone ?? ""} placeholder="Phone" onBlur={(e) => { const v = sanitizeMobile(e.target.value); e.target.value = v; if (v !== (op.phone ?? "")) savePhone(op, v); }} inputMode="numeric" maxLength={10} className="h-8 w-32 rounded-lg border border-border bg-background px-2 text-xs outline-none focus-visible:ring-2 focus-visible:ring-india-green/30" /></td>
                   <td className="px-3 py-2 text-right text-muted-foreground">{op.assigned_count}</td>
                   <td className="px-3 py-2 text-right text-muted-foreground">{op.pending}</td>
                   <td className="px-3 py-2"><Pill on={op.is_active} /></td>

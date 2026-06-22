@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { sanitizeMobile } from "@/lib/phone";
 import {
   User,
   Phone,
@@ -248,7 +249,7 @@ export function DistributorSinglePage({
               maxLength={10}
               inputMode="numeric"
               value={form.mobile}
-              onChange={(e) => set("mobile", e.target.value.replace(/\D/g, ""))}
+              onChange={(e) => set("mobile", sanitizeMobile(e.target.value))}
             />
             {err("mobile")}
           </Field>
@@ -259,7 +260,7 @@ export function DistributorSinglePage({
               maxLength={10}
               inputMode="numeric"
               value={form.altMobile}
-              onChange={(e) => set("altMobile", e.target.value.replace(/\D/g, ""))}
+              onChange={(e) => set("altMobile", sanitizeMobile(e.target.value))}
             />
             {err("altMobile")}
           </Field>

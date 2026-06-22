@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { sanitizeMobile } from "@/lib/phone";
 import { toast } from "sonner";
 import {
   Bell, Mail, Phone, MapPin, ShieldCheck, BadgeCheck, Building2, CalendarDays, Clock,
@@ -57,7 +58,7 @@ export function RegionalProfile({ cfg }: { cfg: RegionalConfig }) {
               className="grid sm:grid-cols-2 gap-4"
             >
               <div><label className="text-xs font-semibold text-slate-600">Full Name</label><input value={name} onChange={(e) => setName(e.target.value)} className={inputCls} /></div>
-              <div><label className="text-xs font-semibold text-slate-600">Phone</label><input value={phone} onChange={(e) => setPhone(e.target.value)} className={inputCls} /></div>
+              <div><label className="text-xs font-semibold text-slate-600">Phone</label><input value={phone} onChange={(e) => setPhone(sanitizeMobile(e.target.value))} inputMode="numeric" maxLength={10} className={inputCls} /></div>
               <div><label className="text-xs font-semibold text-slate-600">Email</label><input value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} /></div>
               <div><label className="text-xs font-semibold text-slate-600">Role</label><input value={cfg.user.role} disabled className={`${inputCls} bg-muted text-muted-foreground`} /></div>
               <div className="sm:col-span-2"><label className="text-xs font-semibold text-slate-600">Region of Assignment</label><input value={cfg.scope} disabled className={`${inputCls} bg-muted text-muted-foreground`} /></div>

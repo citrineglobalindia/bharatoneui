@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { sanitizeMobile } from "@/lib/phone";
 import {
   UserCheck,
   Mail,
@@ -246,7 +247,7 @@ export function AccountStep() {
               inputMode="numeric"
               value={mobile}
               onChange={(e) => {
-                setMobile(e.target.value.replace(/\D/g, ""));
+                setMobile(sanitizeMobile(e.target.value));
                 setMobileVerified(false);
                 setMobileSent(false);
                 setMobileError(null);

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { sanitizeMobile } from "@/lib/phone";
 import { useState } from "react";
 import {
   ArrowLeft,
@@ -206,7 +207,8 @@ function TrackApplicationPage() {
                     <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-india-green" />
                     <input
                       value={mobile}
-                      onChange={(e) => setMobile(e.target.value)}
+                      onChange={(e) => setMobile(sanitizeMobile(e.target.value))}
+                      maxLength={10}
                       inputMode="numeric"
                       className="h-11 sm:h-12 w-full rounded-lg border border-input bg-background pl-10 pr-3 text-sm shadow-soft transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-india-green/15 focus-visible:border-india-green"
                       placeholder="+91 98XXX XXXXX"
