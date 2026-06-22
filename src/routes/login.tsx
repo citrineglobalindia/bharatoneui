@@ -20,6 +20,16 @@ import {
   Instagram,
   Linkedin,
   Search,
+  X,
+  HeartPulse,
+  Bike,
+  Sprout,
+  Ruler,
+  Scale,
+  GraduationCap,
+  Store,
+  Banknote,
+  Coffee,
 } from "lucide-react";
 import { BharatOneLogo } from "@/components/bharatone-logo";
 import { DigitalIndiaLogo } from "@/components/digital-india-logo";
@@ -27,6 +37,20 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { PORTAL_CONFIGS } from "@/components/portal-login";
 import { supabase } from "@/integrations/supabase/client";
+
+const MORE_SERVICES = [
+  { label: "Shreerakshe Health Care", icon: HeartPulse, tone: "text-rose-500 bg-rose-50" },
+  { label: "BharatOne Rural E-Mobility", icon: Bike, tone: "text-emerald-600 bg-emerald-50" },
+  { label: "BharatOne Tours & Travels", icon: Plane, tone: "text-sky-600 bg-sky-50" },
+  { label: "BharatOne Kisan Yojana", icon: Sprout, tone: "text-green-600 bg-green-50" },
+  { label: "BharatOne Aadhaar Card", icon: Fingerprint, tone: "text-indigo-600 bg-indigo-50" },
+  { label: "BharatOne Architectural Services", icon: Ruler, tone: "text-amber-600 bg-amber-50" },
+  { label: "BharatOne Legal & Liaison", icon: Scale, tone: "text-slate-700 bg-slate-100" },
+  { label: "BharatOne Education Service", icon: GraduationCap, tone: "text-violet-600 bg-violet-50" },
+  { label: "BharatOne B2C Services", icon: Store, tone: "text-orange-600 bg-orange-50" },
+  { label: "BharatOne ATM Machine Service", icon: Banknote, tone: "text-teal-600 bg-teal-50" },
+  { label: "BharatOne Today Coffee Shop Franchise", icon: Coffee, tone: "text-[#6f4e37] bg-amber-50" },
+];
 
 const DEMO_RETAILER = {
   phone: "9876789876",
@@ -77,6 +101,7 @@ function LoginPage() {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [captchaInput, setCaptchaInput] = useState("");
+  const [moreOpen, setMoreOpen] = useState(false);
   const navigate = useNavigate();
   useEffect(() => {
     setCaptcha(genCaptcha());
@@ -129,7 +154,7 @@ function LoginPage() {
               <ServiceTile icon={<Plane className="h-5 w-5" />} label="Travel" tone="saffron" />
               <ServiceTile icon={<ShieldCheck className="h-5 w-5" />} label="Insurance" tone="green" />
               <ServiceTile icon={<Fingerprint className="h-5 w-5" />} label="Aadhaar" tone="saffron" />
-              <ServiceTile icon={<LayoutGrid className="h-5 w-5" />} label="& More Services" tone="green" />
+              <ServiceTile icon={<LayoutGrid className="h-5 w-5" />} label="& More Services" tone="green" onClick={() => setMoreOpen(true)} />
             </div>
           </div>
 
@@ -412,6 +437,29 @@ function LoginPage() {
           </div>
         </div>
       </div>
+
+      {moreOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setMoreOpen(false)}>
+          <div className="max-h-[88vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-border bg-card shadow-elev" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between gap-3 border-b border-border bg-gradient-to-r from-saffron/5 to-india-green/5 p-5">
+              <div>
+                <p className="font-display text-lg font-extrabold text-foreground">BharatOne Services</p>
+                <p className="text-xs text-muted-foreground">Explore everything available across the BharatOne network.</p>
+              </div>
+              <button onClick={() => setMoreOpen(false)} className="grid h-8 w-8 place-items-center rounded-lg hover:bg-muted"><X className="h-5 w-5 text-muted-foreground" /></button>
+            </div>
+            <div className="grid grid-cols-2 gap-3 p-5 sm:grid-cols-3">
+              {MORE_SERVICES.map((sv) => (
+                <div key={sv.label} className="flex items-center gap-3 rounded-xl border border-border bg-white p-3 shadow-soft transition hover:-translate-y-0.5 hover:shadow-elev">
+                  <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ${sv.tone}`}><sv.icon className="h-5 w-5" /></span>
+                  <span className="text-[13px] font-semibold leading-tight text-foreground">{sv.label}</span>
+                </div>
+              ))}
+            </div>
+            <div className="border-t border-border p-4 text-center text-[11px] text-muted-foreground">Sign in or create a JSKO account to start offering these services.</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -428,20 +476,20 @@ function ServiceTile({
   icon,
   label,
   tone,
+  onClick,
 }: {
   icon: React.ReactNode;
   label: string;
   tone: "saffron" | "green";
+  onClick?: () => void;
 }) {
   const color = tone === "saffron" ? "text-saffron" : "text-india-green";
-  return (
-    <div className="flex flex-col items-center justify-start gap-1.5 rounded-xl border border-border bg-white px-2 py-2.5 shadow-soft transition-transform hover:-translate-y-0.5 hover:shadow-elev">
-      <div className={`flex h-8 w-8 items-center justify-center ${color}`}>{icon}</div>
-      <span className="text-[10px] sm:text-[11px] font-semibold text-foreground leading-tight text-center">
-        {label}
-      </span>
-    </div>
-  );
+  const cls = `flex w-full flex-col items-center justify-start gap-1.5 rounded-xl border border-border bg-white px-2 py-2.5 shadow-soft transition-transform hover:-translate-y-0.5 hover:shadow-elev ${onClick ? "cursor-pointer ring-1 ring-india-green/20 hover:ring-india-green/50" : ""}`;
+  const inner = (<>
+    <div className={`flex h-8 w-8 items-center justify-center ${color}`}>{icon}</div>
+    <span className="text-[10px] sm:text-[11px] font-semibold text-foreground leading-tight text-center">{label}</span>
+  </>);
+  return onClick ? <button type="button" onClick={onClick} className={cls}>{inner}</button> : <div className={cls}>{inner}</div>;
 }
 
 function genCaptcha() {
