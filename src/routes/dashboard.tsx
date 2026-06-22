@@ -4,8 +4,7 @@ import {
   AreaChart, Area, ResponsiveContainer, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, Legend,
 } from "recharts";
 import {
-  Wallet, TrendingUp, Receipt, ClipboardCheck, ArrowUpRight, Video, Banknote, ArrowLeftRight, Smartphone, Zap, FileText, IdCard, Building2, FileSpreadsheet, ShieldCheck, Landmark, ClipboardList,
-} from "lucide-react";
+  Wallet, TrendingUp, Receipt, ClipboardCheck, ArrowUpRight, Video, Banknote, ArrowLeftRight, Smartphone, Zap, FileText, IdCard, Building2, FileSpreadsheet, ShieldCheck, Landmark, ClipboardList, Bell } from "lucide-react";
 import { RetailerShell } from "@/components/retailer/retailer-shell";
 import { PageHeader, StatusBadge } from "@/components/retailer/page-header";
 import { StatCard } from "@/components/retailer/stat-card";
@@ -130,6 +129,16 @@ function DashboardPage() {
     status: statusLabel[r.status] || r.status,
   })), [rows]);
 
+  const monthly = useMemo(() => {
+    const now = new Date();
+    const monthCount = rows.filter((r) => { const d = new Date(r.created_at); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); }).length;
+    const TARGET = 300;
+    const remaining = Math.max(0, TARGET - monthCount);
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const daysLeft = Math.max(0, Math.ceil((monthEnd.getTime() - now.getTime()) / 86400000));
+    const pct = Math.min(100, Math.round((monthCount / TARGET) * 100));
+    return { monthCount, target: TARGET, remaining, monthEnd, daysLeft, pct };
+  }, [rows]);
   const firstName = (me.name || "there").split(/\s+/)[0];
 
   return (
@@ -205,6 +214,41 @@ function DashboardPage() {
               </span>
             </Link>
           )}
+        </div>
+
+        {/* Notice + Transaction Summary */}
+        <div className="grid lg:grid-cols-3 gap-3">
+          <div className="lg:col-span-2 rounded-2xl border border-border bg-card p-5 shadow-soft">
+            <p className="flex items-center gap-2 text-sm font-bold"><span className="grid h-7 w-7 place-items-center rounded-lg bg-saffron/10 text-saffron"><Bell className="h-4 w-4" /></span> Important Notice from BharatOne</p>
+            <p className="mt-3 text-sm font-semibold">Dear Retailer,</p>
+            <p className="mt-1 text-xs text-muted-foreground leading-relaxed">To grow your business and maintain your retailer status, please follow these guidelines:</p>
+            <ul className="mt-2 space-y-1.5 text-xs text-muted-foreground">
+              <li><b className="text-foreground">Timings</b> — Open your center from 8:00 am to 8:00 pm for better service availability (as per SOP).</li>
+              <li><b className="text-foreground">Branding</b> — Use appropriate branding and display posters showing the services offered.</li>
+              <li><b className="text-foreground">Citizen Participation</b> — Regularly review, promote and help customers use digital services available on BharatOne.</li>
+            </ul>
+            <p className="mt-3 text-[11px] text-muted-foreground leading-relaxed">Each retailer should complete a minimum of 10 transactions per day or 300 transactions per month to retain this status and best possible services.</p>
+            <div className="mt-3 rounded-lg bg-sky-50 border border-sky-100 px-3 py-2 text-[11px] space-y-0.5">
+              <p className="text-india-green font-semibold">Current transactions count: {monthly.monthCount}</p>
+              <p className="text-rose-600 font-semibold">Remaining transactions for the month: {monthly.remaining}</p>
+              <p className="text-foreground">Last date of completion: {monthly.monthEnd.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</p>
+              <p className="text-amber-600 font-semibold">Days remaining to complete: {monthly.daysLeft}</p>
+            </div>
+          </div>
+          <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
+            <p className="text-sm font-bold">Transaction Summary</p>
+            <p className="text-[11px] text-muted-foreground">Your transaction performance</p>
+            <div className="mt-3 space-y-2.5 text-sm">
+              <div className="flex items-center justify-between border-b border-border pb-2"><span className="text-muted-foreground">Current transactions count</span><b className="text-india-green">{monthly.monthCount}</b></div>
+              <div className="flex items-center justify-between border-b border-border pb-2"><span className="text-muted-foreground">Remaining transactions for the month</span><b className="text-rose-600">{monthly.remaining}</b></div>
+              <div className="flex items-center justify-between border-b border-border pb-2"><span className="text-muted-foreground">Last date of completion</span><b>{monthly.monthEnd.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</b></div>
+              <div className="flex items-center justify-between"><span className="text-muted-foreground">Days remaining to complete</span><b className="text-amber-600">{monthly.daysLeft}</b></div>
+            </div>
+            <div className="mt-4">
+              <div className="flex items-center justify-between text-xs"><span className="font-semibold">Monthly Target Progress</span><span className="text-muted-foreground">{monthly.monthCount}/{monthly.target} · {monthly.pct}%</span></div>
+              <div className="mt-1.5 h-2.5 w-full rounded-full bg-muted overflow-hidden"><div className="h-full rounded-full bg-india-green transition-all" style={{ width: `${monthly.pct}%` }} /></div>
+            </div>
+          </div>
         </div>
 
         {/* Charts */}

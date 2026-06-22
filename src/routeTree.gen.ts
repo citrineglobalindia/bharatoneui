@@ -53,6 +53,11 @@ import { Route as AdminLoginRouteImport } from './routes/admin-login'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AccountantLoginRouteImport } from './routes/accountant-login'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as WalletRefundsRouteImport } from './routes/wallet.refunds'
+import { Route as WalletRechargesRouteImport } from './routes/wallet.recharges'
+import { Route as WalletMandatoryRecoveriesRouteImport } from './routes/wallet.mandatory-recoveries'
+import { Route as WalletLedgerRouteImport } from './routes/wallet.ledger'
+import { Route as WalletDeductionsRouteImport } from './routes/wallet.deductions'
 import { Route as TroSupportRouteImport } from './routes/tro.support'
 import { Route as TroServicesRouteImport } from './routes/tro.services'
 import { Route as TroRetailersRouteImport } from './routes/tro.retailers'
@@ -371,6 +376,32 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const WalletRefundsRoute = WalletRefundsRouteImport.update({
+  id: '/refunds',
+  path: '/refunds',
+  getParentRoute: () => WalletRoute,
+} as any)
+const WalletRechargesRoute = WalletRechargesRouteImport.update({
+  id: '/recharges',
+  path: '/recharges',
+  getParentRoute: () => WalletRoute,
+} as any)
+const WalletMandatoryRecoveriesRoute =
+  WalletMandatoryRecoveriesRouteImport.update({
+    id: '/mandatory-recoveries',
+    path: '/mandatory-recoveries',
+    getParentRoute: () => WalletRoute,
+  } as any)
+const WalletLedgerRoute = WalletLedgerRouteImport.update({
+  id: '/ledger',
+  path: '/ledger',
+  getParentRoute: () => WalletRoute,
+} as any)
+const WalletDeductionsRoute = WalletDeductionsRouteImport.update({
+  id: '/deductions',
+  path: '/deductions',
+  getParentRoute: () => WalletRoute,
 } as any)
 const TroSupportRoute = TroSupportRouteImport.update({
   id: '/tro/support',
@@ -913,7 +944,7 @@ export interface FileRoutesByFullPath {
   '/transactions': typeof TransactionsRoute
   '/tro-login': typeof TroLoginRoute
   '/video-kyc': typeof VideoKycRoute
-  '/wallet': typeof WalletRoute
+  '/wallet': typeof WalletRouteWithChildren
   '/accountant/app-ledger': typeof AccountantAppLedgerRoute
   '/accountant/applications': typeof AccountantApplicationsRoute
   '/accountant/change-password': typeof AccountantChangePasswordRoute
@@ -1005,6 +1036,11 @@ export interface FileRoutesByFullPath {
   '/tro/retailers': typeof TroRetailersRouteWithChildren
   '/tro/services': typeof TroServicesRoute
   '/tro/support': typeof TroSupportRoute
+  '/wallet/deductions': typeof WalletDeductionsRoute
+  '/wallet/ledger': typeof WalletLedgerRoute
+  '/wallet/mandatory-recoveries': typeof WalletMandatoryRecoveriesRoute
+  '/wallet/recharges': typeof WalletRechargesRoute
+  '/wallet/refunds': typeof WalletRefundsRoute
   '/distributor/officers/$id': typeof DistributorOfficersIdRoute
   '/distributor/retailers/$id': typeof DistributorRetailersIdRoute
   '/distributor/services/$key': typeof DistributorServicesKeyRoute
@@ -1057,7 +1093,7 @@ export interface FileRoutesByTo {
   '/transactions': typeof TransactionsRoute
   '/tro-login': typeof TroLoginRoute
   '/video-kyc': typeof VideoKycRoute
-  '/wallet': typeof WalletRoute
+  '/wallet': typeof WalletRouteWithChildren
   '/accountant/app-ledger': typeof AccountantAppLedgerRoute
   '/accountant/applications': typeof AccountantApplicationsRoute
   '/accountant/change-password': typeof AccountantChangePasswordRoute
@@ -1148,6 +1184,11 @@ export interface FileRoutesByTo {
   '/tro/retailers': typeof TroRetailersRouteWithChildren
   '/tro/services': typeof TroServicesRoute
   '/tro/support': typeof TroSupportRoute
+  '/wallet/deductions': typeof WalletDeductionsRoute
+  '/wallet/ledger': typeof WalletLedgerRoute
+  '/wallet/mandatory-recoveries': typeof WalletMandatoryRecoveriesRoute
+  '/wallet/recharges': typeof WalletRechargesRoute
+  '/wallet/refunds': typeof WalletRefundsRoute
   '/distributor/officers/$id': typeof DistributorOfficersIdRoute
   '/distributor/retailers/$id': typeof DistributorRetailersIdRoute
   '/distributor/services/$key': typeof DistributorServicesKeyRoute
@@ -1201,7 +1242,7 @@ export interface FileRoutesById {
   '/transactions': typeof TransactionsRoute
   '/tro-login': typeof TroLoginRoute
   '/video-kyc': typeof VideoKycRoute
-  '/wallet': typeof WalletRoute
+  '/wallet': typeof WalletRouteWithChildren
   '/accountant/app-ledger': typeof AccountantAppLedgerRoute
   '/accountant/applications': typeof AccountantApplicationsRoute
   '/accountant/change-password': typeof AccountantChangePasswordRoute
@@ -1293,6 +1334,11 @@ export interface FileRoutesById {
   '/tro/retailers': typeof TroRetailersRouteWithChildren
   '/tro/services': typeof TroServicesRoute
   '/tro/support': typeof TroSupportRoute
+  '/wallet/deductions': typeof WalletDeductionsRoute
+  '/wallet/ledger': typeof WalletLedgerRoute
+  '/wallet/mandatory-recoveries': typeof WalletMandatoryRecoveriesRoute
+  '/wallet/recharges': typeof WalletRechargesRoute
+  '/wallet/refunds': typeof WalletRefundsRoute
   '/distributor/officers/$id': typeof DistributorOfficersIdRoute
   '/distributor/retailers/$id': typeof DistributorRetailersIdRoute
   '/distributor/services/$key': typeof DistributorServicesKeyRoute
@@ -1439,6 +1485,11 @@ export interface FileRouteTypes {
     | '/tro/retailers'
     | '/tro/services'
     | '/tro/support'
+    | '/wallet/deductions'
+    | '/wallet/ledger'
+    | '/wallet/mandatory-recoveries'
+    | '/wallet/recharges'
+    | '/wallet/refunds'
     | '/distributor/officers/$id'
     | '/distributor/retailers/$id'
     | '/distributor/services/$key'
@@ -1582,6 +1633,11 @@ export interface FileRouteTypes {
     | '/tro/retailers'
     | '/tro/services'
     | '/tro/support'
+    | '/wallet/deductions'
+    | '/wallet/ledger'
+    | '/wallet/mandatory-recoveries'
+    | '/wallet/recharges'
+    | '/wallet/refunds'
     | '/distributor/officers/$id'
     | '/distributor/retailers/$id'
     | '/distributor/services/$key'
@@ -1726,6 +1782,11 @@ export interface FileRouteTypes {
     | '/tro/retailers'
     | '/tro/services'
     | '/tro/support'
+    | '/wallet/deductions'
+    | '/wallet/ledger'
+    | '/wallet/mandatory-recoveries'
+    | '/wallet/recharges'
+    | '/wallet/refunds'
     | '/distributor/officers/$id'
     | '/distributor/retailers/$id'
     | '/distributor/services/$key'
@@ -1779,7 +1840,7 @@ export interface RootRouteChildren {
   TransactionsRoute: typeof TransactionsRoute
   TroLoginRoute: typeof TroLoginRoute
   VideoKycRoute: typeof VideoKycRoute
-  WalletRoute: typeof WalletRoute
+  WalletRoute: typeof WalletRouteWithChildren
   AccountantAppLedgerRoute: typeof AccountantAppLedgerRoute
   AccountantApplicationsRoute: typeof AccountantApplicationsRoute
   AccountantChangePasswordRoute: typeof AccountantChangePasswordRoute
@@ -2170,6 +2231,41 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/wallet/refunds': {
+      id: '/wallet/refunds'
+      path: '/refunds'
+      fullPath: '/wallet/refunds'
+      preLoaderRoute: typeof WalletRefundsRouteImport
+      parentRoute: typeof WalletRoute
+    }
+    '/wallet/recharges': {
+      id: '/wallet/recharges'
+      path: '/recharges'
+      fullPath: '/wallet/recharges'
+      preLoaderRoute: typeof WalletRechargesRouteImport
+      parentRoute: typeof WalletRoute
+    }
+    '/wallet/mandatory-recoveries': {
+      id: '/wallet/mandatory-recoveries'
+      path: '/mandatory-recoveries'
+      fullPath: '/wallet/mandatory-recoveries'
+      preLoaderRoute: typeof WalletMandatoryRecoveriesRouteImport
+      parentRoute: typeof WalletRoute
+    }
+    '/wallet/ledger': {
+      id: '/wallet/ledger'
+      path: '/ledger'
+      fullPath: '/wallet/ledger'
+      preLoaderRoute: typeof WalletLedgerRouteImport
+      parentRoute: typeof WalletRoute
+    }
+    '/wallet/deductions': {
+      id: '/wallet/deductions'
+      path: '/deductions'
+      fullPath: '/wallet/deductions'
+      preLoaderRoute: typeof WalletDeductionsRouteImport
+      parentRoute: typeof WalletRoute
     }
     '/tro/support': {
       id: '/tro/support'
@@ -2912,6 +3008,25 @@ const TelecallerRouteWithChildren = TelecallerRoute._addFileChildren(
   TelecallerRouteChildren,
 )
 
+interface WalletRouteChildren {
+  WalletDeductionsRoute: typeof WalletDeductionsRoute
+  WalletLedgerRoute: typeof WalletLedgerRoute
+  WalletMandatoryRecoveriesRoute: typeof WalletMandatoryRecoveriesRoute
+  WalletRechargesRoute: typeof WalletRechargesRoute
+  WalletRefundsRoute: typeof WalletRefundsRoute
+}
+
+const WalletRouteChildren: WalletRouteChildren = {
+  WalletDeductionsRoute: WalletDeductionsRoute,
+  WalletLedgerRoute: WalletLedgerRoute,
+  WalletMandatoryRecoveriesRoute: WalletMandatoryRecoveriesRoute,
+  WalletRechargesRoute: WalletRechargesRoute,
+  WalletRefundsRoute: WalletRefundsRoute,
+}
+
+const WalletRouteWithChildren =
+  WalletRoute._addFileChildren(WalletRouteChildren)
+
 interface DistributorOfficersRouteChildren {
   DistributorOfficersIdRoute: typeof DistributorOfficersIdRoute
 }
@@ -3015,7 +3130,7 @@ const rootRouteChildren: RootRouteChildren = {
   TransactionsRoute: TransactionsRoute,
   TroLoginRoute: TroLoginRoute,
   VideoKycRoute: VideoKycRoute,
-  WalletRoute: WalletRoute,
+  WalletRoute: WalletRouteWithChildren,
   AccountantAppLedgerRoute: AccountantAppLedgerRoute,
   AccountantApplicationsRoute: AccountantApplicationsRoute,
   AccountantChangePasswordRoute: AccountantChangePasswordRoute,

@@ -23,14 +23,13 @@ import {
   Menu,
   X,
   Search,
-  Smile,
-} from "lucide-react";
+  Smile, ChevronDown } from "lucide-react";
 import { useCurrentUser } from "@/lib/use-current-user";
 import { BharatOneLogo } from "@/components/bharatone-logo";
 import { NotificationsBell } from "@/components/retailer/notifications-bell";
 import { ProfileMenu } from "@/components/retailer/profile-menu";
 
-type NavItem = { label: string; icon: React.ReactNode; to: string };
+type NavItem = { label: string; icon: React.ReactNode; to: string; children?: { label: string; to: string }[] };
 type NavSection = { heading: string; items: NavItem[] };
 
 const NAV: NavSection[] = [
@@ -52,7 +51,13 @@ const NAV: NavSection[] = [
   {
     heading: "Finance",
     items: [
-      { label: "Wallet", icon: <Wallet className="h-4 w-4" />, to: "/wallet" },
+      { label: "Wallet", icon: <Wallet className="h-4 w-4" />, to: "/wallet", children: [
+        { label: "Recharges", to: "/wallet/recharges" },
+        { label: "Ledger", to: "/wallet/ledger" },
+        { label: "Deductions", to: "/wallet/deductions" },
+        { label: "Mandatory Recoveries", to: "/wallet/mandatory-recoveries" },
+        { label: "Refund Requests", to: "/wallet/refunds" },
+      ] },
       { label: "Transactions", icon: <ArrowLeftRight className="h-4 w-4" />, to: "/transactions" },
       { label: "Reports", icon: <BarChart3 className="h-4 w-4" />, to: "/reports" },
     ],
@@ -90,6 +95,35 @@ function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: 
             <ul className="space-y-0.5">
               {sec.items.map((it) => {
                 const active = pathname === it.to;
+                if (it.children) {
+                  const childActive = it.children.some((ch) => pathname === ch.to);
+                  const expanded = childActive || pathname === it.to;
+                  return (
+                    <li key={it.to}>
+                      <Link to={it.to} onClick={onNavigate}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${active || childActive ? "bg-saffron-gradient text-white shadow-elev" : "text-foreground/80 hover:bg-muted hover:text-foreground"}`}>
+                        <span className={active || childActive ? "text-white" : "text-muted-foreground"}>{it.icon}</span>
+                        <span className="truncate flex-1">{it.label}</span>
+                        <ChevronDown className={`h-3.5 w-3.5 transition-transform ${expanded ? "rotate-180" : ""} ${active || childActive ? "text-white" : "text-muted-foreground"}`} />
+                      </Link>
+                      {expanded && (
+                        <ul className="mt-0.5 ml-4 space-y-0.5 border-l border-border pl-2">
+                          {it.children.map((ch) => {
+                            const ca = pathname === ch.to;
+                            return (
+                              <li key={ch.to}>
+                                <Link to={ch.to} onClick={onNavigate}
+                                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[13px] transition-colors ${ca ? "bg-india-green/10 text-india-green font-semibold" : "text-foreground/70 hover:bg-muted hover:text-foreground"}`}>
+                                  <span className={`h-1.5 w-1.5 rounded-full ${ca ? "bg-india-green" : "bg-muted-foreground/40"}`} /> {ch.label}
+                                </Link>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+                    </li>
+                  );
+                }
                 return (
                   <li key={it.to}>
                     <Link
