@@ -13,6 +13,8 @@ import {
   KeyRound,
   XCircle,
   User,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { Field, inputCls, Notice, StepHeader } from "../field";
 import { Button } from "@/components/ui/button";
@@ -53,6 +55,7 @@ export function OldPortalStep() {
   const [stage, setStage] = useState<Stage>("lookup");
   const [username, setUsername] = useState("");
   const [jskoPassword, setJskoPassword] = useState("");
+  const [showJskoPw, setShowJskoPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [user, setUser] = useState<FetchedUser | null>(null);
@@ -285,13 +288,16 @@ export function OldPortalStep() {
               <div className="relative">
                 <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-india-green" />
                 <input
-                  type="password"
+                  type={showJskoPw ? "text" : "password"}
                   value={jskoPassword}
                   onChange={(e) => setJskoPassword(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleFetch()}
-                  className={`${inputCls} pl-10`}
+                  className={`${inputCls} pl-10 pr-10`}
                   placeholder="Enter JSKO password"
                 />
+                <button type="button" onClick={() => setShowJskoPw((v) => !v)} aria-label={showJskoPw ? "Hide password" : "Show password"} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  {showJskoPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
               </div>
             </Field>
             <Button
