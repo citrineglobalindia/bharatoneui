@@ -19,6 +19,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { BharatOneLogo } from "@/components/bharatone-logo";
+import { LegalSocial } from "@/components/legal-social";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/track-application")({
@@ -349,6 +350,7 @@ function TrackApplicationPage() {
               <a href="mailto:info@mybharatone.com" className="inline-flex max-w-full items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-xs sm:text-sm font-semibold text-foreground shadow-soft hover:bg-muted transition"><Mail className="h-4 w-4 shrink-0 text-india-green" /> <span className="truncate">info@mybharatone.com</span></a>
               <a href="mailto:support@mybharatone.com" className="inline-flex max-w-full items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-xs sm:text-sm font-semibold text-foreground shadow-soft hover:bg-muted transition"><Mail className="h-4 w-4 shrink-0 text-india-green" /> <span className="truncate">support@mybharatone.com</span></a>
             </div>
+            <LegalSocial />
             <p className="mt-4 text-center text-[11px] text-muted-foreground">Copyright © 2026 <span className="font-semibold text-india-green">BharatOne Services &amp; Affiliates Pvt. Ltd.</span> All rights reserved.</p>
           </div>
 
