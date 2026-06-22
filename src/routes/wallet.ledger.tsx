@@ -54,14 +54,14 @@ function LedgerPage() {
         </div>
         <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-soft">
           <table className="w-full text-sm">
-            <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground"><tr><th className="px-3 py-2.5">Date</th><th className="px-3 py-2.5">Service / Type</th><th className="px-3 py-2.5 text-right">Credit</th><th className="px-3 py-2.5 text-right">Debit</th><th className="px-3 py-2.5 text-right">Closing</th></tr></thead>
+            <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground"><tr><th className="px-3 py-2.5">Date</th><th className="px-3 py-2.5">Service</th><th className="px-3 py-2.5 text-right">Credit</th><th className="px-3 py-2.5 text-right">Debit</th><th className="px-3 py-2.5 text-right">Closing</th></tr></thead>
             <tbody>
               {loading ? <tr><td colSpan={5} className="px-3 py-10 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></td></tr>
                 : filtered.length === 0 ? <tr><td colSpan={5} className="px-3 py-10 text-center text-muted-foreground">No ledger entries.</td></tr>
                 : filtered.map((r) => (
                   <tr key={r.id} className="border-t border-border">
                     <td className="px-3 py-2.5 text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString("en-IN")}</td>
-                    <td className="px-3 py-2.5"><span className="font-medium">{svcOf(r)}</span>{r.reason && <span className="block text-[11px] text-muted-foreground truncate max-w-[280px]">{svcName(r.reason) || r.reason}</span>}</td>
+                    <td className="px-3 py-2.5"><span className="font-medium">{svcName(r.reason) || svcOf(r)}</span></td>
                     <td className="px-3 py-2.5 text-right font-semibold text-emerald-600">{r.direction === "credit" ? inr(r.amount) : "—"}</td>
                     <td className="px-3 py-2.5 text-right font-semibold text-rose-500">{r.direction === "debit" ? inr(r.amount) : "—"}</td>
                     <td className="px-3 py-2.5 text-right">{inr(r.balance_after)}</td>
