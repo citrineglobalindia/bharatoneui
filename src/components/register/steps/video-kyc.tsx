@@ -11,6 +11,7 @@ export function VideoKycStep() {
   const agree = data.declarationAgreed;
   const setAgree = (v: boolean) => set({ declarationAgreed: v });
   const fullName = [data.firstName, data.middleName, data.surname].filter(Boolean).join(" ") || "[Your Name]";
+  const fullAddress = [data.buildingShopNo, data.streetArea, data.landmark, data.villageName, data.city, data.taluk, data.district, data.state, data.pincode].filter(Boolean).join(", ") || "[Address from your form]";
 
   const liveRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -133,6 +134,7 @@ export function VideoKycStep() {
           <p>ನಾನು ಸ್ವಯಂ ಪ್ರೇರಿತವಾಗಿ BharatOne Retailer ಆಗಿ ನೋಂದಣಿ ಮಾಡುತ್ತಿದ್ದೇನೆ.</p>
           <p>ಈ ವೀಡಿಯೊವನ್ನು KYC ಪರಿಶೀಲನೆಗಾಗಿ ದಾಖಲಿಸಲು ಮತ್ತು ಬಳಸಲು ನನ್ನ ಸಂಪೂರ್ಣ ಒಪ್ಪಿಗೆ ಇದೆ.</p>
           <p>I confirm that the Aadhaar / PAN documents shown in this video belong to me.</p>
+          <p>My registered address is: <span className="font-semibold text-foreground">{fullAddress}</span>.</p>
           <p>I agree to abide by the terms and conditions of BharatOne.</p>
         </div>
       </div>
@@ -143,6 +145,8 @@ export function VideoKycStep() {
           <li>Read the declaration clearly on camera</li>
           <li>Show your <b>Aadhaar or PAN card</b> in hand</li>
           <li>Face must be clearly visible throughout</li>
+          <li><b>Do not wear spectacles / sunglasses</b> during the recording</li>
+          <li>Read out your <b>address</b> shown in the declaration</li>
           <li>Gallery upload is <b>not allowed</b></li>
         </ul>
       </Notice>
