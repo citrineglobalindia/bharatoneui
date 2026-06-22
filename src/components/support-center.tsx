@@ -48,7 +48,7 @@ export function SupportCenter() {
   return (
     <div className="space-y-5">
       <div className="grid gap-3 lg:grid-cols-3">
-        {[["Call us", "1800 123 4567 · 8am–10pm", Phone, "bg-india-green/10 text-india-green"], ["Email", "help@bharatone.in", Mail, "bg-blue-500/10 text-blue-600"], ["Live Chat", "Use the chat button, bottom-right", MessageSquare, "bg-violet-500/10 text-violet-600"]].map(([t, d, Icon, tone]: any, i) => (
+        {[["Call us", "+91 90711 00311 · 8am–10pm", Phone, "bg-india-green/10 text-india-green"], ["Email", "support@mybharatone.com", Mail, "bg-blue-500/10 text-blue-600"], ["Live Chat", "Use the chat button, bottom-right", MessageSquare, "bg-violet-500/10 text-violet-600"]].map(([t, d, Icon, tone]: any, i) => (
           <div key={i} className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-soft"><span className={`grid h-10 w-10 place-items-center rounded-xl ${tone}`}><Icon className="h-5 w-5" /></span><div><p className="text-sm font-bold">{t}</p><p className="text-xs text-muted-foreground">{d}</p></div></div>
         ))}
       </div>

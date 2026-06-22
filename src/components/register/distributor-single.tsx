@@ -281,7 +281,8 @@ export function DistributorSinglePage({
               placeholder="Enter Pan Number"
               maxLength={10}
               value={form.panNumber}
-              onChange={(e) => set("panNumber", e.target.value.toUpperCase())}
+              onChange={(e) => set("panNumber", e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 10))}
+              maxLength={10}
             />
             {err("panNumber")}
           </Field>

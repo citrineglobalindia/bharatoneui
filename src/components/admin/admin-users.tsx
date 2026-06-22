@@ -228,8 +228,8 @@ export function AdminUsers() {
                   {!(detail.roles.includes("distributor") || detail.roles.includes("retailer")) && <>
                   <p className="pt-1 text-xs font-bold uppercase tracking-wider text-saffron">Identity & Bank</p>
                   <div className="grid gap-2.5 sm:grid-cols-2">
-                    <div><label className="text-[11px] font-semibold text-muted-foreground">Aadhaar Number</label><input className={input} value={edit.aadhaar_number} onChange={(e) => setEdit({ ...edit, aadhaar_number: e.target.value })} placeholder="XXXX XXXX XXXX" /></div>
-                    <div><label className="text-[11px] font-semibold text-muted-foreground">PAN Number</label><input className={input} value={edit.pan_number} onChange={(e) => setEdit({ ...edit, pan_number: e.target.value.toUpperCase() })} placeholder="ABCDE1234F" /></div>
+                    <div><label className="text-[11px] font-semibold text-muted-foreground">Aadhaar Number</label><input className={input} value={edit.aadhaar_number} onChange={(e) => setEdit({ ...edit, aadhaar_number: e.target.value.replace(/\D/g, "").slice(0, 12) })} inputMode="numeric" maxLength={12} placeholder="XXXX XXXX XXXX" /></div>
+                    <div><label className="text-[11px] font-semibold text-muted-foreground">PAN Number</label><input className={input} value={edit.pan_number} onChange={(e) => setEdit({ ...edit, pan_number: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 10) })} maxLength={10} placeholder="ABCDE1234F" /></div>
                     <div><label className="text-[11px] font-semibold text-muted-foreground">Bank Name</label><input className={input} value={edit.bank_name} onChange={(e) => setEdit({ ...edit, bank_name: e.target.value })} placeholder="e.g. SBI" /></div>
                     <div><label className="text-[11px] font-semibold text-muted-foreground">Account Number</label><input className={input} value={edit.account_number} onChange={(e) => setEdit({ ...edit, account_number: e.target.value })} placeholder="Account number" /></div>
                     <div><label className="text-[11px] font-semibold text-muted-foreground">IFSC Code</label><input className={input} value={edit.ifsc} onChange={(e) => setEdit({ ...edit, ifsc: e.target.value.toUpperCase() })} placeholder="SBIN0001234" /></div>
@@ -351,8 +351,8 @@ export function AdminUsers() {
           </Sec>
 
           {!isBasic && <Sec title="Identity Documents">
-            <F label="Aadhaar Number"><input className={input} placeholder="XXXX XXXX XXXX" value={add.aadhaar_number} onChange={(e) => setAdd({ ...add, aadhaar_number: e.target.value })} /></F>
-            <F label="PAN Number"><input className={input} placeholder="ABCDE1234F" value={add.pan_number} onChange={(e) => setAdd({ ...add, pan_number: e.target.value.toUpperCase() })} /></F>
+            <F label="Aadhaar Number"><input className={input} placeholder="XXXX XXXX XXXX" value={add.aadhaar_number} onChange={(e) => setAdd({ ...add, aadhaar_number: e.target.value.replace(/\D/g, "").slice(0, 12) })} inputMode="numeric" maxLength={12} /></F>
+            <F label="PAN Number"><input className={input} placeholder="ABCDE1234F" value={add.pan_number} onChange={(e) => setAdd({ ...add, pan_number: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 10) })} maxLength={10} /></F>
           </Sec>}
 
           {!isBasic && <Sec title="Bank & Payment">

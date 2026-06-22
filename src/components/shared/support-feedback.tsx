@@ -51,13 +51,13 @@ export function SupportPanel({ accent }: { accent: PortalAccent }) {
       <Header accent={accent} icon={<LifeBuoy className="h-5 w-5" />} title="Support" subtitle="Reach our team or raise a ticket — we usually respond within minutes." />
 
       <div className="grid sm:grid-cols-3 gap-3">
-        <a href="tel:18001234567" className="rounded-xl border border-border bg-card p-4 hover:shadow-elev transition flex items-start gap-3">
+        <a href="tel:+919071100311" className="rounded-xl border border-border bg-card p-4 hover:shadow-elev transition flex items-start gap-3">
           <div className="h-10 w-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center"><Phone className="h-5 w-5" /></div>
-          <div><p className="text-sm font-bold">Call us</p><p className="text-xs text-muted-foreground">1800 123 4567 · 8am–10pm</p></div>
+          <div><p className="text-sm font-bold">Call us</p><p className="text-xs text-muted-foreground">+91 90711 00311 · 8am–10pm</p></div>
         </a>
-        <a href="mailto:help@bharatone.in" className="rounded-xl border border-border bg-card p-4 hover:shadow-elev transition flex items-start gap-3">
+        <a href="mailto:support@mybharatone.com" className="rounded-xl border border-border bg-card p-4 hover:shadow-elev transition flex items-start gap-3">
           <div className="h-10 w-10 rounded-xl bg-sky-500 text-white flex items-center justify-center"><Mail className="h-5 w-5" /></div>
-          <div><p className="text-sm font-bold">Email</p><p className="text-xs text-muted-foreground">help@bharatone.in</p></div>
+          <div><p className="text-sm font-bold">Email</p><p className="text-xs text-muted-foreground">support@mybharatone.com</p></div>
         </a>
         <div className="rounded-xl border border-border bg-card p-4 flex items-start gap-3">
           <div className="h-10 w-10 rounded-xl bg-violet-500 text-white flex items-center justify-center"><MessageSquare className="h-5 w-5" /></div>
