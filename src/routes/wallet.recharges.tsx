@@ -117,7 +117,7 @@ function RechargesPage() {
                     <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{r.reference || "—"}</td>
                     <td className="px-3 py-2.5 text-right font-semibold">{inr(r.amount)}</td>
                     <td className="px-3 py-2.5 text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString("en-IN")}</td>
-                    <td className="px-3 py-2.5"><span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${tone[r.status] ?? "bg-muted"}`}>{metaOf(r.status).label}</span></td>
+                    <td className="px-3 py-2.5"><span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${metaOf(r.status).tone}`}>{metaOf(r.status).label}</span></td>
                   </tr>
                 ))}
             </tbody>
