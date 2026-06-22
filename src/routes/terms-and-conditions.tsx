@@ -105,6 +105,8 @@ const LANGS: { key: "en" | "hi" | "kn"; label: string }[] = [
 function TermsPage() {
   const [lang, setLang] = useState<"en" | "hi" | "kn">("en");
   const t = T[lang];
+  const [zoom, setZoom] = useState(1);
+  const clamp = (z: number) => Math.min(1.5, Math.max(0.8, Math.round(z * 10) / 10));
   return (
     <div className="relative min-h-screen bg-tricolor overflow-hidden">
       <div aria-hidden className="pointer-events-none absolute -top-32 -right-24 h-72 w-72 rounded-full bg-saffron-gradient opacity-15 blur-2xl" />
@@ -117,6 +119,11 @@ function TermsPage() {
           </Link>
           <BharatOneLogo size="xl" />
           <div className="absolute right-3 sm:right-6 flex items-center gap-1.5">
+            <div className="hidden items-center rounded-lg border border-border bg-card p-0.5 sm:flex" title="Text size">
+              <button type="button" aria-label="Increase text size" onClick={() => setZoom((z) => clamp(z + 0.1))} className="grid h-7 w-7 place-items-center rounded-md text-sm font-bold hover:bg-muted">A+</button>
+              <button type="button" aria-label="Reset text size" onClick={() => setZoom(1)} className="grid h-7 w-7 place-items-center rounded-md text-xs font-bold hover:bg-muted">A</button>
+              <button type="button" aria-label="Decrease text size" onClick={() => setZoom((z) => clamp(z - 0.1))} className="grid h-7 w-7 place-items-center rounded-md text-[11px] font-bold hover:bg-muted">A-</button>
+            </div>
             <Languages className="hidden h-4 w-4 text-muted-foreground sm:block" />
             <select value={lang} onChange={(e) => setLang(e.target.value as "en" | "hi" | "kn")} className="h-9 rounded-lg border border-border bg-card px-2 text-sm font-semibold outline-none focus-visible:ring-2 focus-visible:ring-india-green/30">
               {LANGS.map((l) => <option key={l.key} value={l.key}>{l.label}</option>)}
@@ -125,7 +132,7 @@ function TermsPage() {
         </div>
       </header>
 
-      <main className="relative mx-auto max-w-3xl px-4 sm:px-6 py-8 sm:py-14">
+      <main className="relative mx-auto max-w-3xl px-4 sm:px-6 py-8 sm:py-14" style={{ zoom }}>
         <div className="text-center animate-in fade-in slide-in-from-bottom-3 duration-500">
           <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-foreground leading-[1.05]">
             {t.titlePre} <span className="bg-saffron-gradient bg-clip-text text-transparent">{t.titleHi}</span>

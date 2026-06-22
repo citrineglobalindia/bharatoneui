@@ -146,19 +146,13 @@ function TrackApplicationPage() {
           </div>
 
           <div className="p-5 sm:p-6 lg:p-8">
-            <div className="hidden md:flex items-center justify-between gap-3 flex-wrap">
-              <div>
-                <h2 className="font-display text-lg lg:text-xl font-bold text-foreground">
-                  Check Status
-                </h2>
-                <p className="text-xs lg:text-sm text-muted-foreground">
-                  Enter your details to view application progress.
-                </p>
-              </div>
+            <div className="hidden md:flex flex-col items-center text-center gap-2">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-200">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 System Online
               </span>
+              <h2 className="font-display text-lg lg:text-xl font-bold text-foreground">Check Status</h2>
+              <p className="text-xs lg:text-sm text-muted-foreground">Enter your details to view application progress.</p>
             </div>
 
             {/* Method tabs */}
@@ -172,7 +166,7 @@ function TrackApplicationPage() {
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                <FileText className="h-3.5 w-3.5" /> Application ID
+                <FileText className="h-3.5 w-3.5" /> Application Number
               </button>
               <button
                 type="button"
@@ -190,7 +184,7 @@ function TrackApplicationPage() {
             <form onSubmit={handleSearch} className="mt-5 space-y-4">
               {method === "id" ? (
                 <div>
-                  <label className="text-sm font-semibold text-foreground">Application ID</label>
+                  <label className="text-sm font-semibold text-foreground">Application Number</label>
                   <div className="mt-1.5 relative">
                     <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-india-green" />
                     <input
@@ -201,7 +195,7 @@ function TrackApplicationPage() {
                     />
                   </div>
                   <p className="mt-1.5 text-[11px] text-muted-foreground">
-                    Find your Application ID in the confirmation SMS or email.
+                    Find your Application Number in the confirmation SMS or email.
                   </p>
                 </div>
               ) : (
@@ -339,12 +333,23 @@ function TrackApplicationPage() {
             <div className="mt-6 flex items-start gap-3 rounded-xl border border-dashed border-border bg-muted/40 p-3">
               <HelpCircle className="h-4 w-4 mt-0.5 text-india-green shrink-0" />
               <p className="text-xs text-muted-foreground">
-                Need help finding your Application ID?{" "}
-                <a href="mailto:support@bharatone.in" className="font-semibold text-india-green hover:underline">
+                Need help finding your Application Number?{" "}
+                <a href="mailto:support@mybharatone.com" className="font-semibold text-india-green hover:underline">
                   Contact support
                 </a>
               </p>
             </div>
+          </div>
+
+          {/* Contact support */}
+          <div className="border-t border-border px-5 sm:px-6 lg:px-8 py-5">
+            <p className="text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">Contact Support</p>
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+              <a href="tel:+919071100311" className="inline-flex max-w-full items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-xs sm:text-sm font-semibold text-foreground shadow-soft hover:bg-muted transition"><Phone className="h-4 w-4 shrink-0 text-india-green" /> +91 90711 00311</a>
+              <a href="mailto:info@mybharatone.com" className="inline-flex max-w-full items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-xs sm:text-sm font-semibold text-foreground shadow-soft hover:bg-muted transition"><Mail className="h-4 w-4 shrink-0 text-india-green" /> <span className="truncate">info@mybharatone.com</span></a>
+              <a href="mailto:support@mybharatone.com" className="inline-flex max-w-full items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-xs sm:text-sm font-semibold text-foreground shadow-soft hover:bg-muted transition"><Mail className="h-4 w-4 shrink-0 text-india-green" /> <span className="truncate">support@mybharatone.com</span></a>
+            </div>
+            <p className="mt-4 text-center text-[11px] text-muted-foreground">Copyright © 2026 <span className="font-semibold text-india-green">BharatOne Services &amp; Affiliates Pvt. Ltd.</span> All rights reserved.</p>
           </div>
 
           {/* Tricolor strip */}
