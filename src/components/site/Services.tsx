@@ -58,9 +58,9 @@ export function Services() {
                 </div>
                 <h3 className="font-display font-semibold text-sm sm:text-lg mb-1 sm:mb-1.5">{s.title}</h3>
                 <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
-                <div className="mt-4 flex items-center gap-1 text-sm font-medium text-saffron opacity-0 group-hover:opacity-100 transition-opacity">
+                <a href="/citizen-services" className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-saffron opacity-0 group-hover:opacity-100 transition-opacity">
                   Learn more <ArrowRight className="h-3.5 w-3.5" />
-                </div>
+                </a>
               </div>
             </motion.div>
           ))}

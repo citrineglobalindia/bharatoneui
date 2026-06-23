@@ -67,9 +67,9 @@ export function Schemes() {
                 </div>
                 <h3 className="font-display font-semibold text-xl mt-4">{s.title}</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed mt-2">{s.desc}</p>
-                <button className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-saffron group-hover:gap-2.5 transition-all">
+                <a href="/schemes" className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-saffron group-hover:gap-2.5 transition-all">
                   Know more <ArrowRight className="h-3.5 w-3.5" />
-                </button>
+                </a>
               </div>
             </motion.div>
           ))}

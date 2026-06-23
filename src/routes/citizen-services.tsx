@@ -136,9 +136,9 @@ function ServicesPage() {
                       </li>
                     ))}
                   </ul>
-                  <button className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-saffron group-hover:gap-2.5 transition-all">
+                  <a href="/contact" className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-saffron group-hover:gap-2.5 transition-all">
                     Find a center <ArrowRight className="h-3.5 w-3.5" />
-                  </button>
+                  </a>
                 </div>
               </motion.article>
             ))}
