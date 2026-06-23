@@ -6,9 +6,15 @@ import { MessageCircle, X, Send, Sparkles } from "lucide-react";
 type Msg = { role: "bot" | "user"; text: string };
 
 const QUICK = [
+  "What services do you offer?",
+  "How to register a service center?",
+  "Tell me about Shreerakshe Card",
+  "Contact information",
   "What documents are required for registration?",
   "What banking services are available?",
   "How can I track my application?",
+  "Do you provide insurance services?",
+  "How long does center approval take?",
   "Do you provide training after registration?",
 ];
 
