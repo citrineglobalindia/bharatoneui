@@ -19,7 +19,7 @@ export function HeadlinesMarquee() {
         <div className="flex-1 overflow-hidden">
           <div className="marquee whitespace-nowrap text-sm font-medium">
             {[...items, ...items].map((t, i) => (
-              <span key={i} className="mx-8 inline-block">
+              <span key={i} className="mx-8 inline-block shrink-0">
                 {t}
               </span>
             ))}
