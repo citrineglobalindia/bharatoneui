@@ -11,19 +11,21 @@ const ITEMS: { src?: string; caption: string }[] = [
   { caption: "Digital Seva Drive" },
 ];
 
-export function Gallery() {
+export function Gallery({ embedded = false }: { embedded?: boolean }) {
   return (
     <section id="gallery" className="border-t border-border bg-muted/30 py-16 sm:py-24">
       <div className="container mx-auto px-4 sm:px-6">
-        <div className="text-center mb-10">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-card px-3 py-1 text-xs font-semibold text-saffron shadow-soft">
-            <Sparkles className="h-3.5 w-3.5" /> Gallery
-          </span>
-          <h2 className="mt-4 font-display text-3xl sm:text-4xl font-extrabold text-foreground">Moments from BharatOne</h2>
-          <p className="mt-3 text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto">
-            A glimpse of our service centers, citizens served, and milestones across India.
-          </p>
-        </div>
+        {!embedded && (
+          <div className="text-center mb-10">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-card px-3 py-1 text-xs font-semibold text-saffron shadow-soft">
+              <Sparkles className="h-3.5 w-3.5" /> Gallery
+            </span>
+            <h2 className="mt-4 font-display text-3xl sm:text-4xl font-extrabold text-foreground">Moments from BharatOne</h2>
+            <p className="mt-3 text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto">
+              A glimpse of our service centers, citizens served, and milestones across India.
+            </p>
+          </div>
+        )}
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
           {ITEMS.map((it, i) => (
             <motion.div

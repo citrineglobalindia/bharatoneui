@@ -40,6 +40,7 @@ import { Route as HrLoginRouteImport } from './routes/hr-login'
 import { Route as GstRouteImport } from './routes/gst'
 import { Route as GovServicesRouteImport } from './routes/gov-services'
 import { Route as GetStartedRouteImport } from './routes/get-started'
+import { Route as GalleryRouteImport } from './routes/gallery'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as FeedbackRouteImport } from './routes/feedback'
 import { Route as DroLoginRouteImport } from './routes/dro-login'
@@ -318,6 +319,11 @@ const GovServicesRoute = GovServicesRouteImport.update({
 const GetStartedRoute = GetStartedRouteImport.update({
   id: '/get-started',
   path: '/get-started',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GalleryRoute = GalleryRouteImport.update({
+  id: '/gallery',
+  path: '/gallery',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
@@ -969,6 +975,7 @@ export interface FileRoutesByFullPath {
   '/dro-login': typeof DroLoginRoute
   '/feedback': typeof FeedbackRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/gallery': typeof GalleryRoute
   '/get-started': typeof GetStartedRoute
   '/gov-services': typeof GovServicesRoute
   '/gst': typeof GstRoute
@@ -1126,6 +1133,7 @@ export interface FileRoutesByTo {
   '/dro-login': typeof DroLoginRoute
   '/feedback': typeof FeedbackRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/gallery': typeof GalleryRoute
   '/get-started': typeof GetStartedRoute
   '/gov-services': typeof GovServicesRoute
   '/gst': typeof GstRoute
@@ -1282,6 +1290,7 @@ export interface FileRoutesById {
   '/dro-login': typeof DroLoginRoute
   '/feedback': typeof FeedbackRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/gallery': typeof GalleryRoute
   '/get-started': typeof GetStartedRoute
   '/gov-services': typeof GovServicesRoute
   '/gst': typeof GstRoute
@@ -1441,6 +1450,7 @@ export interface FileRouteTypes {
     | '/dro-login'
     | '/feedback'
     | '/forgot-password'
+    | '/gallery'
     | '/get-started'
     | '/gov-services'
     | '/gst'
@@ -1598,6 +1608,7 @@ export interface FileRouteTypes {
     | '/dro-login'
     | '/feedback'
     | '/forgot-password'
+    | '/gallery'
     | '/get-started'
     | '/gov-services'
     | '/gst'
@@ -1753,6 +1764,7 @@ export interface FileRouteTypes {
     | '/dro-login'
     | '/feedback'
     | '/forgot-password'
+    | '/gallery'
     | '/get-started'
     | '/gov-services'
     | '/gst'
@@ -1911,6 +1923,7 @@ export interface RootRouteChildren {
   DroLoginRoute: typeof DroLoginRoute
   FeedbackRoute: typeof FeedbackRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
+  GalleryRoute: typeof GalleryRoute
   GetStartedRoute: typeof GetStartedRoute
   GovServicesRoute: typeof GovServicesRoute
   GstRoute: typeof GstRoute
@@ -2240,6 +2253,13 @@ declare module '@tanstack/react-router' {
       path: '/get-started'
       fullPath: '/get-started'
       preLoaderRoute: typeof GetStartedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/gallery': {
+      id: '/gallery'
+      path: '/gallery'
+      fullPath: '/gallery'
+      preLoaderRoute: typeof GalleryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/forgot-password': {
@@ -3266,6 +3286,7 @@ const rootRouteChildren: RootRouteChildren = {
   DroLoginRoute: DroLoginRoute,
   FeedbackRoute: FeedbackRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
+  GalleryRoute: GalleryRoute,
   GetStartedRoute: GetStartedRoute,
   GovServicesRoute: GovServicesRoute,
   GstRoute: GstRoute,

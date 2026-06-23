@@ -344,7 +344,7 @@ export function Footer() {
             <FooterLink href="/citizen-services">Services</FooterLink>
             <FooterLink href="/schemes">Schemes</FooterLink>
             <FooterLink href="/careers">Careers</FooterLink>
-            <FooterLink href="/about#gallery">Gallery</FooterLink>
+            <FooterLink href="/gallery">Gallery</FooterLink>
             <FooterLink href="/terms">Terms &amp; Conditions</FooterLink>
           </motion.ul>
         </motion.div>
