@@ -376,6 +376,12 @@ export function Footer() {
               <span>10th B Cross, Krishnaraja Puram,<br />Hassan, Karnataka 573201</span>
             </motion.li>
           </motion.ul>
+          <motion.div variants={itemVariants} className="mt-6">
+            <div className="overflow-hidden rounded-xl border border-background/15 bg-background/5">
+              <img src="/ratan-tata.jpg" alt="Ratan Naval TATA" className="h-44 w-full object-cover grayscale" />
+            </div>
+            <p className="mt-2 text-center text-sm font-semibold italic text-background/85">&ldquo;Inspired by Ratan Naval TATA&rdquo;</p>
+          </motion.div>
         </motion.div>
       </motion.div>
 
