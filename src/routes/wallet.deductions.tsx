@@ -4,13 +4,14 @@ import { ArrowUpFromLine, Loader2, RefreshCw, Download } from "lucide-react";
 import { RetailerShell } from "@/components/retailer/retailer-shell";
 import { PageHeader } from "@/components/retailer/page-header";
 import { supabase } from "@/integrations/supabase/client";
+import { downloadWalletCsv } from "@/lib/wallet-export";
 
 export const Route = createFileRoute("/wallet/deductions")({
   head: () => ({ meta: [{ title: "Wallet · Deductions — BharatOne" }] }),
   component: DeductionsPage,
 });
 
-type Tx = { id: string; amount: number; reason: string | null; ref_type: string | null; created_at: string };
+type Tx = { id: string; amount: number; balance_after: number; reason: string | null; ref_type: string | null; ref_id: string | null; created_at: string };
 const inr = (n: number) => "₹" + Number(n || 0).toLocaleString("en-IN");
 const svcName = (reason: string | null) => (reason || "").replace(/^Application\s+\S+\s*[-·]\s*/i, "").trim();
 const catOf = (t: Tx) => t.ref_type === "application" ? "Service Charge" : t.ref_type === "withdrawal" ? "Withdrawal" : t.ref_type === "recovery" ? "Recovery" : (t.ref_type || "Other");
@@ -21,7 +22,7 @@ function DeductionsPage() {
 
   async function load() {
     setLoading(true);
-    const { data } = await supabase.from("wallet_transactions").select("id,amount,reason,ref_type,created_at,direction").eq("direction", "debit").order("created_at", { ascending: false }).limit(500);
+    const { data } = await supabase.from("wallet_transactions").select("id,amount,balance_after,reason,ref_type,ref_id,created_at,direction").eq("direction", "debit").order("created_at", { ascending: false }).limit(500);
     setRows((data as Tx[]) ?? []); setLoading(false);
   }
   useEffect(() => { load(); }, []);
@@ -34,10 +35,21 @@ function DeductionsPage() {
   }), [rows, cat, from, to]);
   const total = filtered.reduce((a, r) => a + Number(r.amount || 0), 0);
 
+  const exportCsv = () => {
+    downloadWalletCsv("deductions.csv", filtered.map((r) => ({
+      "Opening Wallet": Number(r.balance_after) + Number(r.amount),
+      "DR Amount": r.amount, "Closing Wallet": r.balance_after, "Deduction": r.amount,
+      "Type": catOf(r), "Amount": r.amount,
+      "Reference Table": r.ref_type ?? "wallet_transactions", "Reference Id": r.ref_id ?? "", "Order Id": r.id,
+      "Service Department": catOf(r), "Service Remarks": svcName(r.reason) || r.reason || "",
+      "Creation Date Time": new Date(r.created_at).toLocaleString("en-IN"),
+    })));
+  };
+
   return (
     <RetailerShell>
       <div className="space-y-5">
-        <PageHeader icon={<ArrowUpFromLine className="h-5 w-5" />} title="Wallet · Deductions" subtitle="Category-wise wallet deductions" />
+        <PageHeader icon={<ArrowUpFromLine className="h-5 w-5" />} title="Wallet · Deductions" subtitle="Category-wise wallet deductions" actions={<button onClick={exportCsv} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-10 text-sm font-semibold hover:bg-muted"><Download className="h-4 w-4" /> Export</button>} />
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="rounded-2xl border border-border bg-card p-4 shadow-soft"><p className="text-[11px] font-semibold uppercase text-muted-foreground">Total Deducted</p><p className="text-lg font-extrabold text-rose-500">{inr(total)}</p></div>
           <div className="rounded-2xl border border-border bg-card p-4 shadow-soft"><p className="text-[11px] font-semibold uppercase text-muted-foreground">Entries</p><p className="text-lg font-extrabold">{filtered.length}</p></div>

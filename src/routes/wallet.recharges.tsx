@@ -4,6 +4,7 @@ import { ArrowDownToLine, Loader2, RefreshCw, Search, Download } from "lucide-re
 import { RetailerShell } from "@/components/retailer/retailer-shell";
 import { PageHeader } from "@/components/retailer/page-header";
 import { supabase } from "@/integrations/supabase/client";
+import { downloadWalletCsv } from "@/lib/wallet-export";
 
 export const Route = createFileRoute("/wallet/recharges")({
   head: () => ({ meta: [{ title: "Wallet · Recharges — BharatOne" }] }),
@@ -78,10 +79,12 @@ function RechargesPage() {
   const total = filtered.filter((r) => norm(r.status) === "success").reduce((a, r) => a + Number(r.amount || 0), 0);
 
   const exportCsv = () => {
-    const head = ["Order ID", "Date", "Method", "Reference", "Amount", "Status"].join(",");
-    const body = filtered.map((r) => [r.id.slice(0, 8), new Date(r.created_at).toLocaleString("en-IN"), r.method ?? "", r.reference ?? "", r.amount, metaOf(r.status).label].map((x) => `"${x}"`).join(",")).join("\n");
-    const blob = new Blob([head + "\n" + body], { type: "text/csv" }); const u = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = u; a.download = "recharges.csv"; a.click(); URL.revokeObjectURL(u);
+    downloadWalletCsv("recharges.csv", filtered.map((r) => ({
+      "CR amount": r.amount, "Amount": r.amount, "Type": "Recharge",
+      "Reference Table": "wallet_topups", "Reference Id": r.reference ?? "", "Order Id": r.id,
+      "Service Remarks": (r.method ?? "") + (metaOf(r.status).label ? ` · ${metaOf(r.status).label}` : ""),
+      "Creation Date Time": new Date(r.created_at).toLocaleString("en-IN"),
+    })));
   };
 
   return (

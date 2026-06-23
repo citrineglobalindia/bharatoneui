@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { Banknote, Loader2, RefreshCw, Plus, X } from "lucide-react";
+import { Banknote, Loader2, RefreshCw, Plus, X, Download } from "lucide-react";
 import { RetailerShell } from "@/components/retailer/retailer-shell";
 import { PageHeader } from "@/components/retailer/page-header";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { downloadWalletCsv } from "@/lib/wallet-export";
 
 export const Route = createFileRoute("/wallet/refunds")({
   head: () => ({ meta: [{ title: "Wallet · Refund Requests — BharatOne" }] }),
@@ -23,6 +24,15 @@ function RefundsPage() {
   const [f, setF] = useState({ refund_for: "", operator: "", location: "", amount: "" });
 
   async function load() { setLoading(true); const { data } = await supabase.from("refund_requests").select("id,refund_no,operator,location,refund_for,amount,status,created_at").order("created_at", { ascending: false }); setRows((data as Row[]) ?? []); setLoading(false); }
+  const exportCsv = () => {
+    downloadWalletCsv("refund-requests.csv", rows.map((r) => ({
+      "CR amount": r.amount, "Amount": r.amount, "Type": "Refund",
+      "Reference Table": "refund_requests", "Reference Id": r.refund_no, "Order Id": r.id,
+      "Tracking id": r.refund_no, "Service Department": r.operator || r.location || "",
+      "Service Remarks": (r.refund_for || "") + (r.status ? ` · ${r.status}` : ""),
+      "Creation Date Time": new Date(r.created_at).toLocaleString("en-IN"),
+    })));
+  };
   useEffect(() => { load(); }, []);
 
   const create = async () => {
@@ -40,7 +50,7 @@ function RefundsPage() {
     <RetailerShell>
       <div className="space-y-5">
         <PageHeader icon={<Banknote className="h-5 w-5" />} title="Refund Requests" subtitle="Raise and track your refund requests"
-          actions={<><button onClick={load} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-10 text-sm font-semibold hover:bg-muted"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh</button><Button onClick={() => setOpen(true)} className="bg-india-green text-white"><Plus className="h-4 w-4" /> Create</Button></>} />
+          actions={<><button onClick={exportCsv} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-10 text-sm font-semibold hover:bg-muted"><Download className="h-4 w-4" /> Export</button><button onClick={load} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-10 text-sm font-semibold hover:bg-muted"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh</button><Button onClick={() => setOpen(true)} className="bg-india-green text-white"><Plus className="h-4 w-4" /> Create</Button></>} />
         <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-soft">
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground"><tr><th className="px-3 py-2.5">Number</th><th className="px-3 py-2.5">Operator</th><th className="px-3 py-2.5">Location</th><th className="px-3 py-2.5">Refund For</th><th className="px-3 py-2.5 text-right">Amount</th><th className="px-3 py-2.5">Date</th><th className="px-3 py-2.5">Status</th></tr></thead>

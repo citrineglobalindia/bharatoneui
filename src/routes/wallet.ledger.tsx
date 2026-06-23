@@ -4,13 +4,14 @@ import { BookOpen, Loader2, RefreshCw, Download } from "lucide-react";
 import { RetailerShell } from "@/components/retailer/retailer-shell";
 import { PageHeader } from "@/components/retailer/page-header";
 import { supabase } from "@/integrations/supabase/client";
+import { downloadWalletCsv } from "@/lib/wallet-export";
 
 export const Route = createFileRoute("/wallet/ledger")({
   head: () => ({ meta: [{ title: "Wallet · Ledger — BharatOne" }] }),
   component: LedgerPage,
 });
 
-type Tx = { id: string; direction: "credit" | "debit"; amount: number; balance_after: number; reason: string | null; ref_type: string | null; created_at: string };
+type Tx = { id: string; direction: "credit" | "debit"; amount: number; balance_after: number; reason: string | null; ref_type: string | null; ref_id: string | null; created_at: string };
 const inr = (n: number) => "₹" + Number(n || 0).toLocaleString("en-IN");
 const svcName = (reason: string | null) => (reason || "").replace(/^Application\s+\S+\s*[-·]\s*/i, "").trim();
 const svcOf = (t: Tx) => t.ref_type === "topup" ? "Wallet Credit" : t.ref_type === "application" ? "Service" : (t.ref_type || "Other");
@@ -21,7 +22,7 @@ function LedgerPage() {
 
   async function load() {
     setLoading(true);
-    const { data } = await supabase.from("wallet_transactions").select("id,direction,amount,balance_after,reason,ref_type,created_at").order("created_at", { ascending: false }).limit(500);
+    const { data } = await supabase.from("wallet_transactions").select("id,direction,amount,balance_after,reason,ref_type,ref_id,created_at").order("created_at", { ascending: false }).limit(500);
     setRows((data as Tx[]) ?? []); setLoading(false);
   }
   useEffect(() => { load(); }, []);
@@ -35,10 +36,15 @@ function LedgerPage() {
   }), [rows, svc, from, to]);
 
   const exportCsv = () => {
-    const head = ["Date", "Type", "Service", "Credit", "Debit", "Closing"].join(",");
-    const body = filtered.map((r) => [new Date(r.created_at).toLocaleString("en-IN"), r.direction, svcOf(r), r.direction === "credit" ? r.amount : "", r.direction === "debit" ? r.amount : "", r.balance_after].map((x) => `"${x}"`).join(",")).join("\n");
-    const blob = new Blob([head + "\n" + body], { type: "text/csv" }); const u = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = u; a.download = "ledger.csv"; a.click(); URL.revokeObjectURL(u);
+    downloadWalletCsv("ledger.csv", filtered.map((r) => ({
+      "Opening Wallet": r.direction === "credit" ? Number(r.balance_after) - Number(r.amount) : Number(r.balance_after) + Number(r.amount),
+      "CR amount": r.direction === "credit" ? r.amount : "",
+      "DR Amount": r.direction === "debit" ? r.amount : "",
+      "Closing Wallet": r.balance_after, "Type": r.direction, "Amount": r.amount,
+      "Reference Table": r.ref_type ?? "wallet_transactions", "Reference Id": r.ref_id ?? "", "Order Id": r.id,
+      "Service Department": svcOf(r), "Service Remarks": svcName(r.reason) || r.reason || "",
+      "Creation Date Time": new Date(r.created_at).toLocaleString("en-IN"),
+    })));
   };
 
   return (
