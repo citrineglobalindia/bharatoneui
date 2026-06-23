@@ -6,14 +6,26 @@ import { MessageCircle, X, Send, Sparkles } from "lucide-react";
 type Msg = { role: "bot" | "user"; text: string };
 
 const QUICK = [
-  "What services do you offer?",
-  "How to register a service center?",
-  "Tell me about Shreerakshe Card",
-  "Contact information",
+  "What documents are required for registration?",
+  "What banking services are available?",
+  "How can I track my application?",
+  "Do you provide training after registration?",
 ];
 
 function botReply(q: string): string {
   const t = q.toLowerCase();
+  if (t.includes("document") || t.includes("documents required") || (t.includes("require") && (t.includes("regist") || t.includes("center") || t.includes("centre"))))
+    return "For **Center Registration** you generally need:\n- Aadhaar Card\n- PAN Card\n- Passport-size Photograph\n- Mobile Number\n- Email ID\n- Bank Account Details\n- Address Proof";
+  if (t.includes("banking") || t.includes("aeps") || t.includes("dmt") || t.includes("money transfer"))
+    return "Our **banking services** include:\n- AEPS Cash Withdrawal\n- Domestic Money Transfer (DMT)\n- Balance Enquiry\n- Mini Statement\n- Cash Deposit Services\n- Account Opening Assistance\n- Other digital banking services";
+  if (t.includes("track") || t.includes("application status") || (t.includes("application") && t.includes("id")))
+    return "You can track your application using the **Application ID** provided in your acknowledgment receipt.";
+  if (t.includes("insurance"))
+    return "Yes — BharatOne provides **General, Life, Health and Personal Accident Insurance** and other insurance solutions through authorized insurance partners.";
+  if (t.includes("approval") || t.includes("how long") || t.includes("verification time"))
+    return "Center approval is subject to **document verification and management approval**. Once verification is completed, our team will update you on the approval status.";
+  if (t.includes("train"))
+    return "Yes — after registration BharatOne provides **onboarding support, platform training, service guidance and operational assistance** to help your center start and run services effectively.";
   if (t.includes("service") && !t.includes("center"))
     return "We offer **100+ services** including:\n- E-Governance & Government Documents\n- Nadakacheri (Caste / Income / Residence certificates)\n- Banking, AEPS, DMT, Micro ATM\n- Bill Payments (BBPS)\n- Travel & IRCTC bookings\n- Loans & Insurance\n\nVisit our [Services page](/services) for the full list.";
   if (t.includes("register") || t.includes("center") || t.includes("centre"))
