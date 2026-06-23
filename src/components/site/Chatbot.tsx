@@ -103,7 +103,7 @@ export function Chatbot() {
                     <Sparkles className="h-5 w-5" />
                   </div>
                   <div>
-                    <div className="font-semibold text-sm">BharatOne Assistant</div>
+                    <div className="font-semibold text-sm">BharatOne</div>
                     <div className="text-[11px] opacity-90 flex items-center gap-1">
                       <span className="relative flex h-1.5 w-1.5">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
