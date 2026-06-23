@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 import { ServicesManager } from "@/components/admin/services-manager";
 
-type Cat = { id: string; name: string; is_active: boolean; sort_order: number; operator_id: string | null };
+type Cat = { id: string; name: string; is_active: boolean; sort_order: number; operator_id: string | null; service_group: string | null };
 type Operator = { id: string; name: string };
 const inp = "h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-india-green/30";
 const Pill = ({ on }: { on: boolean }) => <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${on ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>{on ? "Active" : "Inactive"}</span>;
@@ -24,6 +24,7 @@ export function CatalogManager() {
   const [name, setName] = useState("");
   const [active, setActive] = useState(true);
   const [operatorId, setOperatorId] = useState("");
+  const [serviceGroup, setServiceGroup] = useState("b2c");
   const [editId, setEditId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -32,7 +33,7 @@ export function CatalogManager() {
     try {
       await ensureStaffSession();
       const [c, s, u, co] = await Promise.all([
-        supabase.from("service_categories").select("id,name,is_active,sort_order,operator_id").order("sort_order").order("name"),
+        supabase.from("service_categories").select("id,name,is_active,sort_order,operator_id,service_group").order("sort_order").order("name"),
         supabase.from("services").select("category_id"),
         supabase.rpc("admin_list_users"),
         supabase.from("category_operators").select("category_id,is_active"),
@@ -56,12 +57,12 @@ export function CatalogManager() {
 
   const opName = (id: string | null) => id ? (operators.find((o) => o.id === id)?.name ?? "Assigned") : "Unassigned";
 
-  const resetForm = () => { setName(""); setActive(true); setOperatorId(""); setEditId(null); };
-  const startEdit = (c: Cat) => { setEditId(c.id); setName(c.name); setActive(c.is_active); setOperatorId(c.operator_id ?? ""); };
+  const resetForm = () => { setName(""); setActive(true); setOperatorId(""); setServiceGroup("b2c"); setEditId(null); };
+  const startEdit = (c: Cat) => { setEditId(c.id); setName(c.name); setActive(c.is_active); setOperatorId(c.operator_id ?? ""); setServiceGroup(c.service_group ?? "b2c"); };
   const saveCat = async () => {
     if (!name.trim()) return toast.error("Category name required");
     setBusy(true);
-    const payload = { name: name.trim(), is_active: active, operator_id: operatorId || null };
+    const payload = { name: name.trim(), is_active: active, operator_id: operatorId || null, service_group: serviceGroup };
     const res = editId
       ? await supabase.from("service_categories").update(payload).eq("id", editId)
       : await supabase.from("service_categories").insert({ ...payload, sort_order: cats.length });
@@ -84,7 +85,7 @@ export function CatalogManager() {
           </div>
           <Button variant="outline" size="sm" onClick={() => startEdit(sel)}><Pencil className="h-4 w-4" /> Edit category</Button>
         </div>
-        {editId === sel.id && <CatForm {...{ name, setName, active, setActive, operatorId, setOperatorId, operators, busy, saveCat, resetForm, editId }} />}
+        {editId === sel.id && <CatForm {...{ name, setName, active, setActive, operatorId, setOperatorId, serviceGroup, setServiceGroup, operators, busy, saveCat, resetForm, editId }} />}
         <CategoryOperators categoryId={sel.id} allOperators={operators} onChange={load} />
         <div>
           <p className="mb-2 text-sm font-bold">Services in this category</p>
@@ -129,20 +130,29 @@ export function CatalogManager() {
           </table>
         </div>
         <div className="h-fit">
-          {editId && !sel ? <CatForm {...{ name, setName, active, setActive, operatorId, setOperatorId, operators, busy, saveCat, resetForm, editId }} />
-            : <CatForm {...{ name, setName, active, setActive, operatorId, setOperatorId, operators, busy, saveCat, resetForm, editId: null }} />}
+          {editId && !sel ? <CatForm {...{ name, setName, active, setActive, operatorId, setOperatorId, serviceGroup, setServiceGroup, operators, busy, saveCat, resetForm, editId }} />
+            : <CatForm {...{ name, setName, active, setActive, operatorId, setOperatorId, serviceGroup, setServiceGroup, operators, busy, saveCat, resetForm, editId: null }} />}
         </div>
       </div>
     </div>
   );
 }
 
-function CatForm({ name, setName, active, setActive, operatorId, setOperatorId, operators, busy, saveCat, resetForm, editId }: any) {
+function CatForm({ name, setName, active, setActive, operatorId, setOperatorId, serviceGroup, setServiceGroup, operators, busy, saveCat, resetForm, editId }: any) {
   return (
     <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
       <p className="mb-3 flex items-center gap-2 text-sm font-bold">{editId ? <Pencil className="h-4 w-4 text-india-green" /> : <Plus className="h-4 w-4 text-india-green" />} {editId ? "Edit category" : "Add category"}</p>
       <label className="text-[11px] font-semibold text-muted-foreground">Name</label>
       <input className={inp} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Government Services" onKeyDown={(e) => e.key === "Enter" && saveCat()} />
+      <label className="mt-3 block text-[11px] font-semibold text-muted-foreground">Service group (retailer menu)</label>
+      <select className={inp} value={serviceGroup} onChange={(e) => setServiceGroup(e.target.value)}>
+        <option value="b2c">B2C Services</option>
+        <option value="g2c">G2C Services</option>
+        <option value="state_gov">State Government Services</option>
+        <option value="central_gov">Central Government Services</option>
+        <option value="internal_links">Internal Links</option>
+        <option value="mart">BharatOne Mart - Separate KYC</option>
+      </select>
       <label className="mt-3 block text-[11px] font-semibold text-muted-foreground">Assign operator (receives applications)</label>
       <select className={inp} value={operatorId} onChange={(e) => setOperatorId(e.target.value)}>
         <option value="">Unassigned</option>

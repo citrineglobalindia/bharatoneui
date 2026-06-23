@@ -43,7 +43,14 @@ const NAV: NavSection[] = [
   {
     heading: "Services",
     items: [
-      { label: "My Services", icon: <Wrench className="h-4 w-4" />, to: "/services" },
+      { label: "My Services", icon: <Wrench className="h-4 w-4" />, to: "/services", children: [
+        { label: "B2C Services", to: "/services?group=b2c" },
+        { label: "G2C Services", to: "/services?group=g2c" },
+        { label: "State Government Services", to: "/services?group=state_gov" },
+        { label: "Central Government Services", to: "/services?group=central_gov" },
+        { label: "Internal Links", to: "/services?group=internal_links" },
+        { label: "BharatOne Mart - Separate KYC", to: "/services?group=mart" },
+      ] },
       { label: "New Application", icon: <PlusCircle className="h-4 w-4" />, to: "/new-service-request" },
       { label: "My Applications", icon: <ClipboardList className="h-4 w-4" />, to: "/applications" },
     ],
@@ -111,10 +118,12 @@ function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: 
                       {expanded && (
                         <ul className="mt-0.5 ml-4 space-y-0.5 border-l border-border pl-2">
                           {it.children.map((ch) => {
-                            const ca = pathname === ch.to;
+                            const [cpath, cqs] = ch.to.split("?");
+                            const csearch = cqs ? Object.fromEntries(new URLSearchParams(cqs)) : undefined;
+                            const ca = pathname === cpath && (!csearch || (typeof window !== "undefined" && window.location.search.includes(cqs ?? "")));
                             return (
                               <li key={ch.to}>
-                                <Link to={ch.to} onClick={onNavigate}
+                                <Link to={cpath as never} search={csearch as never} onClick={onNavigate}
                                   className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[13px] transition-colors ${ca ? "bg-india-green/10 text-india-green font-semibold" : "text-foreground/70 hover:bg-muted hover:text-foreground"}`}>
                                   <span className={`h-1.5 w-1.5 rounded-full ${ca ? "bg-india-green" : "bg-muted-foreground/40"}`} /> {ch.label}
                                 </Link>

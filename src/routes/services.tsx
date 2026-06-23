@@ -7,8 +7,18 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/services")({
   head: () => ({ meta: [{ title: "My Services — BharatOne" }] }),
+  validateSearch: (s: Record<string, unknown>): { group?: string } => ({ group: typeof s.group === "string" ? s.group : undefined }),
   component: ServicesPage,
 });
+
+const GROUPS: { key: string; label: string }[] = [
+  { key: "b2c", label: "B2C Services" },
+  { key: "g2c", label: "G2C Services" },
+  { key: "state_gov", label: "State Government Services" },
+  { key: "central_gov", label: "Central Government Services" },
+  { key: "internal_links", label: "Internal Links" },
+  { key: "mart", label: "BharatOne Mart - Separate KYC" },
+];
 
 const CORE = [
   { label: "AEPS", to: "/aeps", icon: <Banknote className="h-5 w-5" />, tone: "bg-sky-500", active: true },
@@ -22,7 +32,7 @@ const CORE = [
   { label: "Gov. Services", to: "/gov-services", icon: <Globe className="h-5 w-5" />, tone: "bg-indigo-500", active: true },
 ];
 
-type Service = { id: string; name: string; logo_url: string | null; redirect_url: string | null; backend_route: string | null; service_type: "inlink" | "api" | "backend"; category: string | null };
+type Service = { id: string; name: string; logo_url: string | null; redirect_url: string | null; backend_route: string | null; service_type: "inlink" | "api" | "backend"; category: string | null; category_id: string | null };
 
 const TYPE_LABEL: Record<string, string> = { inlink: "Redirect", api: "API Integrated", backend: "Backend" };
 const TYPE_BADGE: Record<string, string> = { inlink: "bg-sky-100 text-sky-700", api: "bg-violet-100 text-violet-700", backend: "bg-emerald-100 text-emerald-700" };
@@ -51,7 +61,9 @@ function ServiceTile({ s }: { s: Service }) {
 }
 
 function ServicesPage() {
+  const { group } = Route.useSearch();
   const [services, setServices] = useState<Service[]>([]);
+  const [catGroup, setCatGroup] = useState<Record<string, string>>({});
   const [q, setQ] = useState("");
   const [type, setType] = useState<"all" | "inlink" | "api">("all");
   const [cat, setCat] = useState("all");
@@ -59,12 +71,22 @@ function ServicesPage() {
   useEffect(() => {
     let on = true;
     (async () => {
-      const { data } = await supabase.from("services").select("id,name,logo_url,redirect_url,backend_route,service_type,category")
-        .eq("is_active", true).in("service_type", ["inlink", "api"]).order("sort_order").order("name");
-      if (on) setServices((data as Service[]) ?? []);
+      const [svc, cats] = await Promise.all([
+        supabase.from("services").select("id,name,logo_url,redirect_url,backend_route,service_type,category,category_id")
+          .eq("is_active", true).in("service_type", ["inlink", "api", "backend"]).order("sort_order").order("name"),
+        supabase.from("service_categories").select("id,service_group"),
+      ]);
+      if (!on) return;
+      setServices((svc.data as Service[]) ?? []);
+      const m: Record<string, string> = {};
+      ((cats.data as { id: string; service_group: string }[]) ?? []).forEach((c) => { m[c.id] = c.service_group; });
+      setCatGroup(m);
     })();
     return () => { on = false; };
   }, []);
+
+  const groupLabel = group ? (GROUPS.find((g) => g.key === group)?.label ?? "Services") : null;
+  const inGroup = (s: Service) => !group || (s.category_id != null && catGroup[s.category_id] === group);
 
   const TYPES = [
     { key: "all" as const, label: "All", icon: Layers },
@@ -80,15 +102,16 @@ function ServicesPage() {
 
   const categories = useMemo(() => {
     const m = new Map<string, number>();
-    services.forEach((s) => { const k = s.category || "Other"; m.set(k, (m.get(k) || 0) + 1); });
+    services.filter(inGroup).forEach((s) => { const k = s.category || "Other"; m.set(k, (m.get(k) || 0) + 1); });
     return Array.from(m.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-  }, [services]);
+  }, [services, group, catGroup]);
 
   const filtered = useMemo(() => services.filter((s) =>
+    inGroup(s) &&
     (type === "all" || s.service_type === type) &&
     (cat === "all" || (s.category || "Other") === cat) &&
     (!q || [s.name, s.category].filter(Boolean).some((v) => String(v).toLowerCase().includes(q.toLowerCase())))
-  ), [services, q, type, cat]);
+  ), [services, q, type, cat, group, catGroup]);
 
   const byCategory = useMemo(() => {
     const m = new Map<string, Service[]>();
@@ -101,9 +124,16 @@ function ServicesPage() {
   return (
     <RetailerShell>
       <div className="space-y-6">
-        <PageHeader icon={<Wrench className="h-5 w-5" />} title="My Services" subtitle="Services activated on your retailer account" />
+        <PageHeader icon={<Wrench className="h-5 w-5" />} title={groupLabel ?? "My Services"} subtitle={groupLabel ? `Services under ${groupLabel}` : "Services activated on your retailer account"} />
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          {GROUPS.map((g) => (
+            <Link key={g.key} to="/services" search={{ group: g.key }} className={`inline-flex items-center rounded-full px-3 h-8 text-xs font-semibold transition ${group === g.key ? "bg-saffron-gradient text-white shadow-soft" : "border border-border bg-card hover:bg-muted"}`}>{g.label}</Link>
+          ))}
+          {group && <Link to="/services" search={{ group: undefined }} className="inline-flex items-center rounded-full px-3 h-8 text-xs font-semibold border border-border bg-card hover:bg-muted">Show all</Link>}
+        </div>
+
+        {!group && <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {CORE.map((s) => (
             <Link key={s.label} to={s.to} className="rounded-xl border border-border bg-card p-4 hover:shadow-elev hover:-translate-y-0.5 transition flex items-start gap-3">
               <div className={`h-10 w-10 rounded-xl ${s.tone} text-white flex items-center justify-center shadow-soft shrink-0`}>{s.icon}</div>
@@ -113,7 +143,7 @@ function ServicesPage() {
               </div>
             </Link>
           ))}
-        </div>
+        </div>}
 
         {services.length > 0 && (
           <div className="space-y-4">
