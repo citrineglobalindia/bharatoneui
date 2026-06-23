@@ -111,6 +111,7 @@ export function RegistrationsReview() {
   const [detail, setDetail] = useState<any | null>(null);
   const [detailUrls, setDetailUrls] = useState<Record<string, string>>({});
   const [detailLoading, setDetailLoading] = useState(false);
+  const [qcVerifier, setQcVerifier] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [editForm, setEditForm] = useState<any>({});
   const [savingEdit, setSavingEdit] = useState(false);
@@ -189,6 +190,11 @@ export function RegistrationsReview() {
         }
       }
       setDetailUrls(urls);
+      setQcVerifier(null);
+      if (data.qc_verified && data.qc_verified_by) {
+        const { data: prof } = await supabase.from("profiles").select("display_name,email").eq("id", data.qc_verified_by).maybeSingle();
+        setQcVerifier((prof as any)?.display_name || (prof as any)?.email || null);
+      }
     } finally {
       setDetailLoading(false);
     }
@@ -869,6 +875,37 @@ export function RegistrationsReview() {
                     <DField label="QC notes" value={detail.qc_notes} />
                   </DCard>
                 </div>
+
+                {/* QC Approval Receipt — visible once QC has approved */}
+                {detail.qc_verified && (
+                  <div id="qc-approval-receipt" className="overflow-hidden rounded-2xl border border-emerald-200 bg-white shadow-soft">
+                    <div className="h-1.5 bg-gradient-to-r from-emerald-500 via-emerald-600 to-india-green" />
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-emerald-100 bg-emerald-50/60 px-5 py-3">
+                      <div className="flex items-center gap-2.5">
+                        <span className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-100 text-emerald-700"><ShieldCheck className="h-5 w-5" /></span>
+                        <div>
+                          <p className="text-sm font-extrabold text-foreground">QC Approval Receipt</p>
+                          <p className="text-[11px] text-muted-foreground">Quality-check verification confirmation</p>
+                        </div>
+                      </div>
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300 bg-emerald-100 px-3 py-1 text-[11px] font-extrabold text-emerald-800"><CheckCircle2 className="h-3.5 w-3.5" /> QC APPROVED</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-3 px-5 py-4 sm:grid-cols-3">
+                      <DField label="Receipt no." value={`QC-${String(detail.application_id || detail.id).slice(0, 10).toUpperCase()}`} />
+                      <DField label="Application ID" value={detail.application_id} />
+                      <DField label="Applicant" value={[detail.first_name, detail.surname].filter(Boolean).join(" ") || "—"} />
+                      <DField label="Shop / Business" value={detail.shop_name} />
+                      <DField label="Verified by (QC)" value={qcVerifier || "QC Officer"} />
+                      <DField label="Verified on" value={detail.qc_verified_at ? new Date(detail.qc_verified_at).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) : "—"} />
+                      <DField label="QC remarks" value={detail.qc_notes || "—"} />
+                      <DField label="Final approval" value={detail.approved_at ? new Date(detail.approved_at).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) : "Pending admin"} />
+                    </div>
+                    <div className="flex items-center justify-between gap-2 border-t border-emerald-100 bg-emerald-50/40 px-5 py-3">
+                      <p className="text-[11px] text-muted-foreground">This receipt confirms the registration passed QC verification.</p>
+                      <Button variant="outline" size="sm" onClick={() => window.print()}><FileText className="h-3.5 w-3.5" /> Print</Button>
+                    </div>
+                  </div>
+                )}
 
                 {/* Documents */}
                 <div>
