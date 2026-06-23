@@ -5,7 +5,7 @@ const items = [
   "🏦 New: Aadhaar Enabled Payment System (AEPS) & Domestic Money Transfer (DMT)",
   "💳 Micro ATM Services, Bill Payments (BBPS) & Mini Banking now available",
   "✈️ Travel Bookings including IRCTC at every BharatOne center",
-  "📞 Contact us: +91 96111 01334",
+  "📞 Contact us: +91 96111 00712",
 ];
 
 export function HeadlinesMarquee() {

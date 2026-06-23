@@ -100,8 +100,8 @@ export function Navbar() {
         <div className="bg-foreground text-background/90 text-xs">
           <div className="container mx-auto px-6 flex items-center justify-between h-9">
             <div className="flex items-center gap-5">
-              <a href="tel:+919611101334" className="flex items-center gap-1.5 hover:text-[var(--saffron-glow)] transition-colors">
-                <Phone className="h-3 w-3" /> +91 96111 01334
+              <a href="tel:+919611100712" className="flex items-center gap-1.5 hover:text-[var(--saffron-glow)] transition-colors">
+                <Phone className="h-3 w-3" /> +91 96111 00712
               </a>
               <a href="mailto:info@mybharatone.com" className="flex items-center gap-1.5 hover:text-[var(--saffron-glow)] transition-colors">
                 <Mail className="h-3 w-3" /> info@mybharatone.com
@@ -411,7 +411,7 @@ export function Navbar() {
                 </Button>
                 <div className="grid grid-cols-2 gap-2.5 text-sm">
                   <a
-                    href="tel:+919611101334"
+                    href="tel:+919611100712"
                     className="flex items-center gap-2 p-2.5 rounded-lg border border-border hover:bg-muted/60 transition-colors"
                   >
                     <Phone className="h-4 w-4 text-[var(--saffron)]" /> Call

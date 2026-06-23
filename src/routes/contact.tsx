@@ -73,9 +73,9 @@ const contactCards = [
   {
     icon: Phone,
     label: "Phone",
-    value: "+91 96111 01334",
+    value: "+91 96111 00712",
     sub: "Mon–Sat · 9:30am – 6:30pm IST",
-    href: "tel:+919611101334",
+    href: "tel:+919611100712",
     accent: "from-[var(--saffron)] to-[var(--saffron-glow)]",
   },
   {
@@ -411,7 +411,7 @@ function ContactPage() {
             </div>
             <div className="mt-4 space-y-3 text-sm">
               <a
-                href="https://wa.me/919611101334"
+                href="https://wa.me/919611100712"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-between rounded-xl border border-border px-4 py-3 hover:border-india-green/50 transition-colors"

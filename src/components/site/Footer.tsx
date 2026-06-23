@@ -363,7 +363,7 @@ export function Footer() {
           <motion.ul variants={containerVariants} className="space-y-3 text-sm text-background/70">
             <motion.li variants={linkVariants} className="flex items-start gap-2.5">
               <Phone className="mt-0.5 h-4 w-4 shrink-0 text-saffron" />
-              <a href="tel:+919611101334" className="hover:text-background">+91 96111 01334</a>
+              <a href="tel:+919611100712" className="hover:text-background">+91 96111 00712</a>
             </motion.li>
             <motion.li variants={linkVariants} className="flex items-start gap-2.5">
               <Mail className="mt-0.5 h-4 w-4 shrink-0 text-saffron" />

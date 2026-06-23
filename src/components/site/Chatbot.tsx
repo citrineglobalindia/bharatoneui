@@ -17,11 +17,11 @@ function botReply(q: string): string {
   if (t.includes("service") && !t.includes("center"))
     return "We offer **100+ services** including:\n- E-Governance & Government Documents\n- Nadakacheri (Caste / Income / Residence certificates)\n- Banking, AEPS, DMT, Micro ATM\n- Bill Payments (BBPS)\n- Travel & IRCTC bookings\n- Loans & Insurance\n\nVisit our [Services page](/services) for the full list.";
   if (t.includes("register") || t.includes("center") || t.includes("centre"))
-    return "Becoming a BharatOne partner is easy! 🎉\n\n1. Click **Register Center** at the top\n2. Submit your basic details & documents\n3. Our team reaches out within 24 hours\n\nCall **+91 96111 01334** to fast-track.";
+    return "Becoming a BharatOne partner is easy! 🎉\n\n1. Click **Register Center** at the top\n2. Submit your basic details & documents\n3. Our team reaches out within 24 hours\n\nCall **+91 96111 00712** to fast-track.";
   if (t.includes("shree") || t.includes("health") || t.includes("card"))
-    return "**Shreerakshe Health Card** gives your family:\n- Exclusive discounts at trusted hospitals\n- Affordable quality healthcare\n- Lifesaving access when you need it most\n\nLearn more at shreerakshe.com or call +91 96111 01334.";
+    return "**Shreerakshe Health Card** gives your family:\n- Exclusive discounts at trusted hospitals\n- Affordable quality healthcare\n- Lifesaving access when you need it most\n\nLearn more at shreerakshe.com or call +91 96111 00712.";
   if (t.includes("contact") || t.includes("phone") || t.includes("call") || t.includes("email"))
-    return "📞 **+91 96111 01334**\n✉️ info@mybharatone.com\n📍 Bharatone Head Office, 10th B Cross, Krishnaraja Puram, Hassan, Karnataka 573201\n\nWe're available Mon–Sat, 9 AM – 7 PM.";
+    return "📞 **+91 96111 00712**\n✉️ info@mybharatone.com\n📍 Bharatone Head Office, 10th B Cross, Krishnaraja Puram, Hassan, Karnataka 573201\n\nWe're available Mon–Sat, 9 AM – 7 PM.";
   if (t.includes("scheme"))
     return "We run welfare-driven schemes covering healthcare, education, cooperative society development, and social support. Visit the **Schemes** section to explore and apply.";
   if (t.includes("loan") || t.includes("bank"))

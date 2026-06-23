@@ -69,7 +69,7 @@ export function Hero() {
               Register Your Center
               <ArrowRight className="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform" />
             </Button>
-            <Button size="lg" variant="outline" className="border-2">
+            <Button size="lg" variant="outline" onClick={() => { window.location.href = "/citizen-services"; }} className="border-2">
               Explore Services
             </Button>
           </motion.div>
