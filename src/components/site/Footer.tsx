@@ -343,18 +343,19 @@ export function Footer() {
             <FooterLink href="/about">About Us</FooterLink>
             <FooterLink href="/citizen-services">Services</FooterLink>
             <FooterLink href="/schemes">Schemes</FooterLink>
-            <FooterLink href="/contact">Careers</FooterLink>
+            <FooterLink href="/careers">Careers</FooterLink>
+            <FooterLink href="/terms">Terms &amp; Conditions</FooterLink>
           </motion.ul>
         </motion.div>
 
         <motion.div variants={itemVariants}>
           <h4 className="mb-4 text-sm font-semibold uppercase tracking-wider text-background/90">Services</h4>
           <motion.ul variants={containerVariants} className="space-y-2.5 text-sm">
-            <FooterLink href="/services#e-gov">E-Governance</FooterLink>
-            <FooterLink href="/services#nadakacheri">Nadakacheri Services</FooterLink>
-            <FooterLink href="/services#aeps">Banking & AEPS</FooterLink>
-            <FooterLink href="/services#irctc">Travel & IRCTC</FooterLink>
-            <FooterLink href="/services#bbps">Bill Payments (BBPS)</FooterLink>
+            <FooterLink href="/citizen-services#e-gov">E-Governance</FooterLink>
+            <FooterLink href="/citizen-services#nadakacheri">Nadakacheri Services</FooterLink>
+            <FooterLink href="/citizen-services#aeps">Banking & AEPS</FooterLink>
+            <FooterLink href="/citizen-services#irctc">Travel & IRCTC</FooterLink>
+            <FooterLink href="/citizen-services#bbps">Bill Payments (BBPS)</FooterLink>
           </motion.ul>
         </motion.div>
 
