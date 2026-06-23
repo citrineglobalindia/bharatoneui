@@ -435,7 +435,19 @@ function RegisterFlow() {
           }
         >
           {done && submission ? (
-            <SuccessStep info={submission} />
+            type === "distributor" ? (
+              <div className="mx-auto max-w-lg rounded-2xl border border-emerald-200 bg-emerald-50 p-8 text-center shadow-soft">
+                <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-emerald-100 text-emerald-600">
+                  <CheckCircle2 className="h-9 w-9" />
+                </div>
+                <h2 className="mt-5 font-display text-2xl font-extrabold text-foreground">Application submitted!</h2>
+                <p className="mt-2 text-sm font-semibold text-emerald-700">Your distributor registration is under review.</p>
+                <p className="mt-1 text-sm text-muted-foreground">Our team will contact you soon!!</p>
+                <a href="/" className="mt-6 inline-flex items-center justify-center rounded-xl bg-india-green px-5 h-11 text-sm font-semibold text-white hover:bg-india-green/90">Back to Home</a>
+              </div>
+            ) : (
+              <SuccessStep info={submission} />
+            )
           ) : type === "distributor" ? (
             <DistributorSinglePage
               onSubmit={submitDistributor}
