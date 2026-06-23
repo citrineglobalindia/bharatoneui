@@ -28,6 +28,16 @@ export function VideoKycStep() {
 
   const hasVideo = !!files.video;
 
+  // Attach the camera stream to the live <video> once it is actually mounted
+  // (the element only renders while recording, so binding inside start() hit a null ref).
+  useEffect(() => {
+    if (recording && liveRef.current && streamRef.current) {
+      liveRef.current.srcObject = streamRef.current;
+      liveRef.current.muted = true;
+      liveRef.current.play().catch(() => {});
+    }
+  }, [recording]);
+
   const stopTracks = () => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
@@ -64,11 +74,6 @@ export function VideoKycStep() {
         audio: true,
       });
       streamRef.current = stream;
-      if (liveRef.current) {
-        liveRef.current.srcObject = stream;
-        liveRef.current.muted = true;
-        await liveRef.current.play();
-      }
       captureGps();
 
       const mime = MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus")
