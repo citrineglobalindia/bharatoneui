@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion, useScroll, useSpring, type Variants } from "framer-motion";
 import { useRef } from "react";
 import { PageShell } from "@/components/site/PageShell";
+import { Gallery } from "@/components/site/Gallery";
 import { Button } from "@/components/ui/button";
 import { Counter } from "@/components/site/Counter";
 import {
@@ -205,6 +206,7 @@ function AboutPage() {
 
       {/* Timeline with scroll-progress line */}
       <Timeline milestones={milestones} />
+      <Gallery />
     </PageShell>
   );
 }

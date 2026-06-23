@@ -344,6 +344,7 @@ export function Footer() {
             <FooterLink href="/citizen-services">Services</FooterLink>
             <FooterLink href="/schemes">Schemes</FooterLink>
             <FooterLink href="/careers">Careers</FooterLink>
+            <FooterLink href="/about#gallery">Gallery</FooterLink>
             <FooterLink href="/terms">Terms &amp; Conditions</FooterLink>
           </motion.ul>
         </motion.div>
@@ -396,9 +397,13 @@ export function Footer() {
         <motion.span variants={itemVariants}>
           © {new Date().getFullYear()} BharatOne Services. All rights reserved.
         </motion.span>
-        <motion.div variants={itemVariants} className="flex items-center gap-5">
+        <motion.div variants={itemVariants} className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
           <a href="/privacy" className="hover:text-background">Privacy</a>
           <a href="/terms" className="hover:text-background">Terms</a>
+          <span aria-hidden className="h-3 w-px bg-background/20" />
+          <span>Version : 1.0</span>
+          <span aria-hidden className="h-3 w-px bg-background/20" />
+          <span>Designed &amp; Developed by <span className="font-semibold text-background/80">BharatOne</span></span>
           <span aria-hidden className="h-3 w-px bg-background/20" />
           <span className="flex items-center gap-1">Made with <span className="text-saffron">♥</span> in India</span>
         </motion.div>
