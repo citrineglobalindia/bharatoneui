@@ -6,7 +6,7 @@ import { Navbar } from "@/components/site/Navbar";
 import { HeadlinesMarquee } from "@/components/site/HeadlinesMarquee";
 import { Hero, Stats } from "@/components/site/Hero";
 import { Services } from "@/components/site/Services";
-import { Schemes, CTA, Awards } from "@/components/site/Schemes";
+import { Schemes, CTA, Awards, Testimonials } from "@/components/site/Schemes";
 import { Footer } from "@/components/site/Footer";
 import { Chatbot } from "@/components/site/Chatbot";
 import { Loader } from "@/components/site/Loader";
@@ -52,6 +52,7 @@ function Index() {
         <Schemes />
         <CTA />
         <Awards />
+        <Testimonials />
       </main>
       <Footer />
       <Chatbot />

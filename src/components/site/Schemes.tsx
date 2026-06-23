@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Heart, GraduationCap, Users, ArrowRight, Sparkles } from "lucide-react";
+import { Heart, GraduationCap, Users, ArrowRight, Sparkles, Quote, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const schemes = [
@@ -129,6 +129,55 @@ export function Awards() {
               className="font-display font-bold text-xl sm:text-2xl text-muted-foreground hover:text-foreground transition-colors"
             >
               {a}
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+
+export function Testimonials() {
+  const items = [
+    { name: "Rajesh Kumar", place: "Tumakuru, Karnataka", text: "Becoming a JSKO partner changed my shop. I now serve banking, Aadhaar and bill payments for my whole village — income has doubled.", initials: "RK" },
+    { name: "Lakshmi Devi", place: "Hassan, Karnataka", text: "The onboarding was simple and the support team is always there. My customers trust BharatOne for government services.", initials: "LD" },
+    { name: "Imran Pasha", place: "Kalaburagi, Karnataka", text: "AEPS and money transfer work smoothly even in my small town. The wallet and ledger make daily accounting effortless.", initials: "IP" },
+  ];
+  return (
+    <section className="py-20 bg-gradient-hero">
+      <div className="container mx-auto px-4 sm:px-6">
+        <div className="text-center mb-12">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-card px-3 py-1 text-xs font-semibold text-saffron shadow-soft">
+            <Sparkles className="h-3.5 w-3.5" /> Testimonials
+          </span>
+          <h2 className="mt-4 font-display text-3xl sm:text-4xl font-extrabold text-foreground">What Our JSKO Has to Say?</h2>
+          <p className="mt-3 text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto">
+            Real stories from BharatOne service-center partners building their businesses across India.
+          </p>
+        </div>
+        <div className="grid gap-6 md:grid-cols-3">
+          {items.map((t, i) => (
+            <motion.div
+              key={t.name}
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.1 }}
+              className="relative flex flex-col rounded-2xl border border-border bg-card p-6 shadow-soft"
+            >
+              <Quote className="h-8 w-8 text-saffron/30" />
+              <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">{t.text}</p>
+              <div className="mt-4 flex items-center gap-0.5 text-saffron">
+                {Array.from({ length: 5 }).map((_, k) => <Star key={k} className="h-4 w-4 fill-current" />)}
+              </div>
+              <div className="mt-4 flex items-center gap-3 border-t border-border pt-4">
+                <div className="grid h-11 w-11 place-items-center rounded-full bg-gradient-saffron text-white font-bold">{t.initials}</div>
+                <div>
+                  <p className="font-bold text-sm text-foreground">{t.name}</p>
+                  <p className="text-xs text-muted-foreground">{t.place}</p>
+                </div>
+              </div>
             </motion.div>
           ))}
         </div>
