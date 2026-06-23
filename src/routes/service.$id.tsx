@@ -30,6 +30,7 @@ function ServiceLauncher() {
   const [uploadingKey, setUploadingKey] = useState<string | null>(null);
   const [receipt, setReceipt] = useState<AppReceipt | null>(null);
   const [balance, setBalance] = useState<number | null>(null);
+  const [lowBalOpen, setLowBalOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -77,10 +78,10 @@ function ServiceLauncher() {
       const { data: sess } = await supabase.auth.getSession();
       if (!sess?.session) { toast.error("Your session has expired", { description: "Please sign in again to submit this application.", action: { label: "Sign in", onClick: () => navigate({ to: "/login" }) } }); return; }
       const charge = Number(svc.service_charge || 0);
-      if (charge > 0 && balance != null && balance - charge < 1000) { toast.error("Minimum balance required", { description: `Retailers must maintain at least ₹1,000 in the wallet. This service costs ₹${charge.toLocaleString("en-IN")}, so you need ₹${(charge + 1000).toLocaleString("en-IN")} available. Add funds to continue.`, action: { label: "Add funds", onClick: () => navigate({ to: "/wallet" }) } }); return; }
+      if (balance != null && balance - charge < 1000) { setLowBalOpen(true); setSubmitting(false); return; }
       const { data, error } = await supabase.rpc("submit_backend_application", { p_service_id: id, p_form: values });
       if (error) { if (String(error.message).includes("ONLY_RETAILER")) { toast.error("Only retailer accounts can apply for services."); return; }
-      if (String(error.message).includes("MIN_BALANCE") || String(error.message).includes("INSUFFICIENT_FUNDS")) { toast.error("Minimum balance required", { description: "Retailers must maintain at least ₹1,000 in the wallet. Please add funds before applying." }); return; } toast.error("Submit failed", { description: error.message }); return; }
+      if (String(error.message).includes("MIN_BALANCE") || String(error.message).includes("INSUFFICIENT_FUNDS")) { setLowBalOpen(true); return; } toast.error("Submit failed", { description: error.message }); return; }
       const res = (data as any) ?? {};
       const pick = (re: RegExp) => { const k = Object.keys(values).find((x) => re.test(x.toLowerCase()) && typeof values[x] !== "object"); return k ? String(values[k]) : undefined; };
       setReceipt({
@@ -185,15 +186,14 @@ function ServiceLauncher() {
               </div>
               {(() => {
                 const charge = Number(svc.service_charge || 0);
-                const low = balance != null && balance - charge < 1000;
+                const low = balance != null && balance < 1000;
                 return (
                   <>
                     <div className="mt-5 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-muted/40 px-4 py-3 text-sm">
                       <span className="inline-flex items-center gap-1.5 text-muted-foreground"><Wallet className="h-4 w-4 text-india-green" /> Service charge <b className="text-foreground">₹{charge.toLocaleString("en-IN")}</b></span>
                       <span className="text-muted-foreground">Wallet balance: <b className={low ? "text-rose-600" : "text-india-green"}>{balance == null ? "…" : `₹${balance.toLocaleString("en-IN")}`}</b></span>
                     </div>
-                    {low && <p className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">{balance != null && balance < 1000 ? "Wallet balance is below ₹1,000. Retailers must maintain a minimum of ₹1,000 to apply for any service." : `Minimum balance required: you must keep at least ₹1,000 after the charge (need ₹${(charge + 1000).toLocaleString("en-IN")} available).`} <Link to="/wallet" className="rounded-lg bg-india-green px-3 py-1 text-white whitespace-nowrap">Add funds</Link></p>}
-                    <Button onClick={() => submitForm(allFields)} disabled={submitting || low} className="mt-3 bg-india-green text-white">{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Submit request</Button>
+                    <Button onClick={() => submitForm(allFields)} disabled={submitting} className="mt-3 bg-india-green text-white">{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Submit request</Button>
                   </>
                 );
               })()}
@@ -211,6 +211,20 @@ function ServiceLauncher() {
           </div>
         )}
       </div>
+    {lowBalOpen && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4" onClick={() => setLowBalOpen(false)}>
+          <div className="w-full max-w-sm rounded-2xl bg-card p-6 text-center shadow-elev" onClick={(e) => e.stopPropagation()}>
+            <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-rose-100 text-rose-600"><Wallet className="h-7 w-7" /></div>
+            <h3 className="mt-4 text-lg font-bold text-foreground">Low wallet balance</h3>
+            <p className="mt-1.5 text-sm text-muted-foreground">Your wallet balance is below the required minimum of ₹1,000. Please top up your wallet to submit this application.</p>
+            <p className="mt-2 text-sm">Current balance: <b className="text-rose-600">{balance == null ? "…" : `₹${balance.toLocaleString("en-IN")}`}</b></p>
+            <div className="mt-5 flex gap-2">
+              <Button onClick={() => setLowBalOpen(false)} className="flex-1 border border-border bg-card text-foreground hover:bg-muted">Cancel</Button>
+              <Button onClick={() => navigate({ to: "/wallet" })} className="flex-1 bg-india-green text-white"><Wallet className="h-4 w-4" /> Top up wallet</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </RetailerShell>
   );
 }
