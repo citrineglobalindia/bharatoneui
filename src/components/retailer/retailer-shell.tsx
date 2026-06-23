@@ -75,6 +75,7 @@ const NAV: NavSection[] = [
 function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
   const navigate = useNavigate();
   const me = useCurrentUser();
+  const [openKey, setOpenKey] = useState<string | null>(null);
   return (
     <div className="flex h-full flex-col">
       <div className="px-4 py-4 border-b border-border">
@@ -97,15 +98,16 @@ function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: 
                 const active = pathname === it.to;
                 if (it.children) {
                   const childActive = it.children.some((ch) => pathname === ch.to);
-                  const expanded = childActive || pathname === it.to;
+                  const expanded = openKey === it.to || (openKey === null && (childActive || pathname === it.to));
                   return (
                     <li key={it.to}>
-                      <Link to={it.to} onClick={onNavigate}
+                      <button type="button"
+                        onClick={() => setOpenKey(expanded ? "" : it.to)}
                         className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${active || childActive ? "bg-saffron-gradient text-white shadow-elev" : "text-foreground/80 hover:bg-muted hover:text-foreground"}`}>
                         <span className={active || childActive ? "text-white" : "text-muted-foreground"}>{it.icon}</span>
-                        <span className="truncate flex-1">{it.label}</span>
+                        <span className="truncate flex-1 text-left">{it.label}</span>
                         <ChevronDown className={`h-3.5 w-3.5 transition-transform ${expanded ? "rotate-180" : ""} ${active || childActive ? "text-white" : "text-muted-foreground"}`} />
-                      </Link>
+                      </button>
                       {expanded && (
                         <ul className="mt-0.5 ml-4 space-y-0.5 border-l border-border pl-2">
                           {it.children.map((ch) => {
