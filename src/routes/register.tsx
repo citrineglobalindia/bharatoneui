@@ -107,7 +107,7 @@ async function uploadFile(folder: string, label: string, file: File | undefined)
 function RegisterFlow() {
   const { type } = Route.useSearch();
   const navigate = Route.useNavigate();
-  const { data, files, set } = useRegistration();
+  const { data, files, set, clearDraft } = useRegistration();
   const steps = type === "old" ? oldSteps : newSteps;
   const [current, setCurrent] = useState(0);
   const [done, setDone] = useState(false);
@@ -182,6 +182,7 @@ function RegisterFlow() {
         }),
         plan: heading,
       });
+      clearDraft();
       setDone(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Submission failed. Please try again.");

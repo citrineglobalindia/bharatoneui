@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { emptyBankDetails, type BankDetailsValue } from "./bank-details";
 import type { PaymentData } from "./steps/payment";
 
@@ -103,13 +103,36 @@ type Ctx = {
   files: RegFiles;
   set: (patch: Partial<RegData>) => void;
   setFile: (key: RegFileKey, file: File | undefined) => void;
+  clearDraft: () => void;
 };
+
+const DRAFT_KEY = "bharatone_reg_draft_v1";
 
 const RegistrationContext = createContext<Ctx | null>(null);
 
 export function RegistrationProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<RegData>(defaultData);
   const [files, setFiles] = useState<RegFiles>({});
+  const loaded = useRef(false);
+
+  // Load any saved draft once on the client (keeps typed data after refresh / return).
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (raw) setData((d) => ({ ...d, ...JSON.parse(raw) }));
+    } catch { /* ignore */ }
+    loaded.current = true;
+  }, []);
+
+  // Auto-save the draft whenever data changes (excluding the password for safety).
+  useEffect(() => {
+    if (!loaded.current) return;
+    try {
+      const { password: _pw, ...rest } = data;
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(rest));
+    } catch { /* ignore */ }
+  }, [data]);
+
   const set = (patch: Partial<RegData>) => setData((d) => ({ ...d, ...patch }));
   const setFile = (key: RegFileKey, file: File | undefined) =>
     setFiles((s) => {
@@ -118,8 +141,13 @@ export function RegistrationProvider({ children }: { children: ReactNode }) {
       else delete next[key];
       return next;
     });
+  const clearDraft = () => {
+    try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
+    setData(defaultData);
+    setFiles({});
+  };
   return (
-    <RegistrationContext.Provider value={{ data, files, set, setFile }}>
+    <RegistrationContext.Provider value={{ data, files, set, setFile, clearDraft }}>
       {children}
     </RegistrationContext.Provider>
   );
