@@ -41,11 +41,7 @@ export function BusinessStep() {
       if (!on) return;
       const info = (res as PinInfo) ?? { found: false };
       setPinInfo(info); setPinChecking(false);
-      if (info.found) {
-        // auto-fill empty fields from the verified pincode
-        if (!data.state) set({ state: info.state });
-        if (!data.district && info.district) set({ district: info.district });
-      }
+      // No auto-fill: user selects State and District manually.
     })();
     return () => { on = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
