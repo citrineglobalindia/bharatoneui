@@ -121,7 +121,7 @@ function RegisterFlow() {
       : type === "distributor"
         ? "Distributor"
         : "New JSKO Retailer Registration";
-  const amount: number | null = type === "distributor" ? 2500000 : type === "old" ? null : 4999;
+  const amount: number | null = type === "distributor" ? 2500000 : type === "old" ? null : 20060;
   const subheading =
     type === "old"
       ? "Complete the steps below to migrate your existing JSKO account to the BharatOne portal."
