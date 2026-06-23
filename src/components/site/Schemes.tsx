@@ -98,11 +98,11 @@ export function CTA() {
             Be the bridge between your community and essential services. Earn while empowering India.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-            <Button size="lg" className="bg-card text-foreground hover:bg-background shadow-elegant">
+            <Button size="lg" onClick={() => { window.location.href = "/get-started"; }} className="bg-card text-foreground hover:bg-background shadow-elegant">
               Register for a Center
               <ArrowRight className="h-4 w-4 ml-1" />
             </Button>
-            <Button size="lg" variant="outline" className="bg-transparent border-white/40 text-primary-foreground hover:bg-white/10">
+            <Button size="lg" variant="outline" onClick={() => { window.location.href = "/contact"; }} className="bg-transparent border-white/40 text-primary-foreground hover:bg-white/10">
               Talk to our team
             </Button>
           </div>
