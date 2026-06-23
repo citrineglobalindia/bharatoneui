@@ -185,14 +185,14 @@ function ServiceLauncher() {
               </div>
               {(() => {
                 const charge = Number(svc.service_charge || 0);
-                const low = charge > 0 && balance != null && balance < charge;
+                const low = balance != null && balance - charge < 1000;
                 return (
                   <>
                     <div className="mt-5 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-muted/40 px-4 py-3 text-sm">
                       <span className="inline-flex items-center gap-1.5 text-muted-foreground"><Wallet className="h-4 w-4 text-india-green" /> Service charge <b className="text-foreground">₹{charge.toLocaleString("en-IN")}</b></span>
                       <span className="text-muted-foreground">Wallet balance: <b className={low ? "text-rose-600" : "text-india-green"}>{balance == null ? "…" : `₹${balance.toLocaleString("en-IN")}`}</b></span>
                     </div>
-                    {low && <p className="mt-2 flex items-center justify-between gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">Insufficient wallet balance to apply. <Link to="/wallet" className="rounded-lg bg-india-green px-3 py-1 text-white">Add funds</Link></p>}
+                    {low && <p className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">{balance != null && balance < 1000 ? "Wallet balance is below ₹1,000. Retailers must maintain a minimum of ₹1,000 to apply for any service." : `Minimum balance required: you must keep at least ₹1,000 after the charge (need ₹${(charge + 1000).toLocaleString("en-IN")} available).`} <Link to="/wallet" className="rounded-lg bg-india-green px-3 py-1 text-white whitespace-nowrap">Add funds</Link></p>}
                     <Button onClick={() => submitForm(allFields)} disabled={submitting || low} className="mt-3 bg-india-green text-white">{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Submit request</Button>
                   </>
                 );
