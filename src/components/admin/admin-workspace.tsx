@@ -33,7 +33,7 @@ import {
   Wallet,
   Network,
   type LucideIcon,
-} from "lucide-react";
+  ImageIcon } from "lucide-react";
 import {
   Area,
   AreaChart,
@@ -82,6 +82,7 @@ import {
 } from "@/components/admin/admin-insights";
 import { RolesPermissions } from "@/components/admin/roles-permissions";
 import { SystemSettings } from "@/components/admin/system-settings";
+import { GalleryManager } from "@/components/admin/gallery-manager";
 import { KycWorkflow } from "@/components/admin/kyc-workflow";
 import { Button } from "@/components/ui/button";
 import {
@@ -146,6 +147,7 @@ const NAVIGATION: NavGroup[] = [
       { label: "Support Center", icon: Headphones },
       { label: "Live Chat", icon: MessageSquare },
       { label: "System Settings", icon: Settings },
+      { label: "Website Gallery", icon: ImageIcon },
       { label: "Feedback", icon: MessageSquare },
       { label: "Audit Log", icon: FileClock },
     ],
@@ -1044,6 +1046,8 @@ export function AdminWorkspace() {
               <RetailerMap scope="admin" />
             ) : active === "System Settings" ? (
               <SystemSettings />
+            ) : active === "Website Gallery" ? (
+              <GalleryManager />
             ) : active === "Support Center" ? (
               <SupportAdmin />
             ) : active === "Live Chat" ? (

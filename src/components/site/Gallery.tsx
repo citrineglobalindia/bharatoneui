@@ -1,8 +1,9 @@
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { ImageIcon, Sparkles } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
-// Placeholder gallery tiles — replace `src` with real photos when available.
-const ITEMS: { src?: string; caption: string }[] = [
+const PLACEHOLDERS: { src?: string; caption: string }[] = [
   { caption: "Service Center Inauguration" },
   { caption: "Citizen Assistance Camp" },
   { caption: "Partner Training Session" },
@@ -12,6 +13,26 @@ const ITEMS: { src?: string; caption: string }[] = [
 ];
 
 export function Gallery({ embedded = false }: { embedded?: boolean }) {
+  const [items, setItems] = useState<{ src?: string; caption: string }[]>(PLACEHOLDERS);
+  useEffect(() => {
+    let on = true;
+    (async () => {
+      const { data } = await supabase
+        .from("gallery_images")
+        .select("image_path, caption")
+        .eq("is_active", true)
+        .order("sort_order")
+        .order("created_at");
+      if (!on || !data || data.length === 0) return;
+      setItems(
+        (data as { image_path: string; caption: string | null }[]).map((d) => ({
+          src: supabase.storage.from("gallery").getPublicUrl(d.image_path).data.publicUrl,
+          caption: d.caption ?? "",
+        })),
+      );
+    })();
+    return () => { on = false; };
+  }, []);
   return (
     <section id="gallery" className="border-t border-border bg-muted/30 py-16 sm:py-24">
       <div className="container mx-auto px-4 sm:px-6">
@@ -27,7 +48,7 @@ export function Gallery({ embedded = false }: { embedded?: boolean }) {
           </div>
         )}
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-          {ITEMS.map((it, i) => (
+          {items.map((it, i) => (
             <motion.div
               key={i}
               initial={{ opacity: 0, y: 14 }}
