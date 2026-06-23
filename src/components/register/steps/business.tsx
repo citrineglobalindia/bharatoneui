@@ -141,23 +141,23 @@ export function BusinessStep() {
             </Field>
             <Field label="Village Name" required>
               <input className={inputCls} autoComplete="off" placeholder="Village name"
-                value={data.villageName} onChange={(e) => set({ villageName: e.target.value })} />
+                value={data.villageName} onChange={(e) => set({ villageName: e.target.value.replace(/[0-9]/g, "") })} />
             </Field>
             <Field label="Gram Panchayat" required>
               <input className={inputCls} autoComplete="off" placeholder="Gram Panchayat"
-                value={data.gramPanchayat} onChange={(e) => set({ gramPanchayat: e.target.value })} />
+                value={data.gramPanchayat} onChange={(e) => set({ gramPanchayat: e.target.value.replace(/[0-9]/g, "") })} />
             </Field>
             <Field label="Hobli Name" required>
               <input className={inputCls} autoComplete="off" placeholder="Hobli name"
-                value={data.hobliName} onChange={(e) => set({ hobliName: e.target.value })} />
+                value={data.hobliName} onChange={(e) => set({ hobliName: e.target.value.replace(/[0-9]/g, "") })} />
             </Field>
             <Field label="Post Office" required>
               <input className={inputCls} autoComplete="off" placeholder="Post office"
-                value={data.postOffice} onChange={(e) => set({ postOffice: e.target.value })} />
+                value={data.postOffice} onChange={(e) => set({ postOffice: e.target.value.replace(/[0-9]/g, "") })} />
             </Field>
             <Field label="Post Office Name">
               <input className={inputCls} autoComplete="off" placeholder="Post office name"
-                value={data.postOfficeName} onChange={(e) => set({ postOfficeName: e.target.value })} />
+                value={data.postOfficeName} onChange={(e) => set({ postOfficeName: e.target.value.replace(/[0-9]/g, "") })} />
             </Field>
             <Field label="PIN Code" required>
               <input className={inputCls} autoComplete="off" placeholder="6 digit pincode" maxLength={6}
@@ -166,7 +166,7 @@ export function BusinessStep() {
             </Field>
             <Field label="Taluk" required>
               <input className={inputCls} autoComplete="off" placeholder="Taluk"
-                value={data.taluk} onChange={(e) => set({ taluk: e.target.value })} />
+                value={data.taluk} onChange={(e) => set({ taluk: e.target.value.replace(/[0-9]/g, "") })} />
             </Field>
             <Field label="District" required>
               <select className={inputCls} autoComplete="off" value={data.district} onChange={(e) => set({ district: e.target.value })}>
