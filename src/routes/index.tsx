@@ -15,7 +15,7 @@ import { BharatOneLogo } from "@/components/bharatone-logo";
 
 export const Route = createFileRoute("/")({
   beforeLoad: () => {
-    throw redirect({ to: "/login" });
+    throw redirect({ href: "https://bharatone-evolved.vercel.app/" });
   },
   head: () => ({
     meta: [
