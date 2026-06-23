@@ -15,7 +15,13 @@ const MapFallback = (
   </div>
 );
 
-const DISTRICTS = ["Bengaluru Urban", "Bengaluru Rural", "Hassan", "Mysuru"];
+const DISTRICTS = [
+  "Bagalkote", "Ballari", "Belagavi", "Bengaluru Rural", "Bengaluru Urban", "Bidar",
+  "Chamarajanagar", "Chikkaballapur", "Chikkamagaluru", "Chitradurga", "Dakshina Kannada",
+  "Davanagere", "Dharwad", "Gadag", "Hassan", "Haveri", "Kalaburagi", "Kodagu", "Kolar",
+  "Koppal", "Mandya", "Mysuru", "Raichur", "Ramanagara", "Shivamogga", "Tumakuru", "Udupi",
+  "Uttara Kannada", "Vijayanagara", "Vijayapura", "Yadgir",
+];
 
 type PinInfo = { found: boolean; state?: string; district?: string; districts?: string[] };
 
@@ -114,7 +120,7 @@ export function BusinessStep() {
             </Field>
             <Field label="City" required>
               <input className={inputCls} autoComplete="off" placeholder="City"
-                value={data.city} onChange={(e) => set({ city: e.target.value })} />
+                value={data.city} onChange={(e) => set({ city: e.target.value.replace(/[0-9]/g, "") })} />
             </Field>
             <Field label="District" required>
               <select className={inputCls} autoComplete="off" value={data.district} onChange={(e) => set({ district: e.target.value })}>
