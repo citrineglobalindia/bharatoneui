@@ -44,7 +44,7 @@ function Index() {
       <header className="sticky top-0 z-30 border-b border-border bg-card/80 backdrop-blur-md">
         <div className="relative mx-auto flex h-16 max-w-5xl items-center justify-center px-4 sm:px-6">
           <a
-            href="https://mybharatone.com/"
+            href="/"
             aria-label="Go back"
             className="absolute left-3 sm:left-6 inline-flex h-9 w-9 items-center justify-center rounded-lg text-foreground transition-colors hover:bg-muted"
           >

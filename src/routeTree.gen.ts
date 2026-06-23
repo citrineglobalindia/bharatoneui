@@ -15,16 +15,19 @@ import { Route as TroLoginRouteImport } from './routes/tro-login'
 import { Route as TransactionsRouteImport } from './routes/transactions'
 import { Route as TrackApplicationRouteImport } from './routes/track-application'
 import { Route as TermsAndConditionsRouteImport } from './routes/terms-and-conditions'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TelecallerLoginRouteImport } from './routes/telecaller-login'
 import { Route as TelecallerRouteImport } from './routes/telecaller'
 import { Route as SupportRouteImport } from './routes/support'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ServicesRouteImport } from './routes/services'
+import { Route as SchemesRouteImport } from './routes/schemes'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as RechargeRouteImport } from './routes/recharge'
 import { Route as QcLoginRouteImport } from './routes/qc-login'
 import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PortalsRouteImport } from './routes/portals'
 import { Route as PanRouteImport } from './routes/pan'
 import { Route as OperatorRouteImport } from './routes/operator'
@@ -42,6 +45,9 @@ import { Route as FeedbackRouteImport } from './routes/feedback'
 import { Route as DroLoginRouteImport } from './routes/dro-login'
 import { Route as DistributorLoginRouteImport } from './routes/distributor-login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as ContactRouteImport } from './routes/contact'
+import { Route as CitizenServicesRouteImport } from './routes/citizen-services'
+import { Route as CareersRouteImport } from './routes/careers'
 import { Route as BusinessRegRouteImport } from './routes/business-reg'
 import { Route as BdeLoginRouteImport } from './routes/bde-login'
 import { Route as BdeRouteImport } from './routes/bde'
@@ -52,6 +58,7 @@ import { Route as AepsRouteImport } from './routes/aeps'
 import { Route as AdminLoginRouteImport } from './routes/admin-login'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AccountantLoginRouteImport } from './routes/accountant-login'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as WalletIndexRouteImport } from './routes/wallet.index'
 import { Route as WalletRefundsRouteImport } from './routes/wallet.refunds'
@@ -188,6 +195,11 @@ const TermsAndConditionsRoute = TermsAndConditionsRouteImport.update({
   path: '/terms-and-conditions',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TelecallerLoginRoute = TelecallerLoginRouteImport.update({
   id: '/telecaller-login',
   path: '/telecaller-login',
@@ -213,6 +225,11 @@ const ServicesRoute = ServicesRouteImport.update({
   path: '/services',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SchemesRoute = SchemesRouteImport.update({
+  id: '/schemes',
+  path: '/schemes',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ReportsRoute = ReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
@@ -236,6 +253,11 @@ const QcLoginRoute = QcLoginRouteImport.update({
 const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
   id: '/privacy-policy',
   path: '/privacy-policy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PortalsRoute = PortalsRouteImport.update({
@@ -323,6 +345,21 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CitizenServicesRoute = CitizenServicesRouteImport.update({
+  id: '/citizen-services',
+  path: '/citizen-services',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CareersRoute = CareersRouteImport.update({
+  id: '/careers',
+  path: '/careers',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BusinessRegRoute = BusinessRegRouteImport.update({
   id: '/business-reg',
   path: '/business-reg',
@@ -371,6 +408,11 @@ const AdminRoute = AdminRouteImport.update({
 const AccountantLoginRoute = AccountantLoginRouteImport.update({
   id: '/accountant-login',
   path: '/accountant-login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -908,6 +950,7 @@ const DistributorOfficersIdRoute = DistributorOfficersIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/accountant-login': typeof AccountantLoginRoute
   '/admin': typeof AdminRouteWithChildren
   '/admin-login': typeof AdminLoginRoute
@@ -918,6 +961,9 @@ export interface FileRoutesByFullPath {
   '/bde': typeof BdeRouteWithChildren
   '/bde-login': typeof BdeLoginRoute
   '/business-reg': typeof BusinessRegRoute
+  '/careers': typeof CareersRoute
+  '/citizen-services': typeof CitizenServicesRoute
+  '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
   '/distributor-login': typeof DistributorLoginRoute
   '/dro-login': typeof DroLoginRoute
@@ -935,16 +981,19 @@ export interface FileRoutesByFullPath {
   '/operator': typeof OperatorRoute
   '/pan': typeof PanRoute
   '/portals': typeof PortalsRoute
+  '/privacy': typeof PrivacyRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/qc-login': typeof QcLoginRoute
   '/recharge': typeof RechargeRoute
   '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
+  '/schemes': typeof SchemesRoute
   '/services': typeof ServicesRoute
   '/settings': typeof SettingsRoute
   '/support': typeof SupportRoute
   '/telecaller': typeof TelecallerRouteWithChildren
   '/telecaller-login': typeof TelecallerLoginRoute
+  '/terms': typeof TermsRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/track-application': typeof TrackApplicationRoute
   '/transactions': typeof TransactionsRoute
@@ -1058,6 +1107,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/accountant-login': typeof AccountantLoginRoute
   '/admin': typeof AdminRouteWithChildren
   '/admin-login': typeof AdminLoginRoute
@@ -1068,6 +1118,9 @@ export interface FileRoutesByTo {
   '/bde': typeof BdeRouteWithChildren
   '/bde-login': typeof BdeLoginRoute
   '/business-reg': typeof BusinessRegRoute
+  '/careers': typeof CareersRoute
+  '/citizen-services': typeof CitizenServicesRoute
+  '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
   '/distributor-login': typeof DistributorLoginRoute
   '/dro-login': typeof DroLoginRoute
@@ -1085,16 +1138,19 @@ export interface FileRoutesByTo {
   '/operator': typeof OperatorRoute
   '/pan': typeof PanRoute
   '/portals': typeof PortalsRoute
+  '/privacy': typeof PrivacyRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/qc-login': typeof QcLoginRoute
   '/recharge': typeof RechargeRoute
   '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
+  '/schemes': typeof SchemesRoute
   '/services': typeof ServicesRoute
   '/settings': typeof SettingsRoute
   '/support': typeof SupportRoute
   '/telecaller': typeof TelecallerRouteWithChildren
   '/telecaller-login': typeof TelecallerLoginRoute
+  '/terms': typeof TermsRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/track-application': typeof TrackApplicationRoute
   '/transactions': typeof TransactionsRoute
@@ -1207,6 +1263,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/accountant-login': typeof AccountantLoginRoute
   '/admin': typeof AdminRouteWithChildren
   '/admin-login': typeof AdminLoginRoute
@@ -1217,6 +1274,9 @@ export interface FileRoutesById {
   '/bde': typeof BdeRouteWithChildren
   '/bde-login': typeof BdeLoginRoute
   '/business-reg': typeof BusinessRegRoute
+  '/careers': typeof CareersRoute
+  '/citizen-services': typeof CitizenServicesRoute
+  '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
   '/distributor-login': typeof DistributorLoginRoute
   '/dro-login': typeof DroLoginRoute
@@ -1234,16 +1294,19 @@ export interface FileRoutesById {
   '/operator': typeof OperatorRoute
   '/pan': typeof PanRoute
   '/portals': typeof PortalsRoute
+  '/privacy': typeof PrivacyRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/qc-login': typeof QcLoginRoute
   '/recharge': typeof RechargeRoute
   '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
+  '/schemes': typeof SchemesRoute
   '/services': typeof ServicesRoute
   '/settings': typeof SettingsRoute
   '/support': typeof SupportRoute
   '/telecaller': typeof TelecallerRouteWithChildren
   '/telecaller-login': typeof TelecallerLoginRoute
+  '/terms': typeof TermsRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/track-application': typeof TrackApplicationRoute
   '/transactions': typeof TransactionsRoute
@@ -1359,6 +1422,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/about'
     | '/accountant-login'
     | '/admin'
     | '/admin-login'
@@ -1369,6 +1433,9 @@ export interface FileRouteTypes {
     | '/bde'
     | '/bde-login'
     | '/business-reg'
+    | '/careers'
+    | '/citizen-services'
+    | '/contact'
     | '/dashboard'
     | '/distributor-login'
     | '/dro-login'
@@ -1386,16 +1453,19 @@ export interface FileRouteTypes {
     | '/operator'
     | '/pan'
     | '/portals'
+    | '/privacy'
     | '/privacy-policy'
     | '/qc-login'
     | '/recharge'
     | '/register'
     | '/reports'
+    | '/schemes'
     | '/services'
     | '/settings'
     | '/support'
     | '/telecaller'
     | '/telecaller-login'
+    | '/terms'
     | '/terms-and-conditions'
     | '/track-application'
     | '/transactions'
@@ -1509,6 +1579,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/about'
     | '/accountant-login'
     | '/admin'
     | '/admin-login'
@@ -1519,6 +1590,9 @@ export interface FileRouteTypes {
     | '/bde'
     | '/bde-login'
     | '/business-reg'
+    | '/careers'
+    | '/citizen-services'
+    | '/contact'
     | '/dashboard'
     | '/distributor-login'
     | '/dro-login'
@@ -1536,16 +1610,19 @@ export interface FileRouteTypes {
     | '/operator'
     | '/pan'
     | '/portals'
+    | '/privacy'
     | '/privacy-policy'
     | '/qc-login'
     | '/recharge'
     | '/register'
     | '/reports'
+    | '/schemes'
     | '/services'
     | '/settings'
     | '/support'
     | '/telecaller'
     | '/telecaller-login'
+    | '/terms'
     | '/terms-and-conditions'
     | '/track-application'
     | '/transactions'
@@ -1657,6 +1734,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/about'
     | '/accountant-login'
     | '/admin'
     | '/admin-login'
@@ -1667,6 +1745,9 @@ export interface FileRouteTypes {
     | '/bde'
     | '/bde-login'
     | '/business-reg'
+    | '/careers'
+    | '/citizen-services'
+    | '/contact'
     | '/dashboard'
     | '/distributor-login'
     | '/dro-login'
@@ -1684,16 +1765,19 @@ export interface FileRouteTypes {
     | '/operator'
     | '/pan'
     | '/portals'
+    | '/privacy'
     | '/privacy-policy'
     | '/qc-login'
     | '/recharge'
     | '/register'
     | '/reports'
+    | '/schemes'
     | '/services'
     | '/settings'
     | '/support'
     | '/telecaller'
     | '/telecaller-login'
+    | '/terms'
     | '/terms-and-conditions'
     | '/track-application'
     | '/transactions'
@@ -1808,6 +1892,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AboutRoute: typeof AboutRoute
   AccountantLoginRoute: typeof AccountantLoginRoute
   AdminRoute: typeof AdminRouteWithChildren
   AdminLoginRoute: typeof AdminLoginRoute
@@ -1818,6 +1903,9 @@ export interface RootRouteChildren {
   BdeRoute: typeof BdeRouteWithChildren
   BdeLoginRoute: typeof BdeLoginRoute
   BusinessRegRoute: typeof BusinessRegRoute
+  CareersRoute: typeof CareersRoute
+  CitizenServicesRoute: typeof CitizenServicesRoute
+  ContactRoute: typeof ContactRoute
   DashboardRoute: typeof DashboardRoute
   DistributorLoginRoute: typeof DistributorLoginRoute
   DroLoginRoute: typeof DroLoginRoute
@@ -1835,16 +1923,19 @@ export interface RootRouteChildren {
   OperatorRoute: typeof OperatorRoute
   PanRoute: typeof PanRoute
   PortalsRoute: typeof PortalsRoute
+  PrivacyRoute: typeof PrivacyRoute
   PrivacyPolicyRoute: typeof PrivacyPolicyRoute
   QcLoginRoute: typeof QcLoginRoute
   RechargeRoute: typeof RechargeRoute
   RegisterRoute: typeof RegisterRoute
   ReportsRoute: typeof ReportsRoute
+  SchemesRoute: typeof SchemesRoute
   ServicesRoute: typeof ServicesRoute
   SettingsRoute: typeof SettingsRoute
   SupportRoute: typeof SupportRoute
   TelecallerRoute: typeof TelecallerRouteWithChildren
   TelecallerLoginRoute: typeof TelecallerLoginRoute
+  TermsRoute: typeof TermsRoute
   TermsAndConditionsRoute: typeof TermsAndConditionsRoute
   TrackApplicationRoute: typeof TrackApplicationRoute
   TransactionsRoute: typeof TransactionsRoute
@@ -1976,6 +2067,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TermsAndConditionsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/telecaller-login': {
       id: '/telecaller-login'
       path: '/telecaller-login'
@@ -2011,6 +2109,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ServicesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/schemes': {
+      id: '/schemes'
+      path: '/schemes'
+      fullPath: '/schemes'
+      preLoaderRoute: typeof SchemesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reports': {
       id: '/reports'
       path: '/reports'
@@ -2044,6 +2149,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy-policy'
       fullPath: '/privacy-policy'
       preLoaderRoute: typeof PrivacyPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/portals': {
@@ -2165,6 +2277,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/citizen-services': {
+      id: '/citizen-services'
+      path: '/citizen-services'
+      fullPath: '/citizen-services'
+      preLoaderRoute: typeof CitizenServicesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/careers': {
+      id: '/careers'
+      path: '/careers'
+      fullPath: '/careers'
+      preLoaderRoute: typeof CareersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/business-reg': {
       id: '/business-reg'
       path: '/business-reg'
@@ -2233,6 +2366,13 @@ declare module '@tanstack/react-router' {
       path: '/accountant-login'
       fullPath: '/accountant-login'
       preLoaderRoute: typeof AccountantLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -3107,6 +3247,7 @@ const TroRetailersRouteWithChildren = TroRetailersRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AboutRoute: AboutRoute,
   AccountantLoginRoute: AccountantLoginRoute,
   AdminRoute: AdminRouteWithChildren,
   AdminLoginRoute: AdminLoginRoute,
@@ -3117,6 +3258,9 @@ const rootRouteChildren: RootRouteChildren = {
   BdeRoute: BdeRouteWithChildren,
   BdeLoginRoute: BdeLoginRoute,
   BusinessRegRoute: BusinessRegRoute,
+  CareersRoute: CareersRoute,
+  CitizenServicesRoute: CitizenServicesRoute,
+  ContactRoute: ContactRoute,
   DashboardRoute: DashboardRoute,
   DistributorLoginRoute: DistributorLoginRoute,
   DroLoginRoute: DroLoginRoute,
@@ -3134,16 +3278,19 @@ const rootRouteChildren: RootRouteChildren = {
   OperatorRoute: OperatorRoute,
   PanRoute: PanRoute,
   PortalsRoute: PortalsRoute,
+  PrivacyRoute: PrivacyRoute,
   PrivacyPolicyRoute: PrivacyPolicyRoute,
   QcLoginRoute: QcLoginRoute,
   RechargeRoute: RechargeRoute,
   RegisterRoute: RegisterRoute,
   ReportsRoute: ReportsRoute,
+  SchemesRoute: SchemesRoute,
   ServicesRoute: ServicesRoute,
   SettingsRoute: SettingsRoute,
   SupportRoute: SupportRoute,
   TelecallerRoute: TelecallerRouteWithChildren,
   TelecallerLoginRoute: TelecallerLoginRoute,
+  TermsRoute: TermsRoute,
   TermsAndConditionsRoute: TermsAndConditionsRoute,
   TrackApplicationRoute: TrackApplicationRoute,
   TransactionsRoute: TransactionsRoute,
