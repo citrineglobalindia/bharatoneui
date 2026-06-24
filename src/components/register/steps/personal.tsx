@@ -1,7 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { User } from "lucide-react";
 import { Field, inputCls, StepHeader } from "../field";
-import { ConfirmPasswordField, PasswordField, isPasswordValid } from "../password-field";
 import { useRegistration } from "../registration-context";
 
 const onlyLetters = (v: string) => v.replace(/[^A-Za-z ]/g, "");
@@ -19,15 +18,12 @@ function ageFrom(dob: string): number | null {
 
 export function PersonalStep() {
   const { data, set } = useRegistration();
-  const [confirm, setConfirm] = useState("");
 
   const firstOk = data.firstName.trim().length > 0;
   const surnameOk = data.surname.trim().length > 0;
   const age = ageFrom(data.dob);
   const dobOk = age !== null && age >= 18;
-  const pwdOk = isPasswordValid(data.password);
-  const matchOk = confirm.length > 0 && confirm === data.password;
-  const valid = firstOk && surnameOk && dobOk && pwdOk && matchOk;
+  const valid = firstOk && surnameOk && dobOk;
 
   useEffect(() => {
     set({ personalValid: valid });
@@ -41,7 +37,7 @@ export function PersonalStep() {
       <StepHeader
         icon={<User className="h-5 w-5" />}
         title="Personal Details"
-        description="Enter your name, date of birth and set a strong password for your BharatOne account."
+        description="Enter your name and date of birth for your BharatOne account."
       />
       <div className="grid gap-4 sm:grid-cols-3">
         <Field label="First Name" required>
@@ -76,17 +72,8 @@ export function PersonalStep() {
         </Field>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Password" required>
-          <PasswordField value={data.password} onChange={(v) => set({ password: v })} />
-        </Field>
-        <Field label="Confirm Password" required>
-          <ConfirmPasswordField value={confirm} onChange={setConfirm} original={data.password} />
-        </Field>
-      </div>
       <p className="text-[12px] text-muted-foreground">
-        First name and surname are required (letters only). You must be 18+. Password must include
-        uppercase, lowercase, a number and a special character, and both passwords must match.
+        First name and surname are required (letters only). You must be 18+.
       </p>
     </div>
   );
