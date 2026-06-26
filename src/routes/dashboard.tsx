@@ -210,9 +210,9 @@ function DashboardPage() {
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <StatCard label="Wallet Balance" value={loading ? "…" : inr(balance)} icon={<Wallet className="h-5 w-5" />} tone="saffron" delta={{ value: loading ? "…" : balance < 1000 ? "Below ₹1,000 minimum" : "Above ₹1,000 minimum", positive: balance >= 1000 }} />
-          <StatCard label="Today's Volume" value={loading ? "…" : inr(kpi.todayVolume)} icon={<TrendingUp className="h-5 w-5" />} tone="green" delta={{ value: `${rows.filter((r) => new Date(r.created_at).toDateString() === todayStr).length} today`, positive: true }} />
+          <StatCard label="Today's Transactions" value={loading ? "…" : inr(kpi.todayVolume)} icon={<TrendingUp className="h-5 w-5" />} tone="green" delta={{ value: `${rows.filter((r) => new Date(r.created_at).toDateString() === todayStr).length} today`, positive: true }} />
           <StatCard label="Earned Commission" value={loading ? "…" : inr(filtered.commission)} icon={<Receipt className="h-5 w-5" />} tone="sky" delta={{ value: periodLabel[period] || "Approved + completed", positive: true }} />
-          <StatCard label="Applications" value={loading ? "…" : String(filtered.total)} icon={<ClipboardCheck className="h-5 w-5" />} tone="violet" delta={{ value: `${filtered.pending} pending`, positive: filtered.pending === 0 }} />
+          <StatCard label="Applications" value={loading ? "…" : String(filtered.total)} icon={<ClipboardCheck className="h-5 w-5" />} tone="violet" />
         </div>
 
         {!loading && balance < 1000 && (
