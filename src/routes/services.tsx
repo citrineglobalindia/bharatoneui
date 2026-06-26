@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Wrench, Banknote, ArrowLeftRight, Smartphone, Receipt, FileText, IdCard, Building2, Globe, CheckCircle2, ExternalLink, Search, Layers, Cpu, FolderTree } from "lucide-react";
+import { Wrench, Banknote, ArrowLeftRight, Smartphone, Receipt, FileText, IdCard, Building2, Globe, CheckCircle2, ExternalLink, Search } from "lucide-react";
 import { RetailerShell } from "@/components/retailer/retailer-shell";
 import { PageHeader } from "@/components/retailer/page-header";
 import { supabase } from "@/integrations/supabase/client";
@@ -65,8 +65,6 @@ function ServicesPage() {
   const [services, setServices] = useState<Service[]>([]);
   const [catGroup, setCatGroup] = useState<Record<string, string>>({});
   const [q, setQ] = useState("");
-  const [type, setType] = useState<"all" | "inlink" | "api">("all");
-  const [cat, setCat] = useState("all");
 
   useEffect(() => {
     let on = true;
@@ -88,30 +86,10 @@ function ServicesPage() {
   const groupLabel = group ? (GROUPS.find((g) => g.key === group)?.label ?? "Services") : null;
   const inGroup = (s: Service) => !group || (s.category_id != null && catGroup[s.category_id] === group);
 
-  const TYPES = [
-    { key: "all" as const, label: "All", icon: Layers },
-    { key: "inlink" as const, label: "Redirect", icon: Globe },
-    { key: "api" as const, label: "API Integrated", icon: Cpu },
-  ];
-
-  const typeCounts = useMemo(() => {
-    const m: Record<string, number> = { all: services.length, inlink: 0, api: 0 };
-    services.forEach((s) => { if (m[s.service_type] != null) m[s.service_type]++; });
-    return m;
-  }, [services]);
-
-  const categories = useMemo(() => {
-    const m = new Map<string, number>();
-    services.filter(inGroup).forEach((s) => { const k = s.category || "Other"; m.set(k, (m.get(k) || 0) + 1); });
-    return Array.from(m.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-  }, [services, group, catGroup]);
-
   const filtered = useMemo(() => services.filter((s) =>
     inGroup(s) &&
-    (type === "all" || s.service_type === type) &&
-    (cat === "all" || (s.category || "Other") === cat) &&
     (!q || [s.name, s.category].filter(Boolean).some((v) => String(v).toLowerCase().includes(q.toLowerCase())))
-  ), [services, q, type, cat, group, catGroup]);
+  ), [services, q, group, catGroup]);
 
   const byCategory = useMemo(() => {
     const m = new Map<string, Service[]>();
@@ -125,13 +103,6 @@ function ServicesPage() {
     <RetailerShell>
       <div className="space-y-6">
         <PageHeader icon={<Wrench className="h-5 w-5" />} title={groupLabel ?? "My Services"} subtitle={groupLabel ? `Services under ${groupLabel}` : "Services activated on your retailer account"} />
-
-        <div className="flex flex-wrap items-center gap-2">
-          {GROUPS.map((g) => (
-            <Link key={g.key} to="/services" search={{ group: g.key }} className={`inline-flex items-center rounded-full px-3 h-8 text-xs font-semibold transition ${group === g.key ? "bg-saffron-gradient text-white shadow-soft" : "border border-border bg-card hover:bg-muted"}`}>{g.label}</Link>
-          ))}
-          {group && <Link to="/services" search={{ group: undefined }} className="inline-flex items-center rounded-full px-3 h-8 text-xs font-semibold border border-border bg-card hover:bg-muted">Show all</Link>}
-        </div>
 
         {!group && <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {CORE.map((s) => (
@@ -150,23 +121,6 @@ function ServicesPage() {
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="font-display text-lg font-extrabold text-foreground">Partner Services <span className="ml-1 text-xs font-semibold text-muted-foreground">Redirect &amp; API services</span></h2>
               <div className="relative w-60"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><input className="h-9 w-full rounded-lg border border-border bg-background pl-8 pr-2 text-sm outline-none" placeholder="Search service" value={q} onChange={(e) => setQ(e.target.value)} /></div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              {TYPES.map((t) => (
-                <button key={t.key} onClick={() => setType(t.key)} className={`inline-flex items-center gap-1.5 rounded-full px-3 h-9 text-xs font-semibold transition ${type === t.key ? "bg-india-green text-white shadow-soft" : "border border-border bg-card hover:bg-muted"}`}>
-                  <t.icon className="h-3.5 w-3.5" />{t.label}<span className={`rounded-full px-1.5 text-[10px] font-bold ${type === t.key ? "bg-white/25" : "bg-muted text-muted-foreground"}`}>{typeCounts[t.key] ?? 0}</span>
-                </button>
-              ))}
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <button onClick={() => setCat("all")} className={`inline-flex items-center gap-1.5 rounded-full px-3 h-8 text-xs font-semibold transition ${cat === "all" ? "bg-foreground text-background" : "border border-border bg-card hover:bg-muted"}`}><FolderTree className="h-3.5 w-3.5" /> All categories</button>
-              {categories.map(([name, n]) => (
-                <button key={name} onClick={() => setCat(name)} className={`inline-flex items-center gap-1.5 rounded-full px-3 h-8 text-xs font-semibold transition ${cat === name ? "bg-foreground text-background" : "border border-border bg-card hover:bg-muted"}`}>
-                  {name}<span className={`rounded-full px-1.5 text-[10px] font-bold ${cat === name ? "bg-background/25" : "bg-muted text-muted-foreground"}`}>{n}</span>
-                </button>
-              ))}
             </div>
 
             {byCategory.length === 0 ? (
