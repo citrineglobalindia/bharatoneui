@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { sanitizeMobile } from "@/lib/phone";
 import { toast } from "sonner";
-import { Users, Search, Loader2, RefreshCw, UserPlus, Eye, X, Check, ShieldCheck } from "lucide-react";
+import { Users, Search, Loader2, RefreshCw, UserPlus, Eye, X, Check, ShieldCheck, Trash2, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -24,6 +24,17 @@ const roleColor: Record<string, string> = {
   telecaller: "bg-orange-100 text-orange-700", retailer: "bg-sky-100 text-sky-700",
 };
 
+// CR-51: User Management modules — each tab scopes the list to a role group.
+type Module = { key: string; label: string; roles: string[]; defaultRole: string };
+const MODULES: Module[] = [
+  { key: "all", label: "All Users", roles: ALL_ROLES, defaultRole: "telecaller" },
+  { key: "retailer", label: "Retailer (JSKO) Staff", roles: ["retailer"], defaultRole: "retailer" },
+  { key: "office", label: "Office Staff", roles: ["operator", "hr_staff", "manager", "accountant", "qc", "telecaller", "bde", "employee", "admin"], defaultRole: "operator" },
+  { key: "dro", label: "DRO Staff", roles: ["dro"], defaultRole: "dro" },
+  { key: "tro", label: "TRO Staff", roles: ["tro"], defaultRole: "tro" },
+  { key: "distributor", label: "Distributor Staff", roles: ["distributor", "master-distributor"], defaultRole: "distributor" },
+];
+
 function genPwd() { return "Bo" + Math.random().toString(36).slice(2, 8) + "@" + Math.floor(Math.random() * 90 + 10); }
 
 export function AdminUsers() {
@@ -42,6 +53,10 @@ export function AdminUsers() {
   const [kycFile, setKycFile] = useState<File | null>(null);
   const [sowFile, setSowFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
+  const [moduleKey, setModuleKey] = useState("all");
+  const activeModule = MODULES.find((m) => m.key === moduleKey) ?? MODULES[0];
+  const [confirmDel, setConfirmDel] = useState<U | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -53,12 +68,15 @@ export function AdminUsers() {
   }
   useEffect(() => { load(); ensureStaffSession().then((ok) => { if (ok) load(); }); }, []);
 
+  const inModule = (u: U, m: Module) => m.key === "all" ? true : u.roles.some((r) => m.roles.includes(r));
+  const moduleCount = (m: Module) => rows.filter((u) => inModule(u, m)).length;
   const filtered = useMemo(() => rows
+    .filter((u) => inModule(u, activeModule))
     .filter((u) => roleFilter === "all" ? true : u.roles.includes(roleFilter))
     .filter((u) => {
       if (!q.trim()) return true; const s = q.toLowerCase();
       return [u.email, u.display_name, u.department, u.employee_code].filter(Boolean).some((v) => String(v).toLowerCase().includes(s));
-    }), [rows, q, roleFilter]);
+    }), [rows, q, roleFilter, moduleKey]);
 
   const toggleActive = async (u: U) => {
     const { error } = await supabase.from("profiles").update({ is_active: !u.is_active }).eq("id", u.id);
@@ -78,6 +96,17 @@ export function AdminUsers() {
     if (error) { toast.error(error.message); return; }
     await load();
     setDetail((d) => d && d.id === u.id ? { ...d, roles: addRole ? [...new Set([...d.roles, role])] : d.roles.filter((r) => r !== role) } : d);
+  };
+  const deleteUser = async (u: U) => {
+    setDeleting(true);
+    try {
+      const { error } = await (supabase.rpc as any)("admin_delete_user", { target: u.id });
+      if (error) { toast.error("Delete failed", { description: error.message }); return; }
+      toast.success("User deleted permanently");
+      setConfirmDel(null); setDetail(null);
+      setRows((rs) => rs.filter((x) => x.id !== u.id));
+      await load();
+    } finally { setDeleting(false); }
   };
   const uploadStaffDoc = async (uid: string, kind: string, file: File) => {
     const ext = (file.name.split(".").pop() || "bin").toLowerCase();
@@ -160,16 +189,29 @@ export function AdminUsers() {
 
   return (
     <div className="space-y-4">
+      <div className="flex flex-wrap gap-1.5 rounded-xl border border-border bg-card p-1.5">
+        {MODULES.map((m) => {
+          const on = m.key === moduleKey;
+          return (
+            <button key={m.key} onClick={() => { setModuleKey(m.key); setRoleFilter("all"); }}
+              className={`flex items-center gap-1.5 rounded-lg px-3 h-9 text-xs font-semibold transition ${on ? "bg-india-green text-white" : "text-muted-foreground hover:bg-muted"}`}>
+              {m.label}
+              <span className={`rounded-full px-1.5 text-[10px] font-bold ${on ? "bg-white/25" : "bg-muted-foreground/10"}`}>{moduleCount(m)}</span>
+            </button>
+          );
+        })}
+      </div>
+
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex items-center gap-2 rounded-lg bg-muted px-3 h-9 flex-1 min-w-[220px]">
           <Search className="h-4 w-4 text-muted-foreground" />
           <input className="bg-transparent flex-1 text-sm outline-none" placeholder="Search name, email, dept, code…" value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
         <select className="h-9 rounded-lg border border-border bg-card px-2 text-sm" value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
-          <option value="all">All roles</option>{ALL_ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
+          <option value="all">{moduleKey === "all" ? "All roles" : "All roles in module"}</option>{activeModule.roles.map((r) => <option key={r} value={r}>{r}</option>)}
         </select>
         <Button variant="outline" size="sm" onClick={load} disabled={loading}><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh</Button>
-        <Button size="sm" className="bg-india-green text-white" onClick={() => setShowAdd(true)}><UserPlus className="h-4 w-4" /> Add staff</Button>
+        <Button size="sm" className="bg-india-green text-white" onClick={() => { setAdd({ ...blankAdd, role: activeModule.defaultRole }); setLangs([]); setKycFile(null); setSowFile(null); setShowAdd(true); }}><UserPlus className="h-4 w-4" /> Add user</Button>
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-border bg-card">
@@ -305,9 +347,12 @@ export function AdminUsers() {
               )}
             </div>
           )}
-          <DialogFooter className="gap-2">
-            {detail && <Button variant="outline" className={detail.is_active ? "text-rose-600" : "text-emerald-700"} onClick={() => toggleActive(detail)}>
-              {detail.is_active ? "Deactivate" : "Activate"}</Button>}
+          <DialogFooter className="gap-2 sm:justify-between">
+            <div className="flex flex-wrap gap-2">
+              {detail && <Button variant="outline" className={detail.is_active ? "text-rose-600" : "text-emerald-700"} onClick={() => toggleActive(detail)}>
+                {detail.is_active ? "Deactivate" : "Activate"}</Button>}
+              {detail && !detail.roles.includes("admin") && <Button variant="outline" className="border-rose-200 text-rose-600 hover:bg-rose-50" onClick={() => setConfirmDel(detail)}><Trash2 className="h-4 w-4" /> Delete</Button>}
+            </div>
             <Button onClick={() => setDetail(null)}>Close</Button>
           </DialogFooter>
         </DialogContent>
@@ -319,7 +364,7 @@ export function AdminUsers() {
           <DialogHeader><DialogTitle className="flex items-center gap-2"><UserPlus className="h-5 w-5 text-saffron" /> Add New User</DialogTitle><DialogDescription>Distributor & Retailer need only basic details; staff roles show the full profile.</DialogDescription></DialogHeader>
 
           <Sec title="Role & Status">
-            <F label="Role *"><select className={input} value={add.role} onChange={(e) => setAdd({ ...add, role: e.target.value })}>{ALL_ROLES.map((r) => <option key={r} value={r}>{r}</option>)}</select></F>
+            <F label="Role *"><select className={input} value={add.role} onChange={(e) => setAdd({ ...add, role: e.target.value })}>{(moduleKey === "all" ? ALL_ROLES : activeModule.roles).map((r) => <option key={r} value={r}>{r}</option>)}</select></F>
             <F label="Status"><select className={input} value={add.status} onChange={(e) => setAdd({ ...add, status: e.target.value })}><option value="active">Active</option><option value="inactive">Inactive</option></select></F>
           </Sec>
 
@@ -396,6 +441,24 @@ export function AdminUsers() {
           <DialogFooter className="mt-2">
             <Button variant="outline" onClick={() => setShowAdd(false)}><X className="h-4 w-4" /> Cancel</Button>
             <Button className="bg-india-green text-white" onClick={createStaff} disabled={busy}>{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Create user</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirm permanent delete */}
+      <Dialog open={!!confirmDel} onOpenChange={(o) => !o && setConfirmDel(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-rose-600"><AlertTriangle className="h-5 w-5" /> Delete user permanently</DialogTitle>
+            <DialogDescription>
+              This permanently removes <span className="font-semibold text-foreground">{confirmDel?.display_name}</span> ({confirmDel?.email}), their login, profile and role assignments. This cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setConfirmDel(null)} disabled={deleting}>Cancel</Button>
+            <Button className="bg-rose-600 text-white hover:bg-rose-700" onClick={() => confirmDel && deleteUser(confirmDel)} disabled={deleting}>
+              {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />} Delete permanently
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
