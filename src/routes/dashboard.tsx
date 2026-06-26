@@ -8,6 +8,7 @@ import {
 import { RetailerShell } from "@/components/retailer/retailer-shell";
 import { PageHeader, StatusBadge } from "@/components/retailer/page-header";
 import { StatCard } from "@/components/retailer/stat-card";
+import { NoticeMarquee } from "@/components/retailer/notice-marquee";
 import { DataTable, type Column } from "@/components/retailer/data-table";
 import { inr } from "@/components/retailer/mock-data";
 import { supabase } from "@/integrations/supabase/client";
@@ -174,6 +175,7 @@ function DashboardPage() {
   return (
     <RetailerShell>
       <div className="space-y-5">
+        <NoticeMarquee />
         <PageHeader
           title={`Hello, ${firstName} 👋`}
           subtitle="Here's what's happening with your business today."
