@@ -7,39 +7,61 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/new-service-request")({
   head: () => ({ meta: [{ title: "New Application — BharatOne" }] }),
+  validateSearch: (s: Record<string, unknown>): { group?: string } => ({ group: typeof s.group === "string" ? s.group : undefined }),
   component: NewRequestPage,
 });
+
+const GROUPS: { key: string; label: string }[] = [
+  { key: "b2c", label: "B2C Services" },
+  { key: "g2c", label: "G2C Services" },
+  { key: "state_gov", label: "State Government Services" },
+  { key: "central_gov", label: "Central Government Services" },
+  { key: "internal_links", label: "Internal Links" },
+  { key: "mart", label: "BharatOne Mart - Separate KYC" },
+];
 
 type Svc = { id: string; name: string; category: string | null; category_id: string | null; logo_url: string | null; service_charge: number; retailer_commission: number; form_schema: any };
 const inr = (n: number) => "₹" + Number(n || 0).toLocaleString("en-IN");
 const PALETTE = ["from-sky-500 to-blue-600", "from-emerald-500 to-green-600", "from-orange-500 to-amber-600", "from-violet-500 to-fuchsia-600", "from-rose-500 to-pink-600", "from-cyan-500 to-teal-600", "from-indigo-500 to-blue-600", "from-teal-500 to-emerald-600"];
 
 function NewRequestPage() {
+  const { group } = Route.useSearch();
   const [svcs, setSvcs] = useState<Svc[]>([]);
+  const [catGroup, setCatGroup] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("all");
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from("services")
-        .select("id,name,category,category_id,logo_url,service_charge,retailer_commission,form_schema")
-        .eq("is_active", true).eq("service_type", "backend").order("sort_order").order("name");
-      setSvcs((data as Svc[]) ?? []);
+      const [svc, cats] = await Promise.all([
+        supabase.from("services")
+          .select("id,name,category,category_id,logo_url,service_charge,retailer_commission,form_schema")
+          .eq("is_active", true).eq("service_type", "backend").order("sort_order").order("name"),
+        supabase.from("service_categories").select("id,service_group"),
+      ]);
+      setSvcs((svc.data as Svc[]) ?? []);
+      const m: Record<string, string> = {};
+      ((cats.data as { id: string; service_group: string }[]) ?? []).forEach((c) => { m[c.id] = c.service_group; });
+      setCatGroup(m);
       setLoading(false);
     })();
   }, []);
 
+  const inGroup = (s: Svc) => !group || (s.category_id != null && catGroup[s.category_id] === group);
+  const groupLabel = group ? (GROUPS.find((g) => g.key === group)?.label ?? "Services") : null;
+
   const categories = useMemo(() => {
     const m = new Map<string, number>();
-    svcs.forEach((s) => { const k = s.category || "Other"; m.set(k, (m.get(k) || 0) + 1); });
+    svcs.filter(inGroup).forEach((s) => { const k = s.category || "Other"; m.set(k, (m.get(k) || 0) + 1); });
     return Array.from(m.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-  }, [svcs]);
+  }, [svcs, group, catGroup]);
 
   const filtered = useMemo(() => svcs.filter((s) =>
+    inGroup(s) &&
     (cat === "all" || (s.category || "Other") === cat) &&
     (!q || [s.name, s.category].filter(Boolean).some((v) => String(v).toLowerCase().includes(q.toLowerCase())))
-  ), [svcs, q, cat]);
+  ), [svcs, q, cat, group, catGroup]);
 
   const byCategory = useMemo(() => {
     const m = new Map<string, Svc[]>();
@@ -52,7 +74,7 @@ function NewRequestPage() {
   return (
     <RetailerShell>
       <div className="space-y-5">
-        <PageHeader icon={<PlusCircle className="h-5 w-5" />} title="New Application" subtitle="Apply for a backend service. Pick a service to fill the form and submit to the assigned operator." />
+        <PageHeader icon={<PlusCircle className="h-5 w-5" />} title={groupLabel ? `New Application — ${groupLabel}` : "New Application"} subtitle={groupLabel ? `Apply for a ${groupLabel} service — pick one to fill the form and submit to the assigned operator.` : "Apply for a backend service. Pick a service to fill the form and submit to the assigned operator."} />
 
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground"><Server className="h-4 w-4 text-india-green" /> Backend Services</p>
