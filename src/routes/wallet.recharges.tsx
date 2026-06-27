@@ -13,6 +13,7 @@ export const Route = createFileRoute("/wallet/recharges")({
 
 type Row = { id: string; amount: number; method: string | null; reference: string | null; status: string; created_at: string };
 const inr = (n: number) => "₹" + Number(n || 0).toLocaleString("en-IN");
+const inr2 = (n: number) => "₹" + Number(n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 // Full payment-transaction status set (CCAvenue-style)
 const norm = (raw: string) => {
   const v = (raw || "").toLowerCase().replace(/[\s/-]+/g, "_");
@@ -109,16 +110,25 @@ function RechargesPage() {
 
         <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-soft">
           <table className="w-full text-sm">
-            <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground"><tr><th className="px-3 py-2.5">Order ID</th><th className="px-3 py-2.5">Method</th><th className="px-3 py-2.5">Reference</th><th className="px-3 py-2.5 text-right">Amount</th><th className="px-3 py-2.5">Date</th><th className="px-3 py-2.5">Status</th></tr></thead>
+            <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground"><tr>
+              <th className="px-3 py-2.5">#</th>
+              <th className="px-3 py-2.5">Order ID</th>
+              <th className="px-3 py-2.5 text-right">Service Charge</th>
+              <th className="px-3 py-2.5 text-right">PPI</th>
+              <th className="px-3 py-2.5 text-right">Amount</th>
+              <th className="px-3 py-2.5">Transaction Date</th>
+              <th className="px-3 py-2.5">Status</th>
+            </tr></thead>
             <tbody>
-              {loading ? <tr><td colSpan={6} className="px-3 py-10 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></td></tr>
-                : filtered.length === 0 ? <tr><td colSpan={6} className="px-3 py-10 text-center text-muted-foreground">No recharges found.</td></tr>
-                : filtered.map((r) => (
+              {loading ? <tr><td colSpan={7} className="px-3 py-10 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></td></tr>
+                : filtered.length === 0 ? <tr><td colSpan={7} className="px-3 py-10 text-center text-muted-foreground">No recharges found.</td></tr>
+                : filtered.map((r, i) => (
                   <tr key={r.id} className="border-t border-border">
-                    <td className="px-3 py-2.5 font-mono text-xs">{r.id.slice(0, 10)}</td>
-                    <td className="px-3 py-2.5">{r.method || "—"}</td>
-                    <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{r.reference || "—"}</td>
-                    <td className="px-3 py-2.5 text-right font-semibold">{inr(r.amount)}</td>
+                    <td className="px-3 py-2.5 text-muted-foreground">{i + 1}</td>
+                    <td className="px-3 py-2.5 font-mono text-xs">{r.id}</td>
+                    <td className="px-3 py-2.5 text-right text-muted-foreground">{inr2(0)}</td>
+                    <td className="px-3 py-2.5 text-right text-muted-foreground">{inr2(0)}</td>
+                    <td className="px-3 py-2.5 text-right font-semibold">{inr2(r.amount)}</td>
                     <td className="px-3 py-2.5 text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString("en-IN")}</td>
                     <td className="px-3 py-2.5"><span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${metaOf(r.status).tone}`}>{metaOf(r.status).label}</span></td>
                   </tr>
