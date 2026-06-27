@@ -14,6 +14,7 @@ export function VideoKycStep() {
   const setTerms = (v: boolean) => set({ termsAgreed: v });
   const fullName = [data.firstName, data.middleName, data.surname].filter(Boolean).join(" ") || "[Your Name]";
   const fullAddress = [data.buildingShopNo, data.streetArea, data.landmark, data.villageName, data.city, data.taluk, data.district, data.state, data.pincode].filter(Boolean).join(", ") || "[Address from your form]";
+  const [lang, setLang] = useState<"kn" | "en">("kn");
 
   const liveRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -132,18 +133,35 @@ export function VideoKycStep() {
         description="Read the declaration aloud while recording a short verification video."
       />
       <div className="rounded-xl border border-border bg-background/40 p-5">
-        <h3 className="text-sm font-bold text-foreground">🛡 Self Declaration (Read aloud during recording)</h3>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-sm font-bold text-foreground">🛡 Self Declaration (Read aloud during recording)</h3>
+          <div className="inline-flex rounded-lg border border-border bg-card p-0.5 text-xs font-semibold">
+            <button type="button" onClick={() => setLang("kn")} className={`rounded-md px-3 h-7 transition ${lang === "kn" ? "bg-india-green text-white" : "text-muted-foreground hover:text-foreground"}`}>ಕನ್ನಡ</button>
+            <button type="button" onClick={() => setLang("en")} className={`rounded-md px-3 h-7 transition ${lang === "en" ? "bg-india-green text-white" : "text-muted-foreground hover:text-foreground"}`}>English</button>
+          </div>
+        </div>
         <div className="mt-3 max-h-48 overflow-auto rounded-md border border-border bg-card p-3 text-sm leading-relaxed text-muted-foreground space-y-2">
-          <p className="font-semibold text-foreground">ಸ್ವಯಂ ಘೋಷಣೆ (Short Video Script)</p>
-          <p>
-            ನಾನು, {fullName}, ಈ ವೀಡಿಯೊದಲ್ಲಿ ಕಾಣಿಸುತ್ತಿರುವ ವ್ಯಕ್ತಿ ನಾನಾಗಿದ್ದು, ನೋಂದಣಿ ಸಮಯದಲ್ಲಿ ನೀಡಿದ ಎಲ್ಲಾ ಮಾಹಿತಿಯೂ ಸತ್ಯ ಮತ್ತು ಸರಿಯಾಗಿದೆ ಎಂದು ಘೋಷಿಸುತ್ತೇನೆ.
-          </p>
-          <p>ನಾನು ಸ್ವಯಂ ಪ್ರೇರಿತವಾಗಿ BharatOne Retailer ಆಗಿ ನೋಂದಣಿ ಮಾಡುತ್ತಿದ್ದೇನೆ.</p>
-          <p>ಈ ವೀಡಿಯೊವನ್ನು KYC ಪರಿಶೀಲನೆಗಾಗಿ ದಾಖಲಿಸಲು ಮತ್ತು ಬಳಸಲು ನನ್ನ ಸಂಪೂರ್ಣ ಒಪ್ಪಿಗೆ ಇದೆ.</p>
-          <p>ನನ್ನ ನೋಂದಾಯಿತ ವಿಳಾಸ: <span className="font-semibold text-foreground">{fullAddress}</span>.</p>
-          <p>I confirm that the Aadhaar / PAN documents shown in this video belong to me.</p>
-          <p>My registered address is: <span className="font-semibold text-foreground">{fullAddress}</span>.</p>
-          <p>I agree to abide by the terms and conditions of BharatOne.</p>
+          {lang === "kn" ? (
+            <>
+              <p className="font-semibold text-foreground">ಸ್ವಯಂ ಘೋಷಣೆ (ಸಂಕ್ಷಿಪ್ತ ವೀಡಿಯೊ ಸ್ಕ್ರಿಪ್ಟ್)</p>
+              <p>ನಾನು, {fullName}, ಈ ವೀಡಿಯೊದಲ್ಲಿ ಕಾಣಿಸುತ್ತಿರುವ ವ್ಯಕ್ತಿ ನಾನಾಗಿದ್ದು, ನೋಂದಣಿ ಸಮಯದಲ್ಲಿ ನೀಡಿದ ಎಲ್ಲಾ ಮಾಹಿತಿಯೂ ಸತ್ಯ ಮತ್ತು ಸರಿಯಾಗಿದೆ ಎಂದು ಘೋಷಿಸುತ್ತೇನೆ.</p>
+              <p>ನಾನು ಸ್ವಯಂ ಪ್ರೇರಿತವಾಗಿ BharatOne Retailer ಆಗಿ ನೋಂದಣಿ ಮಾಡುತ್ತಿದ್ದೇನೆ.</p>
+              <p>ಈ ವೀಡಿಯೊವನ್ನು KYC ಪರಿಶೀಲನೆಗಾಗಿ ದಾಖಲಿಸಲು ಮತ್ತು ಬಳಸಲು ನನ್ನ ಸಂಪೂರ್ಣ ಒಪ್ಪಿಗೆ ಇದೆ.</p>
+              <p>ಈ ವೀಡಿಯೊದಲ್ಲಿ ತೋರಿಸಿರುವ ಆಧಾರ್ / ಪ್ಯಾನ್ ದಾಖಲೆಗಳು ನನಗೆ ಸೇರಿದವು ಎಂದು ನಾನು ಖಚಿತಪಡಿಸುತ್ತೇನೆ.</p>
+              <p>ನನ್ನ ನೋಂದಾಯಿತ ವಿಳಾಸ: <span className="font-semibold text-foreground">{fullAddress}</span>.</p>
+              <p>BharatOne ನ ನಿಯಮಗಳು ಮತ್ತು ಷರತ್ತುಗಳನ್ನು ಪಾಲಿಸಲು ನಾನು ಒಪ್ಪುತ್ತೇನೆ.</p>
+            </>
+          ) : (
+            <>
+              <p className="font-semibold text-foreground">Self Declaration (Short Video Script)</p>
+              <p>I, {fullName}, declare that I am the person appearing in this video, and that all the information provided during registration is true and correct.</p>
+              <p>I am registering as a BharatOne Retailer of my own free will.</p>
+              <p>I give my full consent to record and use this video for KYC verification.</p>
+              <p>I confirm that the Aadhaar / PAN documents shown in this video belong to me.</p>
+              <p>My registered address is: <span className="font-semibold text-foreground">{fullAddress}</span>.</p>
+              <p>I agree to abide by the terms and conditions of BharatOne.</p>
+            </>
+          )}
         </div>
       </div>
 
