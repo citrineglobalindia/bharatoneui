@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import {
   ArrowLeft,
@@ -131,6 +131,11 @@ function RegisterFlow() {
 
   const next = () => setCurrent((c) => Math.min(c + 1, steps.length - 1));
   const prev = () => setCurrent((c) => Math.max(c - 1, 0));
+
+  // On every step change (e.g. Business → KYC Docs), start at the top of the page.
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [current]);
 
   const submitDistributor = async (d: DistributorFormData, formFile: File) => {
     setSubmitting(true);
