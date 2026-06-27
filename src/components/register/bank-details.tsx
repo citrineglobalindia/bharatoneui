@@ -103,6 +103,9 @@ export function BankDetailsSection({
   const [showAcc, setShowAcc] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [touched, setTouched] = useState<Partial<Record<keyof BankDetailsValue, boolean>>>({});
+  // Locked until the user focuses it, so the browser can't autofill the bank name
+  // (e.g. with the JSKO username it remembered from an earlier field).
+  const [bankNameLocked, setBankNameLocked] = useState(true);
 
   const computed = useMemo(() => validateBankDetails(value), [value]);
   const eff: BankErrors = errors ?? computed;
@@ -155,6 +158,11 @@ export function BankDetailsSection({
             className={cn(inputCls, showErr("bankName") && "border-red-400 focus-visible:ring-red-500/15")}
             placeholder="e.g. State Bank of India"
             autoComplete="off"
+            name="bo-bank-name"
+            data-lpignore="true"
+            data-1p-ignore
+            readOnly={bankNameLocked}
+            onFocus={() => setBankNameLocked(false)}
             value={value.bankName}
             maxLength={80}
             onChange={(e) => set("bankName", e.target.value.replace(/\d/g, ""))}
