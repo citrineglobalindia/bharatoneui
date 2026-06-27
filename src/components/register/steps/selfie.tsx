@@ -72,6 +72,10 @@ export function SelfieStep() {
         title="Live Selfie Verification"
         description="Take a clear selfie using your camera. Gallery uploads are not allowed."
       />
+      <div className="flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800">
+        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+        <span>Note: Please click the selfie without wearing spectacles (glasses).</span>
+      </div>
       {error && (
         <div className="flex items-start gap-2 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" /> <span>{error}</span>
