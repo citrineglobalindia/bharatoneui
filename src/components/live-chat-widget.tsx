@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { MessageCircle, X, Loader2, Headset } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,6 +14,14 @@ export function LiveChatWidget() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => { (async () => { const { data } = await supabase.auth.getUser(); setAuthed(!!data.user); })(); }, []);
+
+  // Allow other parts of the app (e.g. the Support "Live Chat" card) to open the chat.
+  const openRef = useRef<() => void>(() => {});
+  useEffect(() => {
+    const handler = () => openRef.current();
+    window.addEventListener("bo:open-live-chat", handler);
+    return () => window.removeEventListener("bo:open-live-chat", handler);
+  }, []);
 
   const openChat = async () => {
     setOpen(true);
@@ -34,6 +42,8 @@ export function LiveChatWidget() {
       setTicketId(id!);
     } finally { setLoading(false); }
   };
+
+  openRef.current = () => { void openChat(); };
 
   if (!authed) return null;
   const grad = "linear-gradient(135deg,#ff9123 0%,#138808 100%)";

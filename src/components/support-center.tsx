@@ -9,14 +9,20 @@ import { ChatInbox } from "@/components/chat-inbox";
 
 type Ticket = { id: string; ticket_no: string; user_id: string; assigned_to: string | null; user_name: string | null; category: string | null; priority: string | null; subject: string; body: string | null; status: string; assigned_name: string | null; created_at: string };
 const statusTone: Record<string, string> = { open: "bg-amber-100 text-amber-700", in_progress: "bg-indigo-100 text-indigo-700", resolved: "bg-emerald-100 text-emerald-700", closed: "bg-slate-100 text-slate-600" };
-const CATS = ["Technical", "Payments", "Wallet", "Application", "Account", "Other"];
+const DEPARTMENTS = ["Technical", "Payments & Wallet", "Onboarding & KYC", "Services", "Accounts", "Other"];
+type Cat = { id: string; name: string };
+type Sub = { id: string; category_id: string; name: string };
+type Svc = { id: string; name: string };
 
 export function SupportCenter() {
   const me = useCurrentUser();
   const [uid, setUid] = useState("");
   const [rows, setRows] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState({ category: "Technical", priority: "Low", subject: "", body: "" });
+  const [cats, setCats] = useState<Cat[]>([]);
+  const [subs, setSubs] = useState<Sub[]>([]);
+  const [services, setServices] = useState<Svc[]>([]);
+  const [form, setForm] = useState({ department: DEPARTMENTS[0], service: "", categoryId: "", subcategory: "", priority: "Low", subject: "", body: "" });
   const [sending, setSending] = useState(false);
   const [sel, setSel] = useState<Ticket | null>(null);
   const [tab, setTab] = useState<"mine" | "assigned">("mine");
@@ -25,8 +31,17 @@ export function SupportCenter() {
     setLoading(true);
     const { data: u } = await supabase.auth.getUser();
     setUid(u.user?.id ?? "");
-    const { data } = await supabase.from("support_tickets").select("*").order("created_at", { ascending: false });
-    setRows((data as Ticket[]) ?? []); setLoading(false);
+    const [t, c, s, sv] = await Promise.all([
+      supabase.from("support_tickets").select("*").order("created_at", { ascending: false }),
+      supabase.from("support_categories").select("id,name").eq("is_active", true).order("sort_order"),
+      supabase.from("support_subcategories").select("id,category_id,name").eq("is_active", true).order("sort_order"),
+      supabase.from("services").select("id,name").eq("is_active", true).order("name"),
+    ]);
+    setRows((t.data as Ticket[]) ?? []);
+    const cl = (c.data as Cat[]) ?? [];
+    setCats(cl); setSubs((s.data as Sub[]) ?? []); setServices((sv.data as Svc[]) ?? []);
+    setForm((f) => (f.categoryId ? f : { ...f, categoryId: cl[0]?.id ?? "" }));
+    setLoading(false);
   }
   useEffect(() => { load(); }, []);
   const mine = rows.filter((t) => t.user_id === uid);
@@ -37,20 +52,25 @@ export function SupportCenter() {
     setSending(true);
     const { data: u } = await supabase.auth.getUser();
     if (!u.user) { setSending(false); return toast.error("Please sign in"); }
-    const { error } = await supabase.from("support_tickets").insert({ user_id: u.user.id, user_name: me.name, user_role: me.role, category: form.category, priority: form.priority, subject: form.subject.trim(), body: form.body || null });
+    const catName = cats.find((c) => c.id === form.categoryId)?.name ?? null;
+    const { error } = await supabase.from("support_tickets").insert({ user_id: u.user.id, user_name: me.name, user_role: me.role, department: form.department || null, service: form.service || null, category: catName, subcategory: form.subcategory || null, priority: form.priority, subject: form.subject.trim(), body: form.body || null });
     setSending(false);
     if (error) return toast.error("Couldn't raise ticket", { description: error.message });
     toast.success("Ticket raised", { description: "Our team will respond shortly." });
-    setForm({ category: "Technical", priority: "Low", subject: "", body: "" }); load();
+    setForm({ department: DEPARTMENTS[0], service: "", categoryId: cats[0]?.id ?? "", subcategory: "", priority: "Low", subject: "", body: "" }); load();
   };
   const inp = "h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-india-green/30";
 
   return (
     <div className="space-y-5">
       <div className="grid gap-3 lg:grid-cols-3">
-        {[["Call us", "+91 90711 00311 · 8am–10pm", Phone, "bg-india-green/10 text-india-green"], ["Email", "support@mybharatone.com", Mail, "bg-blue-500/10 text-blue-600"], ["Live Chat", "Use the chat button, bottom-right", MessageSquare, "bg-violet-500/10 text-violet-600"]].map(([t, d, Icon, tone]: any, i) => (
-          <div key={i} className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-soft"><span className={`grid h-10 w-10 place-items-center rounded-xl ${tone}`}><Icon className="h-5 w-5" /></span><div><p className="text-sm font-bold">{t}</p><p className="text-xs text-muted-foreground">{d}</p></div></div>
-        ))}
+        <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-soft"><span className="grid h-10 w-10 place-items-center rounded-xl bg-india-green/10 text-india-green"><Phone className="h-5 w-5" /></span><div><p className="text-sm font-bold">Call us</p><p className="text-xs text-muted-foreground">+91 90711 00311 · 8am–10pm</p></div></div>
+        <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-soft"><span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-500/10 text-blue-600"><Mail className="h-5 w-5" /></span><div><p className="text-sm font-bold">Email</p><p className="text-xs text-muted-foreground">support@mybharatone.com</p></div></div>
+        <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("bo:open-live-chat"))}
+          className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 text-left shadow-soft transition hover:border-violet-300 hover:shadow-elev">
+          <span className="grid h-10 w-10 place-items-center rounded-xl bg-violet-500/10 text-violet-600"><MessageSquare className="h-5 w-5" /></span>
+          <div><p className="text-sm font-bold">Live Chat</p><p className="text-xs text-muted-foreground">Click to start chatting now</p></div>
+        </button>
       </div>
 
       <div className="inline-flex rounded-lg border border-border bg-card p-0.5">
@@ -64,8 +84,23 @@ export function SupportCenter() {
         <div className="grid gap-5 lg:grid-cols-[360px_1fr] items-start">
           <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
             <p className="mb-3 flex items-center gap-2 text-sm font-bold"><Plus className="h-4 w-4 text-india-green" /> Raise a Ticket</p>
-            <label className="text-[11px] font-semibold text-muted-foreground">Category</label>
-            <select className={inp} value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>{CATS.map((c) => <option key={c}>{c}</option>)}</select>
+            <label className="text-[11px] font-semibold text-muted-foreground">Department</label>
+            <select className={inp} value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })}>{DEPARTMENTS.map((d) => <option key={d}>{d}</option>)}</select>
+            <label className="mt-3 block text-[11px] font-semibold text-muted-foreground">Service</label>
+            <select className={inp} value={form.service} onChange={(e) => setForm({ ...form, service: e.target.value })}>
+              <option value="">Select service (optional)</option>
+              {services.map((s) => <option key={s.id} value={s.name}>{s.name}</option>)}
+            </select>
+            <label className="mt-3 block text-[11px] font-semibold text-muted-foreground">Category</label>
+            <select className={inp} value={form.categoryId} onChange={(e) => setForm({ ...form, categoryId: e.target.value, subcategory: "" })}>
+              <option value="">Select category</option>
+              {cats.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+            <label className="mt-3 block text-[11px] font-semibold text-muted-foreground">Sub-Category</label>
+            <select className={inp} value={form.subcategory} onChange={(e) => setForm({ ...form, subcategory: e.target.value })} disabled={!form.categoryId}>
+              <option value="">{form.categoryId ? "Select sub-category" : "Select a category first"}</option>
+              {subs.filter((s) => s.category_id === form.categoryId).map((s) => <option key={s.id} value={s.name}>{s.name}</option>)}
+            </select>
             <label className="mt-3 block text-[11px] font-semibold text-muted-foreground">Priority</label>
             <select className={inp} value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })}><option>Low</option><option>Medium</option><option>High</option></select>
             <label className="mt-3 block text-[11px] font-semibold text-muted-foreground">Subject</label>
