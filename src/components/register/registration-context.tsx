@@ -6,6 +6,7 @@ export type RegFileKey =
   | "pan"
   | "aadhaar"
   | "shopPhoto"
+  | "shopPhotoInside"
   | "police"
   | "video"
   | "selfie"

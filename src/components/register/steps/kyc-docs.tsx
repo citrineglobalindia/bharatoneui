@@ -70,7 +70,8 @@ export function KycDocsStep() {
       <div className="grid gap-4 sm:grid-cols-2">
         <UploadBox title="PAN Card" required subtitle="Front side clearly visible" fileKey="pan" />
         <UploadBox title="Aadhaar Card" required subtitle="Front & back or e-Aadhaar" fileKey="aadhaar" />
-        <UploadBox title="Shop Photo" required subtitle="Visible signboard preferred" fileKey="shopPhoto" />
+        <UploadBox title="Inside Shop Photo" required subtitle="Interior view — counter / setup visible" fileKey="shopPhotoInside" />
+        <UploadBox title="Outside Shop Photo" required subtitle="Shopfront with signboard visible" fileKey="shopPhoto" />
         <UploadBox title="Police Verification (Optional)" subtitle="Police verification certificate" fileKey="police" />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">

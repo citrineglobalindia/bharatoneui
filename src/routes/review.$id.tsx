@@ -82,7 +82,7 @@ function ReviewPage() {
   const [reqMsg, setReqMsg] = useState("Not approved");
   const REQ_DOCS = ["PAN", "KYC Front", "KYC Back", "Shop Front Image", "Education Certificate", "Cancelled Cheque / Passbook", "Police Verification Certificate (Optional)"];
   const [reqSel, setReqSel] = useState<Record<string, boolean>>({ PAN: true, "KYC Front": true, "KYC Back": true });
-  const DOC_KEYS: { key: string; label: string }[] = [{ key: "pan", label: "PAN Card" }, { key: "aadhaar", label: "Aadhaar Card" }, { key: "selfie", label: "Selfie" }, { key: "shop", label: "Shop Photo" }, { key: "police", label: "Police Verification" }, { key: "video", label: "Video KYC" }];
+  const DOC_KEYS: { key: string; label: string }[] = [{ key: "pan", label: "PAN Card" }, { key: "aadhaar", label: "Aadhaar Card" }, { key: "selfie", label: "Selfie" }, { key: "shop", label: "Outside Shop Photo" }, { key: "police", label: "Police Verification" }, { key: "video", label: "Video KYC" }];
   const [reqKeys, setReqKeys] = useState<Record<string, boolean>>({ pan: true, aadhaar: true });
   const [events, setEvents] = useState<any[]>([]);
   const [editMode, setEditMode] = useState(false);
@@ -212,7 +212,8 @@ function ReviewPage() {
 
   const DOCS: { key: string; label: string; path: string | null }[] = [
     { key: "selfie", label: "Selfie", path: reg.selfie_path },
-    { key: "shop", label: "Shop Photo", path: reg.shop_photo_path },
+    { key: "shop", label: "Outside Shop Photo", path: reg.shop_photo_path },
+    { key: "shop_inside", label: "Inside Shop Photo", path: reg.shop_photo_inside_path },
     { key: "aadhaar", label: "Aadhaar", path: reg.aadhaar_doc_path },
     { key: "pan", label: "PAN Card", path: reg.pan_doc_path },
     { key: "police", label: "Police Verification", path: reg.police_verification_path },

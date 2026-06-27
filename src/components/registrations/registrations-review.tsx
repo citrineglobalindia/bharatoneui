@@ -917,7 +917,8 @@ export function RegistrationsReview() {
                       [
                         ["PAN Card", "pan", detail.pan_doc_path],
                         ["Aadhaar", "aadhaar", detail.aadhaar_doc_path],
-                        ["Shop Photo", "shop", detail.shop_photo_path],
+                        ["Outside Shop Photo", "shop", detail.shop_photo_path],
+                        ["Inside Shop Photo", "shop_inside", detail.shop_photo_inside_path],
                         ["Police Verification", "police", detail.police_verification_path],
                         ["Selfie", "selfie", detail.selfie_path],
                         ["Video KYC", "video", detail.video_kyc_path],
