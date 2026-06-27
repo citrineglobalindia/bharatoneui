@@ -140,6 +140,7 @@ export function VideoKycStep() {
           </p>
           <p>ನಾನು ಸ್ವಯಂ ಪ್ರೇರಿತವಾಗಿ BharatOne Retailer ಆಗಿ ನೋಂದಣಿ ಮಾಡುತ್ತಿದ್ದೇನೆ.</p>
           <p>ಈ ವೀಡಿಯೊವನ್ನು KYC ಪರಿಶೀಲನೆಗಾಗಿ ದಾಖಲಿಸಲು ಮತ್ತು ಬಳಸಲು ನನ್ನ ಸಂಪೂರ್ಣ ಒಪ್ಪಿಗೆ ಇದೆ.</p>
+          <p>ನನ್ನ ನೋಂದಾಯಿತ ವಿಳಾಸ: <span className="font-semibold text-foreground">{fullAddress}</span>.</p>
           <p>I confirm that the Aadhaar / PAN documents shown in this video belong to me.</p>
           <p>My registered address is: <span className="font-semibold text-foreground">{fullAddress}</span>.</p>
           <p>I agree to abide by the terms and conditions of BharatOne.</p>
