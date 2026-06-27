@@ -1,9 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { User } from "lucide-react";
 import { Field, inputCls, StepHeader } from "../field";
 import { useRegistration } from "../registration-context";
 
 const onlyLetters = (v: string) => v.replace(/[^A-Za-z ]/g, "");
+// Shared across the name/DOB inputs to stop the browser from autofilling them.
+const noFill = { autoComplete: "off", "data-lpignore": "true", "data-1p-ignore": true } as const;
 
 function ageFrom(dob: string): number | null {
   if (!dob) return null;
@@ -18,6 +20,9 @@ function ageFrom(dob: string): number | null {
 
 export function PersonalStep() {
   const { data, set } = useRegistration();
+  // Locked until the user interacts, so the browser can't pre-fill these fields.
+  const [locked, setLocked] = useState(true);
+  const unlock = () => setLocked(false);
 
   const firstOk = data.firstName.trim().length > 0;
   const surnameOk = data.surname.trim().length > 0;
@@ -41,15 +46,18 @@ export function PersonalStep() {
       />
       <div className="grid gap-4 sm:grid-cols-3">
         <Field label="First Name" required>
-          <input className={inputCls} autoComplete="off" placeholder="First name" value={data.firstName}
+          <input className={inputCls} {...noFill} name="bo-first-name" readOnly={locked} onFocus={unlock} onMouseDown={unlock}
+            placeholder="First name" value={data.firstName}
             onChange={(e) => set({ firstName: onlyLetters(e.target.value) })} />
         </Field>
         <Field label="Middle Name">
-          <input className={inputCls} autoComplete="off" placeholder="Middle name (optional)" value={data.middleName}
+          <input className={inputCls} {...noFill} name="bo-middle-name" readOnly={locked} onFocus={unlock} onMouseDown={unlock}
+            placeholder="Middle name (optional)" value={data.middleName}
             onChange={(e) => set({ middleName: onlyLetters(e.target.value) })} />
         </Field>
         <Field label="Surname" required>
-          <input className={inputCls} autoComplete="off" placeholder="Surname" value={data.surname}
+          <input className={inputCls} {...noFill} name="bo-surname" readOnly={locked} onFocus={unlock} onMouseDown={unlock}
+            placeholder="Surname" value={data.surname}
             onChange={(e) => set({ surname: onlyLetters(e.target.value) })} />
         </Field>
       </div>
@@ -58,7 +66,8 @@ export function PersonalStep() {
         <Field label="Date of Birth" required>
           <input
             type="date"
-            className={inputCls} autoComplete="off"
+            className={inputCls} {...noFill} name="bo-dob"
+            readOnly={locked} onFocus={unlock} onMouseDown={unlock}
             max={today}
             value={data.dob}
             onChange={(e) => set({ dob: e.target.value })}
