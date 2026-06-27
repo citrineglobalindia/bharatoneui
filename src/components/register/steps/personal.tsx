@@ -71,10 +71,6 @@ export function PersonalStep() {
           )}
         </Field>
       </div>
-
-      <p className="text-[12px] text-muted-foreground">
-        First name and surname are required (letters only). You must be 18+.
-      </p>
     </div>
   );
 }
