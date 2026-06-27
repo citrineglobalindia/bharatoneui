@@ -106,6 +106,8 @@ export function BankDetailsSection({
   // Locked until the user focuses it, so the browser can't autofill the bank name
   // (e.g. with the JSKO username it remembered from an earlier field).
   const [bankNameLocked, setBankNameLocked] = useState(true);
+  // Same guard for the account number (a password-type field the browser tries to fill).
+  const [accLocked, setAccLocked] = useState(true);
 
   const computed = useMemo(() => validateBankDetails(value), [value]);
   const eff: BankErrors = errors ?? computed;
@@ -194,6 +196,11 @@ export function BankDetailsSection({
               type={showAcc ? "text" : "password"}
               inputMode="numeric"
               autoComplete="off"
+              name="bo-acc-no"
+              data-lpignore="true"
+              data-1p-ignore
+              readOnly={accLocked}
+              onFocus={() => setAccLocked(false)}
               placeholder="123456789012"
               maxLength={18}
               value={value.accountNumber}
