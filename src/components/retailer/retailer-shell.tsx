@@ -269,7 +269,7 @@ function GlobalSearch() {
 
   return (
     <div ref={ref} className="relative hidden lg:block">
-      <div className="flex items-center gap-2 rounded-lg bg-muted/60 px-3 h-9 w-80">
+      <div className="flex items-center gap-2 rounded-lg bg-muted/60 px-3 h-9 w-[28rem] xl:w-[34rem]">
         <Search className="h-4 w-4 text-muted-foreground" />
         <input
           ref={inputRef}
