@@ -339,7 +339,9 @@ function RegisterFlow() {
   }, [current, type, data.payment]);
 
   const currentKey = steps[current].key;
-  const accountVerified = data.emailVerified && data.mobileVerified;
+  // SMS/mobile OTP hidden for now — email verification (+ a mobile number on the
+  // new flow, which the old JSKO flow auto-fills) is sufficient to proceed.
+  const accountVerified = data.emailVerified && /^[6-9]\d{9}$/.test(data.mobile);
 
   const pin6 = /^\d{6}$/.test(data.pincode);
   const addrOk =
@@ -361,7 +363,7 @@ function RegisterFlow() {
   const aadhaarOk = /^\d{12}$/.test(data.aadhaarNumber);
 
   const stepValid: Record<string, boolean> = {
-    portal: data.emailVerified && data.mobileVerified,
+    portal: data.emailVerified,
     account: accountVerified,
     personal: data.personalValid,
     business: !!data.shopName.trim() && addrOk && bankOk,
@@ -373,8 +375,10 @@ function RegisterFlow() {
   const blockNext = currentKey in stepValid ? !stepValid[currentKey] : false;
 
   const blockMsg =
-    currentKey === "account" || currentKey === "portal"
-      ? "Verify email & mobile OTP to continue"
+    currentKey === "account"
+      ? "Verify your email OTP and enter your mobile number to continue"
+      : currentKey === "portal"
+      ? "Verify email OTP to continue"
       : currentKey === "business"
         ? "Fill shop name, address, pincode (6 digits) and valid bank details"
         : currentKey === "kyc"

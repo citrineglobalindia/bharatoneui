@@ -187,12 +187,9 @@ export function OldPortalStep() {
       if (!ve && (vd as { verified?: boolean } | null)?.verified === true) {
         setEmailVerified(true);
         setEmailError(null);
-        if (mobileVerified) {
-          setStage("verified");
-          setSuccessChannel("all");
-        } else {
-          setSuccessChannel("email");
-        }
+        // SMS/mobile OTP is hidden for now — email verification alone proceeds.
+        setStage("verified");
+        setSuccessChannel("email");
         setSuccessOpen(true);
       } else {
         setEmailError("Incorrect code. Please try again or resend.");
@@ -254,12 +251,6 @@ export function OldPortalStep() {
           label="Verify Email"
           active={stage === "otp" && !emailVerified}
           done={emailVerified}
-        />
-        <Dash done={emailVerified} />
-        <MiniStep
-          label="Verify Mobile"
-          active={stage === "otp" && !mobileVerified}
-          done={mobileVerified}
         />
       </div>
 
@@ -343,17 +334,16 @@ export function OldPortalStep() {
               <div><p className="text-[10px] uppercase tracking-wide text-muted-foreground">Email</p><p className="font-semibold text-foreground break-all">{user.email || "—"}</p></div>
               <div><p className="text-[10px] uppercase tracking-wide text-muted-foreground">Mobile</p><p className="font-semibold text-foreground">{user.mobile || "—"}</p></div>
             </div>
-            <p className="mt-2 text-[11px] text-muted-foreground">Verify the email and mobile below via OTP to continue your migration.</p>
+            <p className="mt-2 text-[11px] text-muted-foreground">Verify the email below via OTP to continue your migration.</p>
           </div>
 
           {stage === "otp" && (
-            <Notice tone="warn" title="Both verifications required">
-              For your security, you must verify <span className="font-semibold">both</span> your
-              registered email and mobile to proceed.
+            <Notice tone="warn" title="Email verification required">
+              For your security, please verify your <span className="font-semibold">registered email</span> to proceed.
             </Notice>
           )}
 
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid gap-4">
             <OtpCard
               channel="email"
               icon={<Mail className="h-4 w-4" />}
@@ -372,30 +362,7 @@ export function OldPortalStep() {
               onVerify={() => verifyChannel("email")}
               inputsRef={emailInputsRef}
             />
-            <OtpCard
-              channel="mobile"
-              icon={<Phone className="h-4 w-4" />}
-              title="Mobile Verification"
-              target={maskMobile(user.mobile)}
-              otp={mobileOtp}
-              setOtp={setMobileOtp}
-              error={mobileError}
-              setError={setMobileError}
-              verified={mobileVerified}
-              verifying={verifyingMobile}
-              sent={mobileSent}
-              sending={sendingMobile}
-              cooldown={mobileCooldown}
-              onSend={() => sendOtp("mobile")}
-              onVerify={() => verifyChannel("mobile")}
-              inputsRef={mobileInputsRef}
-            />
           </div>
-
-          <p className="text-center text-[11px] text-muted-foreground">
-            Demo OTP: <span className="font-mono font-semibold text-foreground">123456</span> (use
-            for both)
-          </p>
         </div>
       )}
 
@@ -408,11 +375,10 @@ export function OldPortalStep() {
             </span>
             <div className="min-w-0">
               <h3 className="font-display text-base font-bold text-foreground">
-                Both verifications successful
+                Email verified successfully
               </h3>
               <p className="mt-0.5 text-[13px] text-muted-foreground">
-                Your <span className="font-semibold text-foreground">email</span> and{" "}
-                <span className="font-semibold text-foreground">mobile</span> have both been verified
+                Your <span className="font-semibold text-foreground">email</span> has been verified
                 against the JSKO records. Click{" "}
                 <span className="font-semibold text-foreground">Next</span> to continue with your
                 personal details.
