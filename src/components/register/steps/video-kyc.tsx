@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Video, MapPin, Square, RotateCcw, CheckCircle2, AlertTriangle } from "lucide-react";
 import { Notice, StepHeader } from "../field";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useRegistration } from "../registration-context";
 
 const MIN_SECONDS = 15;
@@ -15,6 +16,7 @@ export function VideoKycStep() {
   const fullName = [data.firstName, data.middleName, data.surname].filter(Boolean).join(" ") || "[Your Name]";
   const fullAddress = [data.buildingShopNo, data.streetArea, data.landmark, data.villageName, data.city, data.taluk, data.district, data.state, data.pincode].filter(Boolean).join(", ") || "[Address from your form]";
   const [lang, setLang] = useState<"kn" | "en">("kn");
+  const [consentOpen, setConsentOpen] = useState(false);
 
   const liveRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -259,7 +261,7 @@ export function VideoKycStep() {
             </p>
             <Button
               type="button"
-              onClick={start}
+              onClick={() => setConsentOpen(true)}
               disabled={!agree}
               className="bg-primary text-white hover:bg-primary/90 disabled:opacity-60"
             >
@@ -268,6 +270,24 @@ export function VideoKycStep() {
           </div>
         )}
       </div>
+
+      <Dialog open={consentOpen} onOpenChange={setConsentOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Video className="h-5 w-5 text-primary" /> Consent for camera access</DialogTitle>
+            <DialogDescription className="space-y-2 pt-1 text-left">
+              <span className="block text-foreground">I agree to read the above declaration clearly on video and show my identity document (Aadhaar/PAN) during recording.</span>
+              <span className="block text-xs">By continuing, you allow BharatOne to access your camera and microphone to record this verification video.</span>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button type="button" variant="outline" onClick={() => setConsentOpen(false)}>Cancel</Button>
+            <Button type="button" className="bg-primary text-white hover:bg-primary/90" onClick={() => { setConsentOpen(false); start(); }}>
+              <Video className="h-4 w-4" /> I Agree — Start Camera
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
