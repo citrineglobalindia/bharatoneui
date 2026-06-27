@@ -81,8 +81,8 @@ const oldSteps: Step[] = [
   { key: "personal", label: "Personal", icon: User },
   { key: "business", label: "Business", icon: Building2 },
   { key: "kyc", label: "KYC Docs", icon: Upload },
-  { key: "video", label: "Video KYC", icon: Video },
-  { key: "selfie", label: "Selfie & Submit", icon: Camera },
+  { key: "selfie", label: "Selfie Verification", icon: Camera },
+  { key: "video", label: "Video KYC & Submit", icon: Video },
 ];
 
 function RegisterPage() {
@@ -384,7 +384,7 @@ function RegisterFlow() {
             : currentKey === "payment"
               ? "Enter the UTR and upload the payment screenshot"
               : currentKey === "selfie"
-                ? "Capture your selfie to submit"
+                ? "Capture your selfie to continue"
                 : "Complete the required fields to continue";
 
   return (
