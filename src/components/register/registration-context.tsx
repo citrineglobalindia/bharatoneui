@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { emptyBankDetails, type BankDetailsValue } from "./bank-details";
 import type { PaymentData } from "./steps/payment";
 
@@ -117,11 +117,27 @@ const RegistrationContext = createContext<Ctx | null>(null);
 export function RegistrationProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<RegData>(defaultData);
   const [files, setFiles] = useState<RegFiles>({});
-  // Auto-fill from a saved draft is disabled so every registration starts blank and
-  // users enter all details manually. Also clear any previously stored draft.
+  const loaded = useRef(false);
+
+  // Retain in-progress data across Back / refresh within the same browser tab
+  // (sessionStorage auto-clears when the tab closes, so it isn't carried across
+  // sessions). This is client-side only — nothing reaches admin/QC/accountant until
+  // the registration is submitted. clearDraft() wipes it on successful submit.
   useEffect(() => {
-    try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
+    try {
+      localStorage.removeItem(DRAFT_KEY); // drop any legacy persistent draft
+      const raw = sessionStorage.getItem(DRAFT_KEY);
+      if (raw) setData((d) => ({ ...d, ...JSON.parse(raw) }));
+    } catch { /* ignore */ }
+    loaded.current = true;
   }, []);
+  useEffect(() => {
+    if (!loaded.current) return;
+    try {
+      const { password: _pw, ...rest } = data;
+      sessionStorage.setItem(DRAFT_KEY, JSON.stringify(rest));
+    } catch { /* ignore */ }
+  }, [data]);
 
   const set = (patch: Partial<RegData>) => setData((d) => ({ ...d, ...patch }));
   const setFile = (key: RegFileKey, file: File | undefined) =>
@@ -132,7 +148,7 @@ export function RegistrationProvider({ children }: { children: ReactNode }) {
       return next;
     });
   const clearDraft = () => {
-    try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
+    try { sessionStorage.removeItem(DRAFT_KEY); localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
     setData(defaultData);
     setFiles({});
   };

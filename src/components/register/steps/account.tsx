@@ -24,15 +24,17 @@ const RESEND_COOLDOWN = 30;
 type Channel = "email" | "mobile";
 
 export function AccountStep() {
-  const [email, setEmail] = useState("");
-  const [mobile, setMobile] = useState("");
+  const { data, set: setReg } = useRegistration();
+  // Seed from the shared registration data so going Back keeps what was entered/verified.
+  const [email, setEmail] = useState(data.email || "");
+  const [mobile, setMobile] = useState(data.mobile || "");
 
   const [emailOtp, setEmailOtp] = useState<string[]>(Array(6).fill(""));
   const [mobileOtp, setMobileOtp] = useState<string[]>(Array(6).fill(""));
   const [emailSent, setEmailSent] = useState(false);
   const [mobileSent, setMobileSent] = useState(false);
-  const [emailVerified, setEmailVerified] = useState(false);
-  const [mobileVerified, setMobileVerified] = useState(false);
+  const [emailVerified, setEmailVerified] = useState(data.emailVerified || false);
+  const [mobileVerified, setMobileVerified] = useState(data.mobileVerified || false);
   const [verifyingEmail, setVerifyingEmail] = useState(false);
   const [verifyingMobile, setVerifyingMobile] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
@@ -150,7 +152,6 @@ export function AccountStep() {
     }
   };
 
-  const { set: setReg } = useRegistration();
   useEffect(() => {
     setReg({ email, mobile, emailVerified, mobileVerified });
     // eslint-disable-next-line react-hooks/exhaustive-deps

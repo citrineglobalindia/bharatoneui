@@ -51,22 +51,26 @@ function maskMobile(m: string) {
 }
 
 export function OldPortalStep() {
-  const { set: setReg } = useRegistration();
-  const [stage, setStage] = useState<Stage>("lookup");
-  const [username, setUsername] = useState("");
+  const { data, set: setReg } = useRegistration();
+  // Reconstruct the fetched user from saved data so going Back keeps the verified state.
+  const seeded: FetchedUser | null = (data.jskoId || data.email)
+    ? { username: data.jskoId || "", fullName: [data.firstName, data.middleName, data.surname].filter(Boolean).join(" "), email: data.email || "", mobile: data.mobile || "" }
+    : null;
+  const [stage, setStage] = useState<Stage>(data.emailVerified ? "verified" : seeded ? "otp" : "lookup");
+  const [username, setUsername] = useState(data.jskoId || "");
   const [jskoPassword, setJskoPassword] = useState("");
   const [showJskoPw, setShowJskoPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [lookupError, setLookupError] = useState<string | null>(null);
-  const [user, setUser] = useState<FetchedUser | null>(null);
+  const [user, setUser] = useState<FetchedUser | null>(seeded);
 
   // Both channels are mandatory — track each independently.
   const [emailOtp, setEmailOtp] = useState<string[]>(Array(6).fill(""));
   const [mobileOtp, setMobileOtp] = useState<string[]>(Array(6).fill(""));
   const [emailError, setEmailError] = useState<string | null>(null);
   const [mobileError, setMobileError] = useState<string | null>(null);
-  const [emailVerified, setEmailVerified] = useState(false);
-  const [mobileVerified, setMobileVerified] = useState(false);
+  const [emailVerified, setEmailVerified] = useState(data.emailVerified || false);
+  const [mobileVerified, setMobileVerified] = useState(data.mobileVerified || false);
   const [verifyingEmail, setVerifyingEmail] = useState(false);
   const [verifyingMobile, setVerifyingMobile] = useState(false);
   const [sendingEmail, setSendingEmail] = useState(false);
