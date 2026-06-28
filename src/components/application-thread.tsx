@@ -18,7 +18,7 @@ export function ApplicationThread({ applicationId, title = "Chat with operator" 
   async function load() {
     const { data } = await supabase.from("application_messages").select("*").eq("application_id", applicationId).order("created_at");
     setMsgs((data as Msg[]) ?? []); setLoading(false);
-    setTimeout(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+    // No auto-scroll: the view opens at the top and the user scrolls manually.
   }
   useEffect(() => { let on = true; (async () => { const { data } = await supabase.auth.getUser(); if (on) setUid(data.user?.id ?? ""); await load(); })(); const t = setInterval(load, 6000); return () => { on = false; clearInterval(t); }; /* eslint-disable-next-line */ }, [applicationId]);
 
