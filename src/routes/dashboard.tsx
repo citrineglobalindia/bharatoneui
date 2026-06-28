@@ -274,23 +274,11 @@ function DashboardPage() {
               <li><b className="text-foreground">Citizen Participation</b> — Regularly review, promote and help customers use digital services available on BharatOne.</li>
             </ul>
             <p className="mt-3 text-[11px] text-muted-foreground leading-relaxed">Each retailer should complete a minimum of 10 transactions per day or 300 transactions per month to retain this status and best possible services.</p>
-            <div className="mt-3 rounded-lg bg-sky-50 border border-sky-100 px-3 py-2 text-[11px] space-y-0.5">
-              <p className="text-india-green font-semibold">Current transactions count: {monthly.monthCount}</p>
-              <p className="text-rose-600 font-semibold">Remaining transactions for the month: {monthly.remaining}</p>
-              <p className="text-foreground">Last date of completion: {monthly.monthEnd.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</p>
-              <p className="text-amber-600 font-semibold">Days remaining to complete: {monthly.daysLeft}</p>
-            </div>
           </div>
           <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
             <p className="text-sm font-bold">Transaction Summary</p>
             <p className="text-[11px] text-muted-foreground">Your transaction performance</p>
-            <div className="mt-3 space-y-2.5 text-sm">
-              <div className="flex items-center justify-between border-b border-border pb-2"><span className="text-muted-foreground">Current transactions count</span><b className="text-india-green">{monthly.monthCount}</b></div>
-              <div className="flex items-center justify-between border-b border-border pb-2"><span className="text-muted-foreground">Remaining transactions for the month</span><b className="text-rose-600">{monthly.remaining}</b></div>
-              <div className="flex items-center justify-between border-b border-border pb-2"><span className="text-muted-foreground">Last date of completion</span><b>{monthly.monthEnd.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</b></div>
-              <div className="flex items-center justify-between"><span className="text-muted-foreground">Days remaining to complete</span><b className="text-amber-600">{monthly.daysLeft}</b></div>
-            </div>
-            <div className="mt-4">
+            <div className="mt-3">
               <div className="flex items-center justify-between text-xs"><span className="font-semibold">Monthly Target Progress</span><span className="text-muted-foreground">{monthly.monthCount}/{monthly.target} · {monthly.pct}%</span></div>
               <div className="mt-1.5 h-2.5 w-full rounded-full bg-muted overflow-hidden"><div className="h-full rounded-full bg-india-green transition-all" style={{ width: `${monthly.pct}%` }} /></div>
             </div>
