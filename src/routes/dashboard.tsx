@@ -170,14 +170,14 @@ function DashboardPage() {
     const pct = Math.min(100, Math.round((monthCount / TARGET) * 100));
     return { monthCount, target: TARGET, remaining, monthEnd, daysLeft, pct };
   }, [rows]);
-  const firstName = (me.name || "there").split(/\s+/)[0];
+  const retailerName = (me.name || "Retailer").trim();
 
   return (
     <RetailerShell>
       <div className="space-y-5">
         <NoticeMarquee />
         <PageHeader
-          title={`Hello, ${firstName} 👋`}
+          title={`Hello, JSKO ${retailerName} 👋`}
           subtitle="Here's what's happening with your business today."
           actions={
             <>
