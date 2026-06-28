@@ -537,7 +537,7 @@ function RegisterFlow() {
           )}
         </div>
         <p className="mt-4 text-center text-xs text-muted-foreground">
-          🛡 Secured by BharatOne · All KYC data is encrypted in transit
+          🛡 Secured by BharatOne Services and Affiliates Private Limited. All KYC data is encrypted in transit.
         </p>
       </main>
     </div>
