@@ -22,6 +22,26 @@ import {
 import { BharatOneLogo } from "@/components/bharatone-logo";
 import { LegalSocial } from "@/components/legal-social";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+
+type TrackResult = { type: string; application_id: string; name: string; status: string; submitted_at: string };
+const statusMeta = (status: string) => {
+  const s = (status || "").toLowerCase();
+  if (["approved", "active", "completed"].includes(s)) return { label: "Approved", tone: "bg-emerald-100 text-emerald-700" };
+  if (s === "rejected") return { label: "Rejected", tone: "bg-red-100 text-red-700" };
+  if (s === "docs_requested") return { label: "Docs Requested", tone: "bg-amber-100 text-amber-700" };
+  return { label: "Under Review", tone: "bg-amber-100 text-amber-700" };
+};
+const timelineFor = (status: string): { label: string; status: "completed" | "in-progress" | "pending" }[] => {
+  const s = (status || "").toLowerCase();
+  const approved = ["approved", "active", "completed"].includes(s);
+  const rejected = s === "rejected";
+  return [
+    { label: "Application Submitted", status: "completed" },
+    { label: "Document & KYC Verification", status: approved || rejected ? "completed" : "in-progress" },
+    { label: rejected ? "Rejected" : "Final Approval", status: approved ? "completed" : "pending" },
+  ];
+};
 
 export const Route = createFileRoute("/track-application")({
   head: () => ({
@@ -42,23 +62,29 @@ function TrackApplicationPage() {
   const [mobile, setMobile] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "found" | "not-found">("idle");
   const [method, setMethod] = useState<"id" | "mobile">("id");
+  const [result, setResult] = useState<TrackResult | null>(null);
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     const value = method === "id" ? applicationId.trim() : mobile.trim();
     if (!value) return;
     setStatus("loading");
-    // Simulate API call
-    setTimeout(() => {
-      if (
-        (method === "id" && value.length >= 5) ||
-        (method === "mobile" && value.length >= 10)
-      ) {
+    setResult(null);
+    try {
+      const { data, error } = await supabase.rpc("track_application", {
+        p_ref: method === "id" ? value : null,
+        p_mobile: method === "mobile" ? value : null,
+      });
+      const res = data as unknown as ({ found: boolean } & Partial<TrackResult>) | null;
+      if (!error && res?.found) {
+        setResult(res as TrackResult);
         setStatus("found");
       } else {
         setStatus("not-found");
       }
-    }, 1200);
+    } catch {
+      setStatus("not-found");
+    }
   };
 
   return (
@@ -243,7 +269,7 @@ function TrackApplicationPage() {
             </form>
 
             {/* Results */}
-            {status === "found" && (
+            {status === "found" && result && (
               <div className="mt-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
                 <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50/80 to-white p-5">
                   <div className="flex items-start justify-between gap-3">
@@ -254,17 +280,19 @@ function TrackApplicationPage() {
                       <div>
                         <div className="flex items-center gap-2">
                           <h3 className="font-display text-base font-bold text-foreground">Application Found</h3>
-                          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700">
-                            In Progress
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${statusMeta(result.status).tone}`}>
+                            {statusMeta(result.status).label}
                           </span>
                         </div>
                         <p className="mt-0.5 text-xs text-muted-foreground">
-                          ID: <span className="font-mono font-semibold text-foreground">{applicationId || "BO-2025-XX1234"}</span>
+                          ID: <span className="font-mono font-semibold text-foreground">{result.application_id}</span>
                         </p>
+                        {result.name && <p className="text-xs text-muted-foreground">{result.name} · {result.type === "distributor" ? "Distributor" : "Retailer"}</p>}
                       </div>
                     </div>
                     <button
                       type="button"
+                      onClick={() => navigator.clipboard?.writeText(result.application_id)}
                       className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-white hover:bg-muted transition-colors"
                       title="Copy ID"
                     >
@@ -273,34 +301,20 @@ function TrackApplicationPage() {
                   </div>
 
                   <div className="mt-4 space-y-2.5">
-                    <StatusStep label="Application Submitted" status="completed" />
-                    <StatusStep label="Document Verification" status="completed" />
-                    <StatusStep label="KYC Verification" status="in-progress" />
-                    <StatusStep label="Final Approval" status="pending" />
+                    {timelineFor(result.status).map((s) => (
+                      <StatusStep key={s.label} label={s.label} status={s.status} />
+                    ))}
                   </div>
 
                   <div className="mt-4 grid grid-cols-2 gap-2">
                     <div className="rounded-lg bg-white/80 border border-emerald-200 px-3 py-2">
                       <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Submitted</p>
-                      <p className="text-xs font-semibold text-foreground">22 May 2026</p>
+                      <p className="text-xs font-semibold text-foreground">{result.submitted_at ? new Date(result.submitted_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—"}</p>
                     </div>
                     <div className="rounded-lg bg-white/80 border border-emerald-200 px-3 py-2">
-                      <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Expected</p>
-                      <p className="text-xs font-semibold text-emerald-700">2–3 business days</p>
+                      <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Current Status</p>
+                      <p className="text-xs font-semibold text-emerald-700">{statusMeta(result.status).label}</p>
                     </div>
-                  </div>
-
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <button className="inline-flex items-center gap-1.5 rounded-lg bg-white border border-border px-3 py-1.5 text-xs font-semibold hover:bg-muted transition-colors">
-                      <Download className="h-3.5 w-3.5" /> Download Receipt
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setStatus("loading")}
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-white border border-border px-3 py-1.5 text-xs font-semibold hover:bg-muted transition-colors"
-                    >
-                      <RefreshCw className="h-3.5 w-3.5" /> Refresh
-                    </button>
                   </div>
                 </div>
               </div>

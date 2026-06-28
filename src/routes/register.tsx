@@ -196,6 +196,23 @@ function RegisterFlow() {
         }),
         plan: heading,
       });
+
+      // Send a confirmation email with the Reference/Tracking ID (non-blocking).
+      void supabase.functions
+        .invoke("send-registration-confirmation", {
+          body: {
+            email: d.email,
+            name: d.distributorName,
+            type: "Distributor Registration",
+            applicationId: r.application_id,
+            transactionId: r.transaction_id,
+            plan: heading,
+            amount: amount != null ? `₹${amount.toLocaleString("en-IN")}` : "—",
+            submittedAt: new Date().toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }),
+          },
+        })
+        .catch(() => {});
+
       clearDraft();
       setDone(true);
     } catch (e) {
@@ -462,7 +479,14 @@ function RegisterFlow() {
                 </div>
                 <h2 className="mt-5 font-display text-2xl font-extrabold text-foreground">Application submitted!</h2>
                 <p className="mt-2 text-sm font-semibold text-emerald-700">Your distributor registration is under review.</p>
-                <p className="mt-1 text-sm text-muted-foreground">Our team will contact you soon!!</p>
+                {submission && (
+                  <div className="mx-auto mt-4 w-fit rounded-xl border border-emerald-200 bg-emerald-50/70 px-5 py-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Reference / Tracking ID</p>
+                    <p className="mt-0.5 font-mono text-xl font-extrabold tracking-wider text-emerald-700">{submission.applicationId}</p>
+                    <p className="mt-1 text-[11px] text-muted-foreground">A confirmation email with these details has been sent. Use this ID to track your application.</p>
+                  </div>
+                )}
+                <p className="mt-3 text-sm text-muted-foreground">Our team will contact you soon!!</p>
                 <p className="mx-auto mt-3 max-w-md text-xs text-muted-foreground">
                   If you have any queries, please contact us 24/7 at{" "}
                   <a href="tel:+919071100311" className="font-semibold text-india-green hover:underline">+91 90711 00311</a>{" "}
