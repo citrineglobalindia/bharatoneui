@@ -222,7 +222,7 @@ export function PaymentStep({
               className={inputCls} autoComplete="off"
               placeholder="Name as in bank account"
               value={value.payerName ?? ""}
-              onChange={(e) => onChange({ ...value, payerName: e.target.value })}
+              onChange={(e) => onChange({ ...value, payerName: e.target.value.replace(/[^A-Za-z .]/g, "") })}
             />
           </Field>
           <Field label="Payer Bank" icon={<Building2 className="h-4 w-4" />}>
