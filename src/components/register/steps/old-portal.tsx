@@ -132,6 +132,7 @@ export function OldPortalStep() {
     });
     const parts = fetchedName.trim().split(/\s+/);
     setReg({
+      jskoId: (res.username as string) ?? username.trim().toUpperCase(),
       firstName: parts[0] ?? "",
       middleName: parts.length > 2 ? parts.slice(1, -1).join(" ") : "",
       surname: parts.length > 1 ? parts[parts.length - 1] : "",

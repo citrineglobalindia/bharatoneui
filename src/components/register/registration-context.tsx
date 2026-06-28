@@ -21,6 +21,8 @@ export type RegData = {
   mobile: string;
   emailVerified: boolean;
   mobileVerified: boolean;
+  // old JSKO migration id (the JSKO username used at lookup)
+  jskoId: string;
   // personal
   firstName: string;
   middleName: string;
@@ -65,6 +67,7 @@ const defaultData: RegData = {
   mobile: "",
   emailVerified: false,
   mobileVerified: false,
+  jskoId: "",
   firstName: "",
   middleName: "",
   surname: "",

@@ -245,6 +245,7 @@ function RegisterFlow() {
 
       const payload = {
         registration_type: type,
+        jsko_id: data.jskoId || null,
         email: data.email,
         mobile: data.mobile,
         email_verified: data.emailVerified,

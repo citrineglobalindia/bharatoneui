@@ -209,8 +209,10 @@ function ReviewPage() {
   const canTele = role === "telecaller" || role === "admin";
   const canDocReview = canAccountant || canQc;
   const fullName = [reg.first_name, reg.middle_name, reg.surname].filter(Boolean).join(" ");
+  const fullBizAddress = [reg.building_shop_no, reg.street_area, reg.ward_number, reg.landmark, reg.village_name, reg.gram_panchayat, reg.hobli_name, reg.post_office, reg.taluk, reg.city, reg.district, reg.state, reg.pincode].filter(Boolean).join(", ");
 
   const DOCS: { key: string; label: string; path: string | null }[] = [
+    { key: "passport", label: "Passport Size Photo", path: reg.passport_photo_path },
     { key: "selfie", label: "Selfie", path: reg.selfie_path },
     { key: "shop", label: "Outside Shop Photo", path: reg.shop_photo_path },
     { key: "shop_inside", label: "Inside Shop Photo", path: reg.shop_photo_inside_path },
@@ -263,7 +265,7 @@ function ReviewPage() {
                 <span className="font-mono font-semibold text-saffron">#{reg.application_id}</span>
               </div>
               <div className="mt-1 flex flex-wrap gap-x-5 gap-y-1 text-[12px] text-muted-foreground">
-                <span>Agent ID: {reg.username || "—"}</span><span>DOB: {reg.dob || "—"}</span><span>Submitted: {reg.created_at ? new Date(reg.created_at).toLocaleDateString("en-IN") : "—"}</span>
+                <span>Agent ID: {reg.jsko_id || reg.username || "—"}</span><span>DOB: {reg.dob || "—"}</span><span>Submitted: {reg.created_at ? new Date(reg.created_at).toLocaleDateString("en-IN") : "—"}</span>
               </div>
             </div>
             <div className="text-right">
@@ -315,7 +317,7 @@ function ReviewPage() {
           </div>
           <div className="rounded-2xl border border-border bg-card p-4 shadow-soft">
             <p className="mb-3 flex items-center gap-2 text-sm font-bold"><span className="grid h-6 w-6 place-items-center rounded-lg bg-india-green/10 text-india-green"><Building2 className="h-4 w-4" /></span> Business Info</p>
-            <div className="space-y-2.5"><Field label="Shop Name" value={[reg.shop_name, reg.address_type].filter(Boolean).join(" · ")} /><Field label="Street / Area" value={reg.street_area} /><Field label="Ward / Shop No" value={[reg.ward_number, reg.landmark].filter(Boolean).join(" · ")} /></div>
+            <div className="space-y-2.5"><Field label="Shop Name" value={[reg.shop_name, reg.address_type].filter(Boolean).join(" · ")} /><Field label="Address" value={fullBizAddress} /><Field label="Pincode" value={reg.pincode} /></div>
           </div>
           <div className="rounded-2xl border border-border bg-card p-4 shadow-soft">
             <p className="mb-3 flex items-center gap-2 text-sm font-bold"><span className="grid h-6 w-6 place-items-center rounded-lg bg-violet-500/10 text-violet-600"><Landmark className="h-4 w-4" /></span> Bank Details</p>
