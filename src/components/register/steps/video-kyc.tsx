@@ -7,6 +7,30 @@ import { useRegistration } from "../registration-context";
 
 const MIN_SECONDS = 15;
 
+// Terms & Conditions content in English and Kannada (label, body) per clause.
+const TERMS_EN: [string, string][] = [
+  ["1. Nature of Services:", "BharatOne offers assistance in accessing government schemes, subsidies, certifications and application services. We are not a government agency; all services are consultancy/support-based and do not guarantee approval."],
+  ["2. Eligibility:", "You must be at least 18 years old and legally capable of entering into binding contracts."],
+  ["3. Acceptable Use:", "Use the platform only for lawful purposes; do not misrepresent your identity, provide false information, or attempt unauthorized/fraudulent activity."],
+  ["4. Payments & Refunds:", "Applicable charges are disclosed before payment. Payments are non-refundable once a service has been initiated."],
+  ["5. Intellectual Property:", "All content is the property of BharatOne and protected by law; no copying or distribution without written permission."],
+  ["6. Disclaimer & Liability:", "Services are best-effort; we do not guarantee completeness/accuracy of information or results, and are not liable for indirect or consequential damages."],
+  ["7. Data & Privacy:", "Your personal data is handled per our Privacy Policy and used only to provide the requested services."],
+  ["8. Termination & Changes:", "Access may be suspended for breach; terms may be updated and continued use constitutes acceptance."],
+  ["9. Governing Law:", "These terms are governed by the laws of India; disputes are subject to courts in Karnataka, India."],
+];
+const TERMS_KN: [string, string][] = [
+  ["1. ಸೇವೆಗಳ ಸ್ವರೂಪ:", "BharatOne ಸರ್ಕಾರಿ ಯೋಜನೆಗಳು, ಸಬ್ಸಿಡಿಗಳು, ಪ್ರಮಾಣಪತ್ರಗಳು ಮತ್ತು ಅರ್ಜಿ ಸೇವೆಗಳನ್ನು ಪಡೆಯಲು ಸಹಾಯ ನೀಡುತ್ತದೆ. ನಾವು ಸರ್ಕಾರಿ ಸಂಸ್ಥೆಯಲ್ಲ; ಎಲ್ಲಾ ಸೇವೆಗಳು ಸಲಹಾ/ಬೆಂಬಲ ಆಧಾರಿತವಾಗಿದ್ದು ಅನುಮೋದನೆಯ ಖಾತರಿ ನೀಡುವುದಿಲ್ಲ."],
+  ["2. ಅರ್ಹತೆ:", "ನೀವು ಕನಿಷ್ಠ 18 ವರ್ಷ ವಯಸ್ಸಿನವರಾಗಿರಬೇಕು ಮತ್ತು ಒಪ್ಪಂದಗಳಿಗೆ ಕಾನೂನುಬದ್ಧವಾಗಿ ಸಮರ್ಥರಾಗಿರಬೇಕು."],
+  ["3. ಸ್ವೀಕಾರಾರ್ಹ ಬಳಕೆ:", "ವೇದಿಕೆಯನ್ನು ಕಾನೂನುಬದ್ಧ ಉದ್ದೇಶಗಳಿಗೆ ಮಾತ್ರ ಬಳಸಿ; ನಿಮ್ಮ ಗುರುತನ್ನು ತಪ್ಪಾಗಿ ತೋರಿಸಬೇಡಿ, ಸುಳ್ಳು ಮಾಹಿತಿ ನೀಡಬೇಡಿ ಅಥವಾ ಅನಧಿಕೃತ/ವಂಚನೆಯ ಚಟುವಟಿಕೆ ಮಾಡಬೇಡಿ."],
+  ["4. ಪಾವತಿ ಮತ್ತು ಮರುಪಾವತಿ:", "ಅನ್ವಯವಾಗುವ ಶುಲ್ಕಗಳನ್ನು ಪಾವತಿಗೆ ಮುನ್ನ ತಿಳಿಸಲಾಗುತ್ತದೆ. ಸೇವೆ ಆರಂಭವಾದ ನಂತರ ಪಾವತಿಗಳು ಮರುಪಾವತಿಸಲಾಗದು."],
+  ["5. ಬೌದ್ಧಿಕ ಆಸ್ತಿ:", "ಎಲ್ಲಾ ವಿಷಯವು BharatOne ನ ಆಸ್ತಿಯಾಗಿದ್ದು ಕಾನೂನಿನಿಂದ ರಕ್ಷಿಸಲ್ಪಟ್ಟಿದೆ; ಲಿಖಿತ ಅನುಮತಿ ಇಲ್ಲದೆ ನಕಲು ಅಥವಾ ವಿತರಣೆ ಮಾಡಬಾರದು."],
+  ["6. ಹಕ್ಕು ನಿರಾಕರಣೆ ಮತ್ತು ಹೊಣೆಗಾರಿಕೆ:", "ಸೇವೆಗಳು ಅತ್ಯುತ್ತಮ ಪ್ರಯತ್ನ ಆಧಾರಿತ; ಮಾಹಿತಿ ಅಥವಾ ಫಲಿತಾಂಶಗಳ ಸಂಪೂರ್ಣತೆ/ನಿಖರತೆಯ ಖಾತರಿ ನೀಡುವುದಿಲ್ಲ ಮತ್ತು ಪರೋಕ್ಷ ಅಥವಾ ಪರಿಣಾಮಕಾರಿ ಹಾನಿಗಳಿಗೆ ಹೊಣೆಯಾಗುವುದಿಲ್ಲ."],
+  ["7. ಡೇಟಾ ಮತ್ತು ಗೌಪ್ಯತೆ:", "ನಿಮ್ಮ ವೈಯಕ್ತಿಕ ಮಾಹಿತಿಯನ್ನು ನಮ್ಮ ಗೌಪ್ಯತಾ ನೀತಿಯ ಪ್ರಕಾರ ನಿರ್ವಹಿಸಲಾಗುತ್ತದೆ ಮತ್ತು ವಿನಂತಿಸಿದ ಸೇವೆಗಳನ್ನು ಒದಗಿಸಲು ಮಾತ್ರ ಬಳಸಲಾಗುತ್ತದೆ."],
+  ["8. ಮುಕ್ತಾಯ ಮತ್ತು ಬದಲಾವಣೆಗಳು:", "ಉಲ್ಲಂಘನೆಗೆ ಪ್ರವೇಶವನ್ನು ಸ್ಥಗಿತಗೊಳಿಸಬಹುದು; ನಿಯಮಗಳನ್ನು ನವೀಕರಿಸಬಹುದು ಮತ್ತು ಮುಂದುವರಿದ ಬಳಕೆ ಸ್ವೀಕಾರವೆಂದು ಪರಿಗಣಿಸಲಾಗುತ್ತದೆ."],
+  ["9. ಆಡಳಿತ ಕಾನೂನು:", "ಈ ನಿಯಮಗಳು ಭಾರತದ ಕಾನೂನುಗಳಿಗೆ ಒಳಪಟ್ಟಿವೆ; ವಿವಾದಗಳು ಕರ್ನಾಟಕ, ಭಾರತದ ನ್ಯಾಯಾಲಯಗಳ ವ್ಯಾಪ್ತಿಗೆ ಒಳಪಡುತ್ತವೆ."],
+];
+
 export function VideoKycStep() {
   const { data, set, files, setFile } = useRegistration();
   const agree = data.declarationAgreed;
@@ -16,6 +40,7 @@ export function VideoKycStep() {
   const fullName = [data.firstName, data.middleName, data.surname].filter(Boolean).join(" ") || "[Your Name]";
   const fullAddress = [data.buildingShopNo, data.streetArea, data.landmark, data.villageName, data.city, data.taluk, data.district, data.state, data.pincode].filter(Boolean).join(", ") || "[Address from your form]";
   const [lang, setLang] = useState<"kn" | "en">("kn");
+  const [termsLang, setTermsLang] = useState<"kn" | "en">("en");
   const [consentOpen, setConsentOpen] = useState(false);
 
   const liveRef = useRef<HTMLVideoElement>(null);
@@ -181,19 +206,19 @@ export function VideoKycStep() {
 
       {/* Terms & Conditions — mandatory */}
       <div className="rounded-xl border border-border bg-background/40 p-5">
-        <h3 className="text-sm font-bold text-foreground">📜 Terms &amp; Conditions <span className="text-primary">*</span></h3>
-        <p className="mt-1 text-[11px] text-muted-foreground">Please read the full terms below. You must read and accept them to continue.</p>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-sm font-bold text-foreground">📜 Terms &amp; Conditions <span className="text-primary">*</span></h3>
+          <div className="inline-flex rounded-lg border border-border bg-card p-0.5 text-xs font-semibold">
+            <button type="button" onClick={() => setTermsLang("kn")} className={`rounded-md px-3 h-7 transition ${termsLang === "kn" ? "bg-india-green text-white" : "text-muted-foreground hover:text-foreground"}`}>ಕನ್ನಡ</button>
+            <button type="button" onClick={() => setTermsLang("en")} className={`rounded-md px-3 h-7 transition ${termsLang === "en" ? "bg-india-green text-white" : "text-muted-foreground hover:text-foreground"}`}>English</button>
+          </div>
+        </div>
+        <p className="mt-1 text-[11px] text-muted-foreground">{termsLang === "kn" ? "ಕೆಳಗಿನ ಪೂರ್ಣ ನಿಯಮಗಳನ್ನು ಓದಿ. ಮುಂದುವರಿಯಲು ಅವುಗಳನ್ನು ಓದಿ ಒಪ್ಪಿಕೊಳ್ಳಬೇಕು." : "Please read the full terms below. You must read and accept them to continue."}</p>
         <div className="mt-3 max-h-44 overflow-auto rounded-md border border-border bg-card p-3 text-[12px] leading-relaxed text-muted-foreground space-y-2">
-          <p><b className="text-foreground">1. Nature of Services:</b> BharatOne offers assistance in accessing government schemes, subsidies, certifications and application services. We are not a government agency; all services are consultancy/support-based and do not guarantee approval.</p>
-          <p><b className="text-foreground">2. Eligibility:</b> You must be at least 18 years old and legally capable of entering into binding contracts.</p>
-          <p><b className="text-foreground">3. Acceptable Use:</b> Use the platform only for lawful purposes; do not misrepresent your identity, provide false information, or attempt unauthorized/fraudulent activity.</p>
-          <p><b className="text-foreground">4. Payments &amp; Refunds:</b> Applicable charges are disclosed before payment. Payments are non-refundable once a service has been initiated.</p>
-          <p><b className="text-foreground">5. Intellectual Property:</b> All content is the property of BharatOne and protected by law; no copying or distribution without written permission.</p>
-          <p><b className="text-foreground">6. Disclaimer &amp; Liability:</b> Services are best-effort; we do not guarantee completeness/accuracy of information or results, and are not liable for indirect or consequential damages.</p>
-          <p><b className="text-foreground">7. Data &amp; Privacy:</b> Your personal data is handled per our Privacy Policy and used only to provide the requested services.</p>
-          <p><b className="text-foreground">8. Termination &amp; Changes:</b> Access may be suspended for breach; terms may be updated and continued use constitutes acceptance.</p>
-          <p><b className="text-foreground">9. Governing Law:</b> These terms are governed by the laws of India; disputes are subject to courts in Karnataka, India.</p>
-          <p>Full Terms &amp; Conditions: <a href="/terms-and-conditions" target="_blank" rel="noreferrer" className="font-semibold text-india-green hover:underline">read here</a>.</p>
+          {(termsLang === "kn" ? TERMS_KN : TERMS_EN).map(([label, body], i) => (
+            <p key={i}><b className="text-foreground">{label}</b> {body}</p>
+          ))}
+          <p>{termsLang === "kn" ? "ಪೂರ್ಣ ನಿಯಮಗಳು ಮತ್ತು ಷರತ್ತುಗಳು: " : "Full Terms & Conditions: "}<a href="/terms-and-conditions" target="_blank" rel="noreferrer" className="font-semibold text-india-green hover:underline">{termsLang === "kn" ? "ಇಲ್ಲಿ ಓದಿ" : "read here"}</a>.</p>
         </div>
         <label className="mt-3 flex items-start gap-3 cursor-pointer">
           <input type="checkbox" checked={terms} onChange={(e) => setTerms(e.target.checked)} className="mt-0.5 h-4 w-4 accent-[oklch(0.55_0.12_150)]" />
