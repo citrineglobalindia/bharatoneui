@@ -34,8 +34,8 @@ function UploadBox({
       <div className="text-xs text-muted-foreground">{subtitle}</div>
       {url ? (
         <div className="mt-3 overflow-hidden rounded-lg border border-border bg-card">
-          <div className="relative flex min-h-[11rem] w-full items-center justify-center bg-muted/40 p-2">
-            {isImg ? <img src={url} alt={name ?? title} className="max-h-[18rem] max-w-full object-contain" />
+          <div className="relative flex w-full items-center justify-center bg-muted/40 p-2" style={{ minHeight: "11rem" }}>
+            {isImg ? <img src={url} alt={name ?? title} style={{ maxHeight: "18rem", maxWidth: "100%", width: "auto", height: "auto", objectFit: "contain", display: "block" }} />
               : <div className="flex flex-col items-center gap-1 py-10 text-muted-foreground"><FileText className="h-10 w-10" /><span className="text-xs">PDF document</span></div>}
             <button type="button" onClick={clear} className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-lg bg-black/55 text-white hover:bg-black/70"><X className="h-4 w-4" /></button>
           </div>
