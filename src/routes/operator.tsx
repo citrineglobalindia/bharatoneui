@@ -19,7 +19,7 @@ type App = {
   id: string; application_no: string; category_name: string; service_name: string;
   full_name: string; father_name: string | null; gender: string | null; email: string | null; phone: string | null;
   address: string | null; aadhaar_number: string | null; pan_number: string | null;
-  service_charge: number; commission_price: number; status: string; submitter_name: string | null; created_at: string;
+  service_charge: number; commission_price: number; status: string; submitter_name: string | null; submitted_by: string | null; created_at: string;
   result_doc_path: string | null; result_note: string | null; result_uploaded_at: string | null;
   form_data: Record<string, any> | null;
   reupload_requested: boolean; reupload_note: string | null; reupload_path: string | null; reupload_name: string | null;
@@ -57,6 +57,27 @@ function OperatorPortal() {
     } finally { setLoading(false); }
   }
   useEffect(() => { load(); }, []);
+
+  // "Submitted From" — the JSKO/retailer who submitted the application.
+  const [submitter, setSubmitter] = useState<{ jskoId: string; name: string; phone: string } | null>(null);
+  useEffect(() => {
+    const by = sel?.submitted_by;
+    if (!by) { setSubmitter(null); return; }
+    let on = true;
+    (async () => {
+      const [{ data: prof }, { data: reg }] = await Promise.all([
+        supabase.from("profiles").select("display_name, phone").eq("id", by).maybeSingle(),
+        supabase.from("retailer_registrations").select("jsko_id, application_id, mobile").eq("auth_user_id", by).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+      ]);
+      if (!on) return;
+      setSubmitter({
+        jskoId: (reg as any)?.jsko_id || (reg as any)?.application_id || "—",
+        name: sel?.submitter_name || (prof as any)?.display_name || "—",
+        phone: (prof as any)?.phone || (reg as any)?.mobile || "—",
+      });
+    })();
+    return () => { on = false; };
+  }, [sel?.submitted_by, sel?.submitter_name]);
 
   const counts = useMemo(() => ({
     all: apps.length,
@@ -178,6 +199,14 @@ function OperatorPortal() {
                 <div key={l as string}><p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{l}</p><p className="font-medium">{v || "—"}</p></div>
               ))}
               <div className="col-span-2"><p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Address</p><p className="font-medium">{sel.address || "—"}</p></div>
+            </div>
+            <div className="mt-3 rounded-lg border border-india-green/30 bg-india-green/5 p-3">
+              <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Submitted From</p>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div><p className="text-[11px] uppercase tracking-wide text-muted-foreground">JSKO ID</p><p className="font-medium">{submitter?.jskoId || "—"}</p></div>
+                <div><p className="text-[11px] uppercase tracking-wide text-muted-foreground">JSKO Name</p><p className="font-medium">{submitter?.name || sel.submitter_name || "—"}</p></div>
+                <div className="col-span-2"><p className="text-[11px] uppercase tracking-wide text-muted-foreground">Contact Number</p><p className="font-medium">{submitter?.phone || "—"}</p></div>
+              </div>
             </div>
             {sel.form_data && Object.keys(sel.form_data).length > 0 && (
               <div className="mt-3 rounded-lg border border-border p-3"><p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Submitted form</p>
