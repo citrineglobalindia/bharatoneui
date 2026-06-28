@@ -375,15 +375,6 @@ export function DistributorSinglePage({
         </div>
 
         <div className="mt-4 grid gap-3">
-          <Field label="Group Name">
-            <input
-              className={compactInput}
-              placeholder="Enter Group Name"
-              value={form.groupName}
-              onChange={(e) => set("groupName", e.target.value)}
-            />
-          </Field>
-
           <Field
             label="Form PDF"
             required
