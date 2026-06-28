@@ -71,9 +71,9 @@ const newSteps: Step[] = [
   { key: "personal", label: "Personal", icon: User },
   { key: "business", label: "Business", icon: Building2 },
   { key: "kyc", label: "KYC Docs", icon: Upload },
+  { key: "selfie", label: "Selfie Verification", icon: Camera },
   { key: "video", label: "Video KYC", icon: Video },
-  { key: "payment", label: "Payment", icon: CreditCard },
-  { key: "selfie", label: "Selfie & Submit", icon: Camera },
+  { key: "payment", label: "Payment & Submit", icon: CreditCard },
 ];
 
 const oldSteps: Step[] = [
