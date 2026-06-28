@@ -133,7 +133,7 @@ export function DistributorSinglePage({
     if (!form.dob) e.dob = "Date of birth is required.";
     if (!form.gender) e.gender = "Select a gender.";
     if (!MOBILE_RE.test(form.mobile)) e.mobile = "Enter a valid 10-digit mobile number.";
-    if (!MOBILE_RE.test(form.altMobile)) e.altMobile = "Enter a valid 10-digit alternate number.";
+    if (form.altMobile && !MOBILE_RE.test(form.altMobile)) e.altMobile = "Enter a valid 10-digit alternate number.";
     if (!EMAIL_RE.test(form.email)) e.email = "Enter a valid email address.";
     if (!PAN_RE.test(form.panNumber)) e.panNumber = "Enter a valid PAN (e.g. ABCDE1234F).";
     if (!IFSC_RE.test(form.ifsc)) e.ifsc = "Enter a valid IFSC code.";
@@ -253,10 +253,10 @@ export function DistributorSinglePage({
             />
             {err("mobile")}
           </Field>
-          <Field label="Alternate Mobile No." required icon={<Phone className="h-4 w-4" />}>
+          <Field label="Alternate Mobile No. (optional)" icon={<Phone className="h-4 w-4" />}>
             <input
               className={compactInput}
-              placeholder="Enter Alternate Mobile Number"
+              placeholder="Enter Alternate Mobile Number (optional)"
               maxLength={10}
               inputMode="numeric"
               value={form.altMobile}
