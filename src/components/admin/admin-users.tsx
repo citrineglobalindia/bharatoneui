@@ -44,7 +44,7 @@ export function AdminUsers() {
   const [roleFilter, setRoleFilter] = useState("all");
   const [detail, setDetail] = useState<U | null>(null);
   const [showAdd, setShowAdd] = useState(false);
-  const blankAdd = { email: "", password: "", name: "", role: "telecaller", status: "active", department: "", designation: "", employee_code: "",
+  const blankAdd = { email: "", username: "", password: "", name: "", role: "telecaller", status: "active", department: "", designation: "", employee_code: "",
     gender: "", dob: "", qualification: "", experience: "", phone: "", alt_phone: "", street_address: "", district: "", state: "", pincode: "",
     aadhaar_number: "", pan_number: "", bank_name: "", account_number: "", ifsc: "", upi_id: "", salary: "", rate_per_call: "",
     emergency_contact_name: "", emergency_contact_phone: "", skills: "", sow_signed_date: "", sow_status: "pending" };
@@ -116,28 +116,42 @@ export function AdminUsers() {
     return path;
   };
   const createStaff = async () => {
-    if (!add.email || !add.password || !add.name) { toast.error("Name, email and password are required"); return; }
+    const uname = add.username.trim();
+    if (!uname || !add.password || !add.name.trim()) { toast.error("Username, full name and password are required"); return; }
+    if (!isBasic) {
+      const missing: string[] = [];
+      if (!add.gender) missing.push("Gender");
+      if (!add.dob) missing.push("Date of Birth");
+      if (!/^\d{10}$/.test(add.phone)) missing.push("Phone (10 digits)");
+      if (!add.street_address.trim()) missing.push("Street Address");
+      if (!/^\d{12}$/.test(add.aadhaar_number)) missing.push("Aadhaar Number (12 digits)");
+      if (!add.bank_name.trim()) missing.push("Bank Name");
+      if (!add.account_number.trim()) missing.push("Account Number");
+      if (!add.ifsc.trim()) missing.push("IFSC Code");
+      if (missing.length) { toast.error("Please complete required fields", { description: missing.join(", ") }); return; }
+    }
+    // Username → login email. A plain username maps to a synthetic address so
+    // Supabase (email-based auth) can store it; staff sign in with the username.
+    const loginEmail = uname.includes("@")
+      ? uname.toLowerCase()
+      : `${uname.toLowerCase().replace(/[^a-z0-9._-]/g, "")}@staff.bharatone.app`;
     setBusy(true);
     try {
-      const { data, error } = await supabase.rpc("create_staff_account", { _email: add.email, _password: add.password, _name: add.name, _role: add.role, _department: add.department || null, _designation: add.designation || null, _employee_code: add.employee_code || null, _phone: add.phone || null, _skills: add.skills || null, _experience: add.experience || null, _education: add.qualification || null });
+      const { data, error } = await supabase.rpc("create_staff_account", { _email: loginEmail, _password: add.password, _name: add.name, _role: add.role, _department: add.department || null, _designation: null, _employee_code: null, _phone: add.phone || null, _skills: add.skills || null, _experience: null, _education: add.qualification || null });
       if (error) { toast.error("Create failed", { description: error.message }); return; }
       const uid = (data as any)?.id as string | undefined;
       if (uid) {
-        const videoPath = kycFile ? await uploadStaffDoc(uid, "video-kyc", kycFile) : null;
-        const sowPath = sowFile ? await uploadStaffDoc(uid, "sow", sowFile) : null;
         await supabase.from("profiles").update({
-          gender: add.gender || null, dob: add.dob || null, alt_phone: add.alt_phone || null,
+          gender: add.gender || null, dob: add.dob || null,
           street_address: add.street_address || null, district: add.district || null, state: add.state || null, pincode: add.pincode || null,
           aadhaar_number: add.aadhaar_number || null, pan_number: add.pan_number || null,
-          bank_name: add.bank_name || null, account_number: add.account_number || null, ifsc: add.ifsc || null, upi_id: add.upi_id || null,
-          salary: add.salary ? Number(add.salary) : null, rate_per_call: add.rate_per_call ? Number(add.rate_per_call) : null,
+          bank_name: add.bank_name || null, account_number: add.account_number || null, ifsc: add.ifsc || null,
           languages: langs.length ? langs : null, emergency_contact_name: add.emergency_contact_name || null, emergency_contact_phone: add.emergency_contact_phone || null,
-          is_active: add.status !== "inactive", video_kyc_path: videoPath, sow_path: sowPath,
-          sow_signed_date: add.sow_signed_date || null, sow_status: add.sow_status || null,
+          is_active: true, sow_signed_date: add.sow_signed_date || null,
         }).eq("id", uid);
       }
-      toast.success("Staff account created");
-      setShowAdd(false); setAdd({ ...blankAdd }); setLangs([]); setKycFile(null); setSowFile(null);
+      toast.success("User created", { description: `Login username: ${uname}` });
+      setShowAdd(false); setAdd({ ...blankAdd }); setLangs([]);
       await load();
     } finally { setBusy(false); }
   };
@@ -363,55 +377,44 @@ export function AdminUsers() {
         <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><UserPlus className="h-5 w-5 text-saffron" /> Add New User</DialogTitle><DialogDescription>Distributor & Retailer need only basic details; staff roles show the full profile.</DialogDescription></DialogHeader>
 
-          <Sec title="Role & Status">
+          <Sec title="Role">
             <F label="Role *"><select className={input} value={add.role} onChange={(e) => setAdd({ ...add, role: e.target.value })}>{(moduleKey === "all" ? ALL_ROLES : activeModule.roles).map((r) => <option key={r} value={r}>{r}</option>)}</select></F>
-            <F label="Status"><select className={input} value={add.status} onChange={(e) => setAdd({ ...add, status: e.target.value })}><option value="active">Active</option><option value="inactive">Inactive</option></select></F>
           </Sec>
 
           <Sec title="Basic Information">
             <F label="Full Name *"><input className={input} placeholder="Enter full name" value={add.name} onChange={(e) => setAdd({ ...add, name: e.target.value })} /></F>
             {!isBasic && <>
-            <F label="Gender"><select className={input} value={add.gender} onChange={(e) => setAdd({ ...add, gender: e.target.value })}><option value="">Select</option><option>Male</option><option>Female</option><option>Other</option></select></F>
-            <F label="Date of Birth"><input type="date" className={input} value={add.dob} onChange={(e) => setAdd({ ...add, dob: e.target.value })} /></F>
+            <F label="Gender *"><select className={input} value={add.gender} onChange={(e) => setAdd({ ...add, gender: e.target.value })}><option value="">Select</option><option>Male</option><option>Female</option><option>Other</option></select></F>
+            <F label="Date of Birth *"><input type="date" className={input} value={add.dob} onChange={(e) => setAdd({ ...add, dob: e.target.value })} /></F>
             <F label="Qualification"><input className={input} placeholder="e.g. B.Com, MBA" value={add.qualification} onChange={(e) => setAdd({ ...add, qualification: e.target.value })} /></F>
-            <F label="Experience"><input className={input} placeholder="e.g. 2 years" value={add.experience} onChange={(e) => setAdd({ ...add, experience: e.target.value })} /></F>
             </>}
           </Sec>
 
           <Sec title="Account & Login">
-            <F label="Email *"><input className={input} placeholder="user@mail.com" value={add.email} onChange={(e) => setAdd({ ...add, email: e.target.value })} /></F>
-            <F label="Temporary Password *"><div className="flex gap-2"><input className={input} placeholder="Password" value={add.password} onChange={(e) => setAdd({ ...add, password: e.target.value })} /><Button type="button" variant="outline" onClick={() => setAdd({ ...add, password: genPwd() })}>Gen</Button></div></F>
+            <F label="Username *"><input className={input} autoComplete="off" placeholder="e.g. operator_ravi" value={add.username} onChange={(e) => setAdd({ ...add, username: e.target.value })} /></F>
+            <F label="Password *"><input className={input} type="text" autoComplete="new-password" placeholder="Set a password" value={add.password} onChange={(e) => setAdd({ ...add, password: e.target.value })} /></F>
           </Sec>
 
           <Sec title="Contact Details">
-            <F label="Phone"><input className={input} placeholder="+91 98765 XXXXX" value={add.phone} onChange={(e) => setAdd({ ...add, phone: sanitizeMobile(e.target.value) })} inputMode="numeric" maxLength={10} /></F>
-            <F label="Alternate Phone"><input className={input} placeholder="+91 87654 XXXXX" value={add.alt_phone} onChange={(e) => setAdd({ ...add, alt_phone: sanitizeMobile(e.target.value) })} inputMode="numeric" maxLength={10} /></F>
+            <F label="Phone *"><input className={input} placeholder="+91 98765 XXXXX" value={add.phone} onChange={(e) => setAdd({ ...add, phone: sanitizeMobile(e.target.value) })} inputMode="numeric" maxLength={10} /></F>
           </Sec>
 
           <Sec title="Address">
-            <F label="Street Address" full><input className={input} placeholder="House/Flat, Street, Area" value={add.street_address} onChange={(e) => setAdd({ ...add, street_address: e.target.value })} /></F>
+            <F label="Street Address *" full><input className={input} placeholder="House/Flat, Street, Area" value={add.street_address} onChange={(e) => setAdd({ ...add, street_address: e.target.value })} /></F>
             <F label="District"><input className={input} placeholder="District" value={add.district} onChange={(e) => setAdd({ ...add, district: e.target.value })} /></F>
             <F label="State"><input className={input} placeholder="State" value={add.state} onChange={(e) => setAdd({ ...add, state: e.target.value })} /></F>
             <F label="Pincode"><input className={input} placeholder="110001" value={add.pincode} onChange={(e) => setAdd({ ...add, pincode: e.target.value })} /></F>
           </Sec>
 
           {!isBasic && <Sec title="Identity Documents">
-            <F label="Aadhaar Number"><input className={input} placeholder="XXXX XXXX XXXX" value={add.aadhaar_number} onChange={(e) => setAdd({ ...add, aadhaar_number: e.target.value.replace(/\D/g, "").slice(0, 12) })} inputMode="numeric" maxLength={12} /></F>
+            <F label="Aadhaar Number *"><input className={input} placeholder="XXXX XXXX XXXX" value={add.aadhaar_number} onChange={(e) => setAdd({ ...add, aadhaar_number: e.target.value.replace(/\D/g, "").slice(0, 12) })} inputMode="numeric" maxLength={12} /></F>
             <F label="PAN Number"><input className={input} placeholder="ABCDE1234F" value={add.pan_number} onChange={(e) => setAdd({ ...add, pan_number: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 10) })} maxLength={10} /></F>
           </Sec>}
 
           {!isBasic && <Sec title="Bank & Payment">
-            <F label="Bank Name"><input className={input} placeholder="e.g. SBI, HDFC" value={add.bank_name} onChange={(e) => setAdd({ ...add, bank_name: e.target.value })} /></F>
-            <F label="Account Number"><input className={input} placeholder="Account number" value={add.account_number} onChange={(e) => setAdd({ ...add, account_number: e.target.value })} /></F>
-            <F label="IFSC Code"><input className={input} placeholder="SBIN0001234" value={add.ifsc} onChange={(e) => setAdd({ ...add, ifsc: e.target.value.toUpperCase() })} /></F>
-            <F label="UPI ID"><input className={input} placeholder="name@upi" value={add.upi_id} onChange={(e) => setAdd({ ...add, upi_id: e.target.value })} /></F>
-          </Sec>}
-
-          {!isBasic && <Sec title="Compensation">
-            <F label="Salary (₹/month)"><input className={input} type="number" placeholder="18000" value={add.salary} onChange={(e) => setAdd({ ...add, salary: e.target.value })} /></F>
-            <F label="Rate Per Call (₹)"><input className={input} type="number" placeholder="5" value={add.rate_per_call} onChange={(e) => setAdd({ ...add, rate_per_call: e.target.value })} /></F>
-            <F label="Designation"><input className={input} placeholder="Designation" value={add.designation} onChange={(e) => setAdd({ ...add, designation: e.target.value })} /></F>
-            <F label="Employee Code"><input className={input} placeholder="Code" value={add.employee_code} onChange={(e) => setAdd({ ...add, employee_code: e.target.value })} /></F>
+            <F label="Bank Name *"><input className={input} placeholder="e.g. SBI, HDFC" value={add.bank_name} onChange={(e) => setAdd({ ...add, bank_name: e.target.value })} /></F>
+            <F label="Account Number *"><input className={input} placeholder="Account number" value={add.account_number} onChange={(e) => setAdd({ ...add, account_number: e.target.value })} /></F>
+            <F label="IFSC Code *"><input className={input} placeholder="SBIN0001234" value={add.ifsc} onChange={(e) => setAdd({ ...add, ifsc: e.target.value.toUpperCase() })} /></F>
           </Sec>}
 
           {!isBasic && <div className="mt-4">
@@ -426,17 +429,9 @@ export function AdminUsers() {
             <F label="Contact Phone"><input className={input} placeholder="+91 XXXXX XXXXX" value={add.emergency_contact_phone} onChange={(e) => setAdd({ ...add, emergency_contact_phone: sanitizeMobile(e.target.value) })} inputMode="numeric" maxLength={10} /></F>
           </Sec>}
 
-          {!isBasic && <div className="mt-4">
-            <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Video KYC & SOW Agreement</p>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Uploader label="Video KYC" hint="Self-recorded verification clip" file={kycFile} onPick={setKycFile} />
-              <Uploader label="SOW Agreement" hint="Signed scope of work document" file={sowFile} onPick={setSowFile} />
-            </div>
-            <div className="mt-3 grid gap-3 sm:grid-cols-2">
-              <F label="Signed Date"><input type="date" className={input} value={add.sow_signed_date} onChange={(e) => setAdd({ ...add, sow_signed_date: e.target.value })} /></F>
-              <F label="Status"><select className={input} value={add.sow_status} onChange={(e) => setAdd({ ...add, sow_status: e.target.value })}><option value="pending">Pending</option><option value="signed">Signed</option><option value="verified">Verified</option></select></F>
-            </div>
-          </div>}
+          {!isBasic && <Sec title="Documentation">
+            <F label="Signed Date"><input type="date" className={input} value={add.sow_signed_date} onChange={(e) => setAdd({ ...add, sow_signed_date: e.target.value })} /></F>
+          </Sec>}
 
           <DialogFooter className="mt-2">
             <Button variant="outline" onClick={() => setShowAdd(false)}><X className="h-4 w-4" /> Cancel</Button>

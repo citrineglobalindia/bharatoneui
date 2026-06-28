@@ -224,6 +224,39 @@ function LoginPage() {
                   (a) => a.username === id && a.password === password,
                 );
                 if (!matchesRetailer && !roleAccount) {
+                  // Staff "username" login → maps to the synthetic email used at creation.
+                  const staffEmail = `${id.replace(/[^a-z0-9._-]/g, "")}@staff.bharatone.app`;
+                  const { data: sb, error: sbErr } = await supabase.auth.signInWithPassword({ email: staffEmail, password });
+                  if (!sbErr && sb?.session && sb.user) {
+                    const [{ data: rr }, { data: prof }] = await Promise.all([
+                      supabase.from("user_roles").select("role").eq("user_id", sb.user.id),
+                      supabase.from("profiles").select("display_name").eq("id", sb.user.id).maybeSingle(),
+                    ]);
+                    const set = new Set((rr ?? []).map((x) => x.role as string));
+                    const primary = set.has("admin") ? "admin"
+                      : set.has("accountant") ? "accountant"
+                      : set.has("qc") ? "qc"
+                      : set.has("telecaller") ? "telecaller"
+                      : set.has("operator") ? "operator"
+                      : set.has("distributor") ? "distributor"
+                      : set.has("master-distributor") ? "master-distributor"
+                      : "retailer";
+                    const dest = primary === "admin" ? "/admin/registrations"
+                      : primary === "accountant" ? "/accountant/registrations"
+                      : primary === "qc" ? "/qc/kyc-queue"
+                      : primary === "telecaller" ? "/telecaller/registrations"
+                      : primary === "operator" ? "/operator"
+                      : primary === "distributor" ? "/distributor/dashboard"
+                      : "/dashboard";
+                    try {
+                      localStorage.setItem("bharatone:auth", JSON.stringify({
+                        name: (prof as any)?.display_name || id, email: sb.user.email, role: primary, loggedInAt: new Date().toISOString(),
+                      }));
+                    } catch {}
+                    toast.success("Welcome back");
+                    navigate({ to: dest });
+                    return;
+                  }
                   toast.error("Invalid credentials", {
                     description: "Check your username/email and password.",
                   });
