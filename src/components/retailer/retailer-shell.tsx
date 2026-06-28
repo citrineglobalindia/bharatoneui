@@ -28,6 +28,7 @@ import { useCurrentUser } from "@/lib/use-current-user";
 import { BharatOneLogo } from "@/components/bharatone-logo";
 import { NotificationsBell } from "@/components/retailer/notifications-bell";
 import { ProfileMenu } from "@/components/retailer/profile-menu";
+import { LanguageSwitch } from "@/components/retailer/language-switch";
 
 type NavItem = { label: string; icon: React.ReactNode; to: string; children?: { label: string; to: string }[] };
 type NavSection = { heading: string; items: NavItem[] };
@@ -220,6 +221,7 @@ export function RetailerShell({ children }: { children: React.ReactNode }) {
             <GlobalSearch />
           </div>
           <div className="flex items-center gap-2">
+            <LanguageSwitch />
             <NotificationsBell />
             <ProfileMenu />
           </div>
