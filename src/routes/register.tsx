@@ -133,8 +133,17 @@ function RegisterFlow() {
   const prev = () => setCurrent((c) => Math.max(c - 1, 0));
 
   // On every step change (e.g. Business → KYC Docs), start at the top of the page.
+  // Re-run after layout/paint so a taller new step can't leave the page scrolled down.
   useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    const toTop = () => {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    };
+    toTop();
+    const raf = requestAnimationFrame(toTop);
+    const t = setTimeout(toTop, 90);
+    return () => { cancelAnimationFrame(raf); clearTimeout(t); };
   }, [current]);
 
   const submitDistributor = async (d: DistributorFormData, formFile: File) => {
