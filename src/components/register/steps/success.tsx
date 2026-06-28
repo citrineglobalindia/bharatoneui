@@ -104,8 +104,25 @@ function buildReceiptCanvas(info: SubmissionInfo): HTMLCanvasElement {
   return c;
 }
 
+async function loadImageDataUrl(url: string): Promise<string | null> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      try {
+        const c = document.createElement("canvas");
+        c.width = img.naturalWidth; c.height = img.naturalHeight;
+        c.getContext("2d")!.drawImage(img, 0, 0);
+        resolve(c.toDataURL("image/png"));
+      } catch { resolve(null); }
+    };
+    img.onerror = () => resolve(null);
+    img.src = url;
+  });
+}
+
 export function SuccessStep({ info }: { info: SubmissionInfo }) {
-  const { files } = useRegistration();
+  const { files, data } = useRegistration();
   const passportUrl = useMemo(() => (files.passport ? URL.createObjectURL(files.passport) : null), [files.passport]);
   const [copied, setCopied] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -231,6 +248,109 @@ export function SuccessStep({ info }: { info: SubmissionInfo }) {
       } catch {
         /* ignore */
       }
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const downloadAcknowledgement = async () => {
+    try {
+      setBusy("ack");
+      const mod: any = await import("jspdf");
+      const JsPDF = mod.jsPDF ?? mod.default;
+      const pdf = new JsPDF({ unit: "pt", format: "a4" });
+      const W = pdf.internal.pageSize.getWidth();
+      const M = 40;
+      const cardW = W - M * 2;
+      const applicant = [data.firstName, data.middleName, data.surname].filter(Boolean).join(" ") || "—";
+      const qr = await loadImageDataUrl(qrUrl);
+
+      // tricolor strip
+      pdf.setFillColor(255, 153, 51); pdf.rect(0, 0, W / 3, 6, "F");
+      pdf.setFillColor(214, 214, 214); pdf.rect(W / 3, 0, W / 3, 6, "F");
+      pdf.setFillColor(19, 136, 8); pdf.rect((2 * W) / 3, 0, W / 3, 6, "F");
+
+      // header
+      pdf.setTextColor(17, 24, 39); pdf.setFont("helvetica", "bold"); pdf.setFontSize(20);
+      pdf.text("BharatOne", W / 2, 38, { align: "center" });
+      pdf.setTextColor(107, 114, 128); pdf.setFont("helvetica", "normal"); pdf.setFontSize(9);
+      pdf.text("One Nation | One Platform", W / 2, 52, { align: "center" });
+
+      // submitted banner
+      pdf.setFillColor(236, 253, 245); pdf.roundedRect(M, 66, cardW, 56, 8, 8, "F");
+      pdf.setFillColor(16, 185, 129); pdf.circle(M + 26, 94, 13, "F");
+      pdf.setDrawColor(255, 255, 255); pdf.setLineWidth(2.4);
+      pdf.line(M + 20, 94, M + 25, 99); pdf.line(M + 25, 99, M + 33, 89);
+      pdf.setTextColor(6, 95, 70); pdf.setFont("helvetica", "bold"); pdf.setFontSize(15);
+      pdf.text("APPLICATION SUBMITTED", M + 50, 90);
+      pdf.setTextColor(55, 65, 81); pdf.setFont("helvetica", "normal"); pdf.setFontSize(8.5);
+      pdf.text("Your application has been submitted successfully. The details below are retained", M + 50, 104);
+      pdf.text("until your KYC is verified and approved.", M + 50, 115);
+
+      const section = (title: string, y: number, h: number) => {
+        pdf.setDrawColor(229, 231, 235); pdf.setLineWidth(0.8);
+        pdf.roundedRect(M, y, cardW, h, 8, 8, "S");
+        pdf.setTextColor(19, 136, 8); pdf.setFont("helvetica", "bold"); pdf.setFontSize(10);
+        pdf.text(title, M + 14, y + 18);
+      };
+      const kv = (label: string, value: string, x: number, y: number) => {
+        pdf.setTextColor(120, 120, 120); pdf.setFont("helvetica", "normal"); pdf.setFontSize(8);
+        pdf.text(label.toUpperCase(), x, y);
+        pdf.setTextColor(17, 24, 39); pdf.setFont("helvetica", "bold"); pdf.setFontSize(10.5);
+        pdf.text(String(value), x, y + 13);
+      };
+
+      // APPLICATION RECEIPT
+      let y = 138;
+      section("APPLICATION RECEIPT", y, 168);
+      if (qr) { pdf.addImage(qr, "PNG", W - M - 96, y + 34, 80, 80); pdf.setTextColor(120,120,120); pdf.setFont("helvetica","normal"); pdf.setFontSize(7.5); pdf.text("Scan QR to verify receipt", W - M - 56, y + 124, { align: "center" }); }
+      const colX = M + 14;
+      kv("Application ID", info.applicationId, colX, y + 40);
+      kv("Transaction ID", info.transactionId, colX, y + 70);
+      kv("UTR / Reference No.", info.utr, colX, y + 100);
+      kv("Amount Paid", info.amount, colX, y + 130);
+      kv("Date & Time", info.submittedAt, colX + 230, y + 40);
+      kv("Service", info.plan, colX + 230, y + 70);
+      kv("Status", "Under Review", colX + 230, y + 100);
+
+      // APPLICANT DETAILS
+      y += 184;
+      section("APPLICANT DETAILS", y, 96);
+      kv("Applicant Name", applicant, colX, y + 40);
+      kv("Mobile Number", data.mobile || "—", colX, y + 70);
+      kv("Email ID", data.email || "—", colX + 230, y + 40);
+      kv("Business Name", data.shopName || "—", colX + 230, y + 70);
+
+      // STATUS UPDATE
+      y += 112;
+      section("STATUS UPDATE", y, 110);
+      const steps2: [string, string][] = [
+        ["Application Submitted", info.submittedAt],
+        ["Documents Received", info.submittedAt],
+        ["Under Review", "Your application is under verification."],
+        ["Approval Pending", "You will be notified once approved."],
+      ];
+      let sy = y + 34;
+      for (const [t, s] of steps2) {
+        pdf.setFillColor(255, 153, 51); pdf.circle(colX + 4, sy - 3, 3, "F");
+        pdf.setTextColor(17, 24, 39); pdf.setFont("helvetica", "bold"); pdf.setFontSize(9.5); pdf.text(t, colX + 16, sy);
+        pdf.setTextColor(120, 120, 120); pdf.setFont("helvetica", "normal"); pdf.setFontSize(8); pdf.text(s, colX + 16, sy + 10);
+        sy += 22;
+      }
+
+      // SUPPORT
+      y += 126;
+      pdf.setTextColor(19, 136, 8); pdf.setFont("helvetica", "bold"); pdf.setFontSize(10); pdf.text("SUPPORT", colX, y);
+      pdf.setTextColor(55, 65, 81); pdf.setFont("helvetica", "normal"); pdf.setFontSize(9);
+      pdf.text("support@mybharatone.com   |   +91 90711 00311   |   https://mybharatone.com", colX, y + 16);
+
+      pdf.setTextColor(150, 150, 150); pdf.setFontSize(8);
+      pdf.text("Generated electronically by BharatOne. No signature required.  © BharatOne Services & Affiliates Pvt. Ltd.", W / 2, y + 40, { align: "center" });
+
+      pdf.save(`BharatOne-Acknowledgement-${info.applicationId}.pdf`);
+    } catch (e) {
+      console.error(e);
+      toast.error("Could not generate acknowledgement", { description: e instanceof Error ? e.message : String(e) });
     } finally {
       setBusy(null);
     }
@@ -489,6 +609,16 @@ export function SuccessStep({ info }: { info: SubmissionInfo }) {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+
+        <Button
+          variant="outline"
+          onClick={downloadAcknowledgement}
+          disabled={busy !== null}
+          className="rounded-xl"
+        >
+          <FileText className="h-4 w-4" />
+          {busy === "ack" ? "Generating…" : "Acknowledgement Receipt"}
+        </Button>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
