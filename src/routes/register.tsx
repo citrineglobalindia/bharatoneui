@@ -463,6 +463,13 @@ function RegisterFlow() {
                 <h2 className="mt-5 font-display text-2xl font-extrabold text-foreground">Application submitted!</h2>
                 <p className="mt-2 text-sm font-semibold text-emerald-700">Your distributor registration is under review.</p>
                 <p className="mt-1 text-sm text-muted-foreground">Our team will contact you soon!!</p>
+                <p className="mx-auto mt-3 max-w-md text-xs text-muted-foreground">
+                  If you have any queries, please contact us 24/7 at{" "}
+                  <a href="tel:+919071100311" className="font-semibold text-india-green hover:underline">+91 90711 00311</a>{" "}
+                  or email us at{" "}
+                  <a href="mailto:info@mybharatone.com" className="font-semibold text-india-green hover:underline">info@mybharatone.com</a>{" "}/{" "}
+                  <a href="mailto:support@mybharatone.com" className="font-semibold text-india-green hover:underline">support@mybharatone.com</a>.
+                </p>
                 <a href="/" className="mt-6 inline-flex items-center justify-center rounded-xl bg-india-green px-5 h-11 text-sm font-semibold text-white hover:bg-india-green/90">Back to Home</a>
               </div>
             ) : (
