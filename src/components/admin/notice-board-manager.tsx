@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Loader2, Plus, Trash2, Megaphone, Eye, EyeOff, Check, Link2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 import { Button } from "@/components/ui/button";
 
 type Row = {
@@ -25,6 +26,7 @@ export function NoticeBoardManager() {
 
   async function load() {
     setLoading(true);
+    await ensureStaffSession();
     const { data, error } = await supabase
       .from("notice_board")
       .select("*")
@@ -45,6 +47,11 @@ export function NoticeBoardManager() {
     }
     setBusy(true);
     try {
+      const ok = await ensureStaffSession();
+      if (!ok) {
+        toast.error("Session expired", { description: "Please sign in again as admin and retry." });
+        return;
+      }
       const { error } = await supabase.from("notice_board").insert({
         message: msg.trim(),
         link_url: link.trim() || null,
