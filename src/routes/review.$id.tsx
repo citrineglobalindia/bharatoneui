@@ -151,11 +151,13 @@ function ReviewPage() {
     toast.success(`Document ${status}`);
   };
 
-  const submitQc = async () => {
-    if (!qcAction) { toast.error("Select a QC action"); return; }
-    if (qcAction === "approve_payment") { await act(() => supabase.rpc("verify_retailer_payment", { reg_id: id, received: true, notes: remarks || null }), "Approved — forwarded to QC"); return; }
-    if (qcAction === "reject_payment") { await act(() => supabase.rpc("verify_retailer_payment", { reg_id: id, received: false, notes: remarks || "Payment not received" }), "Sent to Telecaller"); return; }
-    if (qcAction === "approve_kyc") {
+  const submitQc = async (action?: string) => {
+    const a = action ?? qcAction;
+    if (a) setQcAction(a);
+    if (!a) { toast.error("Select a QC action"); return; }
+    if (a === "approve_payment") { await act(() => supabase.rpc("verify_retailer_payment", { reg_id: id, received: true, notes: remarks || null }), "Approved — forwarded to QC"); return; }
+    if (a === "reject_payment") { await act(() => supabase.rpc("verify_retailer_payment", { reg_id: id, received: false, notes: remarks || "Payment not received" }), "Sent to Telecaller"); return; }
+    if (a === "approve_kyc") {
       const data = await act(() => supabase.rpc("verify_retailer_qc", { reg_id: id, verified: true, notes: remarks || null }), "Approved — retailer login created", false);
       if (data) {
         const c = data as { username: string; email: string; password: string };
@@ -168,8 +170,8 @@ function ReviewPage() {
       }
       return;
     }
-    if (qcAction === "reject_kyc") { await act(() => supabase.rpc("verify_retailer_qc", { reg_id: id, verified: false, notes: remarks || "Rejected by QC" }), "Sent to Telecaller"); return; }
-    if (qcAction === "request_docs") { setReqOpen(true); return; }
+    if (a === "reject_kyc") { await act(() => supabase.rpc("verify_retailer_qc", { reg_id: id, verified: false, notes: remarks || "Rejected by QC" }), "Sent to Telecaller"); return; }
+    if (a === "request_docs") { setReqOpen(true); return; }
   };
   const submitRequestDocs = async () => {
     const keys = DOC_KEYS.filter((d) => reqKeys[d.key]).map((d) => d.key);
@@ -301,8 +303,8 @@ function ReviewPage() {
             <p className="mb-3 mt-1 text-xs text-muted-foreground">Review all documents below, then choose an action. Remarks are required to reject.</p>
             <div className="flex flex-wrap items-center gap-3">
               <input className="h-11 flex-1 min-w-[240px] rounded-xl border border-border bg-background px-4 text-sm outline-none focus-visible:ring-2 focus-visible:ring-india-green/30" placeholder="Add remarks (required for reject)…" value={remarks} onChange={(e) => setRemarks(e.target.value)} />
-              <Button disabled={busy} className="h-11 bg-india-green text-white hover:bg-india-green/90" onClick={() => { setQcAction(stageAcct ? "approve_payment" : "approve_kyc"); setTimeout(submitQc, 0); }}>{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} Verify &amp; Approve</Button>
-              <Button variant="outline" disabled={busy} className="h-11 text-rose-600" onClick={() => { if (!remarks.trim()) { toast.error("Add remarks before rejecting"); return; } setQcAction(stageAcct ? "reject_payment" : "reject_kyc"); setTimeout(submitQc, 0); }}><XCircle className="h-4 w-4" /> Reject</Button>
+              <Button disabled={busy} className="h-11 bg-india-green text-white hover:bg-india-green/90" onClick={() => submitQc(stageAcct ? "approve_payment" : "approve_kyc")}>{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} Verify &amp; Approve</Button>
+              <Button variant="outline" disabled={busy} className="h-11 text-rose-600" onClick={() => { if (!remarks.trim()) { toast.error("Add remarks before rejecting"); return; } submitQc(stageAcct ? "reject_payment" : "reject_kyc"); }}><XCircle className="h-4 w-4" /> Reject</Button>
               {stageQc && <Button variant="outline" disabled={busy} className="h-11" onClick={() => setReqOpen(true)}><RefreshCw className="h-4 w-4" /> Request Documents</Button>}
             </div>
           </div>
