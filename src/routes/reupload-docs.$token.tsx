@@ -11,7 +11,7 @@ export const Route = createFileRoute("/reupload-docs/$token")({
   component: ReuploadPage,
 });
 
-const LABEL: Record<string, string> = { selfie: "Selfie", shop: "Shop Photo", aadhaar: "Aadhaar Card", pan: "PAN Card", police: "Police Verification", video: "Video KYC" };
+const LABEL: Record<string, string> = { selfie: "Selfie", shop: "Outside Shop Photo", shop_inside: "Inside Shop Photo", passport: "Passport Size Photo", aadhaar: "Aadhaar Card", pan: "PAN Card", police: "Police Verification", video: "Video KYC" };
 
 function ReuploadPage() {
   const { token } = Route.useParams();
