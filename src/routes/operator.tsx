@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { LogOut, RefreshCw, Loader2, FileSearch, IndianRupee, CheckCircle2, Clock3, XCircle, ChevronRight, Upload, Paperclip, Download } from "lucide-react";
@@ -58,6 +58,9 @@ function OperatorPortal() {
   }
   useEffect(() => { load(); }, []);
 
+  // Detail overlay always opens scrolled to the very top (no auto-scroll to chat).
+  const detailRef = useRef<HTMLDivElement>(null);
+
   // "Submitted From" — the JSKO/retailer who submitted the application.
   const [submitter, setSubmitter] = useState<{ jskoId: string; name: string; phone: string } | null>(null);
   useEffect(() => {
@@ -78,6 +81,11 @@ function OperatorPortal() {
     })();
     return () => { on = false; };
   }, [sel?.submitted_by, sel?.submitter_name]);
+
+  // Reset the detail overlay to the top whenever a new application is opened.
+  useEffect(() => {
+    if (sel) requestAnimationFrame(() => detailRef.current?.scrollTo({ top: 0 }));
+  }, [sel?.id]);
 
   const counts = useMemo(() => ({
     all: apps.length,
@@ -188,7 +196,7 @@ function OperatorPortal() {
       </main>
 
       {sel && (
-        <div className="fixed inset-0 z-30 overflow-y-auto bg-background">
+        <div ref={detailRef} className="fixed inset-0 z-30 overflow-y-auto bg-background">
           <div className="sticky top-0 z-10 flex h-14 items-center justify-between border-b border-border bg-card px-4 shadow-soft sm:px-6">
             <button type="button" onClick={() => setSel(null)} className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground hover:text-india-green">
               <ChevronRight className="h-4 w-4 rotate-180" /> Back
