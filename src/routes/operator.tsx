@@ -188,8 +188,14 @@ function OperatorPortal() {
       </main>
 
       {sel && (
-        <div className="fixed inset-0 z-20 flex items-center justify-center bg-black/40 p-4" onClick={() => setSel(null)}>
-          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-border bg-card p-5 shadow-elev" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-30 overflow-y-auto bg-background">
+          <div className="sticky top-0 z-10 flex h-14 items-center justify-between border-b border-border bg-card px-4 shadow-soft sm:px-6">
+            <button type="button" onClick={() => setSel(null)} className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground hover:text-india-green">
+              <ChevronRight className="h-4 w-4 rotate-180" /> Back
+            </button>
+            <span className="font-mono text-xs font-bold text-muted-foreground">{sel.application_no}</span>
+          </div>
+          <div className="mx-auto max-w-4xl p-4 sm:p-6">
             <div className="flex items-start justify-between">
               <div><p className="font-mono text-xs font-bold text-muted-foreground">{sel.application_no}</p><p className="font-display text-lg font-extrabold">{sel.service_name}</p><p className="text-sm text-muted-foreground">{sel.category_name}</p></div>
               <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${tone[sel.status] ?? "bg-muted"}`}>{label[sel.status] ?? sel.status}</span>
