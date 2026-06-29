@@ -42,6 +42,7 @@ export type RegRow = {
   application_id: string;
   registration_type: string;
   first_name: string;
+  middle_name: string | null;
   surname: string;
   shop_name: string;
   email: string;
@@ -207,7 +208,7 @@ export function RegistrationsReview() {
         supabase
           .from("retailer_registrations")
           .select(
-            "id, application_id, registration_type, first_name, surname, shop_name, email, mobile, status, payment_verified, qc_verified, payment_amount, payment_utr, pan_doc_path, aadhaar_doc_path, shop_photo_path, selfie_path, payment_screenshot_path, created_at",
+            "id, application_id, registration_type, first_name, middle_name, surname, shop_name, email, mobile, status, payment_verified, qc_verified, payment_amount, payment_utr, pan_doc_path, aadhaar_doc_path, shop_photo_path, selfie_path, payment_screenshot_path, created_at",
           )
           .order("created_at", { ascending: false }),
       );
@@ -251,7 +252,7 @@ export function RegistrationsReview() {
         const q = query.toLowerCase();
         return (
           r.application_id.toLowerCase().includes(q) ||
-          (r.first_name + " " + r.surname).toLowerCase().includes(q) ||
+          [r.first_name, r.middle_name, r.surname].filter(Boolean).join(" ").toLowerCase().includes(q) ||
           (r.shop_name ?? "").toLowerCase().includes(q) ||
           (r.mobile ?? "").includes(q) ||
           (r.email ?? "").toLowerCase().includes(q)
@@ -484,7 +485,7 @@ export function RegistrationsReview() {
                   </td>
                   <td className="px-3 py-3">
                     <div className="font-semibold">
-                      {r.first_name} {r.surname}
+                      {[r.first_name, r.middle_name, r.surname].filter(Boolean).join(" ")}
                     </div>
                     <div className="text-xs text-muted-foreground">{r.shop_name}</div>
                     <div className="text-xs text-muted-foreground">
