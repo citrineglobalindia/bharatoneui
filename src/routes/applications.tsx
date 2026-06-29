@@ -21,10 +21,10 @@ type Row = {
   created_at: string; result_doc_path: string | null; result_note: string | null; form_data: any; assigned_operator: string | null;
   reupload_requested: boolean; reupload_note: string | null; reupload_path: string | null; reupload_name: string | null;
 };
-const statusLabel: Record<string, string> = { submitted: "Pending", on_process: "On Process", in_progress: "On Process", waiting_approval: "Waiting for Approval", on_delay: "On Delay", approved: "Waiting for Approval", rejected: "Rejected", completed: "Completed" };
+const statusLabel: Record<string, string> = { submitted: "Waiting for Approval", on_process: "On Process", in_progress: "On Process", waiting_approval: "Waiting for Approval", on_delay: "On Delay", approved: "Completed", rejected: "Rejected", completed: "Completed" };
 const STEPS = ["submitted", "on_process", "waiting_approval", "completed"];
 const inr = (n: number) => "₹" + Number(n || 0).toLocaleString("en-IN");
-const FILTERS = ["All", "Pending", "Processing", "Approved", "Completed", "Rejected"];
+const FILTERS = ["All", "On Process", "Waiting for Approval", "On Delay", "Completed", "Rejected"];
 
 async function openResult(path: string) {
   const { data } = await supabase.storage.from("service-attachments").createSignedUrl(path, 3600);
