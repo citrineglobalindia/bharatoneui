@@ -10,7 +10,18 @@ export function SelfieStep() {
   const [active, setActive] = useState(false);
   const [shot, setShot] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const { setFile } = useRegistration();
+  const { setFile, files } = useRegistration();
+
+  // Re-show a previously captured selfie when the user navigates back to this step.
+  // The image File is kept in the registration context, so rebuild a preview from it.
+  useEffect(() => {
+    if (files.selfie && !shot && !active) {
+      const url = URL.createObjectURL(files.selfie);
+      setShot(url);
+      return () => URL.revokeObjectURL(url);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const stop = () => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
