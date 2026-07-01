@@ -181,6 +181,22 @@ function LoginPage() {
                     password,
                   });
                   if (!sbErr && sb?.session && sb.user) {
+                    // Enforce two-factor authentication if the account has a verified factor.
+                    try {
+                      const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+                      if (aal?.nextLevel === "aal2" && aal.currentLevel !== "aal2") {
+                        const { data: fl } = await supabase.auth.mfa.listFactors();
+                        const factor = (fl?.totp ?? [])[0];
+                        if (factor) {
+                          const otp = window.prompt("Two-factor authentication: enter the 6-digit code from your authenticator app");
+                          if (!otp) { await supabase.auth.signOut(); toast.error("Two-factor code required"); return; }
+                          const { data: ch, error: chErr } = await supabase.auth.mfa.challenge({ factorId: factor.id });
+                          if (chErr) { await supabase.auth.signOut(); toast.error(chErr.message); return; }
+                          const { error: vErr } = await supabase.auth.mfa.verify({ factorId: factor.id, challengeId: ch.id, code: otp.trim() });
+                          if (vErr) { await supabase.auth.signOut(); toast.error("Invalid two-factor code"); return; }
+                        }
+                      }
+                    } catch { /* MFA not available — continue */ }
                     const [{ data: rr }, { data: prof }] = await Promise.all([
                       supabase.from("user_roles").select("role").eq("user_id", sb.user.id),
                       supabase.from("profiles").select("display_name").eq("id", sb.user.id).maybeSingle(),
@@ -250,6 +266,22 @@ function LoginPage() {
                   const staffEmail = `${id.replace(/[^a-z0-9._-]/g, "")}@staff.bharatone.app`;
                   const { data: sb, error: sbErr } = await supabase.auth.signInWithPassword({ email: staffEmail, password });
                   if (!sbErr && sb?.session && sb.user) {
+                    // Enforce two-factor authentication if the account has a verified factor.
+                    try {
+                      const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+                      if (aal?.nextLevel === "aal2" && aal.currentLevel !== "aal2") {
+                        const { data: fl } = await supabase.auth.mfa.listFactors();
+                        const factor = (fl?.totp ?? [])[0];
+                        if (factor) {
+                          const otp = window.prompt("Two-factor authentication: enter the 6-digit code from your authenticator app");
+                          if (!otp) { await supabase.auth.signOut(); toast.error("Two-factor code required"); return; }
+                          const { data: ch, error: chErr } = await supabase.auth.mfa.challenge({ factorId: factor.id });
+                          if (chErr) { await supabase.auth.signOut(); toast.error(chErr.message); return; }
+                          const { error: vErr } = await supabase.auth.mfa.verify({ factorId: factor.id, challengeId: ch.id, code: otp.trim() });
+                          if (vErr) { await supabase.auth.signOut(); toast.error("Invalid two-factor code"); return; }
+                        }
+                      }
+                    } catch { /* MFA not available — continue */ }
                     const [{ data: rr }, { data: prof }] = await Promise.all([
                       supabase.from("user_roles").select("role").eq("user_id", sb.user.id),
                       supabase.from("profiles").select("display_name").eq("id", sb.user.id).maybeSingle(),

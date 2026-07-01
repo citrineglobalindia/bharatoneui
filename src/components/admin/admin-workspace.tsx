@@ -33,7 +33,7 @@ import {
   Wallet,
   Network,
   type LucideIcon,
-  ImageIcon, Megaphone, FolderTree, TrendingUp, Search as SearchIcon } from "lucide-react";
+  ImageIcon, Megaphone, FolderTree, TrendingUp, Search as SearchIcon, BellRing } from "lucide-react";
 import {
   Area,
   AreaChart,
@@ -87,6 +87,9 @@ import { NoticeBoardManager } from "@/components/admin/notice-board-manager";
 import { SupportCategoriesManager } from "@/components/admin/support-categories-manager";
 import { PlatformAnalytics } from "@/components/admin/platform-analytics";
 import { GlobalSearch } from "@/components/admin/global-search";
+import { NotificationCenter } from "@/components/admin/notification-center";
+import { StaffSecurity } from "@/components/admin/staff-security";
+import { RiskFlagsPanel } from "@/components/admin/risk-flags-panel";
 import { KycWorkflow } from "@/components/admin/kyc-workflow";
 import { Button } from "@/components/ui/button";
 import {
@@ -156,6 +159,8 @@ const NAVIGATION: NavGroup[] = [
       { label: "System Settings", icon: Settings },
       { label: "Website Gallery", icon: ImageIcon },
       { label: "Notice Board", icon: Megaphone },
+      { label: "Notification Center", icon: BellRing },
+      { label: "Security & 2FA", icon: ShieldCheck },
       { label: "Feedback", icon: MessageSquare },
       { label: "Audit Log", icon: FileClock },
     ],
@@ -1073,13 +1078,17 @@ export function AdminWorkspace() {
             ) : active === "Settlements" ? (
               <Settlements />
             ) : active === "Risk & Fraud" ? (
-              <RiskFraud />
+              <RiskFlagsPanel />
             ) : active === "Roles & Permissions" ? (
               <RolesPermissions />
             ) : active === "Platform Analytics" ? (
               <PlatformAnalytics />
             ) : active === "Global Search" ? (
               <GlobalSearch />
+            ) : active === "Notification Center" ? (
+              <NotificationCenter />
+            ) : active === "Security & 2FA" ? (
+              <StaffSecurity />
             ) : (
               <AdminModuleView module={active} />
             )}
