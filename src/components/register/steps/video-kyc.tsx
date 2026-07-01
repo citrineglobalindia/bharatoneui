@@ -83,6 +83,16 @@ export function VideoKycStep() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Re-show a previously recorded video when the user navigates back to this step.
+  // The video File is kept in the registration context, so rebuild a preview from it.
+  useEffect(() => {
+    if (files.video && !previewUrl && !recording) {
+      const url = URL.createObjectURL(files.video);
+      setPreviewUrl(url);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const captureGps = () => {
     if (!("geolocation" in navigator)) return;
     navigator.geolocation.getCurrentPosition(
@@ -254,7 +264,7 @@ export function VideoKycStep() {
           <div className="flex flex-col items-center gap-3">
             <video src={previewUrl} controls playsInline className="mx-auto aspect-[4/3] w-full max-w-sm rounded-xl border border-border bg-black object-cover shadow-soft" />
             <div className="flex items-center gap-2 text-sm font-medium text-[oklch(0.45_0.12_150)]">
-              <CheckCircle2 className="h-4 w-4" /> Video recorded ({seconds}s)
+              <CheckCircle2 className="h-4 w-4" /> Video recorded{seconds > 0 ? ` (${seconds}s)` : ""}
             </div>
             <Button type="button" variant="outline" onClick={retake}>
               <RotateCcw className="h-4 w-4" /> Re-record
