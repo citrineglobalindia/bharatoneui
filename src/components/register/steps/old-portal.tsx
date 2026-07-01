@@ -134,12 +134,11 @@ export function OldPortalStep() {
       email: res.email ?? "",
       mobile: res.mobile ?? "",
     });
-    const parts = fetchedName.trim().split(/\s+/);
+    // Do NOT pre-fill the registration form from JSKO records — the applicant
+    // enters Personal / Business details manually. Only the JSKO ID is retained
+    // (used for the Agent ID and tracking, not shown as an editable field).
     setReg({
       jskoId: (res.username as string) ?? username.trim().toUpperCase(),
-      firstName: parts[0] ?? "",
-      middleName: parts.length > 2 ? parts.slice(1, -1).join(" ") : "",
-      surname: parts.length > 1 ? parts[parts.length - 1] : "",
     });
     setStage("otp");
   };
