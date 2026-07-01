@@ -91,6 +91,8 @@ import { NotificationCenter } from "@/components/admin/notification-center";
 import { StaffSecurity } from "@/components/admin/staff-security";
 import { RiskFlagsPanel } from "@/components/admin/risk-flags-panel";
 import { HrmsPanel } from "@/components/admin/hrms-panel";
+import { CrmPanel } from "@/components/admin/crm-panel";
+import { FranchisePanel } from "@/components/admin/franchise-panel";
 import { KycWorkflow } from "@/components/admin/kyc-workflow";
 import { Button } from "@/components/ui/button";
 import {
@@ -134,6 +136,8 @@ const NAVIGATION: NavGroup[] = [
       { label: "Retailer Network", icon: Store },
       { label: "Distributors", icon: Network },
       { label: "Distributor Apps", icon: ClipboardCheck },
+      { label: "CRM", icon: Users },
+      { label: "Franchise", icon: Network },
       { label: "Retailer Map", icon: MapPin },
       { label: "Roles & Permissions", icon: LockKeyhole },
     ],
@@ -1093,6 +1097,10 @@ export function AdminWorkspace() {
               <StaffSecurity />
             ) : active === "HRMS" ? (
               <HrmsPanel />
+            ) : active === "CRM" ? (
+              <CrmPanel />
+            ) : active === "Franchise" ? (
+              <FranchisePanel />
             ) : (
               <AdminModuleView module={active} />
             )}
