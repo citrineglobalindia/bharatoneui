@@ -33,7 +33,7 @@ import {
   Wallet,
   Network,
   type LucideIcon,
-  ImageIcon, Megaphone, FolderTree } from "lucide-react";
+  ImageIcon, Megaphone, FolderTree, TrendingUp, Search as SearchIcon } from "lucide-react";
 import {
   Area,
   AreaChart,
@@ -85,6 +85,8 @@ import { SystemSettings } from "@/components/admin/system-settings";
 import { GalleryManager } from "@/components/admin/gallery-manager";
 import { NoticeBoardManager } from "@/components/admin/notice-board-manager";
 import { SupportCategoriesManager } from "@/components/admin/support-categories-manager";
+import { PlatformAnalytics } from "@/components/admin/platform-analytics";
+import { GlobalSearch } from "@/components/admin/global-search";
 import { KycWorkflow } from "@/components/admin/kyc-workflow";
 import { Button } from "@/components/ui/button";
 import {
@@ -111,6 +113,8 @@ const NAVIGATION: NavGroup[] = [
     label: "Command",
     items: [
       { label: "Executive Overview", icon: Gauge },
+      { label: "Platform Analytics", icon: TrendingUp },
+      { label: "Global Search", icon: SearchIcon },
       { label: "Live Operations", icon: Activity, badge: "LIVE" },
     ],
   },
@@ -1072,6 +1076,10 @@ export function AdminWorkspace() {
               <RiskFraud />
             ) : active === "Roles & Permissions" ? (
               <RolesPermissions />
+            ) : active === "Platform Analytics" ? (
+              <PlatformAnalytics />
+            ) : active === "Global Search" ? (
+              <GlobalSearch />
             ) : (
               <AdminModuleView module={active} />
             )}
