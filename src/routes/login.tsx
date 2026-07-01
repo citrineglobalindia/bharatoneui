@@ -216,6 +216,28 @@ function LoginPage() {
                     return;
                   }
                 }
+                // Retailer login using their JSKO ID / Old JSKO ID (resolve to account email).
+                if (!realId.includes("@")) {
+                  try {
+                    const { data: reEmail } = await supabase.rpc("resolve_retailer_login", { p_login: realId });
+                    if (reEmail) {
+                      const { data: sb, error: sbErr } = await supabase.auth.signInWithPassword({ email: String(reEmail), password });
+                      if (!sbErr && sb?.session && sb.user) {
+                        const { data: prof } = await supabase.from("profiles").select("display_name").eq("id", sb.user.id).maybeSingle();
+                        try {
+                          localStorage.setItem("bharatone:auth", JSON.stringify({
+                            name: (prof as any)?.display_name || sb.user.email?.split("@")[0] || "User",
+                            email: sb.user.email, role: "retailer", loggedInAt: new Date().toISOString(),
+                          }));
+                        } catch {}
+                        try { await supabase.rpc("record_login"); } catch {}
+                        toast.success("Welcome back");
+                        navigate({ to: "/dashboard" });
+                        return;
+                      }
+                    }
+                  } catch { /* fall through to other login paths */ }
+                }
                 const id = identifier.trim().toLowerCase();
                 const matchesRetailer =
                   (id === DEMO_RETAILER.phone || id === DEMO_RETAILER.email) &&

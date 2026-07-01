@@ -18,7 +18,7 @@ function html(name: string, username: string, password: string, email: string, l
       <p>Dear ${name || "Retailer"},</p>
       <p>Congratulations! Your BharatOne retailer registration has been <b style="color:#138808">approved</b>. Your account is now active. Use the credentials below to log in:</p>
       <table style="width:100%;border-collapse:collapse;margin:16px 0">
-        <tr><td style="padding:8px 12px;background:#f6f7f6;font-weight:bold;width:130px">Retailer ID</td><td style="padding:8px 12px;background:#f6f7f6">${username}</td></tr>
+        <tr><td style="padding:8px 12px;background:#f6f7f6;font-weight:bold;width:130px">Login ID (JSKO ID)</td><td style="padding:8px 12px;background:#f6f7f6">${username}</td></tr>
         <tr><td style="padding:8px 12px;font-weight:bold">Email / Login</td><td style="padding:8px 12px">${email}</td></tr>
         <tr><td style="padding:8px 12px;background:#f6f7f6;font-weight:bold">Password</td><td style="padding:8px 12px;background:#f6f7f6;font-family:monospace;font-size:15px"><b>${password}</b></td></tr>
       </table>
@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
       await client.send({
         from: `BharatOne <${user}>`, to: email,
         subject: "Your BharatOne account is approved — login details inside",
-        content: `Welcome to BharatOne! Retailer ID: ${username}, Login email: ${email}, Password: ${password}. Login at ${url}`,
+        content: `Welcome to BharatOne! Login ID (JSKO ID): ${username}, Login email: ${email}, Password: ${password}. Login at ${url}`,
         html: html(name, username, password, email, url),
       });
     } finally { await client.close(); }

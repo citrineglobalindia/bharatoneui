@@ -444,7 +444,7 @@ function ReviewPage() {
           </DialogHeader>
           {creds && (
             <div className="space-y-2 text-sm">
-              {([["Retailer ID", creds.username], ["Email", creds.email], ["Password", creds.password]] as const).map(([l, val]) => (
+              {([["Login ID (JSKO ID)", creds.username], ["Email", creds.email], ["Password", creds.password]] as const).map(([l, val]) => (
                 <div key={l} className="flex items-center justify-between gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2">
                   <span className="text-muted-foreground">{l}</span><span className="font-mono font-semibold">{val}</span>
                   <button className="text-india-green" onClick={() => { navigator.clipboard.writeText(val); toast.success("Copied"); }}><Copy className="h-4 w-4" /></button>

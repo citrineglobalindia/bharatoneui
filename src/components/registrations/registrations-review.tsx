@@ -1049,7 +1049,7 @@ export function RegistrationsReview() {
             <div className="space-y-2 text-sm">
               {(
                 [
-                  ["Retailer ID", creds.username],
+                  ["Login ID (JSKO ID)", creds.username],
                   ["Email", creds.email],
                   ["Password", creds.password],
                 ] as const
