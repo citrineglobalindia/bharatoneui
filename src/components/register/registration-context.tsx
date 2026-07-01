@@ -127,14 +127,22 @@ export function RegistrationProvider({ children }: { children: ReactNode }) {
     try {
       localStorage.removeItem(DRAFT_KEY); // drop any legacy persistent draft
       const raw = sessionStorage.getItem(DRAFT_KEY);
-      if (raw) setData((d) => ({ ...d, ...JSON.parse(raw) }));
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        // Never restore PAN/Aadhaar numbers — they start blank every registration.
+        delete parsed.panNumber;
+        delete parsed.aadhaarNumber;
+        setData((d) => ({ ...d, ...parsed }));
+      }
     } catch { /* ignore */ }
     loaded.current = true;
   }, []);
   useEffect(() => {
     if (!loaded.current) return;
     try {
-      const { password: _pw, ...rest } = data;
+      // PAN and Aadhaar numbers are never persisted: they must be entered fresh
+      // for every registration (blank by default) and should not sit in storage.
+      const { password: _pw, panNumber: _pan, aadhaarNumber: _aad, ...rest } = data;
       sessionStorage.setItem(DRAFT_KEY, JSON.stringify(rest));
     } catch { /* ignore */ }
   }, [data]);
