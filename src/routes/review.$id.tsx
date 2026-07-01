@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
-  ArrowLeft, User, Building2, Landmark, FileText, Banknote, ShieldCheck, MapPin,
+  ArrowLeft, User, Building2, Landmark, FileText, FileSearch, Banknote, ShieldCheck, MapPin,
   CheckCircle2, XCircle, Maximize2, ExternalLink, X, Loader2, Phone, Mail, Copy, RefreshCw, Pencil, UserPlus,
 } from "lucide-react";
 import { BharatOneLogo } from "@/components/bharatone-logo";
@@ -82,6 +82,21 @@ function ReviewPage() {
   const [reqMsg, setReqMsg] = useState("Not approved");
   const REQ_DOCS = ["PAN", "KYC Front", "KYC Back", "Shop Front Image", "Education Certificate", "Cancelled Cheque / Passbook", "Police Verification Certificate (Optional)"];
   const [reqSel, setReqSel] = useState<Record<string, boolean>>({ PAN: true, "KYC Front": true, "KYC Back": true });
+  const [ocrResult, setOcrResult] = useState<Record<string, string>>({});
+  const [ocrBusy, setOcrBusy] = useState<string | null>(null);
+  const verifyDoc = async (docType: "pan" | "aadhaar", value: string) => {
+    if (!value) { toast.error(`No ${docType.toUpperCase()} number on file to verify`); return; }
+    setOcrBusy(docType);
+    try {
+      const { data, error } = await supabase.functions.invoke("verify-document", { body: { registrationId: id, docType, value } });
+      if (error) { setOcrResult((r) => ({ ...r, [docType]: "error" })); toast.error("Verification failed", { description: error.message }); return; }
+      const res = data as { status: string; message?: string };
+      setOcrResult((r) => ({ ...r, [docType]: res.status }));
+      if (res.status === "not_configured") toast.info("OCR provider not connected yet", { description: "Add the OCR API key to enable live verification." });
+      else if (res.status === "match") toast.success(`${docType.toUpperCase()} verified`);
+      else if (res.status === "mismatch") toast.error(`${docType.toUpperCase()} mismatch`);
+    } finally { setOcrBusy(null); }
+  };
   const DOC_KEYS: { key: string; label: string }[] = [{ key: "pan", label: "PAN Card" }, { key: "aadhaar", label: "Aadhaar Card" }, { key: "passport", label: "Passport Size Photo" }, { key: "selfie", label: "Selfie" }, { key: "shop", label: "Outside Shop Photo" }, { key: "shop_inside", label: "Inside Shop Photo" }, { key: "police", label: "Police Verification" }, { key: "video", label: "Video KYC" }];
   const [reqKeys, setReqKeys] = useState<Record<string, boolean>>({ pan: true, aadhaar: true });
   const [events, setEvents] = useState<any[]>([]);
@@ -337,6 +352,23 @@ function ReviewPage() {
             <p className="flex items-center gap-2 text-sm font-bold"><span className="grid h-6 w-6 place-items-center rounded-lg bg-india-green/10 text-india-green"><FileText className="h-4 w-4" /></span> KYC Documents {(() => { const pend = DOCS.filter((d) => d.path && (docReviews[d.key]?.status ?? "pending") === "pending").length; return pend ? <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-700">{pend} PENDING</span> : null; })()}</p>
             {gps && <span className="flex items-center gap-3 text-xs"><span className="inline-flex items-center gap-1 text-muted-foreground"><MapPin className="h-3.5 w-3.5 text-india-green" /> GPS: <span className="font-mono">{gps}</span></span>{mapUrl && <a href={mapUrl} target="_blank" rel="noreferrer" className="font-semibold text-india-green hover:underline">View Map ↗</a>}</span>}
           </div>
+          {(canQc || role === "admin") && (
+            <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2">
+              <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">OCR verify:</span>
+              {(["pan", "aadhaar"] as const).map((dt) => {
+                const val = dt === "pan" ? reg.pan_number : reg.aadhaar_number;
+                const res = ocrResult[dt];
+                const tone = res === "match" ? "text-emerald-700" : res === "mismatch" || res === "error" ? "text-rose-600" : "text-muted-foreground";
+                return (
+                  <button key={dt} type="button" disabled={ocrBusy === dt} onClick={() => verifyDoc(dt, val || "")}
+                    className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-semibold hover:bg-muted disabled:opacity-50">
+                    {ocrBusy === dt ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileSearch className="h-3.5 w-3.5" />} Verify {dt.toUpperCase()}
+                    {res && <span className={`ml-1 ${tone}`}>· {res.replace("_", " ")}</span>}
+                  </button>
+                );
+              })}
+            </div>
+          )}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             {DOCS.filter((d) => d.path).map((d) => { const url = urls[d.key]; const kind = fileKind(d.path); const st = docReviews[d.key]?.status ?? "pending"; return (
               <div key={d.key} className="overflow-hidden rounded-xl border border-border">

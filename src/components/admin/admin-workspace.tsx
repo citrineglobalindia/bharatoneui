@@ -90,6 +90,7 @@ import { GlobalSearch } from "@/components/admin/global-search";
 import { NotificationCenter } from "@/components/admin/notification-center";
 import { StaffSecurity } from "@/components/admin/staff-security";
 import { RiskFlagsPanel } from "@/components/admin/risk-flags-panel";
+import { HrmsPanel } from "@/components/admin/hrms-panel";
 import { KycWorkflow } from "@/components/admin/kyc-workflow";
 import { Button } from "@/components/ui/button";
 import {
@@ -125,6 +126,7 @@ const NAVIGATION: NavGroup[] = [
     label: "Network",
     items: [
       { label: "User Management", icon: Users },
+      { label: "HRMS", icon: Users },
       { label: "KYC Approvals", icon: ClipboardCheck, badge: "116" },
       { label: "DRO Operations", icon: MapPin },
       { label: "TRO Operations", icon: MapPin },
@@ -1089,6 +1091,8 @@ export function AdminWorkspace() {
               <NotificationCenter />
             ) : active === "Security & 2FA" ? (
               <StaffSecurity />
+            ) : active === "HRMS" ? (
+              <HrmsPanel />
             ) : (
               <AdminModuleView module={active} />
             )}
