@@ -41,6 +41,8 @@ export type RegRow = {
   id: string;
   application_id: string;
   registration_type: string;
+  jsko_id: string | null;
+  username: string | null;
   first_name: string;
   middle_name: string | null;
   surname: string;
@@ -208,7 +210,7 @@ export function RegistrationsReview() {
         supabase
           .from("retailer_registrations")
           .select(
-            "id, application_id, registration_type, first_name, middle_name, surname, shop_name, email, mobile, status, payment_verified, qc_verified, payment_amount, payment_utr, pan_doc_path, aadhaar_doc_path, shop_photo_path, selfie_path, payment_screenshot_path, created_at",
+            "id, application_id, registration_type, jsko_id, username, first_name, middle_name, surname, shop_name, email, mobile, status, payment_verified, qc_verified, payment_amount, payment_utr, pan_doc_path, aadhaar_doc_path, shop_photo_path, selfie_path, payment_screenshot_path, created_at",
           )
           .order("created_at", { ascending: false }),
       );
@@ -221,7 +223,7 @@ export function RegistrationsReview() {
         });
         setRows([]);
       } else {
-        setRows((data as RegRow[]) ?? []);
+        setRows((data as unknown as RegRow[]) ?? []);
       }
     } catch (e) {
       toast.error("Couldn't load registrations", {
@@ -421,6 +423,7 @@ export function RegistrationsReview() {
           <thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
             <tr>
               <th className="whitespace-nowrap px-3 py-2.5">Application ID</th>
+              <th className="whitespace-nowrap px-3 py-2.5">{typeFilter === "distributor" ? "Distributor ID" : "JSKO ID"}</th>
               <th className="whitespace-nowrap px-3 py-2.5">Date</th>
               <th className="whitespace-nowrap px-3 py-2.5">Retailer Name</th>
               <th className="whitespace-nowrap px-3 py-2.5">Shop Name</th>
@@ -440,6 +443,7 @@ export function RegistrationsReview() {
                     <Skeleton className="h-4 w-24" />
                     <Skeleton className="mt-1.5 h-4 w-16 rounded-full" />
                   </td>
+                  <td className="px-3 py-3"><Skeleton className="h-4 w-16" /></td>
                   <td className="px-3 py-3"><Skeleton className="h-4 w-20" /></td>
                   <td className="px-3 py-3"><Skeleton className="h-4 w-32" /></td>
                   <td className="px-3 py-3"><Skeleton className="h-4 w-28" /></td>
@@ -460,7 +464,7 @@ export function RegistrationsReview() {
               ))
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={10} className="px-3 py-10 text-center text-muted-foreground">
+                <td colSpan={11} className="px-3 py-10 text-center text-muted-foreground">
                   No {TAB_LABEL[tab].toLowerCase()} registrations.
                 </td>
               </tr>
@@ -481,6 +485,9 @@ export function RegistrationsReview() {
                     >
                       {typeLabel(r.registration_type)}
                     </span>
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-3 font-mono text-xs font-semibold">
+                    {r.jsko_id || r.username || "—"}
                   </td>
                   <td className="whitespace-nowrap px-3 py-3 text-xs text-muted-foreground">
                     {new Date(r.created_at).toLocaleDateString("en-IN")}
