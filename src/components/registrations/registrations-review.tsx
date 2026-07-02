@@ -638,7 +638,7 @@ export function RegistrationsReview() {
                           </Button>
                         </>
                       )}
-                      {r.status === "qc_review" && canQc && (
+                      {r.status === "qc_review" && canQc && role !== "qc" && (
                         <>
                           <Button
                             size="sm"
