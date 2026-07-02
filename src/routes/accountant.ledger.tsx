@@ -110,7 +110,7 @@ function buildLedger(): LedgerEntry[] {
 const ALL_ENTRIES = buildLedger();
 const CATEGORIES: (Category | "All")[] = ["All", "Registration", "Wallet Recharge", "Withdrawal", "Main Recharge"];
 const DIRECTIONS: (Direction | "all")[] = ["all", "credit", "debit"];
-const STATUSES = ["All", "Pending", "Approved", "Rejected", "Credited"];
+const STATUSES = ["All", "Pending", "Approved", "Rejected", "Credited", "Received"];
 
 function LedgerPage() {
   const [query, setQuery] = useState("");
@@ -122,26 +122,52 @@ function LedgerPage() {
   useEffect(() => {
     let on = true;
     (async () => {
-      let data: any[] | null = null;
-      try {
-        const res = await supabase.from("ledger_entries").select("*").order("created_at", { ascending: false });
-        data = res.data as any[] | null;
-      } catch { data = null; }
+      await ensureStaffSession();
+      const db = supabase as any;
+      const [led, rzp, rech, users] = await Promise.all([
+        db.from("ledger_entries").select("*").order("created_at", { ascending: false }),
+        db.from("razorpay_payments").select("id,user_id,amount,status,payment_id,wallet_recharge_id,created_at").in("status", ["paid", "credited"]).order("created_at", { ascending: false }),
+        db.from("wallet_recharges").select("id,user_id,amount,method,wallet_recharge_id,created_at").order("created_at", { ascending: false }),
+        db.rpc("admin_list_users"),
+      ]);
       if (!on) return;
-      setRealRows(
-        (data ?? []).map((e: any) => ({
-          id: e.application_id || e.id,
-          date: new Date(e.created_at).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }),
-          category: "Registration" as Category,
-          direction: (e.direction || "credit") as Direction,
-          party: e.retailer_name || "—",
-          role: "Retailer",
-          method: e.payment_method || "—",
-          reference: e.utr || "—",
-          amount: e.amount || 0,
-          status: "Credited",
-        })),
-      );
+
+      const names: Record<string, string> = {};
+      for (const u of (users.data as any[]) ?? []) names[u.id] = u.display_name || u.email || "Retailer";
+      const fmt = (iso: string) => new Date(iso).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
+
+      const collected: (LedgerEntry & { _ts: number })[] = [];
+
+      for (const e of (led.data as any[]) ?? []) {
+        collected.push({
+          id: e.application_id || e.id, _ts: new Date(e.created_at).getTime(), date: fmt(e.created_at),
+          category: "Registration", direction: (e.direction || "credit") as Direction,
+          party: e.retailer_name || "—", role: "Retailer", method: e.payment_method || "—",
+          reference: e.utr || "—", amount: e.amount || 0, status: "Credited",
+        });
+      }
+      // Razorpay wallet recharges — reflect the amount once a payment is completed.
+      for (const p of (rzp.data as any[]) ?? []) {
+        collected.push({
+          id: p.wallet_recharge_id || p.payment_id || p.id, _ts: new Date(p.created_at).getTime(), date: fmt(p.created_at),
+          category: "Wallet Recharge", direction: "credit",
+          party: p.user_id ? (names[p.user_id] ?? "Retailer") : "—", role: "Retailer", method: "Razorpay",
+          reference: p.payment_id || p.wallet_recharge_id || "—", amount: Number(p.amount) || 0,
+          status: p.status === "credited" ? "Credited" : "Received",
+        });
+      }
+      // Manual accountant wallet recharges.
+      for (const r of (rech.data as any[]) ?? []) {
+        collected.push({
+          id: r.wallet_recharge_id || r.id, _ts: new Date(r.created_at).getTime(), date: fmt(r.created_at),
+          category: "Wallet Recharge", direction: "credit",
+          party: r.user_id ? (names[r.user_id] ?? "Retailer") : "—", role: "Retailer", method: r.method || "Manual",
+          reference: r.wallet_recharge_id || "—", amount: Number(r.amount) || 0, status: "Credited",
+        });
+      }
+
+      collected.sort((a, b) => b._ts - a._ts);
+      setRealRows(collected.map(({ _ts, ...rest }) => rest));
     })();
     return () => { on = false; };
   }, []);
