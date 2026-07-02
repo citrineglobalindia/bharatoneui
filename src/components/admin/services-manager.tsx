@@ -139,7 +139,14 @@ export function ServicesManager({ categoryId, frontend = false }: { categoryId?:
     }
     setForm(base); setEditing(true); window.scrollTo({ top: 0, behavior: "smooth" });
   };
-  const remove = async (id: string) => { if (!confirm("Delete this service?")) return; const { error } = await supabase.from("services").delete().eq("id", id); if (error) { toast.error(error.message); return; } toast.success("Deleted"); load(); };
+  const remove = async (id: string) => {
+    if (!confirm("Delete this service? If retailers have already applied for it, it will be deactivated (hidden from retailers) to preserve their application history.")) return;
+    const { data, error } = await (supabase as any).rpc("admin_delete_service", { p_service: id });
+    if (error) { toast.error(error.message); return; }
+    if ((data as any)?.deactivated) toast.success(`Service deactivated — hidden from retailers (kept ${(data as any).refs} existing application${(data as any).refs === 1 ? "" : "s"}).`);
+    else toast.success("Service deleted");
+    load();
+  };
   const toggle = async (s: Service) => { const { error } = await supabase.from("services").update({ is_active: !s.is_active }).eq("id", s.id); if (error) { toast.error(error.message); return; } load(); };
 
   const input = "h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-india-green/30";
