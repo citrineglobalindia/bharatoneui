@@ -36,6 +36,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession, withTimeout } from "@/integrations/supabase/ensure-session";
 import { useAuth } from "@/hooks/use-auth";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DistributorReviewTable } from "@/components/registrations/distributor-review-table";
 
 export type RegRow = {
   id: string;
@@ -418,12 +419,15 @@ export function RegistrationsReview() {
         />
       </div>
 
+      {typeFilter === "distributor" ? (
+        <DistributorReviewTable tab={tab} />
+      ) : (
       <div className="overflow-x-auto rounded-xl border border-border bg-card">
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
             <tr>
               <th className="whitespace-nowrap px-3 py-2.5">Application ID</th>
-              <th className="whitespace-nowrap px-3 py-2.5">{typeFilter === "distributor" ? "Distributor ID" : "JSKO ID"}</th>
+              <th className="whitespace-nowrap px-3 py-2.5">JSKO ID</th>
               <th className="whitespace-nowrap px-3 py-2.5">Date</th>
               <th className="whitespace-nowrap px-3 py-2.5">Retailer Name</th>
               <th className="whitespace-nowrap px-3 py-2.5">Shop Name</th>
@@ -675,6 +679,7 @@ export function RegistrationsReview() {
           </tbody>
         </table>
       </div>
+      )}
 
       <Dialog open={!!detail} onOpenChange={(o) => !o && (setDetail(null), setEditMode(false))}>
         <DialogContent className="max-h-[92vh] w-[min(980px,96vw)] overflow-y-auto p-0">
