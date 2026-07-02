@@ -5,13 +5,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 
 type Cfg = { active: boolean; key_id: string | null };
-type Payment = { id: string; user_id: string | null; purpose: string; amount: number; status: string; order_id: string | null; payment_id: string | null; created_at: string };
+type Payment = { id: string; user_id: string | null; purpose: string; amount: number; status: string; order_id: string | null; payment_id: string | null; wallet_recharge_id: string | null; created_at: string };
 
 const db = supabase as any;
 const inr = (n: number) => "₹" + Number(n || 0).toLocaleString("en-IN");
 const statusTone: Record<string, string> = {
-  paid: "bg-emerald-100 text-emerald-700", created: "bg-amber-100 text-amber-700",
+  paid: "bg-amber-100 text-amber-700", credited: "bg-emerald-100 text-emerald-700", created: "bg-slate-100 text-slate-600",
   failed: "bg-rose-100 text-rose-700", not_configured: "bg-slate-100 text-slate-600",
+};
+const statusLabel: Record<string, string> = {
+  paid: "Received · awaiting verify", credited: "Credited", created: "Started", failed: "Failed", not_configured: "Not configured",
 };
 const purposeLabel: Record<string, string> = {
   wallet_topup: "Wallet recharge", registration_fee: "Registration fee", service_payment: "Service payment",
@@ -37,7 +40,7 @@ export function RazorpaySettings() {
     await ensureStaffSession();
     const [{ data: c }, { data: p }] = await Promise.all([
       db.from("razorpay_config").select("active,key_id").eq("id", 1).maybeSingle(),
-      db.from("razorpay_payments").select("id,user_id,purpose,amount,status,order_id,payment_id,created_at").order("created_at", { ascending: false }).limit(100),
+      db.from("razorpay_payments").select("id,user_id,purpose,amount,status,order_id,payment_id,wallet_recharge_id,created_at").order("created_at", { ascending: false }).limit(100),
     ]);
     setCfg((c as Cfg) ?? { active: false, key_id: null });
     setKeyId((c as Cfg)?.key_id ?? "");
@@ -56,8 +59,9 @@ export function RazorpaySettings() {
   };
 
   const stats = useMemo(() => {
-    const paid = rows.filter((r) => r.status === "paid");
-    return { count: paid.length, total: paid.reduce((a, r) => a + Number(r.amount), 0) };
+    const credited = rows.filter((r) => r.status === "credited");
+    const awaiting = rows.filter((r) => r.status === "paid");
+    return { count: credited.length, total: credited.reduce((a, r) => a + Number(r.amount), 0), awaiting: awaiting.length };
   }, [rows]);
 
   return (
@@ -97,16 +101,17 @@ export function RazorpaySettings() {
             </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <div className="rounded-2xl border border-border bg-card p-4 shadow-soft"><p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Successful payments</p><p className="text-xl font-extrabold">{stats.count}</p></div>
-            <div className="rounded-2xl border border-border bg-card p-4 shadow-soft"><p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Total collected</p><p className="text-xl font-extrabold text-india-green">{inr(stats.total)}</p></div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-2xl border border-border bg-card p-4 shadow-soft"><p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Credited</p><p className="text-xl font-extrabold">{stats.count}</p></div>
+            <div className="rounded-2xl border border-border bg-card p-4 shadow-soft"><p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Total credited</p><p className="text-xl font-extrabold text-india-green">{inr(stats.total)}</p></div>
+            <div className="rounded-2xl border border-border bg-card p-4 shadow-soft"><p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Awaiting verify</p><p className="text-xl font-extrabold text-amber-600">{stats.awaiting}</p></div>
             <div className="rounded-2xl border border-border bg-card p-4 shadow-soft"><p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Records</p><p className="text-xl font-extrabold">{rows.length}</p></div>
           </div>
 
           <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-soft">
             <table className="w-full text-sm">
               <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
-                <tr><th className="px-3 py-2">Date</th><th className="px-3 py-2">Purpose</th><th className="px-3 py-2">Amount</th><th className="px-3 py-2">Status</th><th className="px-3 py-2">Order ID</th><th className="px-3 py-2">Payment ID</th></tr>
+                <tr><th className="px-3 py-2">Date</th><th className="px-3 py-2">Purpose</th><th className="px-3 py-2">Amount</th><th className="px-3 py-2">Status</th><th className="px-3 py-2">Payment ID</th><th className="px-3 py-2">Recharge ID</th></tr>
               </thead>
               <tbody>
                 {rows.length === 0 ? <tr><td colSpan={6} className="px-3 py-10 text-center text-muted-foreground">No Razorpay payments yet.</td></tr>
@@ -115,9 +120,9 @@ export function RazorpaySettings() {
                       <td className="whitespace-nowrap px-3 py-2 text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}</td>
                       <td className="px-3 py-2">{purposeLabel[r.purpose] ?? r.purpose}</td>
                       <td className="px-3 py-2 font-semibold">{inr(r.amount)}</td>
-                      <td className="px-3 py-2"><span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${statusTone[r.status] ?? "bg-slate-100 text-slate-600"}`}>{r.status.replace("_", " ")}</span></td>
-                      <td className="px-3 py-2 font-mono text-[11px] text-muted-foreground">{r.order_id ?? "—"}</td>
+                      <td className="px-3 py-2"><span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${statusTone[r.status] ?? "bg-slate-100 text-slate-600"}`}>{statusLabel[r.status] ?? r.status}</span></td>
                       <td className="px-3 py-2 font-mono text-[11px] text-muted-foreground">{r.payment_id ?? "—"}</td>
+                      <td className="px-3 py-2 font-mono text-[11px] font-semibold text-india-green">{r.wallet_recharge_id ?? "—"}</td>
                     </tr>
                   ))}
               </tbody>

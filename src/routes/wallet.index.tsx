@@ -79,7 +79,7 @@ function WalletPage() {
     setPaying(false);
     if (r.status === "not_configured") return toast.info("Online payment not enabled yet", { description: "Razorpay isn't configured. Use the manual request below, or ask the admin to enable it." });
     if (r.status === "dismissed") return;
-    if (r.status === "paid") { toast.success("Wallet recharged", { description: r.amount ? `₹${Number(r.amount).toLocaleString("en-IN")} added instantly` : undefined }); setAmount(""); load(); return; }
+    if (r.status === "received") { toast.success("Payment received", { description: `₹${Number(r.amount || 0).toLocaleString("en-IN")} received. Your wallet will be credited once the accountant verifies it.` }); setAmount(""); load(); return; }
     toast.error("Payment failed", { description: r.message });
   };
   const submit = async (e: React.FormEvent) => {
@@ -141,7 +141,7 @@ function WalletPage() {
                 <PrimaryButton type="submit" disabled={submitting || uploadingRcpt}>{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Request Top-up</PrimaryButton>
               </div>
             </form>
-            <p className="mt-1 text-xs text-muted-foreground"><b>Pay online</b> credits your wallet instantly via Razorpay. The manual <b>Request Top-up</b> (with receipt) is credited after the accountant verifies your payment.</p>
+            <p className="mt-1 text-xs text-muted-foreground">Both <b>Pay online (Razorpay)</b> and the manual <b>Request Top-up</b> are credited to your wallet <b>after the accountant verifies the payment</b>. You'll be notified once your wallet is recharged.</p>
           </SectionCard>
         </div>
 

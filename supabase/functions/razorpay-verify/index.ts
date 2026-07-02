@@ -1,5 +1,6 @@
-// BharatOne — verify a Razorpay payment signature and settle it (server-side).
-// On success: wallet_topup credits the wallet; registration_fee / service_payment are marked paid.
+// BharatOne — verify a Razorpay payment signature and mark it RECEIVED (server-side).
+// Money is NOT credited automatically — an accountant cross-checks it in the Razorpay
+// dashboard and confirms, which generates a Wallet Recharge ID and credits the wallet.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -48,12 +49,18 @@ Deno.serve(async (req) => {
     return json({ status: "failed", message: "Signature verification failed" }, 400);
   }
 
+  // Mark RECEIVED — awaiting accountant confirmation before the wallet is credited.
   await svc.from("razorpay_payments").update({ status: "paid", payment_id: paymentId, signature }).eq("id", row.id);
 
-  let balance: number | null = null;
-  if (row.purpose === "wallet_topup") {
-    const { data: bal } = await svc.rpc("razorpay_credit_wallet", { p_payment: row.id });
-    balance = (bal as number) ?? null;
-  }
-  return json({ status: "paid", purpose: row.purpose, ref_id: row.ref_id, amount: row.amount, balance });
+  // Let accountants know a payment needs cross-checking + release.
+  try {
+    await svc.rpc("notify_roles", {
+      _roles: ["accountant", "admin"], _type: "payment_received",
+      _title: "Razorpay payment received",
+      _body: "A retailer paid ₹" + row.amount + " online. Cross-check in Razorpay and confirm to recharge the wallet.",
+      _link: "/accountant/wallet-requests", _entity_type: "razorpay_payment", _entity_id: row.id,
+    });
+  } catch (_e) { /* non-fatal */ }
+
+  return json({ status: "received", purpose: row.purpose, ref_id: row.ref_id, amount: row.amount });
 });

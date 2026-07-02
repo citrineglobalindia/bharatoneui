@@ -16,7 +16,7 @@ function loadCheckout(): Promise<boolean> {
 }
 
 export type Purpose = "wallet_topup" | "registration_fee" | "service_payment";
-export type PayResult = { status: "paid" | "failed" | "not_configured" | "dismissed"; message?: string; balance?: number | null; amount?: number };
+export type PayResult = { status: "received" | "paid" | "failed" | "not_configured" | "dismissed"; message?: string; balance?: number | null; amount?: number };
 
 export async function payWithRazorpay(opts: {
   amount: number; purpose: Purpose; refId?: string;
@@ -53,7 +53,8 @@ export async function payWithRazorpay(opts: {
         });
         if (vErr) { resolve({ status: "failed", message: vErr.message }); return; }
         const vr = v as any;
-        resolve({ status: vr?.status === "paid" ? "paid" : "failed", message: vr?.message, balance: vr?.balance, amount: vr?.amount });
+        const st = vr?.status;
+        resolve({ status: st === "received" || st === "paid" ? "received" : "failed", message: vr?.message, balance: vr?.balance, amount: vr?.amount });
       },
       modal: { ondismiss: () => resolve({ status: "dismissed" }) },
     });
