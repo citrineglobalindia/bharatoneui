@@ -13,12 +13,18 @@ type Service = {
   category_id: string | null; is_active: boolean; sort_order: number;
   service_charge: number; company_commission: number; distributor_commission: number;
   dro_commission: number; tro_commission: number; retailer_commission: number;
+  service_group?: string | null;
 };
+
+const SERVICE_GROUPS: [string, string][] = [
+  ["b2c", "B2C Services"], ["g2c", "G2C Services"], ["state_gov", "State Government Services"],
+  ["central_gov", "Central Government Services"], ["internal_links", "Internal Links"], ["mart", "BharatOne Mart - Separate KYC"],
+];
 type Cat = { id: string; name: string; is_active: boolean };
 
 const emptyForm = {
   id: "", name: "", logo_url: "", redirect_url: "", backend_route: "", service_type: "inlink" as ServiceType,
-  category: "", category_id: "", is_active: true, sort_order: 0, form_schema: [] as FormField[],
+  category: "", category_id: "", is_active: true, sort_order: 0, form_schema: [] as FormField[], service_group: "b2c",
   service_charge: 0, company_commission: 0, distributor_commission: 0, dro_commission: 0, tro_commission: 0, retailer_commission: 0,
   api_endpoint: "", api_method: "POST", api_auth_type: "apikey", api_auth_header: "Authorization", api_secret_ref: "", api_notes: "",
 };
@@ -97,6 +103,7 @@ export function ServicesManager({ categoryId, frontend = false, backendOnly = fa
         redirect_url: form.service_type === "inlink" ? redirect : (redirect || null),
         backend_route: null,
         form_schema: form.service_type === "backend" ? form.form_schema : [],
+        service_group: form.service_type === "backend" ? (form.service_group || null) : null,
         category: (cats.find((c) => c.id === form.category_id)?.name) || form.category || null,
         category_id: form.category_id || null,
         is_active: form.is_active,
@@ -134,7 +141,7 @@ export function ServicesManager({ categoryId, frontend = false, backendOnly = fa
   const edit = async (s: Service) => {
     const base = { ...emptyForm, id: s.id, name: s.name, logo_url: s.logo_url ?? "", redirect_url: s.redirect_url ?? "",
       backend_route: s.backend_route ?? "", service_type: s.service_type, category: s.category ?? "", category_id: s.category_id ?? "", is_active: s.is_active, sort_order: s.sort_order, form_schema: (s as any).form_schema ?? [],
-      service_charge: s.service_charge ?? 0, company_commission: s.company_commission ?? 0, distributor_commission: s.distributor_commission ?? 0, dro_commission: s.dro_commission ?? 0, tro_commission: s.tro_commission ?? 0, retailer_commission: s.retailer_commission ?? 0 };
+      service_charge: s.service_charge ?? 0, company_commission: s.company_commission ?? 0, distributor_commission: s.distributor_commission ?? 0, dro_commission: s.dro_commission ?? 0, tro_commission: s.tro_commission ?? 0, retailer_commission: s.retailer_commission ?? 0, service_group: (s as any).service_group ?? "b2c" };
     if (s.service_type === "api") {
       const { data } = await supabase.from("service_api_config").select("*").eq("service_id", s.id).maybeSingle();
       if (data) Object.assign(base, { api_endpoint: data.endpoint ?? "", api_method: data.method ?? "POST", api_auth_type: data.auth_type ?? "apikey", api_auth_header: data.auth_header ?? "Authorization", api_secret_ref: data.secret_ref ?? "", api_notes: data.notes ?? "" });
@@ -173,6 +180,12 @@ export function ServicesManager({ categoryId, frontend = false, backendOnly = fa
         <div className="grid gap-3 sm:grid-cols-2">
           <div><label className="text-xs font-semibold text-muted-foreground">Service name *</label>
             <input className={input} value={form.name} onChange={(e) => set({ name: e.target.value })} placeholder="e.g. AEPS Services" /></div>
+          {form.service_type === "backend" && (
+            <div><label className="text-xs font-semibold text-muted-foreground">Service group (retailer menu)</label>
+              <select className={input} value={form.service_group} onChange={(e) => set({ service_group: e.target.value })}>
+                {SERVICE_GROUPS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+              </select></div>
+          )}
           {!categoryId && <div><label className="text-xs font-semibold text-muted-foreground">Category</label>
             <select className={input} value={form.category_id} onChange={(e) => set({ category_id: e.target.value })}>
               <option value="">Select category</option>
