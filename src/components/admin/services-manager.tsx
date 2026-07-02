@@ -29,7 +29,7 @@ const TYPE_META: Record<ServiceType, { label: string; icon: React.ReactNode; ton
   backend: { label: "Backend", icon: <Server className="h-3.5 w-3.5" />, tone: "bg-emerald-100 text-emerald-700" },
 };
 
-export function ServicesManager({ categoryId, frontend = false }: { categoryId?: string; frontend?: boolean } = {}) {
+export function ServicesManager({ categoryId, frontend = false, backendOnly = false }: { categoryId?: string; frontend?: boolean; backendOnly?: boolean } = {}) {
   const [rows, setRows] = useState<Service[]>([]);
   const [cats, setCats] = useState<Cat[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,6 +55,8 @@ export function ServicesManager({ categoryId, frontend = false }: { categoryId?:
   useEffect(() => { if (categoryId) setForm((f) => ({ ...f, category_id: categoryId })); /* eslint-disable-next-line */ }, [categoryId]);
   // Frontend services are redirect-only (Inlink) — no API/Backend, cost or commission.
   useEffect(() => { if (frontend) setForm((f) => ({ ...f, service_type: "inlink" })); /* eslint-disable-next-line */ }, [frontend]);
+  // Backend categories only offer Backend services — no Inlink/API option.
+  useEffect(() => { if (backendOnly) setForm((f) => ({ ...f, service_type: "backend" })); /* eslint-disable-next-line */ }, [backendOnly]);
 
   const reset = () => { setForm({ ...emptyForm, category_id: categoryId ?? "" }); setEditing(false); };
   const set = (patch: Partial<typeof emptyForm>) => setForm((f) => ({ ...f, ...patch }));
@@ -156,8 +158,8 @@ export function ServicesManager({ categoryId, frontend = false }: { categoryId?:
       <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
         <p className="mb-4 flex items-center gap-2 text-sm font-bold">{editing ? <Pencil className="h-4 w-4 text-india-green" /> : <Plus className="h-4 w-4 text-india-green" />} {editing ? "Edit service" : "Add a service"}</p>
 
-        {/* Type selector — hidden for frontend (redirect-only) services */}
-        {!frontend && (
+        {/* Type selector — hidden for frontend (redirect-only) and backend-only categories */}
+        {!frontend && !backendOnly && (
           <div className="mb-4 flex flex-wrap gap-2">
             {(Object.keys(TYPE_META) as ServiceType[]).map((t) => (
               <button key={t} onClick={() => set({ service_type: t })}

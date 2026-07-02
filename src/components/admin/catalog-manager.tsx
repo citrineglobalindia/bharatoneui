@@ -91,7 +91,7 @@ export function CatalogManager({ kind = "backend", mode = "list" }: { kind?: "ba
         <div>
           <p className="mb-2 text-sm font-bold">Services in this category</p>
           <p className="mb-3 text-xs text-muted-foreground">{frontend ? "Add redirect (Inlink) services — retailers open these from My Services." : "Add Inlink, API-integrated or Backend services. Set each service's total cost and commission split."}</p>
-          <ServicesManager categoryId={sel.id} frontend={frontend} />
+          <ServicesManager categoryId={sel.id} frontend={frontend} backendOnly={kind === "backend"} />
         </div>
       </div>
     );
