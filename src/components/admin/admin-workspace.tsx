@@ -91,6 +91,7 @@ import { NotificationCenter } from "@/components/admin/notification-center";
 import { StaffSecurity } from "@/components/admin/staff-security";
 import { RiskFlagsPanel } from "@/components/admin/risk-flags-panel";
 import { HrmsPanel } from "@/components/admin/hrms-panel";
+import { RazorpaySettings } from "@/components/admin/razorpay-settings";
 import { CrmPanel } from "@/components/admin/crm-panel";
 import { FranchisePanel } from "@/components/admin/franchise-panel";
 import { KycWorkflow } from "@/components/admin/kyc-workflow";
@@ -150,6 +151,7 @@ const NAVIGATION: NavGroup[] = [
       { label: "Settlements", icon: Landmark },
       { label: "Application Ledger", icon: WalletCards },
       { label: "Wallet & Top-ups", icon: Wallet },
+      { label: "Razorpay Payments", icon: WalletCards },
       { label: "Withdrawals", icon: WalletCards },
       { label: "Risk & Fraud", icon: ShieldCheck, badge: "8" },
     ],
@@ -1106,6 +1108,8 @@ export function AdminWorkspace() {
               <StaffSecurity />
             ) : active === "HRMS" ? (
               <HrmsPanel />
+            ) : active === "Razorpay Payments" ? (
+              <RazorpaySettings />
             ) : active === "CRM" ? (
               <CrmPanel />
             ) : active === "Franchise" ? (
