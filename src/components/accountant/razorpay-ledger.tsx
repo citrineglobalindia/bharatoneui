@@ -40,18 +40,16 @@ export function RazorpayLedger() {
   async function load() {
     setLoading(true);
     await ensureStaffSession();
-    const { data } = await db.from("razorpay_payments")
-      .select("id,user_id,purpose,amount,status,order_id,payment_id,wallet_recharge_id,created_at")
-      .order("created_at", { ascending: false }).limit(300);
-    const list = (data as Payment[]) ?? [];
-    setRows(list);
-    const uids = Array.from(new Set(list.map((r) => r.user_id).filter(Boolean))) as string[];
-    if (uids.length) {
-      const { data: profs } = await db.from("profiles").select("id,display_name").in("id", uids);
-      const m: Record<string, string> = {};
-      for (const p of (profs as any[]) ?? []) m[p.id] = p.display_name || "Retailer";
-      setNames(m);
-    }
+    const [{ data }, { data: users }] = await Promise.all([
+      db.from("razorpay_payments")
+        .select("id,user_id,purpose,amount,status,order_id,payment_id,wallet_recharge_id,created_at")
+        .order("created_at", { ascending: false }).limit(300),
+      db.rpc("admin_list_users"),
+    ]);
+    setRows((data as Payment[]) ?? []);
+    const m: Record<string, string> = {};
+    for (const u of (users as any[]) ?? []) m[u.id] = u.display_name || u.email || "Retailer";
+    setNames(m);
     setLoading(false);
   }
   useEffect(() => { load(); }, []);
