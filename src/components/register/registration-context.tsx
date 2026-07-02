@@ -112,6 +112,15 @@ type Ctx = {
 
 const DRAFT_KEY = "bharatone_reg_draft_v1";
 
+// Fields that are NEVER written to / restored from the saved draft — they must be
+// entered manually for every registration and never carried over from a prior session.
+const TRANSIENT_KEYS: (keyof RegData)[] = [
+  "password", "panNumber", "aadhaarNumber",
+  "shopName", "addressType", "buildingShopNo", "streetArea", "wardNumber", "landmark",
+  "villageName", "gramPanchayat", "hobliName", "postOffice", "postOfficeName", "taluk",
+  "city", "district", "state", "pincode", "latitude", "longitude", "bank",
+];
+
 const RegistrationContext = createContext<Ctx | null>(null);
 
 export function RegistrationProvider({ children }: { children: ReactNode }) {
@@ -129,9 +138,9 @@ export function RegistrationProvider({ children }: { children: ReactNode }) {
       const raw = sessionStorage.getItem(DRAFT_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
-        // Never restore PAN/Aadhaar numbers — they start blank every registration.
-        delete parsed.panNumber;
-        delete parsed.aadhaarNumber;
+        // These fields always start blank for a new registration (entered manually,
+        // never carried over from a prior session/draft).
+        for (const k of TRANSIENT_KEYS) delete parsed[k];
         setData((d) => ({ ...d, ...parsed }));
       }
     } catch { /* ignore */ }
@@ -140,9 +149,11 @@ export function RegistrationProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!loaded.current) return;
     try {
-      // PAN and Aadhaar numbers are never persisted: they must be entered fresh
-      // for every registration (blank by default) and should not sit in storage.
-      const { password: _pw, panNumber: _pan, aadhaarNumber: _aad, ...rest } = data;
+      // Business, address, bank, PAN and Aadhaar details are never persisted —
+      // they must be entered fresh for every registration (blank by default) and
+      // should not sit in browser storage. In-flow Back still keeps them via the
+      // in-memory context; only a refresh / new session starts them blank.
+      const rest = Object.fromEntries(Object.entries(data).filter(([k]) => !(TRANSIENT_KEYS as string[]).includes(k)));
       sessionStorage.setItem(DRAFT_KEY, JSON.stringify(rest));
     } catch { /* ignore */ }
   }, [data]);
