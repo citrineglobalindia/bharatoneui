@@ -124,15 +124,15 @@ export function CatalogManager({ kind = "backend", mode = "list" }: { kind?: "ba
         <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-soft">
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
-              <tr><th className="px-4 py-2.5">Category</th><th className="px-4 py-2.5">Operators</th><th className="px-4 py-2.5">Services</th><th className="px-4 py-2.5">Status</th><th className="px-4 py-2.5 text-right">Actions</th></tr>
+              <tr><th className="px-4 py-2.5">Category</th>{!frontend && <th className="px-4 py-2.5">Operators</th>}<th className="px-4 py-2.5">Services</th><th className="px-4 py-2.5">Status</th><th className="px-4 py-2.5 text-right">Actions</th></tr>
             </thead>
             <tbody>
-              {loading ? <tr><td colSpan={5} className="px-4 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr>
-                : cats.length === 0 ? <tr><td colSpan={5} className="px-4 py-10 text-center text-muted-foreground">No categories yet. Add one →</td></tr>
+              {loading ? <tr><td colSpan={frontend ? 4 : 5} className="px-4 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr>
+                : cats.length === 0 ? <tr><td colSpan={frontend ? 4 : 5} className="px-4 py-10 text-center text-muted-foreground">No categories yet. Add one →</td></tr>
                 : cats.map((c) => (
                 <tr key={c.id} className="border-t border-border hover:bg-muted/30">
                   <td className="px-4 py-3"><button onClick={() => setSel(c)} className="inline-flex items-center gap-1.5 font-semibold hover:text-india-green">{c.name} <ChevronRight className="h-4 w-4 text-muted-foreground" /></button></td>
-                  <td className="px-4 py-3"><span className={`inline-flex items-center gap-1 text-xs ${(opCounts[c.id]?.active ?? 0) ? "text-foreground" : "text-muted-foreground"}`}><UserCog className="h-3.5 w-3.5" /> {(opCounts[c.id]?.active ?? 0) ? `${opCounts[c.id].active} operator(s)` : "Unassigned"}</span></td>
+                  {!frontend && <td className="px-4 py-3"><span className={`inline-flex items-center gap-1 text-xs ${(opCounts[c.id]?.active ?? 0) ? "text-foreground" : "text-muted-foreground"}`}><UserCog className="h-3.5 w-3.5" /> {(opCounts[c.id]?.active ?? 0) ? `${opCounts[c.id].active} operator(s)` : "Unassigned"}</span></td>}
                   <td className="px-4 py-3 text-muted-foreground">{counts[c.id] ?? 0}</td>
                   <td className="px-4 py-3"><Pill on={c.is_active} /></td>
                   <td className="px-4 py-3 text-right whitespace-nowrap">
