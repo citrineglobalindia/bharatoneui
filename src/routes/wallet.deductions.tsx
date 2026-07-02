@@ -35,15 +35,26 @@ function DeductionsPage() {
   }), [rows, cat, from, to]);
   const total = filtered.reduce((a, r) => a + Number(r.amount || 0), 0);
 
-  const exportCsv = () => {
-    downloadWalletCsv("deductions.csv", filtered.map((r) => ({
-      "Opening Wallet": Number(r.balance_after) + Number(r.amount),
-      "DR Amount": r.amount, "Closing Wallet": r.balance_after, "Deduction": r.amount,
-      "Type": catOf(r), "Amount": r.amount,
-      "Reference Table": r.ref_type ?? "wallet_transactions", "Reference Id": r.ref_id ?? "", "Order Id": r.id,
-      "Service Department": catOf(r), "Service Remarks": svcName(r.reason) || r.reason || "",
-      "Creation Date Time": new Date(r.created_at).toLocaleString("en-IN"),
-    })));
+  const exportCsv = async () => {
+    const appIds = Array.from(new Set(filtered.filter((r) => r.ref_type === "application" && r.ref_id).map((r) => r.ref_id as string)));
+    const svcMap: Record<string, any> = {};
+    if (appIds.length) {
+      const { data } = await (supabase as any).from("service_applications").select("id, application_no, service_name, category_name, service_charge, commission_price").in("id", appIds);
+      for (const s of (data as any[]) ?? []) svcMap[s.id] = s;
+    }
+    downloadWalletCsv("deductions.csv", filtered.map((r) => {
+      const s = r.ref_id ? svcMap[r.ref_id] : null;
+      return {
+        "Opening Wallet": Number(r.balance_after) + Number(r.amount),
+        "DR Amount": r.amount, "Closing Wallet": r.balance_after, "Deduction": r.amount,
+        "Type": catOf(r), "Amount": r.amount,
+        "Service Amount": s?.service_charge ?? "", "SP Amount": s?.commission_price ?? "",
+        "Reference Table": r.ref_type ?? "wallet_transactions", "Reference Id": r.ref_id ?? "", "Order Id": s?.application_no ?? r.id,
+        "Tracking id": s?.application_no ?? "",
+        "Service Department": s?.category_name ?? catOf(r), "Service Remarks": s?.service_name ?? svcName(r.reason) ?? r.reason ?? "",
+        "Creation Date Time": new Date(r.created_at).toLocaleString("en-IN"),
+      };
+    }));
   };
 
   return (

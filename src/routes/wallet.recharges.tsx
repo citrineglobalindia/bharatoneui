@@ -79,13 +79,24 @@ function RechargesPage() {
   }), [rows, q, from, to, st]);
   const total = filtered.filter((r) => norm(r.status) === "success").reduce((a, r) => a + Number(r.amount || 0), 0);
 
-  const exportCsv = () => {
-    downloadWalletCsv("recharges.csv", filtered.map((r) => ({
-      "CR amount": r.amount, "Amount": r.amount, "Type": "Recharge",
-      "Reference Table": "wallet_topups", "Reference Id": r.reference ?? "", "Order Id": r.id,
-      "Service Remarks": (r.method ?? "") + (metaOf(r.status).label ? ` · ${metaOf(r.status).label}` : ""),
-      "Creation Date Time": new Date(r.created_at).toLocaleString("en-IN"),
-    })));
+  const exportCsv = async () => {
+    const ids = filtered.map((r) => r.id);
+    const txMap: Record<string, { balance_after: number; amount: number }> = {};
+    if (ids.length) {
+      const { data } = await (supabase as any).from("wallet_transactions").select("ref_id,balance_after,amount").in("ref_id", ids);
+      for (const t of (data as any[]) ?? []) if (t.ref_id) txMap[t.ref_id] = t;
+    }
+    downloadWalletCsv("recharges.csv", filtered.map((r) => {
+      const tx = txMap[r.id];
+      return {
+        "Opening Wallet": tx ? Number(tx.balance_after) - Number(tx.amount) : "",
+        "CR amount": r.amount, "Closing Wallet": tx ? tx.balance_after : "",
+        "Amount": r.amount, "Type": "Recharge",
+        "Reference Table": "wallet_topups", "Reference Id": r.reference ?? "", "Order Id": r.id,
+        "Service Department": r.method ?? "", "Service Remarks": (r.method ?? "") + (metaOf(r.status).label ? ` · ${metaOf(r.status).label}` : ""),
+        "Creation Date Time": new Date(r.created_at).toLocaleString("en-IN"),
+      };
+    }));
   };
 
   return (

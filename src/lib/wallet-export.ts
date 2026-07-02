@@ -52,11 +52,23 @@ export async function fetchRetailerMeta(): Promise<RetailerMeta> {
 
 const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
 
+// Numeric money columns default to 0 (never blank) so every cell is populated.
+const NUMERIC_COLUMNS = new Set<string>([
+  "Opening Wallet", "CR amount", "DR Amount", "Closing Wallet",
+  "Service Amount", "SP Amount", "Deduction", "Amount", "GST", "TDS",
+]);
+
 export async function downloadWalletCsv(filename: string, items: ExportRow[]) {
   const meta = await fetchRetailerMeta();
   const head = EXPORT_COLUMNS.map(esc).join(",");
   const body = items
-    .map((it) => EXPORT_COLUMNS.map((c) => esc((c in meta ? (meta as Record<string, string>)[c] : it[c]) ?? "")).join(","))
+    .map((it) =>
+      EXPORT_COLUMNS.map((c) => {
+        const raw = c in meta ? (meta as Record<string, string>)[c] : it[c];
+        const val = raw === undefined || raw === null || raw === "" ? (NUMERIC_COLUMNS.has(c) ? 0 : "") : raw;
+        return esc(val);
+      }).join(","),
+    )
     .join("\n");
   const blob = new Blob([head + "\n" + body], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
