@@ -144,6 +144,7 @@ import { Route as BdeDashboardRouteImport } from './routes/bde.dashboard'
 import { Route as AdminRegistrationsRouteImport } from './routes/admin.registrations'
 import { Route as AccountantWithdrawalsRouteImport } from './routes/accountant.withdrawals'
 import { Route as AccountantWalletRequestsRouteImport } from './routes/accountant.wallet-requests'
+import { Route as AccountantWalletRechargeRouteImport } from './routes/accountant.wallet-recharge'
 import { Route as AccountantSupportRouteImport } from './routes/accountant.support'
 import { Route as AccountantSettingsRouteImport } from './routes/accountant.settings'
 import { Route as AccountantServicesPaymentsRouteImport } from './routes/accountant.services-payments'
@@ -844,6 +845,12 @@ const AccountantWalletRequestsRoute =
     path: '/accountant/wallet-requests',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AccountantWalletRechargeRoute =
+  AccountantWalletRechargeRouteImport.update({
+    id: '/accountant/wallet-recharge',
+    path: '/accountant/wallet-recharge',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AccountantSupportRoute = AccountantSupportRouteImport.update({
   id: '/accountant/support',
   path: '/accountant/support',
@@ -1022,6 +1029,7 @@ export interface FileRoutesByFullPath {
   '/accountant/settings': typeof AccountantSettingsRoute
   '/accountant/support': typeof AccountantSupportRoute
   '/accountant/wallet-requests': typeof AccountantWalletRequestsRoute
+  '/accountant/wallet-recharge': typeof AccountantWalletRechargeRoute
   '/accountant/withdrawals': typeof AccountantWithdrawalsRoute
   '/admin/registrations': typeof AdminRegistrationsRoute
   '/bde/dashboard': typeof BdeDashboardRoute
@@ -1179,6 +1187,7 @@ export interface FileRoutesByTo {
   '/accountant/settings': typeof AccountantSettingsRoute
   '/accountant/support': typeof AccountantSupportRoute
   '/accountant/wallet-requests': typeof AccountantWalletRequestsRoute
+  '/accountant/wallet-recharge': typeof AccountantWalletRechargeRoute
   '/accountant/withdrawals': typeof AccountantWithdrawalsRoute
   '/admin/registrations': typeof AdminRegistrationsRoute
   '/bde/dashboard': typeof BdeDashboardRoute
@@ -1337,6 +1346,7 @@ export interface FileRoutesById {
   '/accountant/settings': typeof AccountantSettingsRoute
   '/accountant/support': typeof AccountantSupportRoute
   '/accountant/wallet-requests': typeof AccountantWalletRequestsRoute
+  '/accountant/wallet-recharge': typeof AccountantWalletRechargeRoute
   '/accountant/withdrawals': typeof AccountantWithdrawalsRoute
   '/admin/registrations': typeof AdminRegistrationsRoute
   '/bde/dashboard': typeof BdeDashboardRoute
@@ -1497,6 +1507,7 @@ export interface FileRouteTypes {
     | '/accountant/settings'
     | '/accountant/support'
     | '/accountant/wallet-requests'
+    | '/accountant/wallet-recharge'
     | '/accountant/withdrawals'
     | '/admin/registrations'
     | '/bde/dashboard'
@@ -1654,6 +1665,7 @@ export interface FileRouteTypes {
     | '/accountant/settings'
     | '/accountant/support'
     | '/accountant/wallet-requests'
+    | '/accountant/wallet-recharge'
     | '/accountant/withdrawals'
     | '/admin/registrations'
     | '/bde/dashboard'
@@ -1811,6 +1823,7 @@ export interface FileRouteTypes {
     | '/accountant/settings'
     | '/accountant/support'
     | '/accountant/wallet-requests'
+    | '/accountant/wallet-recharge'
     | '/accountant/withdrawals'
     | '/admin/registrations'
     | '/bde/dashboard'
@@ -1970,6 +1983,7 @@ export interface RootRouteChildren {
   AccountantSettingsRoute: typeof AccountantSettingsRoute
   AccountantSupportRoute: typeof AccountantSupportRoute
   AccountantWalletRequestsRoute: typeof AccountantWalletRequestsRoute
+  AccountantWalletRechargeRoute: typeof AccountantWalletRechargeRoute
   AccountantWithdrawalsRoute: typeof AccountantWithdrawalsRoute
   DistributorApplicationsRoute: typeof DistributorApplicationsRoute
   DistributorCommissionsRoute: typeof DistributorCommissionsRoute
@@ -2983,6 +2997,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountantWalletRequestsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/accountant/wallet-recharge': {
+      id: '/accountant/wallet-recharge'
+      path: '/accountant/wallet-recharge'
+      fullPath: '/accountant/wallet-recharge'
+      preLoaderRoute: typeof AccountantWalletRechargeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/accountant/support': {
       id: '/accountant/support'
       path: '/accountant/support'
@@ -3334,6 +3355,7 @@ const rootRouteChildren: RootRouteChildren = {
   AccountantSettingsRoute: AccountantSettingsRoute,
   AccountantSupportRoute: AccountantSupportRoute,
   AccountantWalletRequestsRoute: AccountantWalletRequestsRoute,
+  AccountantWalletRechargeRoute: AccountantWalletRechargeRoute,
   AccountantWithdrawalsRoute: AccountantWithdrawalsRoute,
   DistributorApplicationsRoute: DistributorApplicationsRoute,
   DistributorCommissionsRoute: DistributorCommissionsRoute,
