@@ -6,6 +6,7 @@ import { RetailerShell } from "@/components/retailer/retailer-shell";
 import { PageHeader } from "@/components/retailer/page-header";
 import { SectionCard, Field, Input, Select, PrimaryButton } from "@/components/retailer/section-card";
 import { supabase } from "@/integrations/supabase/client";
+import { payWithRazorpay } from "@/lib/razorpay";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 
 export const Route = createFileRoute("/wallet/")({
@@ -69,6 +70,18 @@ function WalletPage() {
       setReceiptPath(path); setReceiptName(file.name); toast.success("Receipt uploaded");
     } finally { setUploadingRcpt(false); }
   };
+  const [paying, setPaying] = useState(false);
+  const payNow = async () => {
+    const amt = Number(amount);
+    if (!amt || amt <= 0) return toast.error("Enter a valid amount");
+    setPaying(true);
+    const r = await payWithRazorpay({ amount: amt, purpose: "wallet_topup", description: "BharatOne wallet recharge" });
+    setPaying(false);
+    if (r.status === "not_configured") return toast.info("Online payment not enabled yet", { description: "Razorpay isn't configured. Use the manual request below, or ask the admin to enable it." });
+    if (r.status === "dismissed") return;
+    if (r.status === "paid") { toast.success("Wallet recharged", { description: r.amount ? `₹${Number(r.amount).toLocaleString("en-IN")} added instantly` : undefined }); setAmount(""); load(); return; }
+    toast.error("Payment failed", { description: r.message });
+  };
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const amt = Number(amount);
@@ -123,9 +136,12 @@ function WalletPage() {
                   {receiptName && <span className="truncate max-w-[180px] text-xs font-medium text-india-green">{receiptName}</span>}
                 </div>
               </Field></div>
-              <div className="sm:col-span-3 flex justify-end"><PrimaryButton type="submit" disabled={submitting || uploadingRcpt}>{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Request Top-up</PrimaryButton></div>
+              <div className="sm:col-span-3 flex flex-wrap items-center justify-end gap-2">
+                <button type="button" onClick={payNow} disabled={paying} className="inline-flex items-center gap-1.5 rounded-lg bg-india-green px-4 h-10 text-sm font-semibold text-white hover:bg-india-green/90 disabled:opacity-50">{paying ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wallet className="h-4 w-4" />} Pay online (Razorpay)</button>
+                <PrimaryButton type="submit" disabled={submitting || uploadingRcpt}>{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Request Top-up</PrimaryButton>
+              </div>
             </form>
-            <p className="mt-1 text-xs text-muted-foreground">Funds are credited after the accountant verifies your payment.</p>
+            <p className="mt-1 text-xs text-muted-foreground"><b>Pay online</b> credits your wallet instantly via Razorpay. The manual <b>Request Top-up</b> (with receipt) is credited after the accountant verifies your payment.</p>
           </SectionCard>
         </div>
 
