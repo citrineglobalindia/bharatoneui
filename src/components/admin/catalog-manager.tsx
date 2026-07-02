@@ -121,7 +121,7 @@ export function CatalogManager({ kind = "backend", mode = "list" }: { kind?: "ba
                 onKeyDown={(e) => e.key === "Enter" && saveCat()}
               />
             </div>
-            <p className="mt-1.5 text-xs text-muted-foreground">e.g., {frontend ? "B2C Services, Government Applications" : "Government Services, Utility Services"}</p>
+            <p className="mt-1.5 text-xs text-muted-foreground">e.g., Web Development, Mobile Apps</p>
           </div>
 
           <div className="mt-6">
