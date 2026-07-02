@@ -124,29 +124,6 @@ export function CatalogManager({ kind = "backend", mode = "list" }: { kind?: "ba
             <p className="mt-1.5 text-xs text-muted-foreground">e.g., {frontend ? "B2C Services, Government Applications" : "Government Services, Utility Services"}</p>
           </div>
 
-          {!frontend && (
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="text-sm font-semibold text-foreground/80">Service group (retailer menu)</label>
-                <select className={`mt-1.5 ${inp} h-12 rounded-xl text-base`} value={serviceGroup} onChange={(e) => setServiceGroup(e.target.value)}>
-                  <option value="b2c">B2C Services</option>
-                  <option value="g2c">G2C Services</option>
-                  <option value="state_gov">State Government Services</option>
-                  <option value="central_gov">Central Government Services</option>
-                  <option value="internal_links">Internal Links</option>
-                  <option value="mart">BharatOne Mart - Separate KYC</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-sm font-semibold text-foreground/80">Assign operator</label>
-                <select className={`mt-1.5 ${inp} h-12 rounded-xl text-base`} value={operatorId} onChange={(e) => setOperatorId(e.target.value)}>
-                  <option value="">Unassigned</option>
-                  {operators.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
-                </select>
-              </div>
-            </div>
-          )}
-
           <div className="mt-6">
             <label className="text-sm font-semibold text-foreground/80">Status</label>
             <div className="mt-1.5 grid gap-4 sm:grid-cols-2">
