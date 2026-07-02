@@ -82,7 +82,7 @@ export function CatalogManager({ kind = "backend", mode = "list" }: { kind?: "ba
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card p-5 shadow-soft">
           <div>
             <p className="flex items-center gap-2 font-display text-lg font-extrabold"><FolderTree className="h-5 w-5 text-india-green" /> {sel.name} <Pill on={sel.is_active} /></p>
-            <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground"><UserCog className="h-4 w-4" /> {(opCounts[sel.id]?.active ?? 0)} active operator(s) · {counts[sel.id] ?? 0} service(s)</p>
+            <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">{frontend ? <FolderTree className="h-4 w-4" /> : <UserCog className="h-4 w-4" />}{!frontend && <>{(opCounts[sel.id]?.active ?? 0)} active operator(s) · </>}{counts[sel.id] ?? 0} service(s)</p>
           </div>
           <Button variant="outline" size="sm" onClick={() => startEdit(sel)}><Pencil className="h-4 w-4" /> Edit category</Button>
         </div>
