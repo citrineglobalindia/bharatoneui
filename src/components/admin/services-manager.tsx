@@ -29,7 +29,7 @@ const TYPE_META: Record<ServiceType, { label: string; icon: React.ReactNode; ton
   backend: { label: "Backend", icon: <Server className="h-3.5 w-3.5" />, tone: "bg-emerald-100 text-emerald-700" },
 };
 
-export function ServicesManager({ categoryId }: { categoryId?: string } = {}) {
+export function ServicesManager({ categoryId, frontend = false }: { categoryId?: string; frontend?: boolean } = {}) {
   const [rows, setRows] = useState<Service[]>([]);
   const [cats, setCats] = useState<Cat[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,6 +53,8 @@ export function ServicesManager({ categoryId }: { categoryId?: string } = {}) {
   }
   useEffect(() => { load(); ensureStaffSession().then((ok) => { if (ok) load(); }); /* eslint-disable-next-line */ }, [categoryId]);
   useEffect(() => { if (categoryId) setForm((f) => ({ ...f, category_id: categoryId })); /* eslint-disable-next-line */ }, [categoryId]);
+  // Frontend services are redirect-only (Inlink) — no API/Backend, cost or commission.
+  useEffect(() => { if (frontend) setForm((f) => ({ ...f, service_type: "inlink" })); /* eslint-disable-next-line */ }, [frontend]);
 
   const reset = () => { setForm({ ...emptyForm, category_id: categoryId ?? "" }); setEditing(false); };
   const set = (patch: Partial<typeof emptyForm>) => setForm((f) => ({ ...f, ...patch }));
@@ -147,15 +149,17 @@ export function ServicesManager({ categoryId }: { categoryId?: string } = {}) {
       <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
         <p className="mb-4 flex items-center gap-2 text-sm font-bold">{editing ? <Pencil className="h-4 w-4 text-india-green" /> : <Plus className="h-4 w-4 text-india-green" />} {editing ? "Edit service" : "Add a service"}</p>
 
-        {/* Type selector */}
-        <div className="mb-4 flex flex-wrap gap-2">
-          {(Object.keys(TYPE_META) as ServiceType[]).map((t) => (
-            <button key={t} onClick={() => set({ service_type: t })}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-3 h-9 text-sm font-semibold transition ${form.service_type === t ? "bg-india-green text-white" : "border border-border bg-card hover:bg-muted"}`}>
-              {TYPE_META[t].icon} {TYPE_META[t].label}
-            </button>
-          ))}
-        </div>
+        {/* Type selector — hidden for frontend (redirect-only) services */}
+        {!frontend && (
+          <div className="mb-4 flex flex-wrap gap-2">
+            {(Object.keys(TYPE_META) as ServiceType[]).map((t) => (
+              <button key={t} onClick={() => set({ service_type: t })}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 h-9 text-sm font-semibold transition ${form.service_type === t ? "bg-india-green text-white" : "border border-border bg-card hover:bg-muted"}`}>
+                {TYPE_META[t].icon} {TYPE_META[t].label}
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="grid gap-3 sm:grid-cols-2">
           <div><label className="text-xs font-semibold text-muted-foreground">Service name *</label>
@@ -193,6 +197,7 @@ export function ServicesManager({ categoryId }: { categoryId?: string } = {}) {
             </>
           )}
 
+          {!frontend && (<>
           <div><label className="text-xs font-semibold text-muted-foreground">Total Cost of Service (\u20b9)</label>
             <input type="number" min="0" className={input} value={form.service_charge} onChange={(e) => set({ service_charge: Number(e.target.value) })} /></div>
           <div><label className="text-xs font-semibold text-muted-foreground">Sort order</label>
@@ -214,6 +219,7 @@ export function ServicesManager({ categoryId }: { categoryId?: string } = {}) {
             </div>
             <p className="mt-2 text-[11px] text-muted-foreground">Company {inr(amt(form.company_commission))} + Distributor {inr(amt(form.distributor_commission))} + DRO {inr(amt(form.dro_commission))} + TRO {inr(amt(form.tro_commission))} + Retailer {inr(amt(form.retailer_commission))} = <b className="text-foreground">{inr(amt(totalPct))}</b></p>
           </div>
+          </>)}
 
           <div className="sm:col-span-2"><label className="text-xs font-semibold text-muted-foreground">Logo</label>
             <div className="flex flex-wrap items-center gap-3">

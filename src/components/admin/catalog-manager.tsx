@@ -7,12 +7,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 import { ServicesManager } from "@/components/admin/services-manager";
 
-type Cat = { id: string; name: string; is_active: boolean; sort_order: number; operator_id: string | null; service_group: string | null };
+type Cat = { id: string; name: string; is_active: boolean; sort_order: number; operator_id: string | null; service_group: string | null; kind: string };
 type Operator = { id: string; name: string };
 const inp = "h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-india-green/30";
 const Pill = ({ on }: { on: boolean }) => <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${on ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>{on ? "Active" : "Inactive"}</span>;
 
-export function CatalogManager() {
+export function CatalogManager({ kind = "backend", mode = "list" }: { kind?: "backend" | "frontend"; mode?: "add" | "list" } = {}) {
+  const frontend = kind === "frontend";
   const [cats, setCats] = useState<Cat[]>([]);
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [opCounts, setOpCounts] = useState<Record<string, { total: number; active: number }>>({});
@@ -33,12 +34,12 @@ export function CatalogManager() {
     try {
       await ensureStaffSession();
       const [c, s, u, co] = await Promise.all([
-        supabase.from("service_categories").select("id,name,is_active,sort_order,operator_id,service_group").order("sort_order").order("name"),
+        (supabase as any).from("service_categories").select("id,name,is_active,sort_order,operator_id,service_group,kind").eq("kind", kind).order("sort_order").order("name"),
         supabase.from("services").select("category_id"),
         supabase.rpc("admin_list_users"),
         supabase.from("category_operators").select("category_id,is_active"),
       ]);
-      const list = (c.data as Cat[]) ?? [];
+      const list = (c.data as unknown as Cat[]) ?? [];
       setCats(list);
       if (sel) setSel(list.find((x) => x.id === sel.id) ?? null);
       const rows = (s.data as { category_id: string | null }[]) ?? [];
@@ -62,16 +63,16 @@ export function CatalogManager() {
   const saveCat = async () => {
     if (!name.trim()) return toast.error("Category name required");
     setBusy(true);
-    const payload = { name: name.trim(), is_active: active, operator_id: operatorId || null, service_group: serviceGroup };
+    const payload = { name: name.trim(), is_active: active, operator_id: frontend ? null : (operatorId || null), service_group: frontend ? null : serviceGroup, kind };
     const res = editId
-      ? await supabase.from("service_categories").update(payload).eq("id", editId)
-      : await supabase.from("service_categories").insert({ ...payload, sort_order: cats.length });
+      ? await (supabase as any).from("service_categories").update(payload).eq("id", editId)
+      : await (supabase as any).from("service_categories").insert({ ...payload, sort_order: cats.length });
     setBusy(false);
     if (res.error) return toast.error("Save failed", { description: res.error.message });
     toast.success(editId ? "Category updated" : "Category added"); resetForm(); load();
   };
-  const toggle = async (c: Cat) => { await supabase.from("service_categories").update({ is_active: !c.is_active }).eq("id", c.id); load(); };
-  const del = async (c: Cat) => { if (!confirm("Delete this category? Its services become uncategorised.")) return; const { error } = await supabase.from("service_categories").delete().eq("id", c.id); if (error) return toast.error(error.message); if (sel?.id === c.id) setSel(null); toast.success("Deleted"); load(); };
+  const toggle = async (c: Cat) => { await (supabase as any).from("service_categories").update({ is_active: !c.is_active }).eq("id", c.id); load(); };
+  const del = async (c: Cat) => { if (!confirm("Delete this category? Its services become uncategorised.")) return; const { error } = await (supabase as any).from("service_categories").delete().eq("id", c.id); if (error) return toast.error(error.message); if (sel?.id === c.id) setSel(null); toast.success("Deleted"); load(); };
 
   // ---- Detail view: a category's services ----
   if (sel) {
@@ -85,13 +86,28 @@ export function CatalogManager() {
           </div>
           <Button variant="outline" size="sm" onClick={() => startEdit(sel)}><Pencil className="h-4 w-4" /> Edit category</Button>
         </div>
-        {editId === sel.id && <CatForm {...{ name, setName, active, setActive, operatorId, setOperatorId, serviceGroup, setServiceGroup, operators, busy, saveCat, resetForm, editId }} />}
-        <CategoryOperators categoryId={sel.id} allOperators={operators} onChange={load} />
+        {editId === sel.id && <CatForm {...{ name, setName, active, setActive, operatorId, setOperatorId, serviceGroup, setServiceGroup, operators, busy, saveCat, resetForm, editId, frontend }} />}
+        {!frontend && <CategoryOperators categoryId={sel.id} allOperators={operators} onChange={load} />}
         <div>
           <p className="mb-2 text-sm font-bold">Services in this category</p>
-          <p className="mb-3 text-xs text-muted-foreground">Add Inlink, API-integrated or Backend services. Set each service's total cost and commission split.</p>
-          <ServicesManager categoryId={sel.id} />
+          <p className="mb-3 text-xs text-muted-foreground">{frontend ? "Add redirect (Inlink) services — retailers open these from My Services." : "Add Inlink, API-integrated or Backend services. Set each service's total cost and commission split."}</p>
+          <ServicesManager categoryId={sel.id} frontend={frontend} />
         </div>
+      </div>
+    );
+  }
+
+  const kindLabel = frontend ? "Frontend" : "Backend";
+
+  // ---- Add Category page (standalone form) ----
+  if (mode === "add") {
+    return (
+      <div className="mx-auto max-w-2xl space-y-5">
+        <div className="text-center">
+          <h2 className="flex items-center justify-center gap-2 text-xl font-extrabold text-saffron">Add New {kindLabel} Category</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Manage your {kindLabel.toLowerCase()} service categories efficiently</p>
+        </div>
+        <CatForm {...{ name, setName, active, setActive, operatorId, setOperatorId, serviceGroup, setServiceGroup, operators, busy, saveCat, resetForm, editId, frontend }} />
       </div>
     );
   }
@@ -100,10 +116,11 @@ export function CatalogManager() {
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-lg font-extrabold">Service Catalog</h2>
-        <p className="text-sm text-muted-foreground">Categories are the backbone — each can be handled by one or more operators; applications are split equally among the active ones. Open a category to map its services (Inlink, API, Backend) and commission splits.</p>
+        <h2 className="text-lg font-extrabold">{frontend ? "Frontend Services — Categories" : "Service Catalog — Backend Categories"}</h2>
+        <p className="text-sm text-muted-foreground">{frontend ? "Frontend categories appear in the retailer My Services menu. Open a category to add redirect (Inlink) services." : "Categories are the backbone — each can be handled by one or more operators; applications are split equally among the active ones. Open a category to map its services (Inlink, API, Backend) and commission splits."}</p>
       </div>
-      <div className="grid gap-5 lg:grid-cols-[1fr_340px]">
+      {editId && !sel && <CatForm {...{ name, setName, active, setActive, operatorId, setOperatorId, serviceGroup, setServiceGroup, operators, busy, saveCat, resetForm, editId, frontend }} />}
+      <div className="grid gap-5">
         <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-soft">
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
@@ -129,21 +146,18 @@ export function CatalogManager() {
             </tbody>
           </table>
         </div>
-        <div className="h-fit">
-          {editId && !sel ? <CatForm {...{ name, setName, active, setActive, operatorId, setOperatorId, serviceGroup, setServiceGroup, operators, busy, saveCat, resetForm, editId }} />
-            : <CatForm {...{ name, setName, active, setActive, operatorId, setOperatorId, serviceGroup, setServiceGroup, operators, busy, saveCat, resetForm, editId: null }} />}
-        </div>
       </div>
     </div>
   );
 }
 
-function CatForm({ name, setName, active, setActive, operatorId, setOperatorId, serviceGroup, setServiceGroup, operators, busy, saveCat, resetForm, editId }: any) {
+function CatForm({ name, setName, active, setActive, operatorId, setOperatorId, serviceGroup, setServiceGroup, operators, busy, saveCat, resetForm, editId, frontend }: any) {
   return (
     <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
       <p className="mb-3 flex items-center gap-2 text-sm font-bold">{editId ? <Pencil className="h-4 w-4 text-india-green" /> : <Plus className="h-4 w-4 text-india-green" />} {editId ? "Edit category" : "Add category"}</p>
-      <label className="text-[11px] font-semibold text-muted-foreground">Name</label>
-      <input className={inp} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Government Services" onKeyDown={(e) => e.key === "Enter" && saveCat()} />
+      <label className="text-[11px] font-semibold text-muted-foreground">Category Name</label>
+      <input className={inp} value={name} onChange={(e) => setName(e.target.value)} placeholder={frontend ? "e.g. B2C Services" : "e.g. Government Services"} onKeyDown={(e) => e.key === "Enter" && saveCat()} />
+      {!frontend && (<>
       <label className="mt-3 block text-[11px] font-semibold text-muted-foreground">Service group (retailer menu)</label>
       <select className={inp} value={serviceGroup} onChange={(e) => setServiceGroup(e.target.value)}>
         <option value="b2c">B2C Services</option>
@@ -159,6 +173,7 @@ function CatForm({ name, setName, active, setActive, operatorId, setOperatorId, 
         {operators.map((o: Operator) => <option key={o.id} value={o.id}>{o.name}</option>)}
       </select>
       {operators.length === 0 && <p className="mt-1 text-[11px] text-amber-600">No operators yet — create one in User Management (role: Operator).</p>}
+      </>)}
       <label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} className="h-4 w-4 accent-[oklch(0.55_0.12_150)]" /> Active</label>
       <div className="mt-4 flex gap-2">
         <Button onClick={saveCat} disabled={busy} className="flex-1 bg-india-green text-white hover:bg-india-green/90">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : editId ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />} {editId ? "Save" : "Add category"}</Button>
