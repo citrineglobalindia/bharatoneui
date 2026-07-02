@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { sanitizeMobile } from "@/lib/phone";
 import { toast } from "sonner";
-import { Plus, Trash2, Pencil, Loader2, Check, X, FolderTree, ChevronRight, UserCog, ArrowLeft } from "lucide-react";
+import { Plus, Trash2, Pencil, Loader2, Check, X, FolderTree, ChevronRight, UserCog, ArrowLeft, Layers, Tag, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
@@ -102,12 +102,81 @@ export function CatalogManager({ kind = "backend", mode = "list" }: { kind?: "ba
   // ---- Add Category page (standalone form) ----
   if (mode === "add") {
     return (
-      <div className="mx-auto max-w-2xl space-y-5">
-        <div className="text-center">
-          <h2 className="flex items-center justify-center gap-2 text-xl font-extrabold text-saffron">Add New {kindLabel} Category</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Manage your {kindLabel.toLowerCase()} service categories efficiently</p>
+      <div className="mx-auto max-w-3xl">
+        <div className="rounded-2xl border border-border bg-card p-8 shadow-soft sm:p-10">
+          <div className="text-center">
+            <h2 className="flex items-center justify-center gap-2.5 text-2xl font-extrabold text-saffron sm:text-3xl"><Layers className="h-7 w-7" /> Add New Category</h2>
+            <p className="mt-1.5 text-sm text-muted-foreground sm:text-base">Manage your {kindLabel.toLowerCase()} service categories efficiently</p>
+          </div>
+
+          <div className="mt-8">
+            <label className="text-sm font-semibold text-foreground/80">Category Name</label>
+            <div className="mt-1.5 flex overflow-hidden rounded-xl border border-border bg-background focus-within:ring-2 focus-within:ring-saffron/30">
+              <div className="flex w-12 shrink-0 items-center justify-center bg-saffron text-white"><Tag className="h-5 w-5" /></div>
+              <input
+                className="h-12 flex-1 bg-transparent px-4 text-base outline-none"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter category name"
+                onKeyDown={(e) => e.key === "Enter" && saveCat()}
+              />
+            </div>
+            <p className="mt-1.5 text-xs text-muted-foreground">e.g., {frontend ? "B2C Services, Government Applications" : "Government Services, Utility Services"}</p>
+          </div>
+
+          {!frontend && (
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="text-sm font-semibold text-foreground/80">Service group (retailer menu)</label>
+                <select className={`mt-1.5 ${inp} h-12 rounded-xl text-base`} value={serviceGroup} onChange={(e) => setServiceGroup(e.target.value)}>
+                  <option value="b2c">B2C Services</option>
+                  <option value="g2c">G2C Services</option>
+                  <option value="state_gov">State Government Services</option>
+                  <option value="central_gov">Central Government Services</option>
+                  <option value="internal_links">Internal Links</option>
+                  <option value="mart">BharatOne Mart - Separate KYC</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-foreground/80">Assign operator</label>
+                <select className={`mt-1.5 ${inp} h-12 rounded-xl text-base`} value={operatorId} onChange={(e) => setOperatorId(e.target.value)}>
+                  <option value="">Unassigned</option>
+                  {operators.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+                </select>
+              </div>
+            </div>
+          )}
+
+          <div className="mt-6">
+            <label className="text-sm font-semibold text-foreground/80">Status</label>
+            <div className="mt-1.5 grid gap-4 sm:grid-cols-2">
+              {[["Active", true], ["Inactive", false]].map(([label, val]) => {
+                const selected = active === val;
+                return (
+                  <button
+                    key={label as string}
+                    type="button"
+                    onClick={() => setActive(val as boolean)}
+                    className={`flex items-center gap-3 rounded-xl border px-5 py-4 text-left transition ${selected ? "border-indigo-500 bg-indigo-50/60 ring-1 ring-indigo-500/30" : "border-border bg-background hover:bg-muted/40"}`}
+                  >
+                    <span className={`grid h-5 w-5 place-items-center rounded-full border-2 ${selected ? "border-blue-600" : "border-slate-300"}`}>
+                      {selected && <span className="h-2.5 w-2.5 rounded-full bg-blue-600" />}
+                    </span>
+                    <span className={`text-base font-medium ${selected ? "text-foreground" : "text-muted-foreground"}`}>{label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <button
+            onClick={saveCat}
+            disabled={busy || !name.trim()}
+            className="mt-8 flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-india-green text-base font-bold text-white transition hover:bg-india-green/90 disabled:opacity-50"
+          >
+            {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <PlusCircle className="h-5 w-5" />} Add Category
+          </button>
         </div>
-        <CatForm {...{ name, setName, active, setActive, operatorId, setOperatorId, serviceGroup, setServiceGroup, operators, busy, saveCat, resetForm, editId, frontend }} />
       </div>
     );
   }
