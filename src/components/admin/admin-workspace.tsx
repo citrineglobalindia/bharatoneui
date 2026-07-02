@@ -33,7 +33,8 @@ import {
   Wallet,
   Network,
   type LucideIcon,
-  ImageIcon, Megaphone, FolderTree, TrendingUp, Search as SearchIcon, BellRing } from "lucide-react";
+  ImageIcon, Megaphone, FolderTree, TrendingUp, Search as SearchIcon, BellRing,
+  Server, LayoutGrid, Plus, List, ChevronRight } from "lucide-react";
 import {
   Area,
   AreaChart,
@@ -112,7 +113,8 @@ import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 import { useCurrentUser } from "@/lib/use-current-user";
 import { toast } from "sonner";
 
-type NavItem = { label: string; icon: LucideIcon; badge?: string };
+type NavChild = { label: string; display: string; icon: LucideIcon };
+type NavItem = { label: string; icon: LucideIcon; badge?: string; children?: NavChild[] };
 type NavGroup = { label: string; items: NavItem[] };
 
 const NAVIGATION: NavGroup[] = [
@@ -157,12 +159,21 @@ const NAVIGATION: NavGroup[] = [
     ],
   },
   {
+    label: "Service Catalog",
+    items: [
+      { label: "Backend", icon: Server, children: [
+        { label: "Backend · Add Category", display: "Add Category", icon: Plus },
+        { label: "Backend · Categories", display: "Category List", icon: List },
+      ] },
+      { label: "Frontend", icon: LayoutGrid, children: [
+        { label: "Frontend · Add Category", display: "Add Category", icon: Plus },
+        { label: "Frontend · Services", display: "Service List", icon: List },
+      ] },
+    ],
+  },
+  {
     label: "Platform",
     items: [
-      { label: "Backend · Categories", icon: Zap },
-      { label: "Backend · Add Category", icon: Zap },
-      { label: "Frontend · Services", icon: Zap },
-      { label: "Frontend · Add Category", icon: Zap },
       { label: "Old JSKO IDs", icon: IdCard },
       { label: "Support Center", icon: Headphones },
       { label: "Support Categories", icon: FolderTree },
@@ -318,6 +329,7 @@ function Sidebar({
   onClose?: () => void;
 }) {
   const me = useCurrentUser();
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({ Backend: true, Frontend: true });
   return (
     <div className="flex h-full flex-col bg-admin-panel text-admin-panel-foreground">
       <div className="flex h-20 items-center gap-3 border-b border-admin-panel-foreground/10 px-5">
@@ -354,6 +366,54 @@ function Sidebar({
             <div className="space-y-1">
               {group.items.map((item) => {
                 const Icon = item.icon;
+
+                if (item.children) {
+                  const open = expanded[item.label] ?? false;
+                  const childActive = item.children.some((c) => c.label === active);
+                  return (
+                    <div key={item.label}>
+                      <Button
+                        variant="ghost"
+                        className={cn(
+                          "h-9 w-full justify-start rounded-lg px-3 text-xs",
+                          childActive
+                            ? "text-admin-panel-foreground"
+                            : "text-admin-panel-foreground/65 hover:bg-admin-panel-foreground/8 hover:text-admin-panel-foreground",
+                        )}
+                        onClick={() => setExpanded((e) => ({ ...e, [item.label]: !open }))}
+                      >
+                        <Icon className="h-4 w-4" />
+                        <span className="flex-1 text-left font-semibold">{item.label}</span>
+                        <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", open ? "" : "-rotate-90")} />
+                      </Button>
+                      {open && (
+                        <div className="ml-4 mt-1 space-y-1 border-l border-admin-panel-foreground/15 pl-2">
+                          {item.children.map((child) => {
+                            const ChildIcon = child.icon;
+                            const csel = active === child.label;
+                            return (
+                              <Button
+                                key={child.label}
+                                variant="ghost"
+                                className={cn(
+                                  "h-8 w-full justify-start rounded-lg px-3 text-xs",
+                                  csel
+                                    ? "bg-admin text-admin-foreground hover:bg-admin/90 hover:text-admin-foreground"
+                                    : "text-admin-panel-foreground/60 hover:bg-admin-panel-foreground/8 hover:text-admin-panel-foreground",
+                                )}
+                                onClick={() => { onChange(child.label); onClose?.(); }}
+                              >
+                                <ChildIcon className="h-3.5 w-3.5" />
+                                <span className="flex-1 text-left">{child.display}</span>
+                              </Button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
                 const selected = active === item.label;
                 return (
                   <Button
@@ -555,9 +615,14 @@ export function AdminWorkspace() {
   const runGlobalSearch = () => {
     const term = globalQuery.trim().toLowerCase();
     if (!term) return;
-    const match = NAVIGATION.flatMap((group) => group.items).find((item) =>
-      item.label.toLowerCase().includes(term),
+    const targets = NAVIGATION.flatMap((group) =>
+      group.items.flatMap((item) =>
+        item.children
+          ? item.children.map((c) => ({ label: c.label, text: `${item.label} ${c.display} ${c.label}` }))
+          : [{ label: item.label, text: item.label }],
+      ),
     );
+    const match = targets.find((t) => t.text.toLowerCase().includes(term));
     if (match) {
       setActive(match.label);
       toast.success(`Opened ${match.label}`);
