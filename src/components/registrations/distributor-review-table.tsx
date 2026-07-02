@@ -82,7 +82,7 @@ export function DistributorReviewTable({ tab }: { tab: string }) {
               {["Application ID", "Distributor ID", "Distributor Name", "Amount", "Checks", "Contact Number", "Email ID", "Date", "Time", "District", "Taluk", "Status"].map((h) => (
                 <th key={h} className="whitespace-nowrap px-3 py-2.5">{h}</th>
               ))}
-              <th className="whitespace-nowrap px-3 py-2.5 text-right">Actions</th>
+              <th className="sticky right-0 z-20 whitespace-nowrap bg-muted px-3 py-2.5 text-right shadow-[-8px_0_8px_-8px_rgba(0,0,0,0.15)]">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -104,7 +104,7 @@ export function DistributorReviewTable({ tab }: { tab: string }) {
                 <td className="px-3 py-3 text-sm">{r.district || "—"}</td>
                 <td className="px-3 py-3 text-sm">—</td>
                 <td className="px-3 py-3"><span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${statusPill(r.status)}`}>{r.status.replace("_", " ")}</span></td>
-                <td className="px-3 py-3">
+                <td className="sticky right-0 z-10 bg-card px-3 py-3 shadow-[-8px_0_8px_-8px_rgba(0,0,0,0.15)]">
                   <div className="flex flex-wrap justify-end gap-1.5">
                     <Button size="sm" variant="outline" className="h-8" onClick={() => setDetail(r)}><Eye className="h-3.5 w-3.5" /> View</Button>
                     {canReview && r.status === "under_review" && (

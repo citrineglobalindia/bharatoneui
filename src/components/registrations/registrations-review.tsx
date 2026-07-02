@@ -440,7 +440,7 @@ export function RegistrationsReview() {
               <th className="whitespace-nowrap px-3 py-2.5">District</th>
               <th className="whitespace-nowrap px-3 py-2.5">Taluk</th>
               <th className="whitespace-nowrap px-3 py-2.5">Status</th>
-              <th className="whitespace-nowrap px-3 py-2.5 text-right">Actions</th>
+              <th className="sticky right-0 z-20 whitespace-nowrap bg-muted px-3 py-2.5 text-right shadow-[-8px_0_8px_-8px_rgba(0,0,0,0.15)]">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -542,7 +542,7 @@ export function RegistrationsReview() {
                       {r.status.replace("_", " ")}
                     </span>
                   </td>
-                  <td className="px-3 py-3">
+                  <td className="sticky right-0 z-10 bg-card px-3 py-3 shadow-[-8px_0_8px_-8px_rgba(0,0,0,0.15)]">
                     <div className="flex flex-wrap justify-end gap-1.5">
                       <Button
                         size="sm"
