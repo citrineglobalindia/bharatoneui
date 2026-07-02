@@ -116,6 +116,7 @@ const DRAFT_KEY = "bharatone_reg_draft_v1";
 // entered manually for every registration and never carried over from a prior session.
 const TRANSIENT_KEYS: (keyof RegData)[] = [
   "password", "panNumber", "aadhaarNumber",
+  "firstName", "middleName", "surname", "dob", "personalValid",
   "shopName", "addressType", "buildingShopNo", "streetArea", "wardNumber", "landmark",
   "villageName", "gramPanchayat", "hobliName", "postOffice", "postOfficeName", "taluk",
   "city", "district", "state", "pincode", "latitude", "longitude", "bank",
