@@ -50,6 +50,8 @@ export type RegRow = {
   shop_name: string;
   email: string;
   mobile: string;
+  district: string | null;
+  taluk: string | null;
   status: string;
   payment_verified: boolean;
   qc_verified: boolean;
@@ -211,7 +213,7 @@ export function RegistrationsReview() {
         supabase
           .from("retailer_registrations")
           .select(
-            "id, application_id, registration_type, jsko_id, username, first_name, middle_name, surname, shop_name, email, mobile, status, payment_verified, qc_verified, payment_amount, payment_utr, pan_doc_path, aadhaar_doc_path, shop_photo_path, selfie_path, payment_screenshot_path, created_at",
+            "id, application_id, registration_type, jsko_id, username, first_name, middle_name, surname, shop_name, email, mobile, district, taluk, status, payment_verified, qc_verified, payment_amount, payment_utr, pan_doc_path, aadhaar_doc_path, shop_photo_path, selfie_path, payment_screenshot_path, created_at",
           )
           .order("created_at", { ascending: false }),
       );
@@ -428,13 +430,15 @@ export function RegistrationsReview() {
             <tr>
               <th className="whitespace-nowrap px-3 py-2.5">Application ID</th>
               <th className="whitespace-nowrap px-3 py-2.5">JSKO ID</th>
-              <th className="whitespace-nowrap px-3 py-2.5">Date</th>
-              <th className="whitespace-nowrap px-3 py-2.5">Retailer Name</th>
-              <th className="whitespace-nowrap px-3 py-2.5">Shop Name</th>
-              <th className="whitespace-nowrap px-3 py-2.5">Contact Number</th>
-              <th className="whitespace-nowrap px-3 py-2.5">Email ID</th>
+              <th className="whitespace-nowrap px-3 py-2.5">JSKO Name</th>
               <th className="whitespace-nowrap px-3 py-2.5">Amount</th>
               <th className="whitespace-nowrap px-3 py-2.5">Checks</th>
+              <th className="whitespace-nowrap px-3 py-2.5">Phone Number</th>
+              <th className="whitespace-nowrap px-3 py-2.5">Email ID</th>
+              <th className="whitespace-nowrap px-3 py-2.5">Date</th>
+              <th className="whitespace-nowrap px-3 py-2.5">Time</th>
+              <th className="whitespace-nowrap px-3 py-2.5">District</th>
+              <th className="whitespace-nowrap px-3 py-2.5">Taluk</th>
               <th className="whitespace-nowrap px-3 py-2.5">Status</th>
               <th className="whitespace-nowrap px-3 py-2.5 text-right">Actions</th>
             </tr>
@@ -448,16 +452,15 @@ export function RegistrationsReview() {
                     <Skeleton className="mt-1.5 h-4 w-16 rounded-full" />
                   </td>
                   <td className="px-3 py-3"><Skeleton className="h-4 w-16" /></td>
-                  <td className="px-3 py-3"><Skeleton className="h-4 w-20" /></td>
                   <td className="px-3 py-3"><Skeleton className="h-4 w-32" /></td>
-                  <td className="px-3 py-3"><Skeleton className="h-4 w-28" /></td>
+                  <td className="px-3 py-3"><Skeleton className="h-4 w-20" /></td>
+                  <td className="px-3 py-3"><Skeleton className="h-3 w-24" /></td>
                   <td className="px-3 py-3"><Skeleton className="h-4 w-24" /></td>
                   <td className="px-3 py-3"><Skeleton className="h-4 w-36" /></td>
                   <td className="px-3 py-3"><Skeleton className="h-4 w-20" /></td>
-                  <td className="px-3 py-3">
-                    <Skeleton className="h-3 w-24" />
-                    <Skeleton className="mt-1.5 h-3 w-20" />
-                  </td>
+                  <td className="px-3 py-3"><Skeleton className="h-4 w-16" /></td>
+                  <td className="px-3 py-3"><Skeleton className="h-4 w-20" /></td>
+                  <td className="px-3 py-3"><Skeleton className="h-4 w-20" /></td>
                   <td className="px-3 py-3">
                     <Skeleton className="h-5 w-20 rounded-full" />
                   </td>
@@ -468,7 +471,7 @@ export function RegistrationsReview() {
               ))
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={11} className="px-3 py-10 text-center text-muted-foreground">
+                <td colSpan={13} className="px-3 py-10 text-center text-muted-foreground">
                   No {TAB_LABEL[tab].toLowerCase()} registrations.
                 </td>
               </tr>
@@ -493,20 +496,11 @@ export function RegistrationsReview() {
                   <td className="whitespace-nowrap px-3 py-3 font-mono text-xs font-semibold">
                     {r.jsko_id || r.username || "—"}
                   </td>
-                  <td className="whitespace-nowrap px-3 py-3 text-xs text-muted-foreground">
-                    {new Date(r.created_at).toLocaleDateString("en-IN")}
-                  </td>
                   <td className="px-3 py-3">
                     <div className="font-semibold">
                       {[r.first_name, r.middle_name, r.surname].filter(Boolean).join(" ") || "—"}
                     </div>
-                  </td>
-                  <td className="px-3 py-3 text-sm">{r.shop_name || "—"}</td>
-                  <td className="whitespace-nowrap px-3 py-3 text-sm">{r.mobile || "—"}</td>
-                  <td className="px-3 py-3 text-sm">
-                    <span className="block max-w-[200px] truncate" title={r.email || ""}>
-                      {r.email || "—"}
-                    </span>
+                    {r.shop_name && <div className="text-xs text-muted-foreground">{r.shop_name}</div>}
                   </td>
                   <td className="px-3 py-3">
                     <div className="font-semibold">
@@ -527,6 +521,20 @@ export function RegistrationsReview() {
                       <ShieldCheck className="h-3.5 w-3.5" /> QC {r.qc_verified ? "✓" : "—"}
                     </div>
                   </td>
+                  <td className="whitespace-nowrap px-3 py-3 text-sm">{r.mobile || "—"}</td>
+                  <td className="px-3 py-3 text-sm">
+                    <span className="block max-w-[200px] truncate" title={r.email || ""}>
+                      {r.email || "—"}
+                    </span>
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-3 text-xs text-muted-foreground">
+                    {new Date(r.created_at).toLocaleDateString("en-IN")}
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-3 text-xs text-muted-foreground">
+                    {new Date(r.created_at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
+                  </td>
+                  <td className="px-3 py-3 text-sm">{r.district || "—"}</td>
+                  <td className="px-3 py-3 text-sm">{r.taluk || "—"}</td>
                   <td className="px-3 py-3">
                     <span
                       className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${statusPill(r.status)}`}
