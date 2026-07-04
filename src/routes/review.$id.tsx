@@ -370,16 +370,18 @@ function ReviewPage() {
             </div>
           )}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-            {DOCS.filter((d) => d.path).map((d) => { const url = urls[d.key]; const kind = fileKind(d.path); const st = docReviews[d.key]?.status ?? "pending"; return (
+            {DOCS.filter((d) => d.path || d.key === "passport").map((d) => { const url = urls[d.key]; const kind = fileKind(d.path); const st = docReviews[d.key]?.status ?? "pending"; const missing = !d.path; return (
               <div key={d.key} className="overflow-hidden rounded-xl border border-border">
-                <button type="button" onClick={() => url && setLightbox({ url, kind, label: d.label })} className="relative block h-28 w-full bg-muted/40">
-                  {url && kind === "image" ? <img src={url} alt={d.label} className="h-full w-full object-cover" /> : url && kind === "video" ? <video src={url} className="h-full w-full object-cover" muted /> : <div className="grid h-full w-full place-items-center"><FileText className="h-8 w-8 text-muted-foreground" /></div>}
-                  <span className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-lg bg-black/55 text-white"><Maximize2 className="h-3.5 w-3.5" /></span>
+                <button type="button" disabled={missing} onClick={() => url && setLightbox({ url, kind, label: d.label })} className="relative block h-28 w-full bg-muted/40 disabled:cursor-default">
+                  {url && kind === "image" ? <img src={url} alt={d.label} className="h-full w-full object-cover" /> : url && kind === "video" ? <video src={url} className="h-full w-full object-cover" muted /> : <div className="grid h-full w-full place-items-center text-center"><div><FileText className="mx-auto h-8 w-8 text-muted-foreground" />{missing && <span className="mt-1 block text-[10px] font-semibold text-muted-foreground">Not uploaded</span>}</div></div>}
+                  {!missing && <span className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-lg bg-black/55 text-white"><Maximize2 className="h-3.5 w-3.5" /></span>}
                 </button>
                 <div className="space-y-1.5 p-2.5">
                   <div className="flex items-center justify-between"><span className="text-xs font-bold">{d.label}</span></div>
-                  <span className={`inline-block rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${docPill(st)}`}>{st}</span>
-                  {canDocReview && (st === "pending" ? (
+                  {missing
+                    ? <span className="inline-block rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-bold uppercase text-slate-500">Not uploaded</span>
+                    : <span className={`inline-block rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${docPill(st)}`}>{st}</span>}
+                  {!missing && canDocReview && (st === "pending" ? (
                     <div className="grid grid-cols-2 gap-1.5 pt-0.5"><button onClick={() => setDoc(d.key, "approved")} className="rounded-md bg-emerald-50 py-1 text-[11px] font-bold text-emerald-700 hover:bg-emerald-100">Approve</button><button onClick={() => setDoc(d.key, "rejected")} className="rounded-md bg-rose-50 py-1 text-[11px] font-bold text-rose-700 hover:bg-rose-100">Reject</button></div>
                   ) : (
                     <button onClick={() => setDoc(d.key, "pending" as any)} className="pt-0.5 text-[11px] font-semibold text-muted-foreground hover:text-foreground">Re-open ↗</button>
