@@ -33,28 +33,49 @@ export function CatalogManager({ kind = "backend", mode = "list" }: { kind?: "ba
     setLoading(true);
     try {
       await ensureStaffSession();
-      const [c, s, u, co] = await Promise.all([
-        (supabase as any).from("service_categories").select("id,name,is_active,sort_order,operator_id,service_group,kind").eq("kind", kind).order("sort_order").order("name"),
+      // Categories are the critical data: fetch them on their own with a short
+      // retry so a transient auth/network hiccup never leaves the list empty.
+      let list: Cat[] | null = null;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const { data, error } = await (supabase as any)
+          .from("service_categories")
+          .select("id,name,is_active,sort_order,operator_id,service_group,kind")
+          .eq("kind", kind).order("sort_order").order("name");
+        if (!error) { list = (data as unknown as Cat[]) ?? []; break; }
+        await ensureStaffSession();
+        await new Promise((r) => setTimeout(r, 300));
+      }
+      // Only overwrite the list when the fetch actually succeeded (never wipe on error).
+      if (list) {
+        setCats(list);
+        if (sel) setSel(list.find((x) => x.id === sel.id) ?? null);
+      }
+
+      // Auxiliary data (counts, operators) — failures here must NOT affect categories.
+      const [s, u, co] = await Promise.allSettled([
         supabase.from("services").select("category_id"),
         supabase.rpc("admin_list_users"),
         supabase.from("category_operators").select("category_id,is_active"),
       ]);
-      const list = (c.data as unknown as Cat[]) ?? [];
-      setCats(list);
-      if (sel) setSel(list.find((x) => x.id === sel.id) ?? null);
-      const rows = (s.data as { category_id: string | null }[]) ?? [];
-      const m: Record<string, number> = {};
-      rows.forEach((r) => { if (r.category_id) m[r.category_id] = (m[r.category_id] ?? 0) + 1; });
-      setCounts(m);
-      const ops = ((u.data as any[]) ?? []).filter((x) => Array.isArray(x.roles) && x.roles.includes("operator"))
-        .map((x) => ({ id: x.id, name: x.display_name || x.email || "Operator" }));
-      setOperators(ops);
-      const cm: Record<string, { total: number; active: number }> = {};
-      ((co.data as any[]) ?? []).forEach((r) => { const e = cm[r.category_id] ?? { total: 0, active: 0 }; e.total++; if (r.is_active) e.active++; cm[r.category_id] = e; });
-      setOpCounts(cm);
+      if (s.status === "fulfilled") {
+        const rows = ((s.value.data as { category_id: string | null }[]) ?? []);
+        const m: Record<string, number> = {};
+        rows.forEach((r) => { if (r.category_id) m[r.category_id] = (m[r.category_id] ?? 0) + 1; });
+        setCounts(m);
+      }
+      if (u.status === "fulfilled") {
+        const ops = ((u.value.data as any[]) ?? []).filter((x) => Array.isArray(x.roles) && x.roles.includes("operator"))
+          .map((x) => ({ id: x.id, name: x.display_name || x.email || "Operator" }));
+        setOperators(ops);
+      }
+      if (co.status === "fulfilled") {
+        const cm: Record<string, { total: number; active: number }> = {};
+        ((co.value.data as any[]) ?? []).forEach((r) => { const e = cm[r.category_id] ?? { total: 0, active: 0 }; e.total++; if (r.is_active) e.active++; cm[r.category_id] = e; });
+        setOpCounts(cm);
+      }
     } finally { setLoading(false); }
   }
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [kind]);
 
   const opName = (id: string | null) => id ? (operators.find((o) => o.id === id)?.name ?? "Assigned") : "Unassigned";
 
