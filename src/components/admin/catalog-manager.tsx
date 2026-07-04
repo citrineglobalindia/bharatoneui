@@ -195,7 +195,7 @@ export function CatalogManager({ kind = "backend", mode = "list" }: { kind?: "ba
             </thead>
             <tbody>
               {loading ? <tr><td colSpan={frontend ? 4 : 5} className="px-4 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr>
-                : cats.length === 0 ? <tr><td colSpan={frontend ? 4 : 5} className="px-4 py-10 text-center text-muted-foreground">No categories yet. Add one →</td></tr>
+                : cats.length === 0 ? <tr><td colSpan={frontend ? 4 : 5} className="px-4 py-10 text-center text-muted-foreground">No {kindLabel.toLowerCase()} categories yet. Add one →</td></tr>
                 : cats.map((c) => (
                 <tr key={c.id} className="border-t border-border hover:bg-muted/30">
                   <td className="px-4 py-3"><button onClick={() => setSel(c)} className="inline-flex items-center gap-1.5 font-semibold hover:text-india-green">{c.name} <ChevronRight className="h-4 w-4 text-muted-foreground" /></button></td>
