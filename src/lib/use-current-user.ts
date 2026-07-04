@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 
-export type CurrentUser = { name: string; email: string; phone: string; role: string; initials: string };
+export type CurrentUser = { name: string; email: string; phone: string; role: string; jskoId: string; initials: string };
 
 const ROLE_LABEL: Record<string, string> = {
   admin: "Administrator", accountant: "Accountant", qc: "Quality Control", operator: "Service Operator",
@@ -14,9 +14,9 @@ function initialsOf(s: string) {
 }
 
 export function useCurrentUser(): CurrentUser {
-  const [info, setInfo] = useState<{ name: string; email: string; phone: string; role: string }>(() => {
-    try { const a = JSON.parse(localStorage.getItem("bharatone:auth") || "{}"); return { name: a.name || "", email: a.email || "", phone: a.phone || "", role: a.role || "" }; }
-    catch { return { name: "", email: "", phone: "", role: "" }; }
+  const [info, setInfo] = useState<{ name: string; email: string; phone: string; role: string; jskoId: string }>(() => {
+    try { const a = JSON.parse(localStorage.getItem("bharatone:auth") || "{}"); return { name: a.name || "", email: a.email || "", phone: a.phone || "", role: a.role || "", jskoId: a.jskoId || "" }; }
+    catch { return { name: "", email: "", phone: "", role: "", jskoId: "" }; }
   });
   useEffect(() => {
     let on = true;
@@ -32,14 +32,27 @@ export function useCurrentUser(): CurrentUser {
       const role = roles.find((x) => x !== "employee") || roles[0] || "";
       const name = (p as any)?.display_name || u.user.email?.split("@")[0] || "User";
       const phone = (p as any)?.phone || (u.user.phone ?? "") || "";
+      // JSKO ID for the logged-in user (retailers). Prefer the RLS-safe RPC; fall
+      // back to a direct read of the user's own registration.
+      let jskoId = "";
+      try {
+        const { data: jid, error: jErr } = await (supabase as any).rpc("my_jsko_id");
+        if (!jErr && jid) jskoId = String(jid);
+        if (!jskoId) {
+          const { data: reg } = await supabase.from("retailer_registrations")
+            .select("jsko_id, application_id").eq("auth_user_id", u.user.id)
+            .order("created_at", { ascending: false }).limit(1).maybeSingle();
+          jskoId = (reg as any)?.jsko_id || (reg as any)?.application_id || "";
+        }
+      } catch { /* ignore */ }
       if (!on) return;
-      setInfo({ name, email: u.user.email || "", phone, role });
+      setInfo({ name, email: u.user.email || "", phone, role, jskoId });
       try {
         const a = JSON.parse(localStorage.getItem("bharatone:auth") || "{}");
-        localStorage.setItem("bharatone:auth", JSON.stringify({ ...a, name, email: u.user.email, phone, role: role || a.role }));
+        localStorage.setItem("bharatone:auth", JSON.stringify({ ...a, name, email: u.user.email, phone, role: role || a.role, jskoId }));
       } catch {}
     })();
     return () => { on = false; };
   }, []);
-  return { name: info.name || "User", email: info.email, phone: info.phone, role: ROLE_LABEL[info.role] || info.role || "", initials: initialsOf(info.name || info.email) };
+  return { name: info.name || "User", email: info.email, phone: info.phone, role: ROLE_LABEL[info.role] || info.role || "", jskoId: info.jskoId || "", initials: initialsOf(info.name || info.email) };
 }

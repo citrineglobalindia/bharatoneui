@@ -97,7 +97,7 @@ function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: 
           <p className="text-sm font-bold truncate">{me.name}</p>
           <p className="text-[11px] text-muted-foreground truncate">{me.email}</p>
           {me.phone && <p className="text-[11px] text-muted-foreground truncate">{/^\d{10}$/.test(me.phone) ? `+91 ${me.phone}` : me.phone}</p>}
-          <span className="inline-block mt-0.5 text-[10px] font-semibold bg-india-green text-white px-1.5 py-0.5 rounded">{me.role || "Retailer"}</span>
+          {me.jskoId && <span className="inline-block mt-0.5 text-[10px] font-semibold bg-india-green text-white px-1.5 py-0.5 rounded">JSKO ID: {me.jskoId}</span>}
         </div>
       </div>
       <nav className="flex-1 overflow-y-auto nav-scroll px-2 py-3 space-y-4">
