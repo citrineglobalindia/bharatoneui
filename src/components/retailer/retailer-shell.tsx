@@ -60,6 +60,7 @@ const NAV: NavSection[] = [
     heading: "Finance",
     items: [
       { label: "Wallet", icon: <Wallet className="h-4 w-4" />, to: "/wallet", children: [
+        { label: "My Wallet", to: "/wallet" },
         { label: "Recharges", to: "/wallet/recharges" },
         { label: "Ledger", to: "/wallet/ledger" },
         { label: "Deductions", to: "/wallet/deductions" },
