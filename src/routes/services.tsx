@@ -11,15 +11,6 @@ export const Route = createFileRoute("/services")({
   component: ServicesPage,
 });
 
-const GROUPS: { key: string; label: string }[] = [
-  { key: "b2c", label: "B2C Services" },
-  { key: "g2c", label: "G2C Services" },
-  { key: "state_gov", label: "State Government Services" },
-  { key: "central_gov", label: "Central Government Services" },
-  { key: "internal_links", label: "Internal Links" },
-  { key: "mart", label: "BharatOne Mart - Separate KYC" },
-];
-
 const CORE = [
   { label: "AEPS", to: "/aeps", icon: <Banknote className="h-5 w-5" />, tone: "bg-sky-500", active: true },
   { label: "AEPS Activation", to: "/aeps-activation", icon: <CheckCircle2 className="h-5 w-5" />, tone: "bg-sky-600", active: true },
@@ -32,7 +23,7 @@ const CORE = [
   { label: "Gov. Services", to: "/gov-services", icon: <Globe className="h-5 w-5" />, tone: "bg-indigo-500", active: true },
 ];
 
-type Service = { id: string; name: string; logo_url: string | null; redirect_url: string | null; backend_route: string | null; service_type: "inlink" | "api" | "backend"; category: string | null; category_id: string | null };
+type Service = { id: string; name: string; logo_url: string | null; redirect_url: string | null; backend_route: string | null; service_type: "inlink" | "api" | "backend"; category: string | null; category_id: string | null; service_group: string | null };
 
 const TYPE_LABEL: Record<string, string> = { inlink: "Redirect", api: "API Integrated", backend: "Backend" };
 const TYPE_BADGE: Record<string, string> = { inlink: "bg-sky-100 text-sky-700", api: "bg-violet-100 text-violet-700", backend: "bg-emerald-100 text-emerald-700" };
@@ -63,33 +54,36 @@ function ServiceTile({ s }: { s: Service }) {
 function ServicesPage() {
   const { group } = Route.useSearch();
   const [services, setServices] = useState<Service[]>([]);
-  const [catGroup, setCatGroup] = useState<Record<string, string>>({});
+  const [frontCatName, setFrontCatName] = useState<Record<string, string>>({});
   const [q, setQ] = useState("");
 
   useEffect(() => {
     let on = true;
     (async () => {
       const [svc, cats] = await Promise.all([
-        supabase.from("services").select("id,name,logo_url,redirect_url,backend_route,service_type,category,category_id")
+        supabase.from("services").select("id,name,logo_url,redirect_url,backend_route,service_type,category,category_id,service_group")
           .eq("is_active", true).in("service_type", ["inlink", "api", "backend"]).order("sort_order").order("name"),
-        supabase.from("service_categories").select("id,service_group"),
+        // Admin-created frontend categories = the retailer menu service groups (dynamic).
+        (supabase as any).from("service_categories").select("id,name").eq("kind", "frontend").eq("is_active", true),
       ]);
       if (!on) return;
       setServices((svc.data as Service[]) ?? []);
       const m: Record<string, string> = {};
-      ((cats.data as { id: string; service_group: string }[]) ?? []).forEach((c) => { m[c.id] = c.service_group; });
-      setCatGroup(m);
+      ((cats.data as { id: string; name: string }[]) ?? []).forEach((c) => { m[c.id] = c.name; });
+      setFrontCatName(m);
     })();
     return () => { on = false; };
   }, []);
 
-  const groupLabel = group ? (GROUPS.find((g) => g.key === group)?.label ?? "Services") : null;
-  const inGroup = (s: Service) => !group || (s.category_id != null && catGroup[s.category_id] === group);
+  const groupLabel = group ? (frontCatName[group] ?? "Services") : null;
+  // A service belongs to a frontend category if it was created under it (category_id)
+  // or assigned to it via the Service Group (Retailer Menu) field (service_group).
+  const inGroup = (s: Service) => !group || s.category_id === group || s.service_group === group;
 
   const filtered = useMemo(() => services.filter((s) =>
     inGroup(s) &&
     (!q || [s.name, s.category].filter(Boolean).some((v) => String(v).toLowerCase().includes(q.toLowerCase())))
-  ), [services, q, group, catGroup]);
+  ), [services, q, group, frontCatName]);
 
   const byCategory = useMemo(() => {
     const m = new Map<string, Service[]>();

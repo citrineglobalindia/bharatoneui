@@ -25,6 +25,7 @@ import {
   Search,
   Smile, ChevronDown } from "lucide-react";
 import { useCurrentUser } from "@/lib/use-current-user";
+import { supabase } from "@/integrations/supabase/client";
 import { BharatOneLogo } from "@/components/bharatone-logo";
 import { NotificationsBell } from "@/components/retailer/notifications-bell";
 import { ProfileMenu } from "@/components/retailer/profile-menu";
@@ -44,14 +45,8 @@ const NAV: NavSection[] = [
   {
     heading: "Services",
     items: [
-      { label: "My Services", icon: <Wrench className="h-4 w-4" />, to: "/services", children: [
-        { label: "B2C Services", to: "/services?group=b2c" },
-        { label: "G2C Services", to: "/services?group=g2c" },
-        { label: "State Government Services", to: "/services?group=state_gov" },
-        { label: "Central Government Services", to: "/services?group=central_gov" },
-        { label: "Internal Links", to: "/services?group=internal_links" },
-        { label: "BharatOne Mart - Separate KYC", to: "/services?group=mart" },
-      ] },
+      // Children are the admin-created FRONTEND categories, injected dynamically at render.
+      { label: "My Services", icon: <Wrench className="h-4 w-4" />, to: "/services" },
       { label: "New Application", icon: <PlusCircle className="h-4 w-4" />, to: "/new-service-request" },
       { label: "My Applications", icon: <ClipboardList className="h-4 w-4" />, to: "/applications" },
     ],
@@ -86,6 +81,19 @@ function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: 
   const navigate = useNavigate();
   const me = useCurrentUser();
   const [openKey, setOpenKey] = useState<string | null>(null);
+  // Admin-created frontend categories = the retailer "My Services" sub-menu (dynamic).
+  const [frontCats, setFrontCats] = useState<{ id: string; name: string }[]>([]);
+  useEffect(() => {
+    let on = true;
+    (async () => {
+      const { data } = await (supabase as any)
+        .from("service_categories").select("id,name")
+        .eq("kind", "frontend").eq("is_active", true)
+        .order("sort_order").order("name");
+      if (on) setFrontCats((data as { id: string; name: string }[]) ?? []);
+    })();
+    return () => { on = false; };
+  }, []);
   return (
     <div className="flex h-full flex-col">
       <div className="px-4 py-4 border-b border-border">
@@ -107,8 +115,11 @@ function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: 
             <ul className="space-y-0.5">
               {sec.items.map((it) => {
                 const active = pathname === it.to;
-                if (it.children) {
-                  const childActive = it.children.some((ch) => pathname === ch.to);
+                const children = it.label === "My Services"
+                  ? frontCats.map((c) => ({ label: c.name, to: `/services?group=${c.id}` }))
+                  : it.children;
+                if (children && children.length) {
+                  const childActive = children.some((ch) => pathname === ch.to);
                   const expanded = openKey === it.to || (openKey === null && (childActive || pathname === it.to));
                   return (
                     <li key={it.to}>
@@ -121,7 +132,7 @@ function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: 
                       </button>
                       {expanded && (
                         <ul className="mt-0.5 ml-4 space-y-0.5 border-l border-border pl-2">
-                          {it.children.map((ch) => {
+                          {children.map((ch) => {
                             const [cpath, cqs] = ch.to.split("?");
                             const csearch = cqs ? Object.fromEntries(new URLSearchParams(cqs)) : undefined;
                             const ca = pathname === cpath && (!csearch || (typeof window !== "undefined" && window.location.search.includes(cqs ?? "")));
