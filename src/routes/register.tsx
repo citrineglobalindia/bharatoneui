@@ -216,7 +216,18 @@ function RegisterFlow() {
       clearDraft();
       setDone(true);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Submission failed. Please try again.");
+      const msg = e instanceof Error ? e.message : "Submission failed. Please try again.";
+      // Duplicate-email is validated at the JSKO Portal step — never surface it on the
+      // Video KYC / final page. If it slips through (edge case), send the user back to
+      // the JSKO Portal step and show the warning there instead.
+      const portalIdx = steps.findIndex((s) => s.key === "portal");
+      if (/already exists|already registered/i.test(msg) && portalIdx >= 0) {
+        set({ emailVerified: false });
+        setCurrent(portalIdx);
+        setError("This email ID is already registered on BharatOne. Please verify a different email in the JSKO Portal step to continue.");
+      } else {
+        setError(msg);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -327,7 +338,18 @@ function RegisterFlow() {
       });
       setDone(true);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Submission failed. Please try again.");
+      const msg = e instanceof Error ? e.message : "Submission failed. Please try again.";
+      // Duplicate-email is validated at the JSKO Portal step — never surface it on the
+      // Video KYC / final page. If it slips through (edge case), send the user back to
+      // the JSKO Portal step and show the warning there instead.
+      const portalIdx = steps.findIndex((s) => s.key === "portal");
+      if (/already exists|already registered/i.test(msg) && portalIdx >= 0) {
+        set({ emailVerified: false });
+        setCurrent(portalIdx);
+        setError("This email ID is already registered on BharatOne. Please verify a different email in the JSKO Portal step to continue.");
+      } else {
+        setError(msg);
+      }
     } finally {
       setSubmitting(false);
     }

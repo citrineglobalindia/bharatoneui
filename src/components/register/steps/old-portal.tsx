@@ -187,8 +187,16 @@ export function OldPortalStep() {
       }
       setVerifyingEmail(true);
       const { data: vd, error: ve } = await supabase.rpc("verify_registration_otp", { _target: user!.email, _channel: "email", _code: code });
-      setVerifyingEmail(false);
       if (!ve && (vd as { verified?: boolean } | null)?.verified === true) {
+        // Duplicate-email check happens HERE (Old JSKO Portal step) — not at final submit.
+        // If this email is already registered, block and warn in this section only.
+        const { data: dup } = await supabase.rpc("email_already_registered", { p_email: user!.email });
+        setVerifyingEmail(false);
+        if (dup === true) {
+          setEmailVerified(false);
+          setEmailError("This email ID is already registered on BharatOne. You cannot continue with this email — please contact the admin or use an account with a different email.");
+          return;
+        }
         setEmailVerified(true);
         setEmailError(null);
         // SMS/mobile OTP is hidden for now — email verification alone proceeds.
@@ -196,6 +204,7 @@ export function OldPortalStep() {
         setSuccessChannel("email");
         setSuccessOpen(true);
       } else {
+        setVerifyingEmail(false);
         setEmailError("Incorrect code. Please try again or resend.");
       }
     } else {
