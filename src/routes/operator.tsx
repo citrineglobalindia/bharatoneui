@@ -68,6 +68,20 @@ function OperatorPortal() {
     if (!by) { setSubmitter(null); return; }
     let on = true;
     (async () => {
+      // Preferred: a SECURITY DEFINER RPC that returns the submitter's JSKO ID /
+      // name / phone (operator RLS can't read the submitter's profile directly).
+      const { data: info, error } = await supabase.rpc("application_submitter_info", { p_app: sel!.id });
+      if (!on) return;
+      if (!error && info) {
+        const i = info as any;
+        setSubmitter({
+          jskoId: i.jsko_id || "—",
+          name: i.name || sel?.submitter_name || "—",
+          phone: i.phone || "—",
+        });
+        return;
+      }
+      // Fallback (RLS-limited) until the RPC is present.
       const [{ data: prof }, { data: reg }] = await Promise.all([
         supabase.from("profiles").select("display_name, phone").eq("id", by).maybeSingle(),
         supabase.from("retailer_registrations").select("jsko_id, application_id, mobile").eq("auth_user_id", by).order("created_at", { ascending: false }).limit(1).maybeSingle(),
