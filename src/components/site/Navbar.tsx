@@ -6,7 +6,6 @@ import {
   X,
   Phone,
   Mail,
-  Globe,
   ChevronDown,
   Search,
   Sparkles,
@@ -21,6 +20,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { LanguageSwitcher } from "@/components/site/language-switcher";
 import logo from "@/assets/bharatone-logo.png";
 
 type NavLink = {
@@ -109,17 +109,7 @@ export function Navbar() {
               </a>
             </div>
             <div className="flex items-center gap-4">
-              <button className="flex items-center gap-1.5 hover:text-[var(--saffron-glow)] transition-colors">
-                <Globe className="h-3 w-3" /> EN / हिं
-              </button>
-              <span className="h-3 w-px bg-background/30" />
-              <span className="flex items-center gap-1.5">
-                <span className="relative flex h-1.5 w-1.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--india-green-glow)] opacity-75" />
-                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[var(--india-green-glow)]" />
-                </span>
-                Helpdesk Online
-              </span>
+              <LanguageSwitcher />
             </div>
           </div>
           <div className="h-[2px] w-full bg-gradient-to-r from-[var(--saffron)] via-white to-[var(--india-green)]" />
@@ -397,6 +387,7 @@ export function Navbar() {
                 transition={{ delay: 0.35 }}
                 className="relative border-t border-border/60 px-6 py-5 space-y-3 bg-background/80 backdrop-blur"
               >
+                <LanguageSwitcher variant="block" />
                 <Button
                   variant="outline"
                   onClick={() => { setOpen(false); window.location.href = "/login"; }}
