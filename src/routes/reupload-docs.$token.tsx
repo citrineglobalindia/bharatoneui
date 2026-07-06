@@ -41,6 +41,8 @@ function ReuploadPage() {
       if (error) return toast.error("Could not submit", { description: error.message });
       toast.success(`${LABEL[key] || key} uploaded`);
       setDone((d) => [...new Set([...d, key])]);
+      // Email admins that the retailer re-uploaded a document (fire-and-forget).
+      supabase.functions.invoke("notify-doc-reupload", { body: { key, retailer: (data as any)?.retailer, app_id: (data as any)?.app_id, all_done: (data as any)?.all_done } }).catch(() => {});
       if ((data as any)?.all_done) setAllDone(true);
     } finally { setBusyKey(null); }
   };
