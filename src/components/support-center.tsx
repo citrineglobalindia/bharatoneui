@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Phone, Mail, MessageSquare, Plus, Loader2, RefreshCw, ChevronRight, X, Send } from "lucide-react";
+import { Phone, Mail, MessageSquare, Plus, Loader2, RefreshCw, ChevronRight, X, Send, Paperclip } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/lib/use-current-user";
@@ -13,6 +13,9 @@ const DEPARTMENTS = ["Technical", "Payments & Wallet", "Onboarding & KYC", "Serv
 type Cat = { id: string; name: string };
 type Sub = { id: string; category_id: string; name: string };
 type Svc = { id: string; name: string };
+type Prod = { id: string; subcategory_id: string | null; name: string };
+type Prio = { id: string; name: string };
+const db = supabase as any;
 
 export function SupportCenter() {
   const me = useCurrentUser();
@@ -22,7 +25,10 @@ export function SupportCenter() {
   const [cats, setCats] = useState<Cat[]>([]);
   const [subs, setSubs] = useState<Sub[]>([]);
   const [services, setServices] = useState<Svc[]>([]);
-  const [form, setForm] = useState({ department: DEPARTMENTS[0], service: "", categoryId: "", subcategory: "", priority: "Low", subject: "", body: "" });
+  const [prods, setProds] = useState<Prod[]>([]);
+  const [prios, setPrios] = useState<Prio[]>([]);
+  const [files, setFiles] = useState<File[]>([]);
+  const [form, setForm] = useState({ department: DEPARTMENTS[0], service: "", categoryId: "", subcategoryId: "", product: "", priority: "", subject: "", body: "" });
   const [sending, setSending] = useState(false);
   const [sel, setSel] = useState<Ticket | null>(null);
   const [tab, setTab] = useState<"mine" | "assigned">("mine");
@@ -31,16 +37,20 @@ export function SupportCenter() {
     setLoading(true);
     const { data: u } = await supabase.auth.getUser();
     setUid(u.user?.id ?? "");
-    const [t, c, s, sv] = await Promise.all([
+    const [t, c, s, sv, p, pr] = await Promise.all([
       supabase.from("support_tickets").select("*").order("created_at", { ascending: false }),
       supabase.from("support_categories").select("id,name").eq("is_active", true).order("sort_order"),
       supabase.from("support_subcategories").select("id,category_id,name").eq("is_active", true).order("sort_order"),
       supabase.from("services").select("id,name").eq("is_active", true).order("name"),
+      db.from("support_products").select("id,subcategory_id,name").eq("is_active", true).order("sort_order"),
+      db.from("support_priorities").select("id,name").eq("is_active", true).order("sort_order"),
     ]);
     setRows((t.data as Ticket[]) ?? []);
     const cl = (c.data as Cat[]) ?? [];
+    const pl = (pr.data as Prio[]) ?? [];
     setCats(cl); setSubs((s.data as Sub[]) ?? []); setServices((sv.data as Svc[]) ?? []);
-    setForm((f) => (f.categoryId ? f : { ...f, categoryId: cl[0]?.id ?? "" }));
+    setProds((p.data as Prod[]) ?? []); setPrios(pl);
+    setForm((f) => ({ ...f, categoryId: f.categoryId || (cl[0]?.id ?? ""), priority: f.priority || (pl[0]?.name ?? "Low") }));
     setLoading(false);
   }
   useEffect(() => { load(); }, []);
@@ -53,11 +63,29 @@ export function SupportCenter() {
     const { data: u } = await supabase.auth.getUser();
     if (!u.user) { setSending(false); return toast.error("Please sign in"); }
     const catName = cats.find((c) => c.id === form.categoryId)?.name ?? null;
-    const { error } = await supabase.from("support_tickets").insert({ user_id: u.user.id, user_name: me.name, user_role: me.role, department: form.department || null, service: form.service || null, category: catName, subcategory: form.subcategory || null, priority: form.priority, subject: form.subject.trim(), body: form.body || null });
+    const subName = subs.find((s) => s.id === form.subcategoryId)?.name ?? null;
+
+    // Upload attachments (any file type, no count limit) to the storage bucket.
+    const attachments: { name: string; url: string }[] = [];
+    try {
+      for (const f of files) {
+        const path = `${u.user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}-${f.name.replace(/[^\w.\-]/g, "_")}`;
+        const { error: upErr } = await db.storage.from("support-attachments").upload(path, f, { upsert: false, contentType: f.type || undefined });
+        if (upErr) throw upErr;
+        const { data: pub } = db.storage.from("support-attachments").getPublicUrl(path);
+        attachments.push({ name: f.name, url: pub?.publicUrl ?? path });
+      }
+    } catch (e) {
+      setSending(false);
+      return toast.error("Attachment upload failed", { description: e instanceof Error ? e.message : String(e) });
+    }
+
+    const { error } = await db.from("support_tickets").insert({ user_id: u.user.id, user_name: me.name, user_role: me.role, department: form.department || null, service: form.service || null, category: catName, subcategory: subName, product: form.product || null, priority: form.priority || "Low", subject: form.subject.trim(), body: form.body || null, attachments });
     setSending(false);
     if (error) return toast.error("Couldn't raise ticket", { description: error.message });
     toast.success("Ticket raised", { description: "Our team will respond shortly." });
-    setForm({ department: DEPARTMENTS[0], service: "", categoryId: cats[0]?.id ?? "", subcategory: "", priority: "Low", subject: "", body: "" }); load();
+    setForm({ department: DEPARTMENTS[0], service: "", categoryId: cats[0]?.id ?? "", subcategoryId: "", product: "", priority: prios[0]?.name ?? "Low", subject: "", body: "" });
+    setFiles([]); load();
   };
   const inp = "h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-india-green/30";
 
@@ -97,16 +125,40 @@ export function SupportCenter() {
               {cats.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
             <label className="mt-3 block text-[11px] font-semibold text-muted-foreground">Sub-Category</label>
-            <select className={inp} value={form.subcategory} onChange={(e) => setForm({ ...form, subcategory: e.target.value })} disabled={!form.categoryId}>
+            <select className={inp} value={form.subcategoryId} onChange={(e) => setForm({ ...form, subcategoryId: e.target.value, product: "" })} disabled={!form.categoryId}>
               <option value="">{form.categoryId ? "Select sub-category" : "Select a category first"}</option>
-              {subs.filter((s) => s.category_id === form.categoryId).map((s) => <option key={s.id} value={s.name}>{s.name}</option>)}
+              {subs.filter((s) => s.category_id === form.categoryId).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
+            {prods.filter((p) => p.subcategory_id === form.subcategoryId).length > 0 && (<>
+              <label className="mt-3 block text-[11px] font-semibold text-muted-foreground">Product / Service</label>
+              <select className={inp} value={form.product} onChange={(e) => setForm({ ...form, product: e.target.value })}>
+                <option value="">Select product / service (optional)</option>
+                {prods.filter((p) => p.subcategory_id === form.subcategoryId).map((p) => <option key={p.id} value={p.name}>{p.name}</option>)}
+              </select>
+            </>)}
             <label className="mt-3 block text-[11px] font-semibold text-muted-foreground">Priority</label>
-            <select className={inp} value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })}><option>Low</option><option>Medium</option><option>High</option></select>
+            <select className={inp} value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })}>
+              {(prios.length ? prios.map((p) => p.name) : ["Low", "Medium", "High", "Critical"]).map((n) => <option key={n} value={n}>{n}</option>)}
+            </select>
             <label className="mt-3 block text-[11px] font-semibold text-muted-foreground">Subject</label>
             <input className={inp} placeholder="Brief summary" value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} />
             <label className="mt-3 block text-[11px] font-semibold text-muted-foreground">Describe the issue</label>
             <textarea rows={4} className={inp + " h-auto py-2"} placeholder="Provide details, IDs, screenshots…" value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} />
+            <label className="mt-3 block text-[11px] font-semibold text-muted-foreground">Attachments</label>
+            <label className="mt-1 flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-background px-3 py-2.5 text-xs font-semibold text-muted-foreground hover:bg-muted">
+              <Paperclip className="h-4 w-4" /> Upload files (images, PDF, Word, Excel, ZIP…)
+              <input type="file" multiple className="hidden" onChange={(e) => setFiles((prev) => [...prev, ...Array.from(e.target.files ?? [])])} />
+            </label>
+            {files.length > 0 && (
+              <ul className="mt-2 space-y-1">
+                {files.map((f, i) => (
+                  <li key={i} className="flex items-center justify-between gap-2 rounded-md border border-border bg-muted/30 px-2 py-1 text-[11px]">
+                    <span className="truncate">{f.name}</span>
+                    <button type="button" onClick={() => setFiles((prev) => prev.filter((_, j) => j !== i))} className="text-rose-500 hover:text-rose-700"><X className="h-3.5 w-3.5" /></button>
+                  </li>
+                ))}
+              </ul>
+            )}
             <Button onClick={raise} disabled={sending} className="mt-4 w-full bg-india-green text-white hover:bg-india-green/90">{sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Submit Ticket</Button>
           </div>
 
