@@ -1,5 +1,6 @@
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Heart, GraduationCap, Users, ArrowRight, Sparkles, Quote, Star } from "lucide-react";
+import { Heart, GraduationCap, Users, ArrowRight, Sparkles, Quote, Star, X, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const schemes = [
@@ -110,27 +111,99 @@ export function CTA() {
   );
 }
 
+type Award = { name: string; logo: string; certificate: string };
+
+const AWARDS: Award[] = [
+  { name: "ELEVATE 2025", logo: "/awards/elevate-2025.png", certificate: "/awards/elevate-2025-certificate.jpg" },
+  { name: "Startup Karnataka", logo: "/awards/startup-karnataka.png", certificate: "/awards/startup-karnataka-certificate.jpg" },
+  { name: "Government of Karnataka – Dept. of Electronics, IT & BT", logo: "/awards/govt-karnataka-deitbt.png", certificate: "/awards/govt-karnataka-deitbt-certificate.jpg" },
+  { name: "KTCC Karnataka Business Awards", logo: "/awards/ktcc.png", certificate: "/awards/ktcc-certificate.jpg" },
+];
+
 export function Awards() {
-  const awards = ["ELEVATE 2025", "Startup Karnataka", "Startup India"];
+  const [active, setActive] = useState<Award | null>(null);
+  const [zoom, setZoom] = useState(1);
+
+  useEffect(() => {
+    if (!active) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setActive(null); };
+    window.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => { window.removeEventListener("keydown", onKey); document.body.style.overflow = ""; };
+  }, [active]);
+
+  const open = (a: Award) => { setZoom(1); setActive(a); };
+
   return (
     <section className="py-16 border-t border-border">
       <div className="container mx-auto px-4 sm:px-6 text-center">
-        <h3 className="text-xs uppercase tracking-[0.3em] text-muted-foreground mb-8">Awarded & Recognized By</h3>
-        <div className="flex flex-wrap justify-center items-center gap-x-12 gap-y-6">
-          {awards.map((a, i) => (
-            <motion.div
-              key={a}
+        <h3 className="text-xs uppercase tracking-[0.3em] text-muted-foreground mb-8">Awarded &amp; Recognized By</h3>
+        <div className="flex flex-wrap justify-center items-center gap-x-10 gap-y-8 sm:gap-x-16">
+          {AWARDS.map((a, i) => (
+            <motion.button
+              key={a.name}
+              type="button"
+              onClick={() => open(a)}
               initial={{ opacity: 0, y: 10 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.1 }}
-              className="font-display font-bold text-xl sm:text-2xl text-muted-foreground hover:text-foreground transition-colors"
+              title={`Open ${a.name} certificate`}
+              aria-label={`Open ${a.name} certificate`}
+              className="group flex h-16 sm:h-20 items-center justify-center cursor-pointer transition-transform duration-200 hover:scale-105"
             >
-              {a}
-            </motion.div>
+              <img
+                src={a.logo}
+                alt={a.name}
+                loading="lazy"
+                className="max-h-full w-auto max-w-[150px] sm:max-w-[180px] object-contain grayscale opacity-80 transition group-hover:grayscale-0 group-hover:opacity-100 group-hover:drop-shadow-md"
+                onError={(e) => {
+                  const img = e.currentTarget;
+                  img.style.display = "none";
+                  const fb = img.nextElementSibling as HTMLElement | null;
+                  if (fb) fb.style.display = "block";
+                }}
+              />
+              <span className="hidden font-display font-bold text-base sm:text-lg text-muted-foreground group-hover:text-foreground">{a.name}</span>
+            </motion.button>
           ))}
         </div>
       </div>
+
+      {active && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm"
+          onClick={() => setActive(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label={`${active.name} certificate`}
+        >
+          {/* Controls */}
+          <div className="absolute right-4 top-4 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => setZoom((z) => Math.max(1, +(z - 0.25).toFixed(2)))} className="grid h-10 w-10 place-items-center rounded-full bg-white/15 text-white hover:bg-white/25" aria-label="Zoom out"><ZoomOut className="h-5 w-5" /></button>
+            <button onClick={() => setZoom((z) => Math.min(3, +(z + 0.25).toFixed(2)))} className="grid h-10 w-10 place-items-center rounded-full bg-white/15 text-white hover:bg-white/25" aria-label="Zoom in"><ZoomIn className="h-5 w-5" /></button>
+            <button onClick={() => setActive(null)} className="grid h-10 w-10 place-items-center rounded-full bg-white/15 text-white hover:bg-white/25" aria-label="Close"><X className="h-5 w-5" /></button>
+          </div>
+          <div className="max-h-[88vh] max-w-[92vw] overflow-auto" onClick={(e) => e.stopPropagation()}>
+            <img
+              src={active.certificate}
+              alt={`${active.name} certificate`}
+              style={{ transform: `scale(${zoom})`, transformOrigin: "center top" }}
+              className="mx-auto block max-h-[88vh] w-auto max-w-full rounded-lg shadow-2xl transition-transform"
+              onError={(e) => {
+                const img = e.currentTarget;
+                img.style.display = "none";
+                const fb = img.nextElementSibling as HTMLElement | null;
+                if (fb) fb.style.display = "flex";
+              }}
+            />
+            <div style={{ display: "none" }} className="mx-auto hidden h-64 w-full max-w-md items-center justify-center rounded-lg border border-white/20 bg-white/5 px-6 text-center text-sm font-medium text-white/80">
+              The {active.name} certificate image will be available soon.
+            </div>
+            <p className="mt-3 text-center text-sm font-semibold text-white/90">{active.name}</p>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
