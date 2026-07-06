@@ -161,14 +161,7 @@ const NAVIGATION: NavGroup[] = [
   {
     label: "Service Catalog",
     items: [
-      { label: "Backend", icon: Server, children: [
-        { label: "Backend · Add Category", display: "Add Category", icon: Plus },
-        { label: "Backend · Categories", display: "Category List", icon: List },
-      ] },
-      { label: "Frontend", icon: LayoutGrid, children: [
-        { label: "Frontend · Add Category", display: "Add Category", icon: Plus },
-        { label: "Frontend · Services", display: "Service List", icon: List },
-      ] },
+      { label: "Service Catalog", icon: LayoutGrid },
     ],
   },
   {
@@ -1105,14 +1098,8 @@ export function AdminWorkspace() {
               <AdminAuditLog />
             ) : active === "User Management" ? (
               <AdminUsers />
-            ) : active === "Backend · Categories" ? (
-              <CatalogManager kind="backend" mode="list" />
-            ) : active === "Backend · Add Category" ? (
-              <CatalogManager kind="backend" mode="add" />
-            ) : active === "Frontend · Services" ? (
-              <CatalogManager kind="frontend" mode="list" />
-            ) : active === "Frontend · Add Category" ? (
-              <CatalogManager kind="frontend" mode="add" />
+            ) : active === "Service Catalog" ? (
+              <CatalogManager />
             ) : active === "Old JSKO IDs" ? (
               <JskoManager />
             ) : active === "Applications" ? (

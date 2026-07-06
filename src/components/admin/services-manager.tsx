@@ -29,12 +29,12 @@ const emptyForm = {
 };
 
 const TYPE_META: Record<ServiceType, { label: string; icon: React.ReactNode; tone: string }> = {
-  inlink: { label: "Inlink (redirect)", icon: <Link2 className="h-3.5 w-3.5" />, tone: "bg-sky-100 text-sky-700" },
-  api: { label: "API Integrated", icon: <Plug className="h-3.5 w-3.5" />, tone: "bg-violet-100 text-violet-700" },
-  backend: { label: "Backend", icon: <Server className="h-3.5 w-3.5" />, tone: "bg-emerald-100 text-emerald-700" },
+  inlink: { label: "Direct service", icon: <Link2 className="h-3.5 w-3.5" />, tone: "bg-sky-100 text-sky-700" },
+  api: { label: "API service", icon: <Plug className="h-3.5 w-3.5" />, tone: "bg-violet-100 text-violet-700" },
+  backend: { label: "Backend service", icon: <Server className="h-3.5 w-3.5" />, tone: "bg-emerald-100 text-emerald-700" },
 };
 
-export function ServicesManager({ categoryId, frontend = false, backendOnly = false }: { categoryId?: string; frontend?: boolean; backendOnly?: boolean } = {}) {
+export function ServicesManager({ categoryId, subcategoryId, frontend = false, backendOnly = false }: { categoryId?: string; subcategoryId?: string; frontend?: boolean; backendOnly?: boolean } = {}) {
   const [rows, setRows] = useState<Service[]>([]);
   const [cats, setCats] = useState<Cat[]>([]);
   const [frontCats, setFrontCats] = useState<FrontCat[]>([]);
@@ -48,7 +48,8 @@ export function ServicesManager({ categoryId, frontend = false, backendOnly = fa
     setLoading(true);
     try {
       let sq = supabase.from("services").select("*").order("sort_order").order("created_at", { ascending: false });
-      if (categoryId) sq = sq.eq("category_id", categoryId);
+      if (subcategoryId) sq = sq.eq("subcategory_id", subcategoryId);
+      else if (categoryId) sq = sq.eq("category_id", categoryId);
       const [sv, ct, fc] = await Promise.all([
         sq,
         supabase.from("service_categories").select("id,name,is_active").order("sort_order").order("name"),
@@ -107,8 +108,9 @@ export function ServicesManager({ categoryId, frontend = false, backendOnly = fa
         backend_route: null,
         form_schema: form.service_type === "backend" ? form.form_schema : [],
         service_group: form.service_type === "backend" ? (form.service_group || null) : null,
-        category: (cats.find((c) => c.id === form.category_id)?.name) || form.category || null,
-        category_id: form.category_id || null,
+        category: (cats.find((c) => c.id === (categoryId || form.category_id))?.name) || form.category || null,
+        category_id: categoryId || form.category_id || null,
+        subcategory_id: subcategoryId || null,
         is_active: form.is_active,
         sort_order: Number(form.sort_order) || 0,
         service_charge: Number(form.service_charge) || 0,

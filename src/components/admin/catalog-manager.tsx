@@ -1,246 +1,199 @@
 import { useEffect, useState } from "react";
 import { sanitizeMobile } from "@/lib/phone";
 import { toast } from "sonner";
-import { Plus, Trash2, Pencil, Loader2, Check, X, FolderTree, ChevronRight, UserCog, ArrowLeft, Layers, Tag, PlusCircle } from "lucide-react";
+import { Plus, Trash2, Pencil, Loader2, Check, X, FolderTree, ChevronRight, UserCog, ArrowLeft, CornerDownRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 import { ServicesManager } from "@/components/admin/services-manager";
 
-type Cat = { id: string; name: string; is_active: boolean; sort_order: number; operator_id: string | null; service_group: string | null; kind: string };
+type Cat = { id: string; name: string; is_active: boolean; sort_order: number };
+type Sub = { id: string; category_id: string; name: string; is_active: boolean; sort_order: number };
 type Operator = { id: string; name: string };
+const db = supabase as any;
 const inp = "h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-india-green/30";
 const Pill = ({ on }: { on: boolean }) => <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${on ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>{on ? "Active" : "Inactive"}</span>;
 
-export function CatalogManager({ kind = "backend", mode = "list" }: { kind?: "backend" | "frontend"; mode?: "add" | "list" } = {}) {
-  const frontend = kind === "frontend";
+// Unified Service Catalog: Category -> Sub-Category -> Service (Direct / Backend / API),
+// with operator assignment per category.
+export function CatalogManager() {
   const [cats, setCats] = useState<Cat[]>([]);
-  const [counts, setCounts] = useState<Record<string, number>>({});
+  const [subs, setSubs] = useState<Sub[]>([]);
+  const [svcCounts, setSvcCounts] = useState<Record<string, number>>({});
   const [opCounts, setOpCounts] = useState<Record<string, { total: number; active: number }>>({});
   const [operators, setOperators] = useState<Operator[]>([]);
   const [loading, setLoading] = useState(true);
   const [sel, setSel] = useState<Cat | null>(null);
+  const [selSub, setSelSub] = useState<Sub | null>(null);
 
-  // add/edit category form
   const [name, setName] = useState("");
   const [active, setActive] = useState(true);
-  const [operatorId, setOperatorId] = useState("");
-  const [serviceGroup, setServiceGroup] = useState("b2c");
   const [editId, setEditId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [newSub, setNewSub] = useState<Record<string, string>>({});
 
   async function load() {
     setLoading(true);
     try {
       await ensureStaffSession();
-      // Categories are the critical data: fetch them on their own with a short
-      // retry so a transient auth/network hiccup never leaves the list empty.
-      let list: Cat[] | null = null;
-      for (let attempt = 0; attempt < 3; attempt++) {
-        const { data, error } = await (supabase as any)
-          .from("service_categories")
-          .select("id,name,is_active,sort_order,operator_id,service_group,kind")
-          .eq("kind", kind).order("sort_order").order("name");
-        if (!error) { list = (data as unknown as Cat[]) ?? []; break; }
-        await ensureStaffSession();
-        await new Promise((r) => setTimeout(r, 300));
-      }
-      // Only overwrite the list when the fetch actually succeeded (never wipe on error).
-      if (list) {
-        setCats(list);
-        if (sel) setSel(list.find((x) => x.id === sel.id) ?? null);
-      }
-
-      // Auxiliary data (counts, operators) — failures here must NOT affect categories.
-      const [s, u, co] = await Promise.allSettled([
-        supabase.from("services").select("category_id"),
-        supabase.rpc("admin_list_users"),
-        supabase.from("category_operators").select("category_id,is_active"),
+      const [c, s, sv, u, co] = await Promise.all([
+        db.from("service_categories").select("id,name,is_active,sort_order").order("sort_order").order("name"),
+        db.from("service_subcategories").select("id,category_id,name,is_active,sort_order").order("sort_order").order("name"),
+        db.from("services").select("subcategory_id,category_id"),
+        db.rpc("admin_list_users"),
+        db.from("category_operators").select("category_id,is_active"),
       ]);
-      if (s.status === "fulfilled") {
-        const rows = ((s.value.data as { category_id: string | null }[]) ?? []);
-        const m: Record<string, number> = {};
-        rows.forEach((r) => { if (r.category_id) m[r.category_id] = (m[r.category_id] ?? 0) + 1; });
-        setCounts(m);
-      }
-      if (u.status === "fulfilled") {
-        const ops = ((u.value.data as any[]) ?? []).filter((x) => Array.isArray(x.roles) && x.roles.includes("operator"))
-          .map((x) => ({ id: x.id, name: x.display_name || x.email || "Operator" }));
-        setOperators(ops);
-      }
-      if (co.status === "fulfilled") {
-        const cm: Record<string, { total: number; active: number }> = {};
-        ((co.value.data as any[]) ?? []).forEach((r) => { const e = cm[r.category_id] ?? { total: 0, active: 0 }; e.total++; if (r.is_active) e.active++; cm[r.category_id] = e; });
-        setOpCounts(cm);
-      }
+      const cl = (c.data as Cat[]) ?? [];
+      setCats(cl);
+      const sl = (s.data as Sub[]) ?? [];
+      setSubs(sl);
+      if (sel) setSel(cl.find((x) => x.id === sel.id) ?? null);
+      if (selSub) setSelSub(sl.find((x) => x.id === selSub.id) ?? null);
+      const sc: Record<string, number> = {};
+      ((sv.data as { subcategory_id: string | null; category_id: string | null }[]) ?? []).forEach((r) => {
+        const k = r.subcategory_id || r.category_id; if (k) sc[k] = (sc[k] ?? 0) + 1;
+      });
+      setSvcCounts(sc);
+      const ops = ((u.data as any[]) ?? []).filter((x) => Array.isArray(x.roles) && x.roles.includes("operator"))
+        .map((x) => ({ id: x.id, name: x.display_name || x.email || "Operator" }));
+      setOperators(ops);
+      const cm: Record<string, { total: number; active: number }> = {};
+      ((co.data as any[]) ?? []).forEach((r) => { const e = cm[r.category_id] ?? { total: 0, active: 0 }; e.total++; if (r.is_active) e.active++; cm[r.category_id] = e; });
+      setOpCounts(cm);
     } finally { setLoading(false); }
   }
-  useEffect(() => { load(); }, [kind]);
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
 
-  const opName = (id: string | null) => id ? (operators.find((o) => o.id === id)?.name ?? "Assigned") : "Unassigned";
-
-  const resetForm = () => { setName(""); setActive(true); setOperatorId(""); setServiceGroup("b2c"); setEditId(null); };
-  const startEdit = (c: Cat) => { setEditId(c.id); setName(c.name); setActive(c.is_active); setOperatorId(c.operator_id ?? ""); setServiceGroup(c.service_group ?? "b2c"); };
+  const resetForm = () => { setName(""); setActive(true); setEditId(null); };
+  const startEdit = (c: Cat) => { setEditId(c.id); setName(c.name); setActive(c.is_active); };
   const saveCat = async () => {
     if (!name.trim()) return toast.error("Category name required");
     setBusy(true);
-    const payload = { name: name.trim(), is_active: active, operator_id: frontend ? null : (operatorId || null), service_group: frontend ? null : serviceGroup, kind };
+    const payload = { name: name.trim(), is_active: active };
     const res = editId
-      ? await (supabase as any).from("service_categories").update(payload).eq("id", editId)
-      : await (supabase as any).from("service_categories").insert({ ...payload, sort_order: cats.length });
+      ? await db.from("service_categories").update(payload).eq("id", editId)
+      : await db.from("service_categories").insert({ ...payload, sort_order: cats.length });
     setBusy(false);
     if (res.error) return toast.error("Save failed", { description: res.error.message });
     toast.success(editId ? "Category updated" : "Category added"); resetForm(); load();
   };
-  const toggle = async (c: Cat) => { await (supabase as any).from("service_categories").update({ is_active: !c.is_active }).eq("id", c.id); load(); };
-  const del = async (c: Cat) => { if (!confirm("Delete this category? Its services become uncategorised.")) return; const { error } = await (supabase as any).from("service_categories").delete().eq("id", c.id); if (error) return toast.error(error.message); if (sel?.id === c.id) setSel(null); toast.success("Deleted"); load(); };
+  const toggleCat = async (c: Cat) => { await db.from("service_categories").update({ is_active: !c.is_active }).eq("id", c.id); load(); };
+  const delCat = async (c: Cat) => { if (!confirm("Delete this category and its sub-categories? Services become uncategorised.")) return; const { error } = await db.from("service_categories").delete().eq("id", c.id); if (error) return toast.error(error.message); if (sel?.id === c.id) setSel(null); toast.success("Deleted"); load(); };
 
-  // ---- Detail view: a category's services ----
+  const addSub = async (catId: string) => {
+    const nm = (newSub[catId] || "").trim();
+    if (!nm) return toast.error("Sub-category name required");
+    const count = subs.filter((s) => s.category_id === catId).length;
+    const { error } = await db.from("service_subcategories").insert({ category_id: catId, name: nm, sort_order: count });
+    if (error) return toast.error("Add failed", { description: error.message });
+    setNewSub((m) => ({ ...m, [catId]: "" })); toast.success("Sub-category added"); load();
+  };
+  const saveSub = async (s: Sub) => { const { error } = await db.from("service_subcategories").update({ name: s.name }).eq("id", s.id); if (error) return toast.error(error.message); toast.success("Saved"); };
+  const toggleSub = async (s: Sub) => { await db.from("service_subcategories").update({ is_active: !s.is_active }).eq("id", s.id); load(); };
+  const delSub = async (s: Sub) => { if (!confirm("Delete this sub-category? Its services become uncategorised.")) return; const { error } = await db.from("service_subcategories").delete().eq("id", s.id); if (error) return toast.error(error.message); if (selSub?.id === s.id) setSelSub(null); toast.success("Deleted"); load(); };
+  const patchSub = (id: string, p: Partial<Sub>) => setSubs((xs) => xs.map((x) => (x.id === id ? { ...x, ...p } : x)));
+
+  // ---- Sub-category detail: manage services under it ----
+  if (sel && selSub) {
+    return (
+      <div className="space-y-5">
+        <button onClick={() => setSelSub(null)} className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" /> {sel.name}</button>
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
+          <p className="flex items-center gap-2 font-display text-lg font-extrabold"><FolderTree className="h-5 w-5 text-india-green" /> {sel.name} <ChevronRight className="h-4 w-4 text-muted-foreground" /> {selSub.name} <Pill on={selSub.is_active} /></p>
+          <p className="mt-1 text-sm text-muted-foreground">Add services under this sub-category. Each service is a <b>Direct</b> (link), <b>Backend</b> (form) or <b>API</b> service.</p>
+        </div>
+        <ServicesManager subcategoryId={selSub.id} categoryId={sel.id} />
+      </div>
+    );
+  }
+
+  // ---- Category detail: operators + sub-categories ----
   if (sel) {
+    const mySubs = subs.filter((s) => s.category_id === sel.id);
     return (
       <div className="space-y-5">
         <button onClick={() => setSel(null)} className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" /> All categories</button>
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card p-5 shadow-soft">
           <div>
             <p className="flex items-center gap-2 font-display text-lg font-extrabold"><FolderTree className="h-5 w-5 text-india-green" /> {sel.name} <Pill on={sel.is_active} /></p>
-            <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">{frontend ? <FolderTree className="h-4 w-4" /> : <UserCog className="h-4 w-4" />}{!frontend && <>{(opCounts[sel.id]?.active ?? 0)} active operator(s) · </>}{counts[sel.id] ?? 0} service(s)</p>
+            <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground"><UserCog className="h-4 w-4" /> {(opCounts[sel.id]?.active ?? 0)} active operator(s) · {mySubs.length} sub-categor(y/ies)</p>
           </div>
           <Button variant="outline" size="sm" onClick={() => startEdit(sel)}><Pencil className="h-4 w-4" /> Edit category</Button>
         </div>
-        {editId === sel.id && <CatForm {...{ name, setName, active, setActive, operatorId, setOperatorId, serviceGroup, setServiceGroup, operators, busy, saveCat, resetForm, editId, frontend }} />}
-        {!frontend && <CategoryOperators categoryId={sel.id} allOperators={operators} onChange={load} />}
-        <div>
-          <p className="mb-2 text-sm font-bold">Services in this category</p>
-          <p className="mb-3 text-xs text-muted-foreground">{frontend ? "Add redirect (Inlink) services — retailers open these from My Services." : "Add Inlink, API-integrated or Backend services. Set each service's total cost and commission split."}</p>
-          <ServicesManager categoryId={sel.id} frontend={frontend} backendOnly={kind === "backend"} />
+        {editId === sel.id && <CatForm {...{ name, setName, active, setActive, busy, saveCat, resetForm, editId }} />}
+
+        <CategoryOperators categoryId={sel.id} allOperators={operators} onChange={load} />
+
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
+          <p className="mb-3 text-sm font-bold">Sub-categories</p>
+          <div className="space-y-2">
+            {mySubs.length === 0 ? <p className="text-sm text-muted-foreground">No sub-categories yet. Add one below.</p> : mySubs.map((s) => (
+              <div key={s.id} className={`flex flex-wrap items-center gap-2 rounded-xl border border-border p-2.5 ${s.is_active ? "" : "opacity-60"}`}>
+                <CornerDownRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <input value={s.name} onChange={(e) => patchSub(s.id, { name: e.target.value })} className={inp + " max-w-xs"} />
+                <span className="text-xs text-muted-foreground">{svcCounts[s.id] ?? 0} service(s)</span>
+                <div className="ml-auto flex items-center gap-2">
+                  <Button size="sm" className="bg-india-green text-white" onClick={() => { setSelSub(s); }}>Open <ChevronRight className="h-3.5 w-3.5" /></Button>
+                  <Button size="sm" variant="outline" onClick={() => saveSub(s)}><Check className="h-3.5 w-3.5" /> Save</Button>
+                  <button onClick={() => toggleSub(s)} className="rounded-md border border-border px-2 py-1.5 text-[11px] font-semibold hover:bg-muted">{s.is_active ? "Hide" : "Show"}</button>
+                  <button onClick={() => delSub(s)} className="rounded-md border border-rose-200 px-2 py-1.5 text-[11px] font-semibold text-rose-600 hover:bg-rose-50"><Trash2 className="h-3 w-3" /></button>
+                </div>
+              </div>
+            ))}
+            <div className="flex gap-2 pt-1">
+              <input value={newSub[sel.id] || ""} onChange={(e) => setNewSub((m) => ({ ...m, [sel.id]: e.target.value }))} placeholder="Add sub-category" className={inp + " max-w-xs"} onKeyDown={(e) => e.key === "Enter" && addSub(sel.id)} />
+              <Button size="sm" variant="outline" onClick={() => addSub(sel.id)}><Plus className="h-3.5 w-3.5" /> Add sub-category</Button>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
-  const kindLabel = frontend ? "Frontend" : "Backend";
-
-  // ---- Add Category page (standalone form) ----
-  if (mode === "add") {
-    return (
-      <div className="mx-auto max-w-3xl">
-        <div className="rounded-2xl border border-border bg-card p-8 shadow-soft sm:p-10">
-          <div className="text-center">
-            <h2 className="flex items-center justify-center gap-2.5 text-2xl font-extrabold text-saffron sm:text-3xl"><Layers className="h-7 w-7" /> Add New Category</h2>
-            <p className="mt-1.5 text-sm text-muted-foreground sm:text-base">Manage your {kindLabel.toLowerCase()} service categories efficiently</p>
-          </div>
-
-          <div className="mt-8">
-            <label className="text-sm font-semibold text-foreground/80">Category Name</label>
-            <div className="mt-1.5 flex overflow-hidden rounded-xl border border-border bg-background focus-within:ring-2 focus-within:ring-saffron/30">
-              <div className="flex w-12 shrink-0 items-center justify-center bg-saffron text-white"><Tag className="h-5 w-5" /></div>
-              <input
-                className="h-12 flex-1 bg-transparent px-4 text-base outline-none"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Enter category name"
-                onKeyDown={(e) => e.key === "Enter" && saveCat()}
-              />
-            </div>
-            <p className="mt-1.5 text-xs text-muted-foreground">e.g., Web Development, Mobile Apps</p>
-          </div>
-
-          <div className="mt-6">
-            <label className="text-sm font-semibold text-foreground/80">Status</label>
-            <div className="mt-1.5 grid gap-4 sm:grid-cols-2">
-              {[["Active", true], ["Inactive", false]].map(([label, val]) => {
-                const selected = active === val;
-                return (
-                  <button
-                    key={label as string}
-                    type="button"
-                    onClick={() => setActive(val as boolean)}
-                    className={`flex items-center gap-3 rounded-xl border px-5 py-4 text-left transition ${selected ? "border-indigo-500 bg-indigo-50/60 ring-1 ring-indigo-500/30" : "border-border bg-background hover:bg-muted/40"}`}
-                  >
-                    <span className={`grid h-5 w-5 place-items-center rounded-full border-2 ${selected ? "border-blue-600" : "border-slate-300"}`}>
-                      {selected && <span className="h-2.5 w-2.5 rounded-full bg-blue-600" />}
-                    </span>
-                    <span className={`text-base font-medium ${selected ? "text-foreground" : "text-muted-foreground"}`}>{label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <button
-            onClick={saveCat}
-            disabled={busy || !name.trim()}
-            className="mt-8 flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-india-green text-base font-bold text-white transition hover:bg-india-green/90 disabled:opacity-50"
-          >
-            {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <PlusCircle className="h-5 w-5" />} Add Category
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // ---- List view: categories are the main thing ----
+  // ---- Category list ----
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-lg font-extrabold">{frontend ? "Frontend Services — Categories" : "Service Catalog — Backend Categories"}</h2>
-        <p className="text-sm text-muted-foreground">{frontend ? "Frontend categories appear in the retailer My Services menu. Open a category to add redirect (Inlink) services." : "Categories are the backbone — each can be handled by one or more operators; applications are split equally among the active ones. Open a category to map its services (Inlink, API, Backend) and commission splits."}</p>
+        <h2 className="text-lg font-extrabold">Service Catalog — Categories</h2>
+        <p className="text-sm text-muted-foreground">Each category is handled by one or more operators. Open a category to manage its sub-categories, and open a sub-category to add Direct / Backend / API services.</p>
       </div>
-      {editId && !sel && <CatForm {...{ name, setName, active, setActive, operatorId, setOperatorId, serviceGroup, setServiceGroup, operators, busy, saveCat, resetForm, editId, frontend }} />}
-      <div className="grid gap-5">
-        <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-soft">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
-              <tr><th className="px-4 py-2.5">Category</th>{!frontend && <th className="px-4 py-2.5">Operators</th>}<th className="px-4 py-2.5">Services</th><th className="px-4 py-2.5">Status</th><th className="px-4 py-2.5 text-right">Actions</th></tr>
-            </thead>
-            <tbody>
-              {loading ? <tr><td colSpan={frontend ? 4 : 5} className="px-4 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr>
-                : cats.length === 0 ? <tr><td colSpan={frontend ? 4 : 5} className="px-4 py-10 text-center text-muted-foreground">No {kindLabel.toLowerCase()} categories yet. Add one →</td></tr>
-                : cats.map((c) => (
+      {editId === null && <CatForm {...{ name, setName, active, setActive, busy, saveCat, resetForm, editId }} />}
+      {editId && !sel && <CatForm {...{ name, setName, active, setActive, busy, saveCat, resetForm, editId }} />}
+      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-soft">
+        <table className="w-full text-sm">
+          <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
+            <tr><th className="px-4 py-2.5">Category</th><th className="px-4 py-2.5">Operators</th><th className="px-4 py-2.5">Sub-categories</th><th className="px-4 py-2.5">Status</th><th className="px-4 py-2.5 text-right">Actions</th></tr>
+          </thead>
+          <tbody>
+            {loading ? <tr><td colSpan={5} className="px-4 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr>
+              : cats.length === 0 ? <tr><td colSpan={5} className="px-4 py-10 text-center text-muted-foreground">No categories yet. Add one →</td></tr>
+              : cats.map((c) => (
                 <tr key={c.id} className="border-t border-border hover:bg-muted/30">
                   <td className="px-4 py-3"><button onClick={() => setSel(c)} className="inline-flex items-center gap-1.5 font-semibold hover:text-india-green">{c.name} <ChevronRight className="h-4 w-4 text-muted-foreground" /></button></td>
-                  {!frontend && <td className="px-4 py-3"><span className={`inline-flex items-center gap-1 text-xs ${(opCounts[c.id]?.active ?? 0) ? "text-foreground" : "text-muted-foreground"}`}><UserCog className="h-3.5 w-3.5" /> {(opCounts[c.id]?.active ?? 0) ? `${opCounts[c.id].active} operator(s)` : "Unassigned"}</span></td>}
-                  <td className="px-4 py-3 text-muted-foreground">{counts[c.id] ?? 0}</td>
+                  <td className="px-4 py-3"><span className={`inline-flex items-center gap-1 text-xs ${(opCounts[c.id]?.active ?? 0) ? "text-foreground" : "text-muted-foreground"}`}><UserCog className="h-3.5 w-3.5" /> {(opCounts[c.id]?.active ?? 0) ? `${opCounts[c.id].active} operator(s)` : "Unassigned"}</span></td>
+                  <td className="px-4 py-3 text-muted-foreground">{subs.filter((s) => s.category_id === c.id).length}</td>
                   <td className="px-4 py-3"><Pill on={c.is_active} /></td>
                   <td className="px-4 py-3 text-right whitespace-nowrap">
                     <button onClick={() => setSel(c)} className="mr-3 text-xs font-semibold text-india-green hover:underline">Open</button>
-                    <button onClick={() => toggle(c)} className="mr-3 text-xs font-semibold text-muted-foreground hover:text-foreground">{c.is_active ? "Deactivate" : "Activate"}</button>
+                    <button onClick={() => toggleCat(c)} className="mr-3 text-xs font-semibold text-muted-foreground hover:text-foreground">{c.is_active ? "Deactivate" : "Activate"}</button>
                     <button onClick={() => startEdit(c)} className="mr-3 text-muted-foreground hover:text-foreground"><Pencil className="h-3.5 w-3.5" /></button>
-                    <button onClick={() => del(c)} className="text-rose-500 hover:text-rose-700"><Trash2 className="h-3.5 w-3.5" /></button>
+                    <button onClick={() => delCat(c)} className="text-rose-500 hover:text-rose-700"><Trash2 className="h-3.5 w-3.5" /></button>
                   </td>
                 </tr>
               ))}
-            </tbody>
-          </table>
-        </div>
+          </tbody>
+        </table>
       </div>
     </div>
   );
 }
 
-function CatForm({ name, setName, active, setActive, operatorId, setOperatorId, serviceGroup, setServiceGroup, operators, busy, saveCat, resetForm, editId, frontend }: any) {
+function CatForm({ name, setName, active, setActive, busy, saveCat, resetForm, editId }: any) {
   return (
     <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
       <p className="mb-3 flex items-center gap-2 text-sm font-bold">{editId ? <Pencil className="h-4 w-4 text-india-green" /> : <Plus className="h-4 w-4 text-india-green" />} {editId ? "Edit category" : "Add category"}</p>
       <label className="text-[11px] font-semibold text-muted-foreground">Category Name</label>
-      <input className={inp} value={name} onChange={(e) => setName(e.target.value)} placeholder={frontend ? "e.g. B2C Services" : "e.g. Government Services"} onKeyDown={(e) => e.key === "Enter" && saveCat()} />
-      {!frontend && (<>
-      <label className="mt-3 block text-[11px] font-semibold text-muted-foreground">Service group (retailer menu)</label>
-      <select className={inp} value={serviceGroup} onChange={(e) => setServiceGroup(e.target.value)}>
-        <option value="b2c">B2C Services</option>
-        <option value="g2c">G2C Services</option>
-        <option value="state_gov">State Government Services</option>
-        <option value="central_gov">Central Government Services</option>
-        <option value="internal_links">Internal Links</option>
-        <option value="mart">BharatOne Mart - Separate KYC</option>
-      </select>
-      <label className="mt-3 block text-[11px] font-semibold text-muted-foreground">Assign operator (receives applications)</label>
-      <select className={inp} value={operatorId} onChange={(e) => setOperatorId(e.target.value)}>
-        <option value="">Unassigned</option>
-        {operators.map((o: Operator) => <option key={o.id} value={o.id}>{o.name}</option>)}
-      </select>
-      {operators.length === 0 && <p className="mt-1 text-[11px] text-amber-600">No operators yet — create one in User Management (role: Operator).</p>}
-      </>)}
+      <input className={inp} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Government Services" onKeyDown={(e) => e.key === "Enter" && saveCat()} />
       <label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} className="h-4 w-4 accent-[oklch(0.55_0.12_150)]" /> Active</label>
       <div className="mt-4 flex gap-2">
         <Button onClick={saveCat} disabled={busy} className="flex-1 bg-india-green text-white hover:bg-india-green/90">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : editId ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />} {editId ? "Save" : "Add category"}</Button>
@@ -294,13 +247,11 @@ function CategoryOperators({ categoryId, allOperators, onChange }: { categoryId:
   };
 
   const unassigned = allOperators.filter((o) => !rows.some((r) => r.operator_id === o.id));
-  const activeCount = rows.filter((r) => r.is_active).length;
 
   return (
     <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
       <div className="mb-1 flex items-center gap-2 text-sm font-bold"><UserCog className="h-4 w-4 text-india-green" /> Operators handling this category</div>
       <p className="mb-4 text-xs text-muted-foreground">Applications are distributed <b>equally</b> among <b>active</b> operators. Pause one and its pending work is re-split among the rest.</p>
-
       <div className="mb-4 flex flex-wrap items-end gap-2">
         <div className="min-w-[220px] flex-1">
           <label className="text-[11px] font-semibold text-muted-foreground">Add operator</label>
@@ -311,7 +262,6 @@ function CategoryOperators({ categoryId, allOperators, onChange }: { categoryId:
         </div>
         <Button onClick={addOp} disabled={busy || !addId} className="bg-india-green text-white hover:bg-india-green/90">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Assign</Button>
       </div>
-
       {loading ? <div className="py-6 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></div>
         : rows.length === 0 ? <p className="rounded-lg border border-dashed border-border bg-muted/30 px-3 py-6 text-center text-sm text-muted-foreground">No operators assigned yet. Applications for this category won't be routed until you add one.</p>
         : (
@@ -330,7 +280,7 @@ function CategoryOperators({ categoryId, allOperators, onChange }: { categoryId:
                   <td className="px-3 py-2"><Pill on={op.is_active} /></td>
                   <td className="px-3 py-2 text-right whitespace-nowrap">
                     <button onClick={() => toggle(op)} className="mr-3 text-xs font-semibold text-muted-foreground hover:text-foreground">{op.is_active ? "Pause" : "Activate"}</button>
-                    <button onClick={() => remove(op)} className="text-rose-500 hover:text-rose-700"><Trash2 className="inline h-3.5 w-3.5" /></button>
+                    <button onClick={() => remove(op)} className="text-rose-500 hover:text-rose-700"><Trash2 className="h-3.5 w-3.5" /></button>
                   </td>
                 </tr>
               ))}
@@ -338,7 +288,6 @@ function CategoryOperators({ categoryId, allOperators, onChange }: { categoryId:
           </table>
         </div>
       )}
-      <p className="mt-2 text-[11px] text-muted-foreground">{activeCount} active · new applications share equally across them.</p>
     </div>
   );
 }
