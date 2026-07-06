@@ -87,7 +87,7 @@ export function CTA() {
           viewport={{ once: true }}
           className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-saffron via-saffron-glow to-india-green p-10 sm:p-16 text-center shadow-elegant"
         >
-          <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)", backgroundSize: "24px 24px" }} />
+          <div className="pointer-events-none absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)", backgroundSize: "24px 24px" }} />
           <Sparkles className="h-10 w-10 text-primary-foreground mx-auto mb-4" />
           <h2 className="text-3xl sm:text-5xl font-bold text-primary-foreground max-w-2xl mx-auto leading-tight">
             Join Us and Start Your Service Center Today!
@@ -96,11 +96,11 @@ export function CTA() {
             Be the bridge between your community and essential services. Earn while empowering India.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-            <Button size="lg" onClick={() => { window.location.href = "/get-started"; }} className="bg-card text-foreground hover:bg-background shadow-elegant">
+            <Button size="lg" onClick={() => { window.location.href = "/get-started"; }} className="cursor-pointer bg-card text-foreground hover:bg-background shadow-elegant">
               Register for a Center
               <ArrowRight className="h-4 w-4 ml-1" />
             </Button>
-            <Button size="lg" variant="outline" onClick={() => { window.location.href = "/contact"; }} className="bg-transparent border-white/40 text-primary-foreground hover:bg-white/10">
+            <Button size="lg" variant="outline" onClick={() => { window.location.href = "/contact"; }} className="cursor-pointer bg-transparent border-white/40 text-primary-foreground hover:bg-white/10">
               Talk to our team
             </Button>
           </div>
