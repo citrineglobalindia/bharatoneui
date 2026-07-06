@@ -37,18 +37,19 @@ export function SupportCenter() {
     setLoading(true);
     const { data: u } = await supabase.auth.getUser();
     setUid(u.user?.id ?? "");
-    const [t, c, s, sv, p, pr] = await Promise.all([
+    // Category / Sub-Category / Product-Service come from the Service Catalog so the
+    // support ticket matches the admin-managed catalog (Category -> Sub-Category -> Service).
+    const [t, c, s, p, pr] = await Promise.all([
       supabase.from("support_tickets").select("*").order("created_at", { ascending: false }),
-      supabase.from("support_categories").select("id,name").eq("is_active", true).order("sort_order"),
-      supabase.from("support_subcategories").select("id,category_id,name").eq("is_active", true).order("sort_order"),
-      supabase.from("services").select("id,name").eq("is_active", true).order("name"),
-      db.from("support_products").select("id,subcategory_id,name").eq("is_active", true).order("sort_order"),
+      db.from("service_categories").select("id,name").eq("is_active", true).order("sort_order").order("name"),
+      db.from("service_subcategories").select("id,category_id,name").eq("is_active", true).order("sort_order").order("name"),
+      db.from("services").select("id,name,subcategory_id").eq("is_active", true).order("sort_order").order("name"),
       db.from("support_priorities").select("id,name").eq("is_active", true).order("sort_order"),
     ]);
     setRows((t.data as Ticket[]) ?? []);
     const cl = (c.data as Cat[]) ?? [];
     const pl = (pr.data as Prio[]) ?? [];
-    setCats(cl); setSubs((s.data as Sub[]) ?? []); setServices((sv.data as Svc[]) ?? []);
+    setCats(cl); setSubs((s.data as Sub[]) ?? []);
     setProds((p.data as Prod[]) ?? []); setPrios(pl);
     setForm((f) => ({ ...f, categoryId: f.categoryId || (cl[0]?.id ?? ""), priority: f.priority || (pl[0]?.name ?? "Low") }));
     setLoading(false);
