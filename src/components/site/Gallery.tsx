@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { ImageIcon, Sparkles } from "lucide-react";
+import { ImageIcon, Sparkles, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const PLACEHOLDERS: { src?: string; caption: string }[] = [
@@ -14,6 +14,31 @@ const PLACEHOLDERS: { src?: string; caption: string }[] = [
 
 export function Gallery({ embedded = false }: { embedded?: boolean }) {
   const [items, setItems] = useState<{ src?: string; caption: string }[]>(PLACEHOLDERS);
+  const [open, setOpen] = useState<number | null>(null);
+
+  // Only images that actually have a src are openable in the lightbox.
+  const openable = items.map((it, i) => ({ ...it, i })).filter((it) => !!it.src);
+  const openImage = (i: number) => { if (items[i]?.src) setOpen(i); };
+  const step = (dir: 1 | -1) => {
+    if (open === null || openable.length === 0) return;
+    const pos = openable.findIndex((o) => o.i === open);
+    const next = openable[(pos + dir + openable.length) % openable.length];
+    setOpen(next.i);
+  };
+
+  useEffect(() => {
+    if (open === null) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(null);
+      else if (e.key === "ArrowRight") step(1);
+      else if (e.key === "ArrowLeft") step(-1);
+    };
+    window.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => { window.removeEventListener("keydown", onKey); document.body.style.overflow = ""; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, items]);
+
   useEffect(() => {
     let on = true;
     (async () => {
@@ -55,7 +80,8 @@ export function Gallery({ embedded = false }: { embedded?: boolean }) {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.06 }}
-              className="group relative aspect-[4/3] overflow-hidden rounded-2xl border border-border bg-card shadow-soft"
+              onClick={() => openImage(i)}
+              className={`group relative aspect-[4/3] overflow-hidden rounded-2xl border border-border bg-card shadow-soft ${it.src ? "cursor-pointer" : ""}`}
             >
               {it.src ? (
                 <img src={it.src} alt={it.caption} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
@@ -71,6 +97,28 @@ export function Gallery({ embedded = false }: { embedded?: boolean }) {
           ))}
         </div>
       </div>
+
+      {open !== null && items[open]?.src && (
+        <div
+          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm"
+          onClick={() => setOpen(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label={items[open].caption || "Gallery image"}
+        >
+          <button onClick={() => setOpen(null)} aria-label="Close" className="absolute right-4 top-4 grid h-11 w-11 place-items-center rounded-full bg-white/15 text-white hover:bg-white/25"><X className="h-5 w-5" /></button>
+          {openable.length > 1 && (
+            <>
+              <button onClick={(e) => { e.stopPropagation(); step(-1); }} aria-label="Previous" className="absolute left-3 top-1/2 -translate-y-1/2 grid h-11 w-11 place-items-center rounded-full bg-white/15 text-white hover:bg-white/25"><ChevronLeft className="h-6 w-6" /></button>
+              <button onClick={(e) => { e.stopPropagation(); step(1); }} aria-label="Next" className="absolute right-3 top-1/2 -translate-y-1/2 grid h-11 w-11 place-items-center rounded-full bg-white/15 text-white hover:bg-white/25"><ChevronRight className="h-6 w-6" /></button>
+            </>
+          )}
+          <figure onClick={(e) => e.stopPropagation()} className="flex max-h-[92vh] max-w-[92vw] flex-col items-center">
+            <img src={items[open].src} alt={items[open].caption} className="max-h-[86vh] max-w-full rounded-lg object-contain shadow-2xl" />
+            {items[open].caption && <figcaption className="mt-3 text-center text-sm font-semibold text-white/90">{items[open].caption}</figcaption>}
+          </figure>
+        </div>
+      )}
     </section>
   );
 }
