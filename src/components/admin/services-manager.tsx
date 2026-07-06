@@ -23,7 +23,7 @@ type FrontCat = { id: string; name: string };
 
 const emptyForm = {
   id: "", name: "", logo_url: "", redirect_url: "", backend_route: "", service_type: "inlink" as ServiceType,
-  category: "", category_id: "", is_active: true, sort_order: 0, form_schema: [] as FormField[], service_group: "",
+  category: "", category_id: "", subcategory_id: "", is_active: true, sort_order: 0, form_schema: [] as FormField[], service_group: "",
   service_charge: 0, company_commission: 0, distributor_commission: 0, dro_commission: 0, tro_commission: 0, retailer_commission: 0,
   api_endpoint: "", api_method: "POST", api_auth_type: "apikey", api_auth_header: "Authorization", api_secret_ref: "", api_notes: "",
 };
@@ -34,7 +34,7 @@ const TYPE_META: Record<ServiceType, { label: string; icon: React.ReactNode; ton
   backend: { label: "Backend service", icon: <Server className="h-3.5 w-3.5" />, tone: "bg-emerald-100 text-emerald-700" },
 };
 
-export function ServicesManager({ categoryId, subcategoryId, frontend = false, backendOnly = false }: { categoryId?: string; subcategoryId?: string; frontend?: boolean; backendOnly?: boolean } = {}) {
+export function ServicesManager({ categoryId, subcategoryId, subcategories, frontend = false, backendOnly = false }: { categoryId?: string; subcategoryId?: string; subcategories?: { id: string; name: string }[]; frontend?: boolean; backendOnly?: boolean } = {}) {
   const [rows, setRows] = useState<Service[]>([]);
   const [cats, setCats] = useState<Cat[]>([]);
   const [frontCats, setFrontCats] = useState<FrontCat[]>([]);
@@ -110,7 +110,7 @@ export function ServicesManager({ categoryId, subcategoryId, frontend = false, b
         service_group: form.service_type === "backend" ? (form.service_group || null) : null,
         category: (cats.find((c) => c.id === (categoryId || form.category_id))?.name) || form.category || null,
         category_id: categoryId || form.category_id || null,
-        subcategory_id: subcategoryId || null,
+        subcategory_id: subcategoryId || form.subcategory_id || null,
         is_active: form.is_active,
         sort_order: Number(form.sort_order) || 0,
         service_charge: Number(form.service_charge) || 0,
@@ -146,7 +146,7 @@ export function ServicesManager({ categoryId, subcategoryId, frontend = false, b
   const edit = async (s: Service) => {
     const base = { ...emptyForm, id: s.id, name: s.name, logo_url: s.logo_url ?? "", redirect_url: s.redirect_url ?? "",
       backend_route: s.backend_route ?? "", service_type: s.service_type, category: s.category ?? "", category_id: s.category_id ?? "", is_active: s.is_active, sort_order: s.sort_order, form_schema: (s as any).form_schema ?? [],
-      service_charge: s.service_charge ?? 0, company_commission: s.company_commission ?? 0, distributor_commission: s.distributor_commission ?? 0, dro_commission: s.dro_commission ?? 0, tro_commission: s.tro_commission ?? 0, retailer_commission: s.retailer_commission ?? 0, service_group: (s as any).service_group ?? "" };
+      service_charge: s.service_charge ?? 0, company_commission: s.company_commission ?? 0, distributor_commission: s.distributor_commission ?? 0, dro_commission: s.dro_commission ?? 0, tro_commission: s.tro_commission ?? 0, retailer_commission: s.retailer_commission ?? 0, service_group: (s as any).service_group ?? "", subcategory_id: (s as any).subcategory_id ?? "" };
     if (s.service_type === "api") {
       const { data } = await supabase.from("service_api_config").select("*").eq("service_id", s.id).maybeSingle();
       if (data) Object.assign(base, { api_endpoint: data.endpoint ?? "", api_method: data.method ?? "POST", api_auth_type: data.auth_type ?? "apikey", api_auth_header: data.auth_header ?? "Authorization", api_secret_ref: data.secret_ref ?? "", api_notes: data.notes ?? "" });
@@ -185,6 +185,13 @@ export function ServicesManager({ categoryId, subcategoryId, frontend = false, b
         <div className="grid gap-3 sm:grid-cols-2">
           <div><label className="text-xs font-semibold text-muted-foreground">Service name *</label>
             <input className={input} value={form.name} onChange={(e) => set({ name: e.target.value })} placeholder="e.g. AEPS Services" /></div>
+          {subcategories && subcategories.length > 0 && !subcategoryId && (
+            <div><label className="text-xs font-semibold text-muted-foreground">Sub-category (optional)</label>
+              <select className={input} value={form.subcategory_id} onChange={(e) => set({ subcategory_id: e.target.value })}>
+                <option value="">— None —</option>
+                {subcategories.map((sc) => <option key={sc.id} value={sc.id}>{sc.name}</option>)}
+              </select></div>
+          )}
           {form.service_type === "backend" && (
             <div><label className="text-xs font-semibold text-muted-foreground">Service group (retailer menu)</label>
               <select className={input} value={form.service_group} onChange={(e) => set({ service_group: e.target.value })}>

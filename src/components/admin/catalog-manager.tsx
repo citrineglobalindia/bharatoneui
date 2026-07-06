@@ -146,6 +146,12 @@ export function CatalogManager() {
             </div>
           </div>
         </div>
+
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
+          <p className="mb-1 text-sm font-bold">Services in this category</p>
+          <p className="mb-3 text-xs text-muted-foreground">Add <b>Direct</b> / <b>Backend</b> / <b>API</b> services. Assign each to a sub-category (optional).</p>
+          <ServicesManager categoryId={sel.id} subcategories={mySubs.map((s) => ({ id: s.id, name: s.name }))} />
+        </div>
       </div>
     );
   }
