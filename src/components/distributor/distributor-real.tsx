@@ -174,13 +174,13 @@ export function DistributorServicesReal() {
   async function load() { setLoading(true); try { await ensureStaffSession(); const { data } = await supabase.from("services").select("id,name,category,service_type,service_charge,distributor_commission,logo_url,is_active").eq("is_active", true).order("category").order("name"); setRows((data as any[]) ?? []); } finally { setLoading(false); } }
   useEffect(() => { load(); }, []);
 
-  const TYPE_LABEL: Record<string, string> = { inlink: "Redirect", api: "API Integrated", backend: "Backend" };
+  const TYPE_LABEL: Record<string, string> = { inlink: "Direct (My Services)", api: "API (Trending)", backend: "Backend (New Applications)" };
   const TYPE_ICON: Record<string, any> = { inlink: Globe, api: Cpu, backend: Server };
   const TYPES = [
     { key: "all" as const, label: "All", icon: Layers },
-    { key: "inlink" as const, label: "Redirect", icon: Globe },
-    { key: "api" as const, label: "API Integrated", icon: Cpu },
-    { key: "backend" as const, label: "Backend", icon: Server },
+    { key: "inlink" as const, label: "My Services", icon: Globe },
+    { key: "backend" as const, label: "New Applications", icon: Server },
+    { key: "api" as const, label: "Trending Services", icon: Cpu },
   ];
   const tBadge: Record<string, string> = { inlink: "bg-sky-100 text-sky-700", api: "bg-violet-100 text-violet-700", backend: "bg-emerald-100 text-emerald-700" };
 
@@ -245,8 +245,8 @@ export function DistributorServicesReal() {
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         <Stat icon={Layers} label="Total Services" value={rows.length} tone="bg-india-green/10 text-india-green" />
         <Stat icon={FolderTree} label="Categories" value={categories.length} tone="bg-orange-100 text-orange-600" />
-        <Stat icon={Globe} label="Redirect" value={typeCounts.inlink} tone="bg-sky-100 text-sky-600" />
-        <Stat icon={Cpu} label="API Integrated" value={typeCounts.api} tone="bg-violet-100 text-violet-600" />
+        <Stat icon={Globe} label="Direct" value={typeCounts.inlink} tone="bg-sky-100 text-sky-600" />
+        <Stat icon={Cpu} label="API" value={typeCounts.api} tone="bg-violet-100 text-violet-600" />
         <Stat icon={Server} label="Backend" value={typeCounts.backend} tone="bg-emerald-100 text-emerald-600" />
       </div>
 

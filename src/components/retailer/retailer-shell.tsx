@@ -115,9 +115,7 @@ function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: 
             <ul className="space-y-0.5">
               {sec.items.map((it) => {
                 const active = pathname === it.to;
-                const children = it.label === "My Services"
-                  ? frontCats.map((c) => ({ label: c.name, to: `/services?group=${c.id}` }))
-                  : it.children;
+                const children = it.children;
                 if (children && children.length) {
                   const childActive = children.some((ch) => pathname === ch.to);
                   const expanded = openKey === it.to || (openKey === null && (childActive || pathname === it.to));
