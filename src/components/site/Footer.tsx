@@ -378,7 +378,7 @@ export function Footer() {
           </motion.ul>
           <motion.div variants={itemVariants} className="mt-6">
             <div className="overflow-hidden rounded-xl border border-background/15 bg-background/5">
-              <img src="/ratan-tata.jpg" alt="Ratan Naval TATA" className="h-44 w-full object-cover grayscale" />
+              <img src="/ratan-tata.jpg" alt="Ratan Naval TATA" className="h-44 w-full object-cover grayscale" onError={(e) => { const block = e.currentTarget.closest("div")?.parentElement as HTMLElement | null; if (block) block.style.display = "none"; }} />
             </div>
             <p className="mt-2 text-center text-sm font-semibold italic text-background/85">&ldquo;Inspired by Ratan Naval TATA&rdquo;</p>
           </motion.div>
