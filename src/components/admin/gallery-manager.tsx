@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { Loader2, Upload, Trash2, ImageIcon, Eye, EyeOff } from "lucide-react";
+import { Loader2, Upload, Trash2, ImageIcon, Eye, EyeOff, Video } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
 
-type Row = { id: string; image_path: string; caption: string | null; sort_order: number; is_active: boolean };
+type Row = { id: string; image_path: string; caption: string | null; sort_order: number; is_active: boolean; media_type: string };
 
 const publicUrl = (path: string) =>
   supabase.storage.from("gallery").getPublicUrl(path).data.publicUrl;
@@ -15,6 +14,7 @@ export function GalleryManager() {
   const [uploading, setUploading] = useState(false);
   const [caption, setCaption] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLInputElement>(null);
 
   async function load() {
     setLoading(true);
@@ -25,19 +25,27 @@ export function GalleryManager() {
   useEffect(() => { load(); }, []);
 
   const onUpload = async (file: File) => {
+    const isVideo = file.type.startsWith("video/");
+    // Storage / plan guard: keep videos reasonable (100 MB).
+    if (isVideo && file.size > 100 * 1024 * 1024) {
+      toast.error("Video too large", { description: "Maximum size is 100 MB." });
+      return;
+    }
     setUploading(true);
     try {
-      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+      const ext = (file.name.split(".").pop() || (isVideo ? "mp4" : "jpg")).toLowerCase();
       const path = `${crypto.randomUUID()}.${ext}`;
       const { error: upErr } = await supabase.storage.from("gallery").upload(path, file, { contentType: file.type || undefined });
       if (upErr) { toast.error("Upload failed", { description: upErr.message }); return; }
       const { error: insErr } = await supabase.from("gallery_images").insert({
         image_path: path, caption: caption.trim() || null, sort_order: rows.length,
+        media_type: isVideo ? "video" : "image",
       });
       if (insErr) { toast.error("Save failed", { description: insErr.message }); return; }
-      toast.success("Image added to gallery");
+      toast.success(isVideo ? "Video added to gallery" : "Image added to gallery");
       setCaption("");
       if (fileRef.current) fileRef.current.value = "";
+      if (videoRef.current) videoRef.current.value = "";
       load();
     } finally { setUploading(false); }
   };
@@ -57,18 +65,23 @@ export function GalleryManager() {
   return (
     <div className="space-y-6">
       <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
-        <p className="mb-3 flex items-center gap-2 text-sm font-bold"><ImageIcon className="h-4 w-4 text-india-green" /> Add gallery image</p>
-        <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+        <p className="mb-3 flex items-center gap-2 text-sm font-bold"><ImageIcon className="h-4 w-4 text-india-green" /> Add gallery image or video</p>
+        <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end">
           <div>
             <label className="text-[11px] font-semibold text-muted-foreground">Caption (optional)</label>
             <input value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="e.g. Service Center Inauguration"
               className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm" />
           </div>
-          <label className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-india-green px-4 h-10 text-sm font-semibold text-white hover:bg-india-green/90">
+          <label className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-india-green px-4 h-10 text-sm font-semibold text-white hover:bg-india-green/90 disabled:opacity-60">
             {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} Upload image
-            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && onUpload(e.target.files[0])} />
+            <input ref={fileRef} type="file" accept="image/*" disabled={uploading} className="hidden" onChange={(e) => e.target.files?.[0] && onUpload(e.target.files[0])} />
+          </label>
+          <label className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-india-green bg-background px-4 h-10 text-sm font-semibold text-india-green hover:bg-india-green/5 disabled:opacity-60">
+            {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Video className="h-4 w-4" />} Upload video
+            <input ref={videoRef} type="file" accept="video/*" disabled={uploading} className="hidden" onChange={(e) => e.target.files?.[0] && onUpload(e.target.files[0])} />
           </label>
         </div>
+        <p className="mt-2 text-[11px] text-muted-foreground">Videos up to 100 MB (MP4 recommended). Both appear in the public Gallery.</p>
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
@@ -81,8 +94,15 @@ export function GalleryManager() {
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {rows.map((r) => (
               <div key={r.id} className={`overflow-hidden rounded-xl border border-border ${r.is_active ? "" : "opacity-50"}`}>
-                <div className="aspect-[4/3] bg-muted">
-                  <img src={publicUrl(r.image_path)} alt={r.caption ?? ""} className="h-full w-full object-cover" />
+                <div className="relative aspect-[4/3] bg-muted">
+                  {r.media_type === "video" ? (
+                    <>
+                      <video src={publicUrl(r.image_path)} className="h-full w-full object-cover" muted preload="metadata" />
+                      <span className="absolute left-1.5 top-1.5 inline-flex items-center gap-1 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold text-white"><Video className="h-3 w-3" /> Video</span>
+                    </>
+                  ) : (
+                    <img src={publicUrl(r.image_path)} alt={r.caption ?? ""} className="h-full w-full object-cover" />
+                  )}
                 </div>
                 <div className="p-2">
                   <p className="truncate text-xs font-medium">{r.caption || "—"}</p>
