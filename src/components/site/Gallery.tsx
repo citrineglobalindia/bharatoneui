@@ -100,7 +100,7 @@ export function Gallery({ embedded = false }: { embedded?: boolean }) {
 
       {open !== null && items[open]?.src && (
         <div
-          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/85 p-2 sm:p-3 backdrop-blur-sm"
           onClick={() => setOpen(null)}
           role="dialog"
           aria-modal="true"
@@ -113,9 +113,9 @@ export function Gallery({ embedded = false }: { embedded?: boolean }) {
               <button onClick={(e) => { e.stopPropagation(); step(1); }} aria-label="Next" className="absolute right-3 top-1/2 -translate-y-1/2 grid h-11 w-11 place-items-center rounded-full bg-white/15 text-white hover:bg-white/25"><ChevronRight className="h-6 w-6" /></button>
             </>
           )}
-          <figure onClick={(e) => e.stopPropagation()} className="flex max-h-[92vh] max-w-[92vw] flex-col items-center">
-            <img src={items[open].src} alt={items[open].caption} className="max-h-[86vh] max-w-full rounded-lg object-contain shadow-2xl" />
-            {items[open].caption && <figcaption className="mt-3 text-center text-sm font-semibold text-white/90">{items[open].caption}</figcaption>}
+          <figure onClick={(e) => e.stopPropagation()} className="flex max-h-[98vh] max-w-[98vw] flex-col items-center">
+            <img src={items[open].src} alt={items[open].caption} className="max-h-[92vh] w-auto max-w-[98vw] rounded-lg object-contain shadow-2xl" />
+            {items[open].caption && <figcaption className="mt-2 text-center text-sm font-semibold text-white/90">{items[open].caption}</figcaption>}
           </figure>
         </div>
       )}
