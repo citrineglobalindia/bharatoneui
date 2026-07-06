@@ -125,13 +125,11 @@ export function SupportCenter() {
               <option value="">{form.categoryId ? "Select sub-category" : "Select a category first"}</option>
               {subs.filter((s) => s.category_id === form.categoryId).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
-            {prods.filter((p) => p.subcategory_id === form.subcategoryId).length > 0 && (<>
-              <label className="mt-3 block text-[11px] font-semibold text-muted-foreground">Product / Service</label>
-              <select className={inp} value={form.product} onChange={(e) => setForm({ ...form, product: e.target.value })}>
-                <option value="">Select product / service (optional)</option>
-                {prods.filter((p) => p.subcategory_id === form.subcategoryId).map((p) => <option key={p.id} value={p.name}>{p.name}</option>)}
-              </select>
-            </>)}
+            <label className="mt-3 block text-[11px] font-semibold text-muted-foreground">Product / Service</label>
+            <select className={inp} value={form.product} onChange={(e) => setForm({ ...form, product: e.target.value })} disabled={!form.subcategoryId}>
+              <option value="">{!form.subcategoryId ? "Select a sub-category first" : (prods.filter((p) => p.subcategory_id === form.subcategoryId).length ? "Select product / service (optional)" : "No products / services for this sub-category")}</option>
+              {prods.filter((p) => p.subcategory_id === form.subcategoryId).map((p) => <option key={p.id} value={p.name}>{p.name}</option>)}
+            </select>
             <label className="mt-3 block text-[11px] font-semibold text-muted-foreground">Subject</label>
             <input className={inp} placeholder="Brief summary" value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} />
             <label className="mt-3 block text-[11px] font-semibold text-muted-foreground">Describe the issue</label>
