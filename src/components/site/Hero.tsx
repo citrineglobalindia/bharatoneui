@@ -1,8 +1,74 @@
-import { motion, useInView } from "framer-motion";
+import { motion, AnimatePresence, useInView } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Sparkles, ShieldCheck, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 import heroImg from "@/assets/hero-citizens.jpg";
+
+// Admin-managed hero carousel. Falls back to the bundled default image when no
+// hero images have been uploaded. Auto-scrolls continuously through all images.
+function HeroCarousel() {
+  const [slides, setSlides] = useState<{ src: string; caption: string }[]>([
+    { src: heroImg, caption: "Indian citizens using BharatOne digital services on mobile" },
+  ]);
+  const [idx, setIdx] = useState(0);
+
+  useEffect(() => {
+    let on = true;
+    (async () => {
+      const { data } = await supabase
+        .from("hero_images")
+        .select("image_path, caption")
+        .eq("is_active", true)
+        .order("sort_order")
+        .order("created_at");
+      if (!on || !data || data.length === 0) return;
+      setSlides(
+        (data as { image_path: string; caption: string | null }[]).map((d) => ({
+          src: supabase.storage.from("gallery").getPublicUrl(d.image_path).data.publicUrl,
+          caption: d.caption ?? "BharatOne services",
+        })),
+      );
+      setIdx(0);
+    })();
+    return () => { on = false; };
+  }, []);
+
+  useEffect(() => {
+    if (slides.length <= 1) return;
+    const t = setInterval(() => setIdx((i) => (i + 1) % slides.length), 4000);
+    return () => clearInterval(t);
+  }, [slides.length]);
+
+  return (
+    <div className="relative rounded-3xl overflow-hidden shadow-elegant border-4 border-card aspect-[4/3]">
+      <AnimatePresence mode="popLayout">
+        <motion.img
+          key={idx}
+          src={slides[idx].src}
+          alt={slides[idx].caption}
+          initial={{ opacity: 0, scale: 1.04 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.98 }}
+          transition={{ duration: 0.8, ease: "easeInOut" }}
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+      </AnimatePresence>
+      {slides.length > 1 && (
+        <div className="absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 gap-1.5">
+          {slides.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setIdx(i)}
+              aria-label={`Go to slide ${i + 1}`}
+              className={`h-1.5 rounded-full transition-all ${i === idx ? "w-5 bg-white" : "w-1.5 bg-white/60 hover:bg-white/80"}`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function Hero() {
   return (
@@ -102,35 +168,7 @@ export function Hero() {
           className="relative"
         >
           <div className="absolute inset-0 bg-gradient-to-tr from-saffron/30 to-india-green/30 blur-2xl -z-10" />
-          <div className="relative rounded-3xl overflow-hidden shadow-elegant border-4 border-card">
-            <img
-              src={heroImg}
-              alt="Indian citizens using BharatOne digital services on mobile"
-              width={1280}
-              height={960}
-              className="w-full h-auto"
-            />
-          </div>
-
-          {/* floating cards */}
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.8 }}
-            className="absolute -left-3 sm:-left-8 top-1/4 glass border border-border rounded-2xl px-4 py-3 shadow-elegant hidden sm:block"
-          >
-            <div className="text-xs text-muted-foreground">Active Centers</div>
-            <div className="font-display font-bold text-2xl text-saffron">1,000+</div>
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 1 }}
-            className="absolute -right-3 sm:-right-8 bottom-10 glass border border-border rounded-2xl px-4 py-3 shadow-elegant hidden sm:block"
-          >
-            <div className="text-xs text-muted-foreground">Citizens Served</div>
-            <div className="font-display font-bold text-2xl text-india-green">10L+</div>
-          </motion.div>
+          <HeroCarousel />
         </motion.div>
       </div>
     </section>
