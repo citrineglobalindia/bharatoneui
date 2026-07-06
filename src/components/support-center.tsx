@@ -80,11 +80,14 @@ export function SupportCenter() {
       return toast.error("Attachment upload failed", { description: e instanceof Error ? e.message : String(e) });
     }
 
-    const { error } = await db.from("support_tickets").insert({ user_id: u.user.id, user_name: me.name, user_role: me.role, department: form.department || null, service: form.service || null, category: catName, subcategory: subName, product: form.product || null, priority: form.priority || "Low", subject: form.subject.trim(), body: form.body || null, attachments });
+    const { data: created, error } = await db.from("support_tickets")
+      .insert({ user_id: u.user.id, user_name: me.name, user_role: me.role, category: catName, subcategory: subName, product: form.product || null, priority: "Low", subject: form.subject.trim(), body: form.body || null, attachments })
+      .select("ticket_no").single();
     setSending(false);
     if (error) return toast.error("Couldn't raise ticket", { description: error.message });
-    toast.success("Ticket raised", { description: "Our team will respond shortly." });
-    setForm({ department: DEPARTMENTS[0], service: "", categoryId: cats[0]?.id ?? "", subcategoryId: "", product: "", priority: prios[0]?.name ?? "Low", subject: "", body: "" });
+    const no = (created as any)?.ticket_no;
+    toast.success("Ticket raised" + (no ? ` — ${no}` : ""), { description: no ? `Your support ticket ${no} has been created. Our team will respond shortly.` : "Our team will respond shortly." });
+    setForm({ department: DEPARTMENTS[0], service: "", categoryId: cats[0]?.id ?? "", subcategoryId: "", product: "", priority: "Low", subject: "", body: "" });
     setFiles([]); load();
   };
   const inp = "h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-india-green/30";
@@ -112,15 +115,8 @@ export function SupportCenter() {
         <div className="grid gap-5 lg:grid-cols-[360px_1fr] items-start">
           <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
             <p className="mb-3 flex items-center gap-2 text-sm font-bold"><Plus className="h-4 w-4 text-india-green" /> Raise a Ticket</p>
-            <label className="text-[11px] font-semibold text-muted-foreground">Department</label>
-            <select className={inp} value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })}>{DEPARTMENTS.map((d) => <option key={d}>{d}</option>)}</select>
-            <label className="mt-3 block text-[11px] font-semibold text-muted-foreground">Service</label>
-            <select className={inp} value={form.service} onChange={(e) => setForm({ ...form, service: e.target.value })}>
-              <option value="">Select service (optional)</option>
-              {services.map((s) => <option key={s.id} value={s.name}>{s.name}</option>)}
-            </select>
-            <label className="mt-3 block text-[11px] font-semibold text-muted-foreground">Category</label>
-            <select className={inp} value={form.categoryId} onChange={(e) => setForm({ ...form, categoryId: e.target.value, subcategory: "" })}>
+            <label className="text-[11px] font-semibold text-muted-foreground">Category</label>
+            <select className={inp} value={form.categoryId} onChange={(e) => setForm({ ...form, categoryId: e.target.value, subcategoryId: "", product: "" })}>
               <option value="">Select category</option>
               {cats.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
@@ -136,10 +132,6 @@ export function SupportCenter() {
                 {prods.filter((p) => p.subcategory_id === form.subcategoryId).map((p) => <option key={p.id} value={p.name}>{p.name}</option>)}
               </select>
             </>)}
-            <label className="mt-3 block text-[11px] font-semibold text-muted-foreground">Priority</label>
-            <select className={inp} value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })}>
-              {(prios.length ? prios.map((p) => p.name) : ["Low", "Medium", "High", "Critical"]).map((n) => <option key={n} value={n}>{n}</option>)}
-            </select>
             <label className="mt-3 block text-[11px] font-semibold text-muted-foreground">Subject</label>
             <input className={inp} placeholder="Brief summary" value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} />
             <label className="mt-3 block text-[11px] font-semibold text-muted-foreground">Describe the issue</label>
