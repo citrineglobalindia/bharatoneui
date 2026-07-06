@@ -9,6 +9,7 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 
+import { useEffect } from "react";
 import appCss from "../styles.css?url";
 import { Toaster } from "sonner";
 import { LiveChatWidget } from "@/components/live-chat-widget";
@@ -38,6 +39,26 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
+
+  // Auto-recover from stale chunk / dynamic-import failures that happen right after
+  // a new deploy (old cached page requests JS chunk hashes that no longer exist).
+  // Reload once so the browser fetches the fresh build.
+  useEffect(() => {
+    const msg = String((error as any)?.message || error || "");
+    const isChunkError = /dynamically imported module|Loading chunk|ChunkLoadError|Failed to fetch|Importing a module script failed|error loading dynamically imported module/i.test(msg)
+      || (error as any)?.name === "ChunkLoadError";
+    if (isChunkError) {
+      try {
+        if (!sessionStorage.getItem("bo:chunk-reloaded")) {
+          sessionStorage.setItem("bo:chunk-reloaded", "1");
+          window.location.reload();
+          return;
+        }
+      } catch { /* ignore */ }
+    } else {
+      try { sessionStorage.removeItem("bo:chunk-reloaded"); } catch { /* ignore */ }
+    }
+  }, [error]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
