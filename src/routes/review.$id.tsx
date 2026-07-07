@@ -23,10 +23,19 @@ export const Route = createFileRoute("/review/$id")({
 function fileKind(path?: string | null): "image" | "video" | "pdf" | "other" {
   if (!path) return "other";
   const ext = path.split("?")[0].split(".").pop()?.toLowerCase() ?? "";
-  if (["jpg", "jpeg", "png", "webp", "gif"].includes(ext)) return "image";
-  if (["webm", "mp4", "mov", "ogg", "m4v"].includes(ext)) return "video";
+  if (["jpg", "jpeg", "jfif", "pjpeg", "png", "webp", "gif", "bmp", "tif", "tiff", "heic", "heif", "avif", "svg"].includes(ext)) return "image";
+  if (["webm", "mp4", "mov", "ogg", "m4v", "avi", "mkv", "3gp", "quicktime"].includes(ext)) return "video";
   if (ext === "pdf") return "pdf";
   return "other";
+}
+// Robust document preview: renders image / video / pdf correctly, and falls
+// back to an embedded viewer when an image can't be decoded (e.g. HEIC).
+function DocPreview({ url, kind, label }: { url: string; kind: string; label: string }) {
+  const [imgFailed, setImgFailed] = useState(false);
+  if (kind === "video") return <video src={url} controls autoPlay className="max-h-full max-w-full rounded-lg bg-black" />;
+  if (kind === "image" && !imgFailed) return <img src={url} alt={label} onError={() => setImgFailed(true)} className="max-h-full max-w-full object-contain" />;
+  // pdf, unknown, or an image the browser couldn't render → embed it.
+  return <iframe src={url} title={label} className="h-full w-full rounded-lg bg-white" />;
 }
 function typeLabel(t?: string) { return t === "old" ? "OLD (JSKO Migration)" : t === "distributor" ? "Distributor" : "Retailer"; }
 function statusPill(s: string) {
@@ -440,9 +449,7 @@ function ReviewPage() {
             </div>
           </div>
           <div className="flex flex-1 items-center justify-center overflow-auto p-4" onClick={(e) => e.stopPropagation()}>
-            {lightbox.kind === "image" ? <img src={lightbox.url} alt={lightbox.label} className="max-h-full max-w-full object-contain" />
-              : lightbox.kind === "video" ? <video src={lightbox.url} controls autoPlay className="max-h-full max-w-full rounded-lg bg-black" />
-              : <iframe src={lightbox.url} title={lightbox.label} className="h-full w-full rounded-lg bg-white" />}
+            <DocPreview url={lightbox.url} kind={lightbox.kind} label={lightbox.label} />
           </div>
         </div>
       )}

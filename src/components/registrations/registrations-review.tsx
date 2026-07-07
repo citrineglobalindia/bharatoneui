@@ -1107,8 +1107,8 @@ export function RegistrationsReview() {
 function fileKind(path?: string | null): "image" | "video" | "pdf" | "other" {
   if (!path) return "other";
   const ext = path.split("?")[0].split(".").pop()?.toLowerCase() ?? "";
-  if (["jpg", "jpeg", "png", "webp", "gif"].includes(ext)) return "image";
-  if (["webm", "mp4", "mov", "ogg", "m4v"].includes(ext)) return "video";
+  if (["jpg", "jpeg", "jfif", "pjpeg", "png", "webp", "gif", "bmp", "tif", "tiff", "heic", "heif", "avif", "svg"].includes(ext)) return "image";
+  if (["webm", "mp4", "mov", "ogg", "m4v", "avi", "mkv", "3gp", "quicktime"].includes(ext)) return "video";
   if (ext === "pdf") return "pdf";
   return "other";
 }
