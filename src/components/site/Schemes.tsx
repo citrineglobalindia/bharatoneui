@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Heart, GraduationCap, Users, ArrowRight, Sparkles, Quote, Star, X, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 
 const schemes = [
   {
@@ -111,7 +112,7 @@ export function CTA() {
   );
 }
 
-type Award = { name: string; logo: string; certificate: string };
+type Award = { name: string; logo: string; certificate?: string };
 
 const AWARDS: Award[] = [
   { name: "ELEVATE 2025", logo: "/awards/elevate-2025.png", certificate: "/awards/elevate-2025-certificate.jpg" },
@@ -121,8 +122,32 @@ const AWARDS: Award[] = [
 ];
 
 export function Awards() {
+  const [awards, setAwards] = useState<Award[]>(AWARDS);
   const [active, setActive] = useState<Award | null>(null);
   const [zoom, setZoom] = useState(1);
+
+  // Admin-managed awards override the defaults when present.
+  useEffect(() => {
+    let on = true;
+    (async () => {
+      const { data } = await supabase
+        .from("awards")
+        .select("name, logo_path, certificate_path")
+        .eq("is_active", true)
+        .order("sort_order")
+        .order("created_at");
+      if (!on || !data || data.length === 0) return;
+      const url = (p: string) => supabase.storage.from("gallery").getPublicUrl(p).data.publicUrl;
+      setAwards(
+        (data as { name: string; logo_path: string; certificate_path: string | null }[]).map((d) => ({
+          name: d.name,
+          logo: url(d.logo_path),
+          certificate: d.certificate_path ? url(d.certificate_path) : undefined,
+        })),
+      );
+    })();
+    return () => { on = false; };
+  }, []);
 
   useEffect(() => {
     if (!active) return;
@@ -139,7 +164,7 @@ export function Awards() {
       <div className="container mx-auto px-4 sm:px-6 text-center">
         <h3 className="text-xs uppercase tracking-[0.3em] text-muted-foreground mb-8">Awarded &amp; Recognized By</h3>
         <div className="flex flex-wrap justify-center items-center gap-x-10 gap-y-8 sm:gap-x-16">
-          {AWARDS.map((a, i) => (
+          {awards.map((a, i) => (
             <motion.button
               key={a.name}
               type="button"
@@ -186,7 +211,7 @@ export function Awards() {
           </div>
           <div className="max-h-[88vh] max-w-[92vw] overflow-auto" onClick={(e) => e.stopPropagation()}>
             <img
-              src={active.certificate}
+              src={active.certificate ?? active.logo}
               alt={`${active.name} certificate`}
               style={{ transform: `scale(${zoom})`, transformOrigin: "center top" }}
               className="mx-auto block max-h-[88vh] w-auto max-w-full rounded-lg shadow-2xl transition-transform"

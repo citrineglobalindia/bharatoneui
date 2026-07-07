@@ -85,6 +85,7 @@ import { RolesPermissions } from "@/components/admin/roles-permissions";
 import { SystemSettings } from "@/components/admin/system-settings";
 import { GalleryManager } from "@/components/admin/gallery-manager";
 import { HeroManager } from "@/components/admin/hero-manager";
+import { AwardsManager } from "@/components/admin/awards-manager";
 import { NoticeBoardManager } from "@/components/admin/notice-board-manager";
 import { SupportCategoriesManager } from "@/components/admin/support-categories-manager";
 import { PlatformAnalytics } from "@/components/admin/platform-analytics";
@@ -1156,6 +1157,10 @@ export function AdminWorkspace() {
                 <div>
                   <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted-foreground">Homepage Hero Images</h3>
                   <HeroManager />
+                </div>
+                <div>
+                  <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted-foreground">Awarded &amp; Recognized By</h3>
+                  <AwardsManager />
                 </div>
                 <div>
                   <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted-foreground">Gallery</h3>
