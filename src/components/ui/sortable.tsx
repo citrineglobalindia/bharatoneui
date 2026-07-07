@@ -46,6 +46,44 @@ export function useSort<T>(rows: T[], accessor: (row: T, key: string) => unknown
   return { sorted, sort, toggle };
 }
 
+// Per-column filtering: keeps a { columnKey: text } map and filters rows where
+// each active column's value contains the typed text. Pair with a filter-input
+// row rendered under the header (see <FilterTh/>).
+export function useColumnFilters<T>() {
+  const [filters, setFilters] = useState<Record<string, string>>({});
+  const setFilter = (key: string, v: string) => setFilters((f) => ({ ...f, [key]: v }));
+  const clear = () => setFilters({});
+  const anyActive = Object.values(filters).some((v) => v.trim());
+  const apply = (rows: T[], accessor: (row: T, key: string) => unknown) => {
+    const active = Object.entries(filters).filter(([, v]) => v.trim());
+    if (!active.length) return rows;
+    return rows.filter((r) => active.every(([k, v]) => String(accessor(r, k) ?? "").toLowerCase().includes(v.trim().toLowerCase())));
+  };
+  return { filters, setFilter, clear, anyActive, apply };
+}
+
+export function FilterTh({
+  filterKey, filters, setFilter, className = "", placeholder = "Filter…",
+}: {
+  filterKey?: string;
+  filters: Record<string, string>;
+  setFilter: (key: string, v: string) => void;
+  className?: string;
+  placeholder?: string;
+}) {
+  if (!filterKey) return <th className={className} />;
+  return (
+    <th className={className}>
+      <input
+        value={filters[filterKey] ?? ""}
+        onChange={(e) => setFilter(filterKey, e.target.value)}
+        placeholder={placeholder}
+        className="h-7 w-full min-w-[70px] rounded border border-border bg-background px-2 text-xs font-normal normal-case tracking-normal outline-none focus:ring-1 focus:ring-india-green/40"
+      />
+    </th>
+  );
+}
+
 export function SortTh({
   label, sortKey, sort, onSort, className = "", children,
 }: {

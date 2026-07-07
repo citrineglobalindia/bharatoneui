@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { useSort, SortTh } from "@/components/ui/sortable";
+import { useSort, SortTh, useColumnFilters, FilterTh } from "@/components/ui/sortable";
 import {
   ShieldCheck,
   CreditCard,
@@ -304,15 +304,15 @@ export function RegistrationsReview() {
   }
 
   const exportList = async () => {
-    if (filtered.length === 0) { toast.error("No rows to export"); return; }
+    if (sorted.length === 0) { toast.error("No rows to export"); return; }
     // Fetch the full detail for the visible rows so we can fill every available column.
-    const ids = filtered.map((r) => r.id);
+    const ids = sorted.map((r) => r.id);
     const { data } = await supabase
       .from("retailer_registrations")
       .select("id, application_id, jsko_id, username, first_name, middle_name, surname, pan_number, district, taluk, hobli_name, gram_panchayat, registration_type, rejection_reason, payment_amount, created_at")
       .in("id", ids);
     const byId = new Map((((data as any[]) ?? [])).map((d) => [d.id, d]));
-    const rows = filtered.map((r) => byId.get(r.id) ?? r);
+    const rows = sorted.map((r) => byId.get(r.id) ?? r);
 
     const HEADERS = [
       "Sl.no", "User Name", "Old JSKO Id", "New JSKO ID", "Full Name", "Pan", "District", "Taluka", "Hobli", "Gram Panchayat",
@@ -461,7 +461,8 @@ export function RegistrationsReview() {
           ? (["telecaller", "rejected"] as unknown as typeof TABS)
           : TABS;
 
-  const { sorted, sort, toggle } = useSort(filtered, (r: RegRow, key) => {
+  // Value used for sorting (numeric for amount/date so they order correctly).
+  const sortVal = (r: RegRow, key: string): string | number => {
     switch (key) {
       case "app_id": return r.application_id;
       case "type": return typeLabel(r.registration_type);
@@ -477,7 +478,19 @@ export function RegistrationsReview() {
       case "status": return r.status || "";
       default: return "";
     }
-  });
+  };
+  // Display text used for the per-column filter boxes.
+  const filterVal = (r: RegRow, key: string): string => {
+    switch (key) {
+      case "amount": return r.payment_amount ? String(r.payment_amount) : "";
+      case "date": return new Date(r.created_at).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+      case "status": return (r.status || "").replace(/_/g, " ");
+      default: return String(sortVal(r, key) ?? "");
+    }
+  };
+  const colFilters = useColumnFilters<RegRow>();
+  const colFiltered = useMemo(() => colFilters.apply(filtered, filterVal), [filtered, colFilters.filters]);
+  const { sorted, sort, toggle } = useSort(colFiltered, sortVal);
 
   return (
     <div className="space-y-4">
@@ -569,6 +582,22 @@ export function RegistrationsReview() {
               <SortTh className="whitespace-nowrap px-3 py-2.5" label="Taluk" sortKey="taluk" sort={sort} onSort={toggle} />
               <SortTh className="whitespace-nowrap px-3 py-2.5" label="Status" sortKey="status" sort={sort} onSort={toggle} />
               <th className="sticky right-0 z-20 whitespace-nowrap bg-muted px-3 py-2.5 text-right shadow-[-8px_0_8px_-8px_rgba(0,0,0,0.15)]">Actions</th>
+            </tr>
+            <tr className="bg-muted/30">
+              <FilterTh className="px-2 pb-2" filterKey="app_id" filters={colFilters.filters} setFilter={colFilters.setFilter} />
+              <FilterTh className="px-2 pb-2" filterKey="type" filters={colFilters.filters} setFilter={colFilters.setFilter} />
+              <FilterTh className="px-2 pb-2" filterKey="jsko" filters={colFilters.filters} setFilter={colFilters.setFilter} />
+              <FilterTh className="px-2 pb-2" filterKey="name" filters={colFilters.filters} setFilter={colFilters.setFilter} />
+              <FilterTh className="px-2 pb-2" filterKey="amount" filters={colFilters.filters} setFilter={colFilters.setFilter} />
+              <FilterTh className="px-2 pb-2" filterKey="txn" filters={colFilters.filters} setFilter={colFilters.setFilter} />
+              <th className="px-2 pb-2" />
+              <FilterTh className="px-2 pb-2" filterKey="phone" filters={colFilters.filters} setFilter={colFilters.setFilter} />
+              <FilterTh className="px-2 pb-2" filterKey="email" filters={colFilters.filters} setFilter={colFilters.setFilter} />
+              <FilterTh className="px-2 pb-2" filterKey="date" filters={colFilters.filters} setFilter={colFilters.setFilter} />
+              <FilterTh className="px-2 pb-2" filterKey="district" filters={colFilters.filters} setFilter={colFilters.setFilter} />
+              <FilterTh className="px-2 pb-2" filterKey="taluk" filters={colFilters.filters} setFilter={colFilters.setFilter} />
+              <FilterTh className="px-2 pb-2" filterKey="status" filters={colFilters.filters} setFilter={colFilters.setFilter} />
+              <th className="sticky right-0 z-20 bg-muted px-2 pb-2" />
             </tr>
           </thead>
           <tbody>
