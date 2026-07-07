@@ -119,7 +119,9 @@ function ReviewPage() {
       setForm(data);
       setDocReviews(data.doc_reviews || {});
       const cols: Record<string, string | null> = {
-        selfie: data.selfie_path, shop: data.shop_photo_path, aadhaar: data.aadhaar_doc_path,
+        passport: data.passport_photo_path,
+        selfie: data.selfie_path, shop: data.shop_photo_path, shop_inside: data.shop_photo_inside_path,
+        aadhaar: data.aadhaar_doc_path,
         pan: data.pan_doc_path, police: data.police_verification_path, video: data.video_kyc_path,
         payment: data.payment_screenshot_path,
       };

@@ -180,7 +180,9 @@ export function RegistrationsReview() {
       const fileCols: Record<string, string | null> = {
         pan: data.pan_doc_path,
         aadhaar: data.aadhaar_doc_path,
+        passport: data.passport_photo_path,
         shop: data.shop_photo_path,
+        shop_inside: data.shop_photo_inside_path,
         police: data.police_verification_path,
         selfie: data.selfie_path,
         video: data.video_kyc_path,
