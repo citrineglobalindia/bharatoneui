@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { Wrench, Search, Pencil, IndianRupee, Loader2, Check, X, RefreshCw, Layers, Percent } from "lucide-react";
+import { Wrench, Search, Pencil, IndianRupee, Loader2, Check, X, RefreshCw, Layers, Percent, Download } from "lucide-react";
 import { AccountantShell } from "@/components/accountant/accountant-shell";
 import { PageHeader } from "@/components/retailer/page-header";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
+import { useSort, SortTh } from "@/components/ui/sortable";
+import { exportRowsToCsv } from "@/components/ui/table-toolbar";
 
 export const Route = createFileRoute("/accountant/services")({
   head: () => ({ meta: [{ title: "Services & Commission — BharatOne Accountant" }] }),
@@ -41,6 +43,34 @@ function ServicesPage() {
 
   const cats = useMemo(() => Array.from(new Set(rows.map((r) => r.category).filter(Boolean))) as string[], [rows]);
   const filtered = useMemo(() => rows.filter((r) => (cat === "all" || r.category === cat) && (!q || r.name.toLowerCase().includes(q.toLowerCase()))), [rows, q, cat]);
+  const { sorted, sort, toggle } = useSort(filtered, (s: Svc, key) => {
+    switch (key) {
+      case "service": return s.name;
+      case "category": return s.category ?? "";
+      case "charge": return Number(s.service_charge || 0);
+      case "company": return Number(s.company_commission || 0);
+      case "distributor": return Number(s.distributor_commission || 0);
+      case "dro": return Number(s.dro_commission || 0);
+      case "tro": return Number(s.tro_commission || 0);
+      case "retailer": return Number(s.retailer_commission || 0);
+      default: return "";
+    }
+  });
+  const exportCsv = () => {
+    if (filtered.length === 0) return toast.error("No services to export");
+    exportRowsToCsv(sorted, [
+      { header: "Service", value: (s) => s.name },
+      { header: "Category", value: (s) => s.category ?? "" },
+      { header: "Charge", value: (s) => s.service_charge },
+      { header: "Company %", value: (s) => s.company_commission },
+      { header: "Distributor %", value: (s) => s.distributor_commission },
+      { header: "DRO %", value: (s) => s.dro_commission },
+      { header: "TRO %", value: (s) => s.tro_commission },
+      { header: "Retailer %", value: (s) => s.retailer_commission },
+      { header: "Active", value: (s) => (s.is_active ? "Yes" : "No") },
+    ], `services-commission-${new Date().toISOString().slice(0, 10)}.csv`);
+    toast.success("Exported", { description: `${sorted.length} rows` });
+  };
 
   const openEdit = (s: Svc) => { setEdit(s); setForm({ service_charge: s.service_charge, company_commission: s.company_commission, distributor_commission: s.distributor_commission, dro_commission: s.dro_commission, tro_commission: s.tro_commission, retailer_commission: s.retailer_commission }); };
   const charge = Number(form.service_charge) || 0;
@@ -77,17 +107,18 @@ function ServicesPage() {
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><input className={inp + " w-56 pl-8"} placeholder="Search service" value={q} onChange={(e) => setQ(e.target.value)} /></div>
           <select className={inp + " w-48"} value={cat} onChange={(e) => setCat(e.target.value)}><option value="all">All categories</option>{cats.map((c) => <option key={c} value={c}>{c}</option>)}</select>
+          <button onClick={exportCsv} className="ml-auto inline-flex items-center gap-1.5 rounded-lg bg-india-green px-3 h-9 text-sm font-semibold text-white hover:bg-india-green/90"><Download className="h-4 w-4" /> Export</button>
         </div>
 
         <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-soft">
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
-              <tr><th className="px-3 py-2">Service</th><th className="px-3 py-2">Category</th><th className="px-3 py-2">Charge</th><th className="px-3 py-2">Company</th><th className="px-3 py-2">Distrib.</th><th className="px-3 py-2">DRO</th><th className="px-3 py-2">TRO</th><th className="px-3 py-2">Retailer</th><th className="px-3 py-2 text-right">Edit</th></tr>
+              <tr><SortTh className="px-3 py-2" label="Service" sortKey="service" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Category" sortKey="category" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Charge" sortKey="charge" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Company" sortKey="company" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Distrib." sortKey="distributor" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="DRO" sortKey="dro" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="TRO" sortKey="tro" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Retailer" sortKey="retailer" sort={sort} onSort={toggle} /><th className="px-3 py-2 text-right">Edit</th></tr>
             </thead>
             <tbody>
               {loading ? <tr><td colSpan={9} className="px-3 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr>
-                : filtered.length === 0 ? <tr><td colSpan={9} className="px-3 py-10 text-center text-muted-foreground">No services. Admin can add them in Service Catalog.</td></tr>
-                : filtered.map((s) => (<tr key={s.id} className="border-t border-border">
+                : sorted.length === 0 ? <tr><td colSpan={9} className="px-3 py-10 text-center text-muted-foreground">No services. Admin can add them in Service Catalog.</td></tr>
+                : sorted.map((s) => (<tr key={s.id} className="border-t border-border">
                   <td className="px-3 py-2 font-semibold">{s.name}{!s.is_active && <span className="ml-1 text-[10px] text-muted-foreground">(off)</span>}</td>
                   <td className="px-3 py-2 text-muted-foreground">{s.category ?? "—"}</td>
                   <td className="px-3 py-2 font-semibold">{inr(s.service_charge)}</td>
