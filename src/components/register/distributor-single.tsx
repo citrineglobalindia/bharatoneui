@@ -73,7 +73,7 @@ export function DistributorSinglePage({
   submitting = false,
   error = null,
 }: {
-  onSubmit: (data: DistributorFormData, formFile: File) => void | Promise<void>;
+  onSubmit: (data: DistributorFormData, files: { form: File; bankCopy: File; aadhaar: File; pan: File }) => void | Promise<void>;
   submitting?: boolean;
   error?: string | null;
 }) {
@@ -81,6 +81,9 @@ export function DistributorSinglePage({
   const [confirmPwd, setConfirmPwd] = useState("");
   const [confirmAccount, setConfirmAccount] = useState("");
   const [formFile, setFormFile] = useState<File | null>(null);
+  const [bankCopyFile, setBankCopyFile] = useState<File | null>(null);
+  const [aadhaarFile, setAadhaarFile] = useState<File | null>(null);
+  const [panFile, setPanFile] = useState<File | null>(null);
   const [attempted, setAttempted] = useState(false);
 
   // Admin-managed downloadable forms (blank form + sample). Fall back to the
@@ -150,7 +153,7 @@ export function DistributorSinglePage({
 
   const errors = useMemo(() => {
     const e: Partial<
-      Record<keyof DistributorFormData | "confirmAccount" | "confirmPwd" | "formFile", string>
+      Record<keyof DistributorFormData | "confirmAccount" | "confirmPwd" | "formFile" | "bankCopyFile" | "aadhaarFile" | "panFile", string>
     > = {};
     if (!form.distributorName.trim()) e.distributorName = "Distributor name is required.";
     if (!form.proprietorName.trim()) e.proprietorName = "Proprietor name is required.";
@@ -171,17 +174,20 @@ export function DistributorSinglePage({
     if (!form.state) e.state = "Select a state.";
     if (!form.district) e.district = "Select a district.";
     if (!formFile) e.formFile = "Upload the filled & signed onboarding form (PDF).";
+    if (!bankCopyFile) e.bankCopyFile = "Upload the bank passbook / cheque copy.";
+    if (!aadhaarFile) e.aadhaarFile = "Upload the Aadhaar card.";
+    if (!panFile) e.panFile = "Upload the PAN card.";
     if (!isPasswordValid(form.password)) e.password = "Password does not meet the requirements.";
     if (confirmPwd !== form.password) e.confirmPwd = "Passwords do not match.";
     return e;
-  }, [form, confirmAccount, confirmPwd, formFile]);
+  }, [form, confirmAccount, confirmPwd, formFile, bankCopyFile, aadhaarFile, panFile]);
 
   const isValid = Object.keys(errors).length === 0;
 
   const handleSubmit = () => {
     setAttempted(true);
-    if (!isValid || !formFile || submitting) return;
-    onSubmit(form, formFile);
+    if (!isValid || !formFile || !bankCopyFile || !aadhaarFile || !panFile || submitting) return;
+    onSubmit(form, { form: formFile, bankCopy: bankCopyFile, aadhaar: aadhaarFile, pan: panFile });
   };
 
   const err = (key: keyof typeof errors) =>
@@ -428,6 +434,34 @@ export function DistributorSinglePage({
             </div>
             {err("formFile")}
           </Field>
+
+          <div className="grid gap-3 sm:grid-cols-3">
+            {([
+              ["Bank Passbook / Cheque Copy", bankCopyFile, setBankCopyFile, "bankCopyFile", <Landmark className="h-4 w-4" />],
+              ["Aadhaar Card", aadhaarFile, setAadhaarFile, "aadhaarFile", <IdCard className="h-4 w-4" />],
+              ["PAN Card", panFile, setPanFile, "panFile", <IdCard className="h-4 w-4" />],
+            ] as [string, File | null, (f: File | null) => void, "bankCopyFile" | "aadhaarFile" | "panFile", JSX.Element][]).map(
+              ([label, file, setter, key, icon]) => (
+                <Field key={key} label={label} required icon={icon} hint={<span className="text-[11px]">Image or PDF</span>}>
+                  <div className="flex items-center gap-2">
+                    <label className="inline-flex h-10 cursor-pointer items-center rounded-lg border border-input bg-background px-3 text-sm font-medium shadow-soft hover:bg-muted">
+                      Choose file
+                      <input
+                        type="file"
+                        accept="image/*,application/pdf"
+                        className="sr-only"
+                        onChange={(e) => setter(e.target.files?.[0] ?? null)}
+                      />
+                    </label>
+                    <span className="truncate max-w-[55%] text-xs text-muted-foreground">
+                      {file ? file.name : "No file chosen"}
+                    </span>
+                  </div>
+                  {err(key)}
+                </Field>
+              ),
+            )}
+          </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Password" required>

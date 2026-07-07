@@ -54,6 +54,9 @@ type DistRow = {
   district: string | null;
   group_name: string | null;
   form_doc_path: string | null;
+  bank_copy_path: string | null;
+  aadhaar_doc_path: string | null;
+  pan_doc_path: string | null;
   status: string;
   rejection_reason: string | null;
   created_at: string;
@@ -86,6 +89,7 @@ export function DistributorApplications() {
   const [detail, setDetail] = useState<DistRow | null>(null);
   const [formUrl, setFormUrl] = useState<string | null>(null);
   const [formState, setFormState] = useState<"none" | "loading" | "ready" | "error">("none");
+  const [kycUrls, setKycUrls] = useState<Record<string, string>>({});
   const [rejecting, setRejecting] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [creds, setCreds] = useState<{ username: string; email: string; password: string } | null>(
@@ -100,7 +104,7 @@ export function DistributorApplications() {
         supabase
           .from("distributor_registrations")
           .select(
-            "id, application_id, distributor_name, proprietor_name, company_name, gst_number, dob, gender, mobile, alt_mobile, email, pan_number, ifsc, bank_name, account_number, address_line, state, district, group_name, form_doc_path, status, rejection_reason, created_at",
+            "id, application_id, distributor_name, proprietor_name, company_name, gst_number, dob, gender, mobile, alt_mobile, email, pan_number, ifsc, bank_name, account_number, address_line, state, district, group_name, form_doc_path, bank_copy_path, aadhaar_doc_path, pan_doc_path, status, rejection_reason, created_at",
           )
           .order("created_at", { ascending: false }),
       );
@@ -121,8 +125,18 @@ export function DistributorApplications() {
   const openDetail = async (r: DistRow) => {
     setDetail(r);
     setFormUrl(null);
+    setKycUrls({});
     setRejecting(false);
     setRejectReason("");
+    // Secure links for the KYC documents (bank copy, Aadhaar, PAN).
+    (async () => {
+      const cols: Record<string, string | null> = { bank: r.bank_copy_path, aadhaar: r.aadhaar_doc_path, pan: r.pan_doc_path };
+      const out: Record<string, string> = {};
+      for (const [k, p] of Object.entries(cols)) {
+        if (p) { const { data: su } = await supabase.storage.from("retailer-kyc").createSignedUrl(p, 3600); if (su?.signedUrl) out[k] = su.signedUrl; }
+      }
+      setKycUrls(out);
+    })();
     if (!r.form_doc_path) {
       setFormState("none");
       return;
@@ -445,6 +459,39 @@ export function DistributorApplications() {
                 ) : (
                   <p className="mt-1 text-xs text-muted-foreground">No form uploaded.</p>
                 )}
+              </div>
+
+              <div className="mt-1 rounded-xl border border-border bg-muted/30 p-3">
+                <p className="mb-2 text-xs font-semibold text-foreground">KYC Documents</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {([
+                    ["Bank Copy", "bank", detail.bank_copy_path],
+                    ["Aadhaar Card", "aadhaar", detail.aadhaar_doc_path],
+                    ["PAN Card", "pan", detail.pan_doc_path],
+                  ] as [string, string, string | null][]).map(([label, key, path]) => {
+                    const url = kycUrls[key];
+                    const isImg = !!path && /\.(jpg|jpeg|jfif|png|webp|gif|bmp|heic|heif|avif)$/i.test(path.split("?")[0]);
+                    return (
+                      <div key={key} className="overflow-hidden rounded-lg border border-border bg-background">
+                        {url ? (
+                          <a href={url} target="_blank" rel="noreferrer" className="block">
+                            {isImg ? (
+                              <img src={url} alt={label} className="h-24 w-full object-cover" />
+                            ) : (
+                              <div className="grid h-24 w-full place-items-center bg-muted/40"><FileText className="h-7 w-7 text-muted-foreground" /></div>
+                            )}
+                          </a>
+                        ) : (
+                          <div className="grid h-24 w-full place-items-center text-[10px] text-muted-foreground">{path ? "Loading…" : "Not uploaded"}</div>
+                        )}
+                        <div className="flex items-center justify-between gap-1 px-2 py-1">
+                          <span className="truncate text-[10px] font-semibold">{label}</span>
+                          {url && <a href={url} target="_blank" rel="noreferrer" className="text-primary"><ExternalLink className="h-3 w-3" /></a>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
               {detail.status === "rejected" && detail.rejection_reason && (

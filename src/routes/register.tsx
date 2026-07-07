@@ -146,7 +146,10 @@ function RegisterFlow() {
     return () => { cancelAnimationFrame(raf); clearTimeout(t); };
   }, [current]);
 
-  const submitDistributor = async (d: DistributorFormData, formFile: File) => {
+  const submitDistributor = async (
+    d: DistributorFormData,
+    files: { form: File; bankCopy: File; aadhaar: File; pan: File },
+  ) => {
     setSubmitting(true);
     setError(null);
     try {
@@ -155,7 +158,10 @@ function RegisterFlow() {
         (typeof crypto !== "undefined" && "randomUUID" in crypto
           ? crypto.randomUUID()
           : String(Date.now()));
-      const formDocPath = await uploadFile(folder, "onboarding-form", formFile);
+      const formDocPath = await uploadFile(folder, "onboarding-form", files.form);
+      const bankCopyPath = await uploadFile(folder, "bank-copy", files.bankCopy);
+      const aadhaarPath = await uploadFile(folder, "aadhaar", files.aadhaar);
+      const panPath = await uploadFile(folder, "pan", files.pan);
 
       const payload = {
         distributor_name: d.distributorName,
@@ -176,6 +182,9 @@ function RegisterFlow() {
         district: d.district,
         group_name: d.groupName,
         form_doc_path: formDocPath,
+        bank_copy_path: bankCopyPath,
+        aadhaar_doc_path: aadhaarPath,
+        pan_doc_path: panPath,
         password: d.password,
       };
 
