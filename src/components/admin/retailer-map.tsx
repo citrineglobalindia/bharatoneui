@@ -42,6 +42,7 @@ export function RetailerMap({ scope }: { scope: "admin" | "distributor" }) {
   const layer = useRef<any>(null);
   const [radius, setRadius] = useState<number>(2);
   const [radiusInput, setRadiusInput] = useState("2");
+  const [proximityOn, setProximityOn] = useState(true);
   const [selected, setSelected] = useState<Pt | null>(null);
   const [geoState, setGeoState] = useState("Karnataka");
   const [geoDist, setGeoDist] = useState("");
@@ -50,7 +51,7 @@ export function RetailerMap({ scope }: { scope: "admin" | "distributor" }) {
 
   async function load() {
     setLoading(true);
-    try { await ensureStaffSession(); const [m, r] = await Promise.all([supabase.rpc(scope === "admin" ? "admin_retailer_map" : "distributor_retailer_map"), supabase.from("app_settings").select("value").eq("key","retailer_radius_km").maybeSingle()]); setPts(((m.data as Pt[]) ?? []).filter((p) => p.lat && p.lng)); const rk = Number((r.data as any)?.value ?? 2); setRadius(rk); setRadiusInput(String(rk)); }
+    try { await ensureStaffSession(); const [m, s] = await Promise.all([supabase.rpc(scope === "admin" ? "admin_retailer_map" : "distributor_retailer_map"), supabase.from("app_settings").select("key,value").in("key", ["retailer_radius_km", "retailer_proximity_enabled"])]); setPts(((m.data as Pt[]) ?? []).filter((p) => p.lat && p.lng)); const rows = (s.data as { key: string; value: string }[]) ?? []; const rk = Number(rows.find((x) => x.key === "retailer_radius_km")?.value ?? 2); setRadius(rk); setRadiusInput(String(rk)); setProximityOn((rows.find((x) => x.key === "retailer_proximity_enabled")?.value ?? "true") === "true"); }
     finally { setLoading(false); }
   }
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [scope]);
@@ -59,6 +60,7 @@ export function RetailerMap({ scope }: { scope: "admin" | "distributor" }) {
   const onState = (st: string) => { setGeoState(st); setGeoDist(""); const g = GEO[st]; if (g) flyTo(g.center, g.zoom); };
   const onDistrict = (d: string) => { setGeoDist(d); setDist(d || "all"); const c = GEO[geoState]?.districts[d]; if (c) flyTo(c, 12); };
   const saveRadius = async () => { const v = Number(radiusInput); if (!v || v <= 0) return toast.error("Enter a valid radius"); const { error } = await supabase.rpc("set_retailer_radius", { p_km: v }); if (error) return toast.error("Failed", { description: error.message }); toast.success(`Radius set to ${v} km`); setRadius(v); load(); };
+  const saveProximity = async (on: boolean) => { setProximityOn(on); const { error } = await supabase.rpc("set_retailer_proximity_enabled", { p_on: on }); if (error) { toast.error("Failed", { description: error.message }); setProximityOn(!on); return; } toast.success(on ? "Same-location block ON — registrations blocked within the radius" : "Same-location block OFF — registrations allowed at the same spot"); };
   const districts = useMemo(() => Array.from(new Set(pts.map((p) => p.district).filter(Boolean))) as string[], [pts]);
   const shown = useMemo(() => pts.filter((p) => (dist === "all" || p.district === dist) && (!q || [p.name, p.shop, p.mobile, p.district].filter(Boolean).some((v) => String(v).toLowerCase().includes(q.toLowerCase())))), [pts, q, dist]);
 
@@ -105,13 +107,13 @@ export function RetailerMap({ scope }: { scope: "admin" | "distributor" }) {
       shown.forEach((p) => {
         const m = L.circleMarker([p.lat, p.lng], { radius: 8, color: "#fff", weight: 2, fillColor: tone[p.status] || "#64748b", fillOpacity: 0.9 });
         m.bindPopup(`<b>${p.name}</b><br/>${p.shop || ""}<br/>${p.district || ""}<br/>${p.mobile || ""}<br/><span style="text-transform:capitalize">${p.status.replace("_", " ")}</span>`);
-        m.on("click", () => { setSelected(p); if (map.current) map.current.setView([p.lat, p.lng], 15, { animate: true }); }); m.addTo(layer.current); L.circle([p.lat, p.lng], { radius: radius * 1000, color: tone[p.status] || "#64748b", weight: 2, dashArray: "6 6", fillColor: tone[p.status] || "#64748b", fillOpacity: 0.12 }).addTo(layer.current); bounds.push([p.lat, p.lng]);
+        m.on("click", () => { setSelected(p); if (map.current) map.current.setView([p.lat, p.lng], 15, { animate: true }); }); m.addTo(layer.current); if (proximityOn) L.circle([p.lat, p.lng], { radius: radius * 1000, color: tone[p.status] || "#64748b", weight: 2, dashArray: "6 6", fillColor: tone[p.status] || "#64748b", fillOpacity: 0.12 }).addTo(layer.current); bounds.push([p.lat, p.lng]);
       });
       if (bounds.length === 1) { map.current.setView(bounds[0], 13); } else if (bounds.length) { map.current.fitBounds(bounds, { padding: [50, 50], maxZoom: 13 }); }
       setTimeout(() => map.current && map.current.invalidateSize(), 100);
     })();
     return () => { cancelled = true; };
-  }, [shown, radius]);
+  }, [shown, radius, proximityOn]);
 
   return (
     <div className="space-y-4">
@@ -122,7 +124,17 @@ export function RetailerMap({ scope }: { scope: "admin" | "distributor" }) {
           <div className="relative"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><input className="h-9 w-52 rounded-lg border border-border bg-background pl-8 pr-2 text-sm outline-none" placeholder="Search retailer" value={q} onChange={(e) => setQ(e.target.value)} /></div>
           <select className="h-9 rounded-lg border border-border bg-background px-2 text-sm" value={dist} onChange={(e) => setDist(e.target.value)}><option value="all">All districts</option>{districts.map((d) => <option key={d} value={d}>{d}</option>)}</select>
           <button onClick={load} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-9 text-sm font-semibold hover:bg-muted"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh</button>
-          {scope === "admin" && <span className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-2 h-9 text-sm"><span className="text-xs font-semibold text-muted-foreground">Radius</span><input type="number" min="0.1" step="0.1" className="h-7 w-14 rounded border border-border bg-background px-1.5 text-sm outline-none" value={radiusInput} onChange={(e) => setRadiusInput(e.target.value)} /><span className="text-xs text-muted-foreground">km</span><button onClick={saveRadius} className="ml-1 rounded bg-india-green px-2 py-1 text-[11px] font-bold text-white">Set</button></span>}
+          {scope === "admin" && (
+            <span className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-2.5 h-9 text-sm" title="When ON, a new registration is blocked if it falls within the radius of an existing approved agent. When OFF, registrations are allowed at the same location.">
+              <span className="text-xs font-semibold text-muted-foreground">Block same location</span>
+              <button type="button" role="switch" aria-checked={proximityOn} aria-label="Block same-location registrations" onClick={() => saveProximity(!proximityOn)}
+                className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${proximityOn ? "bg-india-green" : "bg-muted-foreground/40"}`}>
+                <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${proximityOn ? "left-[18px]" : "left-0.5"}`} />
+              </button>
+              <span className={`text-[11px] font-bold ${proximityOn ? "text-india-green" : "text-muted-foreground"}`}>{proximityOn ? "ON" : "OFF"}</span>
+            </span>
+          )}
+          {scope === "admin" && <span className={`inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-2 h-9 text-sm ${proximityOn ? "" : "opacity-50"}`}><span className="text-xs font-semibold text-muted-foreground">Radius</span><input type="number" min="0.1" step="0.1" disabled={!proximityOn} className="h-7 w-14 rounded border border-border bg-background px-1.5 text-sm outline-none disabled:opacity-60" value={radiusInput} onChange={(e) => setRadiusInput(e.target.value)} /><span className="text-xs text-muted-foreground">km</span><button onClick={saveRadius} disabled={!proximityOn} className="ml-1 rounded bg-india-green px-2 py-1 text-[11px] font-bold text-white disabled:opacity-50">Set</button></span>}
         </div>
       </div>
       <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-border bg-gradient-to-r from-saffron/5 via-card to-india-green/5 p-4 shadow-soft">
