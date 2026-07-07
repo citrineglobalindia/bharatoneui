@@ -1,6 +1,8 @@
+import { useEffect, useState } from "react";
 import { Megaphone } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
-const items = [
+const DEFAULT_ITEMS = [
   "🎉 Shreerakshe Health Card launched — discounts & lifesaving access for your family",
   "🏦 New: Aadhaar Enabled Payment System (AEPS) & Domestic Money Transfer (DMT)",
   "💳 Micro ATM Services, Bill Payments (BBPS) & Mini Banking now available",
@@ -9,6 +11,23 @@ const items = [
 ];
 
 export function HeadlinesMarquee() {
+  const [items, setItems] = useState<string[]>(DEFAULT_ITEMS);
+
+  useEffect(() => {
+    let on = true;
+    (async () => {
+      const { data } = await supabase
+        .from("headlines")
+        .select("text")
+        .eq("is_active", true)
+        .order("sort_order")
+        .order("created_at");
+      if (!on || !data || data.length === 0) return;
+      setItems((data as { text: string }[]).map((d) => d.text));
+    })();
+    return () => { on = false; };
+  }, []);
+
   return (
     <div className="relative bg-gradient-saffron text-primary-foreground overflow-hidden">
       <div className="container mx-auto px-4 flex items-center gap-4 py-2.5">

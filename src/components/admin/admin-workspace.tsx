@@ -86,6 +86,8 @@ import { SystemSettings } from "@/components/admin/system-settings";
 import { GalleryManager } from "@/components/admin/gallery-manager";
 import { HeroManager } from "@/components/admin/hero-manager";
 import { AwardsManager } from "@/components/admin/awards-manager";
+import { HeadlinesManager } from "@/components/admin/headlines-manager";
+import { TestimonialsManager } from "@/components/admin/testimonials-manager";
 import { NoticeBoardManager } from "@/components/admin/notice-board-manager";
 import { SupportCategoriesManager } from "@/components/admin/support-categories-manager";
 import { PlatformAnalytics } from "@/components/admin/platform-analytics";
@@ -1157,6 +1159,14 @@ export function AdminWorkspace() {
                 <div>
                   <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted-foreground">Homepage Hero Images</h3>
                   <HeroManager />
+                </div>
+                <div>
+                  <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted-foreground">Homepage Headlines (ticker)</h3>
+                  <HeadlinesManager />
+                </div>
+                <div>
+                  <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted-foreground">Testimonials (What Our JSKO Has to Say?)</h3>
+                  <TestimonialsManager />
                 </div>
                 <div>
                   <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted-foreground">Awarded &amp; Recognized By</h3>

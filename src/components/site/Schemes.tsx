@@ -234,12 +234,43 @@ export function Awards() {
 }
 
 
+type Testimonial = { name: string; place: string; text: string; initials: string; rating: number };
+
+const DEFAULT_TESTIMONIALS: Testimonial[] = [
+  { name: "Rajesh Kumar", place: "Tumakuru, Karnataka", text: "Becoming a JSKO partner changed my shop. I now serve banking, Aadhaar and bill payments for my whole village — income has doubled.", initials: "RK", rating: 5 },
+  { name: "Lakshmi Devi", place: "Hassan, Karnataka", text: "The onboarding was simple and the support team is always there. My customers trust BharatOne for government services.", initials: "LD", rating: 5 },
+  { name: "Imran Pasha", place: "Kalaburagi, Karnataka", text: "AEPS and money transfer work smoothly even in my small town. The wallet and ledger make daily accounting effortless.", initials: "IP", rating: 5 },
+];
+
+const initialsOf = (name: string) =>
+  name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("") || "•";
+
 export function Testimonials() {
-  const items = [
-    { name: "Rajesh Kumar", place: "Tumakuru, Karnataka", text: "Becoming a JSKO partner changed my shop. I now serve banking, Aadhaar and bill payments for my whole village — income has doubled.", initials: "RK" },
-    { name: "Lakshmi Devi", place: "Hassan, Karnataka", text: "The onboarding was simple and the support team is always there. My customers trust BharatOne for government services.", initials: "LD" },
-    { name: "Imran Pasha", place: "Kalaburagi, Karnataka", text: "AEPS and money transfer work smoothly even in my small town. The wallet and ledger make daily accounting effortless.", initials: "IP" },
-  ];
+  const [items, setItems] = useState<Testimonial[]>(DEFAULT_TESTIMONIALS);
+
+  useEffect(() => {
+    let on = true;
+    (async () => {
+      const { data } = await supabase
+        .from("testimonials")
+        .select("name, place, quote, rating, initials")
+        .eq("is_active", true)
+        .order("sort_order")
+        .order("created_at");
+      if (!on || !data || data.length === 0) return;
+      setItems(
+        (data as { name: string; place: string | null; quote: string; rating: number | null; initials: string | null }[]).map((d) => ({
+          name: d.name,
+          place: d.place ?? "",
+          text: d.quote,
+          initials: d.initials?.trim() || initialsOf(d.name),
+          rating: Math.max(1, Math.min(5, d.rating ?? 5)),
+        })),
+      );
+    })();
+    return () => { on = false; };
+  }, []);
+
   return (
     <section className="py-20 bg-gradient-hero">
       <div className="container mx-auto px-4 sm:px-6">
@@ -265,7 +296,7 @@ export function Testimonials() {
               <Quote className="h-8 w-8 text-saffron/30" />
               <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">{t.text}</p>
               <div className="mt-4 flex items-center gap-0.5 text-saffron">
-                {Array.from({ length: 5 }).map((_, k) => <Star key={k} className="h-4 w-4 fill-current" />)}
+                {Array.from({ length: t.rating }).map((_, k) => <Star key={k} className="h-4 w-4 fill-current" />)}
               </div>
               <div className="mt-4 flex items-center gap-3 border-t border-border pt-4">
                 <div className="grid h-11 w-11 place-items-center rounded-full bg-gradient-saffron text-white font-bold">{t.initials}</div>
