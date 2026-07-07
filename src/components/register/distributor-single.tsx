@@ -107,6 +107,7 @@ export function DistributorSinglePage({
     return () => { on = false; };
   }, []);
   const formHref = forms.form || "/distributor-onboarding-form.pdf";
+  const sampleHref = forms.sample || "/distributor-onboarding-sample.pdf";
 
   const set = <K extends keyof DistributorFormData>(key: K, value: DistributorFormData[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
@@ -491,19 +492,17 @@ export function DistributorSinglePage({
                   Form <Download className="h-3 w-3" />
                 </a>
               </Button>
-              {forms.sample && (
-                <Button
-                  asChild
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  className="h-7 gap-1 rounded-md text-xs font-semibold px-2.5"
-                >
-                  <a href={forms.sample} download target="_blank" rel="noopener noreferrer">
-                    Sample <Download className="h-3 w-3" />
-                  </a>
-                </Button>
-              )}
+              <Button
+                asChild
+                type="button"
+                size="sm"
+                variant="outline"
+                className="h-7 gap-1 rounded-md text-xs font-semibold px-2.5"
+              >
+                <a href={sampleHref} download target="_blank" rel="noopener noreferrer">
+                  Sample <Download className="h-3 w-3" />
+                </a>
+              </Button>
             </div>
           </div>
           <p className="mt-2 text-[11.5px] leading-relaxed text-muted-foreground">
