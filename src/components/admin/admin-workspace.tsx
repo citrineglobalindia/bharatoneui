@@ -29,7 +29,6 @@ import {
   X,
   Zap,
   MessageSquare,
-  IdCard,
   Wallet,
   Network,
   type LucideIcon,
@@ -57,7 +56,6 @@ import { AdminUsers } from "@/components/admin/admin-users";
 import { ServiceCatalogBuilder } from "@/components/admin/service-catalog-builder";
 import { ServicesManager } from "@/components/admin/services-manager";
 import { CatalogManager } from "@/components/admin/catalog-manager";
-import { JskoManager } from "@/components/admin/jsko-manager";
 import { ApplicationLedger } from "@/components/admin/application-ledger";
 import { WalletAdmin } from "@/components/admin/wallet-admin";
 import { WithdrawalsAdmin } from "@/components/admin/withdrawals-admin";
@@ -70,7 +68,6 @@ import { AccountProfile } from "@/components/account/account-profile";
 import { RolePermissionCenter } from "@/components/admin/role-permission-center";
 import { AccountantOperations } from "@/components/admin/accountant-operations";
 import { QcOperations } from "@/components/admin/qc-operations";
-import { RegionalOperations } from "@/components/admin/regional-operations";
 import { RetailerNetworkCenter } from "@/components/admin/retailer-network-center";
 import { DistributorAdmin } from "@/components/admin/distributor-admin";
 import { DistributorApplications } from "@/components/admin/distributor-applications";
@@ -139,8 +136,6 @@ const NAVIGATION: NavGroup[] = [
       { label: "User Management", icon: Users },
       { label: "HRMS", icon: Users },
       { label: "KYC Approvals", icon: ClipboardCheck, badge: "116" },
-      { label: "DRO Operations", icon: MapPin },
-      { label: "TRO Operations", icon: MapPin },
       { label: "Applications", icon: FileSearch },
       { label: "Retailer Network", icon: Store },
       { label: "Distributors", icon: Network },
@@ -173,7 +168,6 @@ const NAVIGATION: NavGroup[] = [
   {
     label: "Platform",
     items: [
-      { label: "Old JSKO IDs", icon: IdCard },
       { label: "Support Center", icon: Headphones },
       { label: "Support Categories", icon: FolderTree },
       { label: "Live Chat", icon: MessageSquare },
@@ -505,9 +499,6 @@ const HEADERLESS_SECTIONS = new Set([
   "Feedback",
   "Accountant Operations",
   "KYC Approvals",
-  "DRO Operations",
-  "TRO Operations",
-  "Old JSKO IDs",
   "Retailer Network",
   "Website Gallery",
 ]);
@@ -1128,8 +1119,6 @@ export function AdminWorkspace() {
               <AdminUsers />
             ) : active === "Service Catalog" ? (
               <CatalogManager />
-            ) : active === "Old JSKO IDs" ? (
-              <JskoManager />
             ) : active === "Applications" ? (
               <ServiceApplicationsView />
             ) : active === "Application Ledger" ? (
@@ -1142,10 +1131,6 @@ export function AdminWorkspace() {
               <RegistrationsReview />
             ) : active === "KYC Approvals" ? (
               <RegistrationsReview />
-            ) : active === "DRO Operations" ? (
-              <RegionalOperations role="DRO" />
-            ) : active === "TRO Operations" ? (
-              <RegionalOperations role="TRO" />
             ) : active === "Retailer Network" ? (
               <RetailerNetworkCenter />
             ) : active === "Distributors" ? (
