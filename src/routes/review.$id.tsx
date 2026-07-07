@@ -118,6 +118,9 @@ function ReviewPage() {
   const [assignee, setAssignee] = useState("");
   const [busy, setBusy] = useState(false);
   const [pdfBusy, setPdfBusy] = useState(false);
+  const [policeIssue, setPoliceIssue] = useState("");
+  const [policeExpiry, setPoliceExpiry] = useState("");
+  const [savingValidity, setSavingValidity] = useState(false);
   const [lightbox, setLightbox] = useState<{ url: string; kind: string; label: string } | null>(null);
   const [creds, setCreds] = useState<{ username: string; email: string; password: string } | null>(null);
 
@@ -127,6 +130,8 @@ function ReviewPage() {
       const { data, error } = await supabase.from("retailer_registrations").select("*").eq("id", id).maybeSingle();
       if (error || !data) { toast.error("Could not load application"); setReg(null); return; }
       setReg(data);
+      setPoliceIssue((data as any).police_issue_date || "");
+      setPoliceExpiry((data as any).police_expiry_date || "");
       setForm(data);
       setDocReviews(data.doc_reviews || {});
       const cols: Record<string, string | null> = {
@@ -382,6 +387,14 @@ function ReviewPage() {
             <p className="flex items-center gap-2 text-sm font-bold"><span className="grid h-6 w-6 place-items-center rounded-lg bg-india-green/10 text-india-green"><FileText className="h-4 w-4" /></span> KYC Documents {(() => { const pend = DOCS.filter((d) => d.path && (docReviews[d.key]?.status ?? "pending") === "pending").length; return pend ? <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-700">{pend} PENDING</span> : null; })()}</p>
             {gps && <span className="flex items-center gap-3 text-xs"><span className="inline-flex items-center gap-1 text-muted-foreground"><MapPin className="h-3.5 w-3.5 text-india-green" /> GPS: <span className="font-mono">{gps}</span></span>{mapUrl && <a href={mapUrl} target="_blank" rel="noreferrer" className="font-semibold text-india-green hover:underline">View Map ↗</a>}</span>}
           </div>
+          {canDocReview && reg.police_verification_path && (
+            <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2 text-xs">
+              <span className="font-bold text-muted-foreground">Police Verification validity:</span>
+              <label className="inline-flex items-center gap-1">Issue<input type="date" value={policeIssue} onChange={(e) => setPoliceIssue(e.target.value)} className="h-8 rounded border border-border bg-background px-2" /></label>
+              <label className="inline-flex items-center gap-1">Valid till<input type="date" value={policeExpiry} onChange={(e) => setPoliceExpiry(e.target.value)} className="h-8 rounded border border-border bg-background px-2" /></label>
+              <Button size="sm" className="h-8 bg-india-green text-white" disabled={savingValidity} onClick={async () => { setSavingValidity(true); try { const { error } = await supabase.rpc("set_police_validity", { reg_id: id, _issue: policeIssue || null, _expiry: policeExpiry || null }); if (error) { toast.error("Failed", { description: error.message }); return; } toast.success("Police validity saved"); load(); } finally { setSavingValidity(false); } }}>{savingValidity ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Save validity"}</Button>
+            </div>
+          )}
           {(canQc || role === "admin") && (
             <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2">
               <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">OCR verify:</span>

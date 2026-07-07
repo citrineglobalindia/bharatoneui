@@ -99,6 +99,10 @@ function KycDocsPage() {
   const policeDocStatus = docReviews["police"]?.status as string | undefined;
   const policeVerified = policeDocStatus === "approved" || (regStatus === "approved" && policeDocStatus !== "rejected");
   const canReplacePolice = !policeVerified; // View-only once verified
+  const policeIssueDate = (reg as any)?.police_issue_date as string | undefined;
+  const policeExpiryDate = (reg as any)?.police_expiry_date as string | undefined;
+  const policeDaysLeft = policeExpiryDate ? Math.ceil((new Date(policeExpiryDate + "T00:00:00").getTime() - Date.now()) / 86400000) : null;
+  const fmtDate = (d?: string) => (d ? new Date(d + "T00:00:00").toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—");
 
   const uploadPolice = async (file: File) => {
     if (file.size > 50 * 1024 * 1024) return toast.error("File too large", { description: "Maximum size is 50 MB." });
@@ -231,6 +235,30 @@ function KycDocsPage() {
               )}
             </div>
           </div>
+          {policePath && (policeIssueDate || policeExpiryDate) && (
+            <div className="mt-3 grid gap-3 rounded-xl border border-border bg-muted/20 p-3 text-xs sm:grid-cols-4">
+              <div><p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Status</p><p className="mt-0.5 font-semibold">{policeVerified ? "Verified" : policeDocStatus === "rejected" ? "Rejected" : "Pending"}</p></div>
+              <div><p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Issue Date</p><p className="mt-0.5 font-semibold">{fmtDate(policeIssueDate)}</p></div>
+              <div><p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Valid Till</p><p className="mt-0.5 font-semibold">{fmtDate(policeExpiryDate)}</p></div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Days Remaining</p>
+                {policeDaysLeft === null ? <p className="mt-0.5 font-semibold">—</p> : policeDaysLeft < 0 ? (
+                  <p className="mt-0.5 font-bold text-rose-600">Expired {Math.abs(policeDaysLeft)} day(s) ago</p>
+                ) : policeDaysLeft <= 30 ? (
+                  <p className="mt-0.5 font-bold text-amber-600">{policeDaysLeft} day(s) left — expiring soon</p>
+                ) : (
+                  <p className="mt-0.5 font-semibold text-india-green">{policeDaysLeft} day(s)</p>
+                )}
+              </div>
+            </div>
+          )}
+          {policeExpiryDate && policeDaysLeft !== null && policeDaysLeft <= 30 && (
+            <div className={`mt-3 rounded-xl border p-3 text-sm ${policeDaysLeft < 0 ? "border-rose-200 bg-rose-50 text-rose-700" : "border-amber-200 bg-amber-50 text-amber-800"}`}>
+              {policeDaysLeft < 0
+                ? `⚠️ Your Police Verification expired on ${fmtDate(policeExpiryDate)}. Please upload a valid certificate.`
+                : `⚠️ Your Police Verification expires on ${fmtDate(policeExpiryDate)} (${policeDaysLeft} day(s) left). Please renew it soon.`}
+            </div>
+          )}
           <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-[13px] text-red-700">
             <p className="font-bold">Important notes:</p>
             <ul className="mt-1.5 list-disc space-y-1 pl-5">
