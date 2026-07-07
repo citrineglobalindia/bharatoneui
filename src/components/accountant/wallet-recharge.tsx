@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Wallet, Loader2, RefreshCw, Search, ShieldCheck, CheckCircle2, BadgeIndianRupee } from "lucide-react";
+import { Wallet, Loader2, RefreshCw, Search, ShieldCheck, CheckCircle2, BadgeIndianRupee, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
+import { useSort, SortTh } from "@/components/ui/sortable";
+import { exportRowsToCsv } from "@/components/ui/table-toolbar";
 
 type RUser = { id: string; name: string; email: string };
 type Recharge = { id: string; wallet_recharge_id: string; user_id: string; amount: number; method: string; note: string | null; created_at: string };
@@ -59,6 +61,34 @@ export function WalletRecharge() {
     const list = !s ? retailers : retailers.filter((r) => r.name.toLowerCase().includes(s) || r.email.toLowerCase().includes(s));
     return list.slice(0, 50);
   }, [retailers, q]);
+
+  const [rq, setRq] = useState("");
+  const filteredRecent = useMemo(() => {
+    const s = rq.trim().toLowerCase();
+    if (!s) return recent;
+    return recent.filter((r) => [r.wallet_recharge_id, names[r.user_id], r.method, String(r.amount)].filter(Boolean).some((v) => String(v).toLowerCase().includes(s)));
+  }, [recent, rq, names]);
+  const { sorted: sortedRecent, sort, toggle } = useSort(filteredRecent, (r: Recharge, key) => {
+    switch (key) {
+      case "wr": return r.wallet_recharge_id;
+      case "retailer": return names[r.user_id] ?? "";
+      case "amount": return Number(r.amount || 0);
+      case "method": return r.method;
+      case "when": return new Date(r.created_at).getTime();
+      default: return "";
+    }
+  });
+  const exportRecent = () => {
+    if (filteredRecent.length === 0) return toast.error("No recharges to export");
+    exportRowsToCsv(sortedRecent, [
+      { header: "Recharge ID", value: (r) => r.wallet_recharge_id },
+      { header: "Retailer", value: (r) => names[r.user_id] ?? "Retailer" },
+      { header: "Amount", value: (r) => r.amount },
+      { header: "Method", value: (r) => r.method },
+      { header: "When", value: (r) => new Date(r.created_at).toLocaleString("en-IN") },
+    ], `wallet-recharges-${new Date().toISOString().slice(0, 10)}.csv`);
+    toast.success("Exported", { description: `${sortedRecent.length} rows` });
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,16 +164,22 @@ export function WalletRecharge() {
         </form>
 
         <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
-          <p className="mb-3 flex items-center gap-2 text-sm font-bold"><Wallet className="h-4 w-4 text-india-green" /> Recent recharges</p>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <p className="flex items-center gap-2 text-sm font-bold"><Wallet className="h-4 w-4 text-india-green" /> Recent recharges</p>
+            <div className="flex items-center gap-2">
+              <div className="relative"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><input value={rq} onChange={(e) => setRq(e.target.value)} placeholder="Search…" className="h-9 w-40 rounded-lg border border-border bg-background pl-8 pr-2 text-sm outline-none" /></div>
+              <button onClick={exportRecent} className="inline-flex items-center gap-1.5 rounded-lg bg-india-green px-3 h-9 text-sm font-semibold text-white hover:bg-india-green/90"><Download className="h-4 w-4" /> Export</button>
+            </div>
+          </div>
           <div className="overflow-x-auto rounded-xl border border-border">
             <table className="w-full text-sm">
               <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
-                <tr><th className="px-3 py-2">Recharge ID</th><th className="px-3 py-2">Retailer</th><th className="px-3 py-2">Amount</th><th className="px-3 py-2">Method</th><th className="px-3 py-2">When</th></tr>
+                <tr><SortTh className="px-3 py-2" label="Recharge ID" sortKey="wr" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Retailer" sortKey="retailer" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Amount" sortKey="amount" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Method" sortKey="method" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="When" sortKey="when" sort={sort} onSort={toggle} /></tr>
               </thead>
               <tbody>
                 {loading ? <tr><td colSpan={5} className="px-3 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr>
-                  : recent.length === 0 ? <tr><td colSpan={5} className="px-3 py-8 text-center text-muted-foreground">No recharges yet.</td></tr>
-                  : recent.map((r) => (
+                  : sortedRecent.length === 0 ? <tr><td colSpan={5} className="px-3 py-8 text-center text-muted-foreground">No recharges yet.</td></tr>
+                  : sortedRecent.map((r) => (
                     <tr key={r.id} className="border-t border-border">
                       <td className="px-3 py-2 font-mono text-[11px] font-semibold text-india-green">{r.wallet_recharge_id}</td>
                       <td className="px-3 py-2">{names[r.user_id] ?? "Retailer"}</td>

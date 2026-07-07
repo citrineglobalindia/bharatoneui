@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { Banknote, Plus, Loader2, RefreshCw, ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
+import { Banknote, Plus, Loader2, RefreshCw, ArrowDownToLine, ArrowUpFromLine, Search, Download } from "lucide-react";
 import { AccountantShell } from "@/components/accountant/accountant-shell";
 import { PageHeader } from "@/components/retailer/page-header";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
+import { useSort, SortTh } from "@/components/ui/sortable";
+import { exportRowsToCsv } from "@/components/ui/table-toolbar";
 
 export const Route = createFileRoute("/accountant/main-recharge")({
   head: () => ({ meta: [{ title: "Main Account Recharge — BharatOne Accountant" }] }),
@@ -51,6 +53,38 @@ function MainRechargePage() {
     debit: ledger.filter((l) => l.direction === "debit").reduce((a, l) => a + Number(l.amount), 0),
   }), [ledger]);
 
+  const [q, setQ] = useState(""); const [from, setFrom] = useState(""); const [to, setTo] = useState("");
+  const filtered = useMemo(() => {
+    const s = q.trim().toLowerCase();
+    const f = from ? new Date(from + "T00:00:00").getTime() : null;
+    const t = to ? new Date(to + "T23:59:59").getTime() : null;
+    return ledger.filter((l) => {
+      if (f || t) { const d = new Date(l.created_at).getTime(); if (f && d < f) return false; if (t && d > t) return false; }
+      if (s && !`${l.reason ?? ""} ${l.direction} ${l.amount}`.toLowerCase().includes(s)) return false;
+      return true;
+    });
+  }, [ledger, q, from, to]);
+  const { sorted, sort, toggle } = useSort(filtered, (l: Ledger, key) => {
+    switch (key) {
+      case "date": return new Date(l.created_at).getTime();
+      case "details": return l.reason ?? l.direction;
+      case "amount": return Number(l.amount || 0);
+      case "balance": return Number(l.balance_after || 0);
+      default: return "";
+    }
+  });
+  const exportCsv = () => {
+    if (filtered.length === 0) return toast.error("No rows to export");
+    exportRowsToCsv(sorted, [
+      { header: "Date", value: (l) => new Date(l.created_at).toLocaleString("en-IN") },
+      { header: "Details", value: (l) => l.reason ?? l.direction },
+      { header: "Direction", value: (l) => l.direction },
+      { header: "Amount", value: (l) => l.amount },
+      { header: "Balance", value: (l) => l.balance_after },
+    ], `main-account-ledger-${new Date().toISOString().slice(0, 10)}.csv`);
+    toast.success("Exported", { description: `${sorted.length} rows` });
+  };
+
   return (
     <AccountantShell>
       <div className="space-y-5">
@@ -76,13 +110,19 @@ function MainRechargePage() {
           </div>
         </div>
 
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex min-w-[200px] flex-1 items-center gap-2 rounded-lg bg-slate-100 px-3 h-9"><Search className="h-4 w-4 text-muted-foreground" /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search details / amount…" className="bg-transparent flex-1 text-sm outline-none placeholder:text-muted-foreground" /></div>
+          <div className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-2 h-9 text-xs"><span className="font-semibold text-muted-foreground">From</span><input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="bg-transparent outline-none" /><span className="font-semibold text-muted-foreground">To</span><input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="bg-transparent outline-none" />{(from || to) && <button onClick={() => { setFrom(""); setTo(""); }} className="ml-1 rounded px-1.5 py-0.5 text-[11px] font-semibold text-rose-600 hover:bg-rose-50">Clear</button>}</div>
+          <button onClick={exportCsv} className="inline-flex items-center gap-1.5 rounded-lg bg-india-green px-3 h-9 text-sm font-semibold text-white hover:bg-india-green/90"><Download className="h-4 w-4" /> Export</button>
+        </div>
+
         <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-soft">
           <table className="w-full text-sm">
-            <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground"><tr><th className="px-3 py-2">Date</th><th className="px-3 py-2">Details</th><th className="px-3 py-2 text-right">Amount</th><th className="px-3 py-2 text-right">Balance</th></tr></thead>
+            <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground"><tr><SortTh className="px-3 py-2" label="Date" sortKey="date" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Details" sortKey="details" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2 text-right" label="Amount" sortKey="amount" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2 text-right" label="Balance" sortKey="balance" sort={sort} onSort={toggle} /></tr></thead>
             <tbody>
               {loading ? <tr><td colSpan={4} className="px-3 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr>
-                : ledger.length === 0 ? <tr><td colSpan={4} className="px-3 py-10 text-center text-muted-foreground">No movements yet. Recharge to add float.</td></tr>
-                : ledger.map((l) => (<tr key={l.id} className="border-t border-border">
+                : sorted.length === 0 ? <tr><td colSpan={4} className="px-3 py-10 text-center text-muted-foreground">No movements yet. Recharge to add float.</td></tr>
+                : sorted.map((l) => (<tr key={l.id} className="border-t border-border">
                   <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">{new Date(l.created_at).toLocaleString("en-IN")}</td>
                   <td className="px-3 py-2"><span className="inline-flex items-center gap-1.5">{l.direction === "credit" ? <ArrowDownToLine className="h-3.5 w-3.5 text-emerald-600" /> : <ArrowUpFromLine className="h-3.5 w-3.5 text-rose-500" />}{l.reason ?? l.direction}</span></td>
                   <td className={`px-3 py-2 text-right font-semibold ${l.direction === "credit" ? "text-emerald-600" : "text-rose-500"}`}>{l.direction === "credit" ? "+" : "−"}{inr(l.amount)}</td>

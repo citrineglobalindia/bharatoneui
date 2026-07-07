@@ -1,7 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Users, ShieldCheck, Clock } from "lucide-react";
+import { Users, ShieldCheck, Clock, Download } from "lucide-react";
+import { toast } from "sonner";
 import { QcShell } from "@/components/qc/qc-shell";
 import { PageHeader, StatusBadge } from "@/components/retailer/page-header";
+import { useSort, SortTh } from "@/components/ui/sortable";
+import { exportRowsToCsv } from "@/components/ui/table-toolbar";
 
 export const Route = createFileRoute("/qc/reviewers")({
   head: () => ({ meta: [{ title: "Reviewers — QC Portal" }] }),
@@ -17,6 +20,31 @@ const REVIEWERS = [
 ];
 
 function ReviewersPage() {
+  const { sorted, sort, toggle } = useSort(REVIEWERS, (r, key) => {
+    switch (key) {
+      case "reviewer": return r.name;
+      case "level": return r.level;
+      case "status": return r.status;
+      case "approved": return r.approved;
+      case "rejected": return r.rejected;
+      case "hold": return r.hold;
+      case "sla": return r.sla;
+      default: return "";
+    }
+  });
+  const exportCsv = () => {
+    exportRowsToCsv(sorted, [
+      { header: "Reviewer", value: (r) => r.name },
+      { header: "ID", value: (r) => r.id },
+      { header: "Level", value: (r) => r.level },
+      { header: "Status", value: (r) => r.status },
+      { header: "Approved", value: (r) => r.approved },
+      { header: "Rejected", value: (r) => r.rejected },
+      { header: "On Hold", value: (r) => r.hold },
+      { header: "SLA", value: (r) => r.sla },
+    ], `qc-reviewers-${new Date().toISOString().slice(0, 10)}.csv`);
+    toast.success("Exported", { description: `${sorted.length} rows` });
+  };
   return (
     <QcShell>
       <div className="space-y-5">
@@ -24,6 +52,7 @@ function ReviewersPage() {
           icon={<Users className="h-5 w-5" />}
           title="Reviewers"
           subtitle="QC team members, workload and SLA performance."
+          actions={<button onClick={exportCsv} className="inline-flex items-center gap-1.5 rounded-lg bg-india-green px-3 h-10 text-sm font-semibold text-white hover:bg-india-green/90"><Download className="h-4 w-4" /> Export</button>}
         />
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -36,17 +65,17 @@ function ReviewersPage() {
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-[11px] uppercase tracking-wider text-muted-foreground">
               <tr>
-                <th className="text-left px-4 py-3 font-bold">Reviewer</th>
-                <th className="text-left px-4 py-3 font-bold">Level</th>
-                <th className="text-left px-4 py-3 font-bold">Status</th>
-                <th className="text-right px-4 py-3 font-bold">Approved</th>
-                <th className="text-right px-4 py-3 font-bold">Rejected</th>
-                <th className="text-right px-4 py-3 font-bold">On Hold</th>
-                <th className="text-right px-4 py-3 font-bold">SLA</th>
+                <SortTh className="text-left px-4 py-3 font-bold" label="Reviewer" sortKey="reviewer" sort={sort} onSort={toggle} />
+                <SortTh className="text-left px-4 py-3 font-bold" label="Level" sortKey="level" sort={sort} onSort={toggle} />
+                <SortTh className="text-left px-4 py-3 font-bold" label="Status" sortKey="status" sort={sort} onSort={toggle} />
+                <SortTh className="text-right px-4 py-3 font-bold" label="Approved" sortKey="approved" sort={sort} onSort={toggle} />
+                <SortTh className="text-right px-4 py-3 font-bold" label="Rejected" sortKey="rejected" sort={sort} onSort={toggle} />
+                <SortTh className="text-right px-4 py-3 font-bold" label="On Hold" sortKey="hold" sort={sort} onSort={toggle} />
+                <SortTh className="text-right px-4 py-3 font-bold" label="SLA" sortKey="sla" sort={sort} onSort={toggle} />
               </tr>
             </thead>
             <tbody>
-              {REVIEWERS.map((r) => (
+              {sorted.map((r) => (
                 <tr key={r.id} className="border-t border-border hover:bg-muted/30">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">

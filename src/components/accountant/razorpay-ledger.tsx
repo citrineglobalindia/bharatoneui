@@ -3,6 +3,9 @@ import { Loader2, RefreshCw, CreditCard, ShieldCheck, Search, ExternalLink, Chec
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
+import { useSort, SortTh } from "@/components/ui/sortable";
+import { exportRowsToCsv } from "@/components/ui/table-toolbar";
+import { Download } from "lucide-react";
 
 type Payment = { id: string; user_id: string | null; purpose: string; amount: number; status: string; order_id: string | null; payment_id: string | null; wallet_recharge_id: string | null; created_at: string };
 
@@ -25,6 +28,8 @@ export function RazorpayLedger() {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"all" | "paid" | "credited" | "failed">("paid");
   const [q, setQ] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
   const [confirmRow, setConfirmRow] = useState<Payment | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -59,10 +64,43 @@ export function RazorpayLedger() {
     return { count: paid.length, total: paid.reduce((a, r) => a + Number(r.amount), 0) };
   }, [rows]);
 
-  const filtered = useMemo(() => rows.filter((r) =>
-    (tab === "all" || r.status === tab) &&
-    (!q || [names[r.user_id ?? ""], r.order_id, r.payment_id, purposeLabel[r.purpose]].filter(Boolean).some((v) => String(v).toLowerCase().includes(q.toLowerCase())))
-  ), [rows, tab, q, names]);
+  const filtered = useMemo(() => {
+    const f = from ? new Date(from + "T00:00:00").getTime() : null;
+    const t = to ? new Date(to + "T23:59:59").getTime() : null;
+    return rows.filter((r) => {
+      if (tab !== "all" && r.status !== tab) return false;
+      if (f || t) { const d = new Date(r.created_at).getTime(); if (f && d < f) return false; if (t && d > t) return false; }
+      if (q && ![names[r.user_id ?? ""], r.order_id, r.payment_id, purposeLabel[r.purpose]].filter(Boolean).some((v) => String(v).toLowerCase().includes(q.toLowerCase()))) return false;
+      return true;
+    });
+  }, [rows, tab, q, from, to, names]);
+
+  const { sorted, sort, toggle } = useSort(filtered, (r: Payment, key) => {
+    switch (key) {
+      case "date": return new Date(r.created_at).getTime();
+      case "retailer": return r.user_id ? (names[r.user_id] ?? "") : "";
+      case "amount": return Number(r.amount || 0);
+      case "status": return statusLabel[r.status] ?? r.status;
+      case "payment": return r.payment_id ?? "";
+      case "recharge": return r.wallet_recharge_id ?? "";
+      default: return "";
+    }
+  });
+
+  const exportCsv = () => {
+    if (filtered.length === 0) return toast.error("No rows to export");
+    exportRowsToCsv(sorted, [
+      { header: "Date", value: (r) => new Date(r.created_at).toLocaleString("en-IN") },
+      { header: "Retailer", value: (r) => r.user_id ? (names[r.user_id] ?? "Retailer") : "" },
+      { header: "Amount", value: (r) => r.amount },
+      { header: "Status", value: (r) => statusLabel[r.status] ?? r.status },
+      { header: "Purpose", value: (r) => purposeLabel[r.purpose] ?? r.purpose },
+      { header: "Payment ID", value: (r) => r.payment_id ?? "" },
+      { header: "Order ID", value: (r) => r.order_id ?? "" },
+      { header: "Recharge ID", value: (r) => r.wallet_recharge_id ?? "" },
+    ], `razorpay-payments-${new Date().toISOString().slice(0, 10)}.csv`);
+    toast.success("Exported", { description: `${sorted.length} rows` });
+  };
 
   return (
     <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
@@ -84,18 +122,28 @@ export function RazorpayLedger() {
         {([["paid", "Awaiting verify"], ["credited", "Credited"], ["failed", "Failed"], ["all", "All"]] as const).map(([t, label]) => (
           <button key={t} onClick={() => setTab(t)} className={`rounded-full px-3 h-8 text-xs font-semibold transition ${tab === t ? "bg-india-green text-white" : "border border-border bg-card hover:bg-muted"}`}>{label} {t !== "all" && `(${rows.filter((r) => r.status === t).length})`}</button>
         ))}
-        <div className="relative ml-auto"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><input className="h-9 w-56 rounded-lg border border-border bg-background pl-8 pr-2 text-sm outline-none" placeholder="Search retailer, order, payment id" value={q} onChange={(e) => setQ(e.target.value)} /></div>
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-2 h-9 text-xs">
+            <span className="font-semibold text-muted-foreground">From</span>
+            <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="bg-transparent outline-none" />
+            <span className="font-semibold text-muted-foreground">To</span>
+            <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="bg-transparent outline-none" />
+            {(from || to) && <button onClick={() => { setFrom(""); setTo(""); }} className="ml-1 rounded px-1.5 py-0.5 text-[11px] font-semibold text-rose-600 hover:bg-rose-50">Clear</button>}
+          </div>
+          <div className="relative"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><input className="h-9 w-56 rounded-lg border border-border bg-background pl-8 pr-2 text-sm outline-none" placeholder="Search retailer, order, payment id" value={q} onChange={(e) => setQ(e.target.value)} /></div>
+          <button onClick={exportCsv} className="inline-flex items-center gap-1.5 rounded-lg bg-india-green px-3 h-9 text-sm font-semibold text-white hover:bg-india-green/90"><Download className="h-4 w-4" /> Export</button>
+        </div>
       </div>
 
       <div className="mt-3 overflow-x-auto rounded-xl border border-border">
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
-            <tr><th className="px-3 py-2">Date</th><th className="px-3 py-2">Retailer</th><th className="px-3 py-2">Amount</th><th className="px-3 py-2">Status</th><th className="px-3 py-2">Payment ID</th><th className="px-3 py-2">Recharge ID</th><th className="px-3 py-2 text-right">Action</th></tr>
+            <tr><SortTh className="px-3 py-2" label="Date" sortKey="date" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Retailer" sortKey="retailer" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Amount" sortKey="amount" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Status" sortKey="status" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Payment ID" sortKey="payment" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Recharge ID" sortKey="recharge" sort={sort} onSort={toggle} /><th className="px-3 py-2 text-right">Action</th></tr>
           </thead>
           <tbody>
             {loading ? <tr><td colSpan={7} className="px-3 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr>
-              : filtered.length === 0 ? <tr><td colSpan={7} className="px-3 py-8 text-center text-muted-foreground">No Razorpay payments{tab !== "all" || q ? " for this filter" : " yet"}.</td></tr>
-              : filtered.map((r) => (
+              : sorted.length === 0 ? <tr><td colSpan={7} className="px-3 py-8 text-center text-muted-foreground">No Razorpay payments{tab !== "all" || q ? " for this filter" : " yet"}.</td></tr>
+              : sorted.map((r) => (
                 <tr key={r.id} className="border-t border-border">
                   <td className="whitespace-nowrap px-3 py-2 text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}</td>
                   <td className="px-3 py-2 font-medium">{r.user_id ? (names[r.user_id] ?? "Retailer") : "—"}</td>
