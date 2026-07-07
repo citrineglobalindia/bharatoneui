@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   ArrowLeft, User, Building2, Landmark, FileText, FileSearch, Banknote, ShieldCheck, MapPin,
-  CheckCircle2, XCircle, Maximize2, ExternalLink, X, Loader2, Phone, Mail, Copy, RefreshCw, Pencil, UserPlus,
+  CheckCircle2, XCircle, Maximize2, ExternalLink, X, Loader2, Phone, Mail, Copy, RefreshCw, Pencil, UserPlus, PauseCircle,
 } from "lucide-react";
 import { BharatOneLogo } from "@/components/bharatone-logo";
 import { Button } from "@/components/ui/button";
@@ -182,7 +182,8 @@ function ReviewPage() {
     if (a) setQcAction(a);
     if (!a) { toast.error("Select a QC action"); return; }
     if (a === "approve_payment") { await act(() => supabase.rpc("verify_retailer_payment", { reg_id: id, received: true, notes: remarks || null }), "Approved — forwarded to QC"); return; }
-    if (a === "reject_payment") { await act(() => supabase.rpc("verify_retailer_payment", { reg_id: id, received: false, notes: remarks || "Payment not received" }), "Sent to Telecaller"); return; }
+    if (a === "reject_payment") { if (!remarks.trim()) { toast.error("Remark is required to reject"); return; } await act(() => supabase.rpc("verify_retailer_payment", { reg_id: id, received: false, notes: remarks.trim() }), "Sent to Telecaller"); return; }
+    if (a === "hold_payment") { if (!remarks.trim()) { toast.error("Remark is required to hold"); return; } await act(() => supabase.rpc("hold_retailer_payment", { reg_id: id, notes: remarks.trim() }), "Put on Hold — sent to Telecaller"); return; }
     if (a === "approve_kyc") {
       const data = await act(() => supabase.rpc("verify_retailer_qc", { reg_id: id, verified: true, notes: remarks || null }), "Approved — retailer login created", false);
       if (data) {
@@ -326,10 +327,11 @@ function ReviewPage() {
           return (
           <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
             <p className="flex items-center gap-2 text-base font-extrabold"><span className="grid h-6 w-6 place-items-center rounded-full bg-emerald-100 text-emerald-600"><CheckCircle2 className="h-4 w-4" /></span> {stageAcct ? "Payment Verification Decision" : "QC Verification Decision"}</p>
-            <p className="mb-3 mt-1 text-xs text-muted-foreground">Review all documents below, then choose an action. Remarks are required to reject.</p>
+            <p className="mb-3 mt-1 text-xs text-muted-foreground">Review all documents below, then choose an action. Remarks are required to reject{stageAcct ? " or hold" : ""}.</p>
             <div className="flex flex-wrap items-center gap-3">
-              <input className="h-11 flex-1 min-w-[240px] rounded-xl border border-border bg-background px-4 text-sm outline-none focus-visible:ring-2 focus-visible:ring-india-green/30" placeholder="Add remarks (required for reject)…" value={remarks} onChange={(e) => setRemarks(e.target.value)} />
+              <input className="h-11 flex-1 min-w-[240px] rounded-xl border border-border bg-background px-4 text-sm outline-none focus-visible:ring-2 focus-visible:ring-india-green/30" placeholder={stageAcct ? "Add remarks (required for reject / hold)…" : "Add remarks (required for reject)…"} value={remarks} onChange={(e) => setRemarks(e.target.value)} />
               <Button disabled={busy} className="h-11 bg-india-green text-white hover:bg-india-green/90" onClick={() => submitQc(stageAcct ? "approve_payment" : "approve_kyc")}>{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} Verify &amp; Approve</Button>
+              {stageAcct && <Button variant="outline" disabled={busy} className="h-11 text-amber-600" onClick={() => { if (!remarks.trim()) { toast.error("Add remarks before holding"); return; } submitQc("hold_payment"); }}><PauseCircle className="h-4 w-4" /> Hold</Button>}
               <Button variant="outline" disabled={busy} className="h-11 text-rose-600" onClick={() => { if (!remarks.trim()) { toast.error("Add remarks before rejecting"); return; } submitQc(stageAcct ? "reject_payment" : "reject_kyc"); }}><XCircle className="h-4 w-4" /> Reject</Button>
               {stageQc && <Button variant="outline" disabled={busy} className="h-11" onClick={() => setReqOpen(true)}><RefreshCw className="h-4 w-4" /> Request Documents</Button>}
             </div>
@@ -432,7 +434,7 @@ function ReviewPage() {
           <div><p className="text-[10px] uppercase tracking-wide text-muted-foreground">Stage</p><p className="font-bold capitalize">{reg.status.replace("_", " ")}</p></div>
           <div><p className="text-[10px] uppercase tracking-wide text-muted-foreground">Payment Verified</p><p className={`font-bold ${reg.payment_verified ? "text-india-green" : "text-amber-600"}`}>{reg.payment_verified ? "Yes" : "Pending"}</p></div>
           <div><p className="text-[10px] uppercase tracking-wide text-muted-foreground">QC Verified</p><p className={`font-bold ${reg.qc_verified ? "text-india-green" : "text-amber-600"}`}>{reg.qc_verified ? "Yes" : "Pending"}</p></div>
-          <div className="min-w-[120px]"><p className="text-[10px] uppercase tracking-wide text-muted-foreground">Rejection Reason</p><p className="font-bold">{reg.rejection_reason || "—"}</p></div>
+          <div className="min-w-[120px]"><p className="text-[10px] uppercase tracking-wide text-muted-foreground">{reg.accountant_decision === "hold" ? "On Hold — Remark" : reg.accountant_decision === "rejected" ? "Rejected — Remark" : "Remark / Reason"}</p><p className="font-bold">{reg.rejection_reason || "—"}</p></div>
           <div className="ml-auto min-w-[160px]"><p className="text-right text-[11px] font-semibold text-muted-foreground">{done} of 3 stages complete</p><div className="mt-1 h-2 w-40 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-india-green" style={{ width: `${(done / 3) * 100}%` }} /></div></div>
         </div>
         ); })()}

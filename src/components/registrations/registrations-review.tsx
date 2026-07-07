@@ -22,6 +22,7 @@ import {
   ExternalLink,
   FileSearch,
   Banknote,
+  PauseCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -53,6 +54,8 @@ export type RegRow = {
   district: string | null;
   taluk: string | null;
   status: string;
+  accountant_decision: string | null;
+  rejection_reason: string | null;
   payment_verified: boolean;
   qc_verified: boolean;
   payment_amount: number | null;
@@ -215,7 +218,7 @@ export function RegistrationsReview() {
         supabase
           .from("retailer_registrations")
           .select(
-            "id, application_id, registration_type, jsko_id, username, first_name, middle_name, surname, shop_name, email, mobile, district, taluk, status, payment_verified, qc_verified, payment_amount, payment_utr, pan_doc_path, aadhaar_doc_path, shop_photo_path, selfie_path, payment_screenshot_path, created_at",
+            "id, application_id, registration_type, jsko_id, username, first_name, middle_name, surname, shop_name, email, mobile, district, taluk, status, accountant_decision, rejection_reason, payment_verified, qc_verified, payment_amount, payment_utr, pan_doc_path, aadhaar_doc_path, shop_photo_path, selfie_path, payment_screenshot_path, created_at",
           )
           .order("created_at", { ascending: false }),
       );
@@ -294,17 +297,28 @@ export function RegistrationsReview() {
       "Payment verified — forwarded to QC",
     );
   const acctReject = (r: RegRow) => {
-    const reason = window.prompt("Reason for rejection (will be sent to Telecaller):");
+    const reason = window.prompt("Reason for rejection (required — will be sent to Telecaller):");
     if (reason === null) return;
+    if (!reason.trim()) { toast.error("Remark is required to reject"); return; }
     run(
       r.id,
       () =>
         supabase.rpc("verify_retailer_payment", {
           reg_id: r.id,
           received: false,
-          notes: reason || "Payment not received",
+          notes: reason.trim(),
         }),
       "Sent to Telecaller for follow-up",
+    );
+  };
+  const acctHold = (r: RegRow) => {
+    const reason = window.prompt("Reason for hold (required — will be sent to Telecaller):");
+    if (reason === null) return;
+    if (!reason.trim()) { toast.error("Remark is required to hold"); return; }
+    run(
+      r.id,
+      () => supabase.rpc("hold_retailer_payment", { reg_id: r.id, notes: reason.trim() }),
+      "Put on Hold — sent to Telecaller",
     );
   };
   const qcApprove = async (r: RegRow) => {
@@ -632,6 +646,15 @@ export function RegistrationsReview() {
                           <Button
                             size="sm"
                             variant="outline"
+                            className="h-8 text-amber-600"
+                            disabled={busy === r.id}
+                            onClick={() => acctHold(r)}
+                          >
+                            <PauseCircle className="h-3.5 w-3.5" /> Hold
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
                             className="h-8 text-rose-600"
                             disabled={busy === r.id}
                             onClick={() => acctReject(r)}
@@ -665,6 +688,14 @@ export function RegistrationsReview() {
                             <XCircle className="h-3.5 w-3.5" /> Reject
                           </Button>
                         </>
+                      )}
+                      {r.status === "telecaller" && (
+                        <div className="w-full">
+                          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${r.accountant_decision === "hold" ? "bg-amber-100 text-amber-700" : "bg-rose-100 text-rose-700"}`}>
+                            {r.accountant_decision === "hold" ? <><PauseCircle className="h-3 w-3" /> On Hold</> : <><XCircle className="h-3 w-3" /> Rejected by accountant</>}
+                          </span>
+                          {r.rejection_reason && <p className="mt-1 text-[11px] text-muted-foreground"><b>Remark:</b> {r.rejection_reason}</p>}
+                        </div>
                       )}
                       {r.status === "telecaller" && canTele && (
                         <Button
