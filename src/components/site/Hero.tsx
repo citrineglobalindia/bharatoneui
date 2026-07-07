@@ -41,17 +41,17 @@ function HeroCarousel() {
   }, [slides.length]);
 
   return (
-    <div className="relative rounded-3xl overflow-hidden shadow-elegant border-4 border-card aspect-[4/3]">
+    <div className="relative rounded-3xl overflow-hidden shadow-elegant border-4 border-card aspect-[4/3] bg-gradient-to-br from-muted to-card">
       <AnimatePresence mode="popLayout">
         <motion.img
           key={idx}
           src={slides[idx].src}
           alt={slides[idx].caption}
-          initial={{ opacity: 0, scale: 1.04 }}
+          initial={{ opacity: 0, scale: 1.02 }}
           animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.98 }}
+          exit={{ opacity: 0, scale: 0.99 }}
           transition={{ duration: 0.8, ease: "easeInOut" }}
-          className="absolute inset-0 h-full w-full object-cover"
+          className="absolute inset-0 h-full w-full object-contain"
         />
       </AnimatePresence>
       {slides.length > 1 && (

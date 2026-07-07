@@ -487,6 +487,26 @@ function MetricCard({ item }: { item: (typeof KPI)[number] }) {
   );
 }
 
+// Sections whose module renders its OWN page header show only that header.
+// These sections have no header of their own, so they keep the generic
+// command-center header (prevents the duplicate title seen on self-headed
+// modules like HRMS, CRM, Wallet, etc.).
+const HEADERLESS_SECTIONS = new Set([
+  "Executive Overview",
+  "User Management",
+  "System Settings",
+  "Notice Board",
+  "Support Categories",
+  "Feedback",
+  "Accountant Operations",
+  "KYC Approvals",
+  "DRO Operations",
+  "TRO Operations",
+  "Old JSKO IDs",
+  "Retailer Network",
+  "Website Gallery",
+]);
+
 export function AdminWorkspace() {
   const [active, setActive] = useState("Executive Overview");
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -727,6 +747,7 @@ export function AdminWorkspace() {
 
         <main className="flex-1 overflow-y-auto">
           <div className="mx-auto max-w-[1700px] space-y-5 p-4 lg:p-6 xl:p-7">
+            {HEADERLESS_SECTIONS.has(active) && (
             <section className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-admin">
@@ -766,6 +787,7 @@ export function AdminWorkspace() {
                 </Button>
               </div>
             </section>
+            )}
 
             {active === "Executive Overview" ? (
               <>
