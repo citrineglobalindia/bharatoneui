@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Eye, CreditCard, XCircle, X, CheckCircle2, Download } from "lucide-react";
+import { Loader2, Eye, CreditCard, XCircle, X, CheckCircle2, Download, PauseCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,14 +21,14 @@ type DistRow = {
 
 const db = supabase as any;
 const statusPill = (s: string) => ({
-  under_review: "bg-amber-100 text-amber-700", approved: "bg-emerald-100 text-emerald-700", rejected: "bg-rose-100 text-rose-700",
+  under_review: "bg-amber-100 text-amber-700", on_hold: "bg-orange-100 text-orange-700", approved: "bg-emerald-100 text-emerald-700", rejected: "bg-rose-100 text-rose-700",
 }[s] ?? "bg-slate-100 text-slate-700");
 
 // Map the KYC-Approvals tab to the distributor status shown under it.
 function statusForTab(tab: string): string[] {
   if (tab === "approved") return ["approved"];
   if (tab === "rejected") return ["rejected"];
-  if (tab === "accountant_review" || tab === "qc_review" || tab === "telecaller") return ["under_review", "pending", "submitted"];
+  if (tab === "accountant_review" || tab === "qc_review" || tab === "telecaller") return ["under_review", "pending", "submitted", "on_hold"];
   return [];
 }
 
@@ -40,7 +40,7 @@ export function DistributorReviewTable({ tab }: { tab: string }) {
   const [detail, setDetail] = useState<DistRow | null>(null);
   const [docUrls, setDocUrls] = useState<Record<string, string>>({});
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
-  const canReview = role === "admin";
+  const canReview = role === "admin" || role === "accountant";
 
   const downloadRow = async (r: DistRow) => {
     setDownloadingId(r.id);
@@ -116,13 +116,26 @@ export function DistributorReviewTable({ tab }: { tab: string }) {
     } finally { setBusy(null); }
   };
   const reject = async (r: DistRow) => {
-    const reason = window.prompt("Reason for rejection:");
+    const reason = window.prompt("Reason for rejection (required):");
     if (reason === null) return;
+    if (!reason.trim()) { toast.error("Remark is required to reject"); return; }
     setBusy(r.id);
     try {
-      const { error } = await db.rpc("reject_distributor_registration", { reg_id: r.id, reason: reason || "Rejected" });
+      const { error } = await db.rpc("reject_distributor_registration", { reg_id: r.id, reason: reason.trim() });
       if (error) { toast.error("Reject failed", { description: error.message }); return; }
       toast.success("Distributor rejected");
+      setDetail(null); load();
+    } finally { setBusy(null); }
+  };
+  const hold = async (r: DistRow) => {
+    const reason = window.prompt("Reason for hold (required):");
+    if (reason === null) return;
+    if (!reason.trim()) { toast.error("Remark is required to hold"); return; }
+    setBusy(r.id);
+    try {
+      const { error } = await db.rpc("hold_distributor_registration", { reg_id: r.id, reason: reason.trim() });
+      if (error) { toast.error("Hold failed", { description: error.message }); return; }
+      toast.success("Distributor put on hold");
       setDetail(null); load();
     } finally { setBusy(null); }
   };
@@ -165,11 +178,12 @@ export function DistributorReviewTable({ tab }: { tab: string }) {
                     <Button size="sm" variant="outline" className="h-8" disabled={downloadingId === r.id} title="Download PDF" onClick={() => downloadRow(r)}>
                       {downloadingId === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
                     </Button>
-                    {canReview && r.status === "under_review" && (
+                    {canReview && (r.status === "under_review" || r.status === "on_hold") && (
                       <>
                         <Button size="sm" className="h-8 bg-india-green text-white" disabled={busy === r.id} onClick={() => approve(r)}>
                           {busy === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CreditCard className="h-3.5 w-3.5" />} Approve
                         </Button>
+                        <Button size="sm" variant="outline" className="h-8 text-amber-600" disabled={busy === r.id} onClick={() => hold(r)}><PauseCircle className="h-3.5 w-3.5" /> Hold</Button>
                         <Button size="sm" variant="outline" className="h-8 text-rose-600" disabled={busy === r.id} onClick={() => reject(r)}><XCircle className="h-3.5 w-3.5" /> Reject</Button>
                       </>
                     )}
@@ -231,9 +245,10 @@ export function DistributorReviewTable({ tab }: { tab: string }) {
               {detail.status === "rejected" && detail.rejection_reason && (
                 <p className="mt-3 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">Rejected: {detail.rejection_reason}</p>
               )}
-              {canReview && detail.status === "under_review" && (
+              {canReview && (detail.status === "under_review" || detail.status === "on_hold") && (
                 <DialogFooter className="mt-4 gap-2">
                   <Button variant="outline" className="text-rose-600" disabled={busy === detail.id} onClick={() => reject(detail)}><XCircle className="h-4 w-4" /> Reject</Button>
+                  <Button variant="outline" className="text-amber-600" disabled={busy === detail.id} onClick={() => hold(detail)}><PauseCircle className="h-4 w-4" /> Hold</Button>
                   <Button className="bg-india-green text-white" disabled={busy === detail.id} onClick={() => approve(detail)}>{busy === detail.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} Approve</Button>
                 </DialogFooter>
               )}
