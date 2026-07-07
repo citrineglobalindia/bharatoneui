@@ -57,7 +57,7 @@ export function LanguageSwitcher({ variant = "bar" }: { variant?: "bar" | "block
       >
         <span className="flex items-center gap-1.5">
           <Globe className={isBlock ? "h-4 w-4 text-muted-foreground" : "h-3 w-3"} />
-          <span>{current.flag} {isBlock ? current.label : current.short}</span>
+          <span>{isBlock ? current.label : current.short}</span>
         </span>
         <ChevronDown className={`${isBlock ? "h-4 w-4" : "h-3 w-3"} opacity-70 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
@@ -74,7 +74,7 @@ export function LanguageSwitcher({ variant = "bar" }: { variant?: "bar" | "block
                 onClick={() => choose(o.code)}
                 className={`flex w-full items-center justify-between gap-3 px-3 py-2 text-sm transition-colors hover:bg-muted ${o.code === lang ? "font-bold text-india-green" : "font-medium"}`}
               >
-                <span className="flex items-center gap-2"><span className="text-base leading-none">{o.flag}</span> {o.label}</span>
+                <span className="flex items-center gap-2">{o.label}</span>
                 {o.code === lang && <Check className="h-4 w-4 text-india-green" />}
               </button>
             </li>
