@@ -114,15 +114,9 @@ export function CTA() {
 
 type Award = { name: string; logo: string; certificate?: string };
 
-const AWARDS: Award[] = [
-  { name: "ELEVATE 2025", logo: "/awards/elevate-2025.png", certificate: "/awards/elevate-2025-certificate.jpg" },
-  { name: "Startup Karnataka", logo: "/awards/startup-karnataka.png", certificate: "/awards/startup-karnataka-certificate.jpg" },
-  { name: "Government of Karnataka – Dept. of Electronics, IT & BT", logo: "/awards/govt-karnataka-deitbt.png", certificate: "/awards/govt-karnataka-deitbt-certificate.jpg" },
-  { name: "KTCC Karnataka Business Awards", logo: "/awards/ktcc.png", certificate: "/awards/ktcc-certificate.jpg" },
-];
-
 export function Awards() {
-  const [awards, setAwards] = useState<Award[]>(AWARDS);
+  // Blank until an admin adds awards in Website Gallery → Awarded & Recognized By.
+  const [awards, setAwards] = useState<Award[]>([]);
   const [active, setActive] = useState<Award | null>(null);
   const [zoom, setZoom] = useState(1);
 
@@ -158,6 +152,9 @@ export function Awards() {
   }, [active]);
 
   const open = (a: Award) => { setZoom(1); setActive(a); };
+
+  // Nothing to show until the admin adds awards — hide the whole section.
+  if (awards.length === 0) return null;
 
   return (
     <section className="py-16 border-t border-border">
