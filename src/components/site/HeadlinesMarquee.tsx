@@ -2,16 +2,10 @@ import { useEffect, useState } from "react";
 import { Megaphone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
-const DEFAULT_ITEMS = [
-  "🎉 Shreerakshe Health Card launched — discounts & lifesaving access for your family",
-  "🏦 New: Aadhaar Enabled Payment System (AEPS) & Domestic Money Transfer (DMT)",
-  "💳 Micro ATM Services, Bill Payments (BBPS) & Mini Banking now available",
-  "✈️ Travel Bookings including IRCTC at every BharatOne center",
-  "📞 Contact us: +91 96111 00712",
-];
+const EMPTY_MESSAGE = "📢 There are no notifications from BharatOne right now.";
 
 export function HeadlinesMarquee() {
-  const [items, setItems] = useState<string[]>(DEFAULT_ITEMS);
+  const [items, setItems] = useState<string[]>([]);
 
   useEffect(() => {
     let on = true;
@@ -22,11 +16,14 @@ export function HeadlinesMarquee() {
         .eq("is_active", true)
         .order("sort_order")
         .order("created_at");
-      if (!on || !data || data.length === 0) return;
-      setItems((data as { text: string }[]).map((d) => d.text));
+      if (!on) return;
+      setItems(((data as { text: string }[] | null) ?? []).map((d) => d.text));
     })();
     return () => { on = false; };
   }, []);
+
+  // Admin-added headlines when present; otherwise a friendly "no notifications" note.
+  const display = items.length ? items : [EMPTY_MESSAGE];
 
   return (
     <div className="relative bg-gradient-saffron text-primary-foreground overflow-hidden">
@@ -37,7 +34,7 @@ export function HeadlinesMarquee() {
         </div>
         <div className="flex-1 overflow-hidden">
           <div className="marquee whitespace-nowrap text-sm font-medium">
-            {[...items, ...items].map((t, i) => (
+            {[...display, ...display].map((t, i) => (
               <span key={i} className="mx-8 inline-block shrink-0">
                 {t}
               </span>
