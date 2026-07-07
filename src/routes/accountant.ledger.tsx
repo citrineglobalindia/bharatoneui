@@ -17,7 +17,7 @@ import { StatCard } from "@/components/retailer/stat-card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession, withTimeout } from "@/integrations/supabase/ensure-session";
-import { useSort, SortTh } from "@/components/ui/sortable";
+import { useSort, SortTh, useColumnFilters, FilterTh } from "@/components/ui/sortable";
 import {
   REGISTRATION_PAYMENTS,
   WALLET_REQUESTS,
@@ -187,7 +187,7 @@ function LedgerPage() {
     });
   }, [entries, query, category, direction, status]);
 
-  const { sorted, sort, toggle } = useSort(filtered, (e: LedgerEntry, key) => {
+  const acc = (e: LedgerEntry, key: string) => {
     switch (key) {
       case "entry": return e.id;
       case "category": return e.category;
@@ -197,7 +197,10 @@ function LedgerPage() {
       case "status": return e.status;
       default: return "";
     }
-  });
+  };
+  const cf = useColumnFilters<LedgerEntry>();
+  const colFiltered = useMemo(() => cf.apply(filtered, acc), [filtered, cf.filters]);
+  const { sorted, sort, toggle } = useSort(colFiltered, acc);
 
   const totals = useMemo(() => {
     let credit = 0;
@@ -344,6 +347,14 @@ function LedgerPage() {
                   <SortTh className="px-4 py-3" label="Method · Reference" sortKey="methodref" sort={sort} onSort={toggle} />
                   <SortTh className="px-4 py-3 text-right" label="Amount" sortKey="amount" sort={sort} onSort={toggle} />
                   <SortTh className="px-4 py-3" label="Status" sortKey="status" sort={sort} onSort={toggle} />
+                </tr>
+                <tr className="bg-muted/30">
+                  <FilterTh className="px-2 pb-2" filterKey="entry" filters={cf.filters} setFilter={cf.setFilter} />
+                  <FilterTh className="px-2 pb-2" filterKey="category" filters={cf.filters} setFilter={cf.setFilter} />
+                  <FilterTh className="px-2 pb-2" filterKey="party" filters={cf.filters} setFilter={cf.setFilter} />
+                  <FilterTh className="px-2 pb-2" filterKey="methodref" filters={cf.filters} setFilter={cf.setFilter} />
+                  <FilterTh className="px-2 pb-2" filterKey="amount" filters={cf.filters} setFilter={cf.setFilter} />
+                  <FilterTh className="px-2 pb-2" filterKey="status" filters={cf.filters} setFilter={cf.setFilter} />
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useSort, SortTh } from "@/components/ui/sortable";
+import { useSort, SortTh, useColumnFilters, FilterTh } from "@/components/ui/sortable";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { LogOut, RefreshCw, Loader2, FileSearch, IndianRupee, CheckCircle2, Clock3, XCircle, ChevronRight, Upload, Paperclip, Download } from "lucide-react";
@@ -110,7 +110,7 @@ function OperatorPortal() {
     commission: apps.filter((a) => a.status === "completed").reduce((s, a) => s + Number(a.commission_price || 0), 0),
   }), [apps]);
   const filtered = useMemo(() => filter === "all" ? apps : apps.filter((a) => a.status === filter), [apps, filter]);
-  const { sorted, sort, toggle } = useSort(filtered, (a: any, key) => {
+  const acc = (a: any, key: string) => {
     switch (key) {
       case "app": return a.application_no || "";
       case "retailer": return a.submitter_name || "";
@@ -120,7 +120,10 @@ function OperatorPortal() {
       case "status": return a.status || "";
       default: return "";
     }
-  });
+  };
+  const cf = useColumnFilters<any>();
+  const colFiltered = useMemo(() => cf.apply(filtered, acc), [filtered, cf.filters]);
+  const { sorted, sort, toggle } = useSort(colFiltered, acc);
 
   const setStatus = async (a: App, status: string) => {
     setSaving(true);
@@ -202,6 +205,15 @@ function OperatorPortal() {
             <table className="w-full text-sm">
               <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
                 <tr><SortTh className="px-3 py-2" label="Application ID" sortKey="app" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Retailer" sortKey="retailer" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Applicant" sortKey="applicant" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Service" sortKey="service" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Charge" sortKey="charge" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Status" sortKey="status" sort={sort} onSort={toggle} /><th className="px-3 py-2 text-right">Action</th></tr>
+                <tr className="bg-muted/30">
+                  <FilterTh className="px-2 pb-2" filterKey="app" filters={cf.filters} setFilter={cf.setFilter} />
+                  <FilterTh className="px-2 pb-2" filterKey="retailer" filters={cf.filters} setFilter={cf.setFilter} />
+                  <FilterTh className="px-2 pb-2" filterKey="applicant" filters={cf.filters} setFilter={cf.setFilter} />
+                  <FilterTh className="px-2 pb-2" filterKey="service" filters={cf.filters} setFilter={cf.setFilter} />
+                  <FilterTh className="px-2 pb-2" filterKey="charge" filters={cf.filters} setFilter={cf.setFilter} />
+                  <FilterTh className="px-2 pb-2" filterKey="status" filters={cf.filters} setFilter={cf.setFilter} />
+                  <th className="px-2 pb-2" />
+                </tr>
               </thead>
               <tbody>
                 {sorted.map((a) => (

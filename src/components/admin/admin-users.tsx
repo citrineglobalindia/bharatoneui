@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
-import { useSort, SortTh } from "@/components/ui/sortable";
+import { useSort, SortTh, useColumnFilters, FilterTh } from "@/components/ui/sortable";
 
 type U = {
   id: string; email: string; display_name: string; department: string | null; designation: string | null;
@@ -202,7 +202,7 @@ export function AdminUsers() {
   const input = "h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-india-green/30";
   const isBasic = add.role === "distributor" || add.role === "retailer";
 
-  const { sorted, sort, toggle } = useSort(filtered, (u: any, key) => {
+  const acc = (u: any, key: string) => {
     switch (key) {
       case "name": return u.display_name || "";
       case "email": return u.email || "";
@@ -212,7 +212,10 @@ export function AdminUsers() {
       case "joined": return new Date(u.created_at).getTime();
       default: return "";
     }
-  });
+  };
+  const cf = useColumnFilters<any>();
+  const colFiltered = useMemo(() => cf.apply(filtered, acc), [filtered, cf.filters]);
+  const { sorted, sort, toggle } = useSort(colFiltered, acc);
 
   return (
     <div className="space-y-4">
@@ -245,6 +248,15 @@ export function AdminUsers() {
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
             <tr><SortTh className="px-3 py-2.5" label="User" sortKey="name" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2.5" label="Email / ID" sortKey="email" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2.5" label="Roles" sortKey="roles" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2.5" label="Department" sortKey="dept" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2.5" label="Status" sortKey="status" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2.5" label="Joined" sortKey="joined" sort={sort} onSort={toggle} /><th className="px-3 py-2.5 text-right">Actions</th></tr>
+            <tr className="bg-muted/30">
+              <FilterTh className="px-2 pb-2" filterKey="name" filters={cf.filters} setFilter={cf.setFilter} />
+              <FilterTh className="px-2 pb-2" filterKey="email" filters={cf.filters} setFilter={cf.setFilter} />
+              <FilterTh className="px-2 pb-2" filterKey="roles" filters={cf.filters} setFilter={cf.setFilter} />
+              <FilterTh className="px-2 pb-2" filterKey="dept" filters={cf.filters} setFilter={cf.setFilter} />
+              <FilterTh className="px-2 pb-2" filterKey="status" filters={cf.filters} setFilter={cf.setFilter} />
+              <FilterTh className="px-2 pb-2" filterKey="joined" filters={cf.filters} setFilter={cf.setFilter} />
+              <th className="px-2 pb-2" />
+            </tr>
           </thead>
           <tbody>
             {loading ? <tr><td colSpan={7} className="px-3 py-10 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></td></tr>

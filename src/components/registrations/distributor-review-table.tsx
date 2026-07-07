@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { downloadRegistrationPDF } from "@/lib/registration-pdf";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 import { useAuth } from "@/hooks/use-auth";
-import { useSort, SortTh } from "@/components/ui/sortable";
+import { useSort, SortTh, useColumnFilters, FilterTh } from "@/components/ui/sortable";
 
 type DistRow = {
   id: string; application_id: string; username: string | null; status: string;
@@ -161,7 +161,7 @@ export function DistributorReviewTable({ tab, query = "", fromDate = "", toDate 
 
   const dt = (s: string) => new Date(s);
 
-  const { sorted, sort, toggle } = useSort(filtered, (r: DistRow, key) => {
+  const acc = (r: DistRow, key: string) => {
     switch (key) {
       case "app_id": return r.application_id;
       case "dist_id": return r.username || r.application_id;
@@ -173,7 +173,10 @@ export function DistributorReviewTable({ tab, query = "", fromDate = "", toDate 
       case "status": return r.status || "";
       default: return "";
     }
-  });
+  };
+  const cf = useColumnFilters<DistRow>();
+  const colFiltered = useMemo(() => cf.apply(filtered, acc), [filtered, cf.filters]);
+  const { sorted, sort, toggle } = useSort(colFiltered, acc);
 
   const exportList = () => {
     if (filtered.length === 0) { toast.error("No rows to export"); return; }
@@ -227,6 +230,20 @@ export function DistributorReviewTable({ tab, query = "", fromDate = "", toDate 
                 : <th key={h} className="whitespace-nowrap px-3 py-2.5">{h}</th>
               )}
               <th className="sticky right-0 z-20 whitespace-nowrap bg-muted px-3 py-2.5 text-right shadow-[-8px_0_8px_-8px_rgba(0,0,0,0.15)]">Actions</th>
+            </tr>
+            <tr className="bg-muted/30">
+              <FilterTh className="px-2 pb-2" filterKey="app_id" filters={cf.filters} setFilter={cf.setFilter} />
+              <FilterTh className="px-2 pb-2" filterKey="dist_id" filters={cf.filters} setFilter={cf.setFilter} />
+              <FilterTh className="px-2 pb-2" filterKey="name" filters={cf.filters} setFilter={cf.setFilter} />
+              <th className="px-2 pb-2" />
+              <th className="px-2 pb-2" />
+              <FilterTh className="px-2 pb-2" filterKey="contact" filters={cf.filters} setFilter={cf.setFilter} />
+              <FilterTh className="px-2 pb-2" filterKey="email" filters={cf.filters} setFilter={cf.setFilter} />
+              <FilterTh className="px-2 pb-2" filterKey="date" filters={cf.filters} setFilter={cf.setFilter} />
+              <FilterTh className="px-2 pb-2" filterKey="district" filters={cf.filters} setFilter={cf.setFilter} />
+              <th className="px-2 pb-2" />
+              <FilterTh className="px-2 pb-2" filterKey="status" filters={cf.filters} setFilter={cf.setFilter} />
+              <th className="sticky right-0 z-20 bg-muted px-2 pb-2" />
             </tr>
           </thead>
           <tbody>

@@ -7,7 +7,7 @@ import { PageHeader } from "@/components/retailer/page-header";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
-import { useSort, SortTh } from "@/components/ui/sortable";
+import { useSort, SortTh, useColumnFilters, FilterTh } from "@/components/ui/sortable";
 import { exportRowsToCsv } from "@/components/ui/table-toolbar";
 
 export const Route = createFileRoute("/accountant/main-recharge")({
@@ -64,7 +64,7 @@ function MainRechargePage() {
       return true;
     });
   }, [ledger, q, from, to]);
-  const { sorted, sort, toggle } = useSort(filtered, (l: Ledger, key) => {
+  const acc = (l: Ledger, key: string) => {
     switch (key) {
       case "date": return new Date(l.created_at).getTime();
       case "details": return l.reason ?? l.direction;
@@ -72,7 +72,10 @@ function MainRechargePage() {
       case "balance": return Number(l.balance_after || 0);
       default: return "";
     }
-  });
+  };
+  const cf = useColumnFilters<Ledger>();
+  const colFiltered = useMemo(() => cf.apply(filtered, acc), [filtered, cf.filters]);
+  const { sorted, sort, toggle } = useSort(colFiltered, acc);
   const exportCsv = () => {
     if (filtered.length === 0) return toast.error("No rows to export");
     exportRowsToCsv(sorted, [
@@ -118,7 +121,7 @@ function MainRechargePage() {
 
         <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-soft">
           <table className="w-full text-sm">
-            <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground"><tr><SortTh className="px-3 py-2" label="Date" sortKey="date" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Details" sortKey="details" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2 text-right" label="Amount" sortKey="amount" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2 text-right" label="Balance" sortKey="balance" sort={sort} onSort={toggle} /></tr></thead>
+            <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground"><tr><SortTh className="px-3 py-2" label="Date" sortKey="date" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Details" sortKey="details" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2 text-right" label="Amount" sortKey="amount" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2 text-right" label="Balance" sortKey="balance" sort={sort} onSort={toggle} /></tr><tr className="bg-muted/30"><FilterTh className="px-2 pb-2" filterKey="date" filters={cf.filters} setFilter={cf.setFilter} /><FilterTh className="px-2 pb-2" filterKey="details" filters={cf.filters} setFilter={cf.setFilter} /><FilterTh className="px-2 pb-2" filterKey="amount" filters={cf.filters} setFilter={cf.setFilter} /><FilterTh className="px-2 pb-2" filterKey="balance" filters={cf.filters} setFilter={cf.setFilter} /></tr></thead>
             <tbody>
               {loading ? <tr><td colSpan={4} className="px-3 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr>
                 : sorted.length === 0 ? <tr><td colSpan={4} className="px-3 py-10 text-center text-muted-foreground">No movements yet. Recharge to add float.</td></tr>

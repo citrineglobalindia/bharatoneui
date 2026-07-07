@@ -1,9 +1,10 @@
+import { useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Users, ShieldCheck, Clock, Download } from "lucide-react";
 import { toast } from "sonner";
 import { QcShell } from "@/components/qc/qc-shell";
 import { PageHeader, StatusBadge } from "@/components/retailer/page-header";
-import { useSort, SortTh } from "@/components/ui/sortable";
+import { useSort, SortTh, useColumnFilters, FilterTh } from "@/components/ui/sortable";
 import { exportRowsToCsv } from "@/components/ui/table-toolbar";
 
 export const Route = createFileRoute("/qc/reviewers")({
@@ -20,7 +21,7 @@ const REVIEWERS = [
 ];
 
 function ReviewersPage() {
-  const { sorted, sort, toggle } = useSort(REVIEWERS, (r, key) => {
+  const acc = (r: (typeof REVIEWERS)[number], key: string) => {
     switch (key) {
       case "reviewer": return r.name;
       case "level": return r.level;
@@ -31,7 +32,10 @@ function ReviewersPage() {
       case "sla": return r.sla;
       default: return "";
     }
-  });
+  };
+  const cf = useColumnFilters<(typeof REVIEWERS)[number]>();
+  const colFiltered = useMemo(() => cf.apply(REVIEWERS, acc), [REVIEWERS, cf.filters]);
+  const { sorted, sort, toggle } = useSort(colFiltered, acc);
   const exportCsv = () => {
     exportRowsToCsv(sorted, [
       { header: "Reviewer", value: (r) => r.name },
@@ -72,6 +76,15 @@ function ReviewersPage() {
                 <SortTh className="text-right px-4 py-3 font-bold" label="Rejected" sortKey="rejected" sort={sort} onSort={toggle} />
                 <SortTh className="text-right px-4 py-3 font-bold" label="On Hold" sortKey="hold" sort={sort} onSort={toggle} />
                 <SortTh className="text-right px-4 py-3 font-bold" label="SLA" sortKey="sla" sort={sort} onSort={toggle} />
+              </tr>
+              <tr className="bg-muted/30">
+                <FilterTh className="px-2 pb-2" filterKey="reviewer" filters={cf.filters} setFilter={cf.setFilter} />
+                <FilterTh className="px-2 pb-2" filterKey="level" filters={cf.filters} setFilter={cf.setFilter} />
+                <FilterTh className="px-2 pb-2" filterKey="status" filters={cf.filters} setFilter={cf.setFilter} />
+                <FilterTh className="px-2 pb-2" filterKey="approved" filters={cf.filters} setFilter={cf.setFilter} />
+                <FilterTh className="px-2 pb-2" filterKey="rejected" filters={cf.filters} setFilter={cf.setFilter} />
+                <FilterTh className="px-2 pb-2" filterKey="hold" filters={cf.filters} setFilter={cf.setFilter} />
+                <FilterTh className="px-2 pb-2" filterKey="sla" filters={cf.filters} setFilter={cf.setFilter} />
               </tr>
             </thead>
             <tbody>

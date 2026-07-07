@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { Wallet, Loader2, RefreshCw, Search, ShieldCheck, CheckCircle2, BadgeIndianRupee, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
-import { useSort, SortTh } from "@/components/ui/sortable";
+import { useSort, SortTh, useColumnFilters, FilterTh } from "@/components/ui/sortable";
 import { exportRowsToCsv } from "@/components/ui/table-toolbar";
 
 type RUser = { id: string; name: string; email: string };
@@ -68,7 +68,7 @@ export function WalletRecharge() {
     if (!s) return recent;
     return recent.filter((r) => [r.wallet_recharge_id, names[r.user_id], r.method, String(r.amount)].filter(Boolean).some((v) => String(v).toLowerCase().includes(s)));
   }, [recent, rq, names]);
-  const { sorted: sortedRecent, sort, toggle } = useSort(filteredRecent, (r: Recharge, key) => {
+  const acc = (r: Recharge, key: string) => {
     switch (key) {
       case "wr": return r.wallet_recharge_id;
       case "retailer": return names[r.user_id] ?? "";
@@ -77,7 +77,10 @@ export function WalletRecharge() {
       case "when": return new Date(r.created_at).getTime();
       default: return "";
     }
-  });
+  };
+  const cf = useColumnFilters<Recharge>();
+  const colFiltered = useMemo(() => cf.apply(filteredRecent, acc), [filteredRecent, cf.filters]);
+  const { sorted: sortedRecent, sort, toggle } = useSort(colFiltered, acc);
   const exportRecent = () => {
     if (filteredRecent.length === 0) return toast.error("No recharges to export");
     exportRowsToCsv(sortedRecent, [
@@ -175,6 +178,7 @@ export function WalletRecharge() {
             <table className="w-full text-sm">
               <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
                 <tr><SortTh className="px-3 py-2" label="Recharge ID" sortKey="wr" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Retailer" sortKey="retailer" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Amount" sortKey="amount" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Method" sortKey="method" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="When" sortKey="when" sort={sort} onSort={toggle} /></tr>
+                <tr className="bg-muted/30"><FilterTh className="px-2 pb-2" filterKey="wr" filters={cf.filters} setFilter={cf.setFilter} /><FilterTh className="px-2 pb-2" filterKey="retailer" filters={cf.filters} setFilter={cf.setFilter} /><FilterTh className="px-2 pb-2" filterKey="amount" filters={cf.filters} setFilter={cf.setFilter} /><FilterTh className="px-2 pb-2" filterKey="method" filters={cf.filters} setFilter={cf.setFilter} /><FilterTh className="px-2 pb-2" filterKey="when" filters={cf.filters} setFilter={cf.setFilter} /></tr>
               </thead>
               <tbody>
                 {loading ? <tr><td colSpan={5} className="px-3 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr>
