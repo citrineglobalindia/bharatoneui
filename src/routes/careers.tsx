@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useMemo, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useLang, pick } from "@/lib/use-lang";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { PageShell } from "@/components/site/PageShell";
 import { ApplyDialog, type JobMeta } from "@/components/site/ApplyDialog";
@@ -219,24 +220,29 @@ function CareersPage() {
   const [team, setTeam] = useState<(typeof TEAMS)[number]>("All");
   const [q, setQ] = useState("");
   // "Life at BharatOne" team testimonials — admin-managed (Website Gallery → Careers).
-  const [teamTestimonials, setTeamTestimonials] = useState<{ quote: string; name: string; role: string; avatar: string }[]>([]);
+  const lang = useLang();
+  const [teamTestimonials, setTeamTestimonials] = useState<{ quote: string; quote_kn?: string | null; quote_hi?: string | null; name: string; role: string; role_kn?: string | null; role_hi?: string | null; avatar: string }[]>([]);
 
   useEffect(() => {
     let on = true;
     (async () => {
       const { data } = await supabase
         .from("testimonials")
-        .select("name, place, quote, initials")
+        .select("name, place, quote, initials, quote_kn, quote_hi, place_kn, place_hi")
         .eq("is_active", true)
         .eq("kind", "team")
         .order("sort_order")
         .order("created_at");
       if (!on || !data) return;
       setTeamTestimonials(
-        (data as { name: string; place: string | null; quote: string; initials: string | null }[]).map((d) => ({
+        (data as { name: string; place: string | null; quote: string; initials: string | null; quote_kn: string | null; quote_hi: string | null; place_kn: string | null; place_hi: string | null }[]).map((d) => ({
           quote: d.quote,
+          quote_kn: d.quote_kn,
+          quote_hi: d.quote_hi,
           name: d.name,
           role: d.place ?? "",
+          role_kn: d.place_kn,
+          role_hi: d.place_hi,
           avatar: d.initials?.trim() || initialsOf(d.name),
         })),
       );
@@ -634,16 +640,16 @@ function CareersPage() {
               className="rounded-3xl border border-border bg-card p-6 sm:p-7 relative hover:shadow-elegant transition-shadow"
             >
               <Quote className="absolute top-5 right-5 h-6 w-6 text-saffron/30" />
-              <blockquote className="text-sm leading-relaxed text-foreground/85">
-                "{t.quote}"
+              <blockquote className="text-sm leading-relaxed text-foreground/85" translate="no">
+                "{pick(lang, t.quote, t.quote_kn, t.quote_hi)}"
               </blockquote>
               <figcaption className="mt-5 flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-gradient-to-br from-[var(--saffron)] to-[var(--india-green)] text-white text-sm font-semibold flex items-center justify-center">
                   {t.avatar}
                 </div>
                 <div>
-                  <div className="font-semibold text-sm">{t.name}</div>
-                  <div className="text-xs text-muted-foreground">{t.role}</div>
+                  <div className="font-semibold text-sm" translate="no">{t.name}</div>
+                  <div className="text-xs text-muted-foreground" translate="no">{pick(lang, t.role, t.role_kn, t.role_hi)}</div>
                 </div>
               </figcaption>
             </motion.figure>

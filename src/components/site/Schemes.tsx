@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Heart, GraduationCap, Users, ArrowRight, Sparkles, Quote, Star, X, ZoomIn, ZoomOut, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { useLang, pick } from "@/lib/use-lang";
 
 const schemes = [
   {
@@ -184,13 +185,13 @@ export function Awards() {
               transition={{ delay: i * 0.1 }}
               title={`Open ${a.name}`}
               aria-label={`Open ${a.name} photos`}
-              className="group flex h-16 sm:h-20 items-center justify-center cursor-pointer transition-transform duration-200 hover:scale-105"
+              className="group flex h-16 sm:h-20 items-center justify-center cursor-pointer"
             >
               <img
                 src={a.logo}
                 alt={a.name}
                 loading="lazy"
-                className="max-h-full w-auto max-w-[150px] sm:max-w-[180px] object-contain grayscale opacity-80 transition group-hover:grayscale-0 group-hover:opacity-100 group-hover:drop-shadow-md"
+                className="max-h-full w-auto max-w-[150px] sm:max-w-[180px] object-contain"
                 onError={(e) => {
                   const img = e.currentTarget;
                   img.style.display = "none";
@@ -198,7 +199,7 @@ export function Awards() {
                   if (fb) fb.style.display = "block";
                 }}
               />
-              <span className="hidden font-display font-bold text-base sm:text-lg text-muted-foreground group-hover:text-foreground">{a.name}</span>
+              <span className="hidden font-display font-bold text-base sm:text-lg text-foreground">{a.name}</span>
             </motion.button>
           ))}
         </div>
@@ -242,7 +243,7 @@ export function Awards() {
 }
 
 
-type Testimonial = { name: string; place: string; text: string; initials: string; rating: number };
+type Testimonial = { name: string; place: string; place_kn?: string | null; place_hi?: string | null; text: string; text_kn?: string | null; text_hi?: string | null; initials: string; rating: number };
 
 const initialsOf = (name: string) =>
   name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("") || "•";
@@ -250,23 +251,28 @@ const initialsOf = (name: string) =>
 export function Testimonials() {
   // Blank until an admin adds testimonials in Website Gallery → Testimonials.
   const [items, setItems] = useState<Testimonial[]>([]);
+  const lang = useLang();
 
   useEffect(() => {
     let on = true;
     (async () => {
       const { data } = await supabase
         .from("testimonials")
-        .select("name, place, quote, rating, initials")
+        .select("name, place, quote, rating, initials, quote_kn, quote_hi, place_kn, place_hi")
         .eq("is_active", true)
         .eq("kind", "partner")
         .order("sort_order")
         .order("created_at");
       if (!on || !data || data.length === 0) return;
       setItems(
-        (data as { name: string; place: string | null; quote: string; rating: number | null; initials: string | null }[]).map((d) => ({
+        (data as { name: string; place: string | null; quote: string; rating: number | null; initials: string | null; quote_kn: string | null; quote_hi: string | null; place_kn: string | null; place_hi: string | null }[]).map((d) => ({
           name: d.name,
           place: d.place ?? "",
+          place_kn: d.place_kn,
+          place_hi: d.place_hi,
           text: d.quote,
+          text_kn: d.quote_kn,
+          text_hi: d.quote_hi,
           initials: d.initials?.trim() || initialsOf(d.name),
           rating: Math.max(1, Math.min(5, d.rating ?? 5)),
         })),
@@ -301,15 +307,15 @@ export function Testimonials() {
               className="relative flex flex-col rounded-2xl border border-border bg-card p-6 shadow-soft"
             >
               <Quote className="h-8 w-8 text-saffron/30" />
-              <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">{t.text}</p>
+              <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground" translate="no">{pick(lang, t.text, t.text_kn, t.text_hi)}</p>
               <div className="mt-4 flex items-center gap-0.5 text-saffron">
                 {Array.from({ length: t.rating }).map((_, k) => <Star key={k} className="h-4 w-4 fill-current" />)}
               </div>
               <div className="mt-4 flex items-center gap-3 border-t border-border pt-4">
                 <div className="grid h-11 w-11 place-items-center rounded-full bg-gradient-saffron text-white font-bold">{t.initials}</div>
                 <div>
-                  <p className="font-bold text-sm text-foreground">{t.name}</p>
-                  <p className="text-xs text-muted-foreground">{t.place}</p>
+                  <p className="font-bold text-sm text-foreground" translate="no">{t.name}</p>
+                  <p className="text-xs text-muted-foreground" translate="no">{pick(lang, t.place, t.place_kn, t.place_hi)}</p>
                 </div>
               </div>
             </motion.div>

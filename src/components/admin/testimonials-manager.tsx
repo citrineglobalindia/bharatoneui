@@ -12,6 +12,10 @@ export function TestimonialsManager({ kind = "partner", placeLabel = "Place (opt
   const [name, setName] = useState("");
   const [place, setPlace] = useState("");
   const [quote, setQuote] = useState("");
+  const [quoteKn, setQuoteKn] = useState("");
+  const [quoteHi, setQuoteHi] = useState("");
+  const [placeKn, setPlaceKn] = useState("");
+  const [placeHi, setPlaceHi] = useState("");
   const [rating, setRating] = useState(5);
 
   async function load() {
@@ -29,10 +33,13 @@ export function TestimonialsManager({ kind = "partner", placeLabel = "Place (opt
     try {
       const { error } = await supabase.from("testimonials").insert({
         name: name.trim(), place: place.trim() || null, quote: quote.trim(), rating, sort_order: rows.length, kind,
+        quote_kn: quoteKn.trim() || null, quote_hi: quoteHi.trim() || null,
+        place_kn: placeKn.trim() || null, place_hi: placeHi.trim() || null,
       });
       if (error) { toast.error("Save failed", { description: error.message }); return; }
       toast.success("Testimonial added");
       setName(""); setPlace(""); setQuote(""); setRating(5);
+      setQuoteKn(""); setQuoteHi(""); setPlaceKn(""); setPlaceHi("");
       load();
     } finally { setBusy(false); }
   };
@@ -65,8 +72,28 @@ export function TestimonialsManager({ kind = "partner", placeLabel = "Place (opt
           </div>
         </div>
         <div className="mt-3">
-          <label className="text-[11px] font-semibold text-muted-foreground">Testimonial</label>
+          <label className="text-[11px] font-semibold text-muted-foreground">Testimonial (English)</label>
           <textarea value={quote} onChange={(e) => setQuote(e.target.value)} rows={3} placeholder="What the partner said…" className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
+        </div>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <div>
+            <label className="text-[11px] font-semibold text-muted-foreground">Testimonial — ಕನ್ನಡ (optional)</label>
+            <textarea value={quoteKn} onChange={(e) => setQuoteKn(e.target.value)} rows={3} placeholder="ಕನ್ನಡದಲ್ಲಿ ಅಭಿಪ್ರಾಯ…" className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label className="text-[11px] font-semibold text-muted-foreground">Testimonial — हिन्दी (optional)</label>
+            <textarea value={quoteHi} onChange={(e) => setQuoteHi(e.target.value)} rows={3} placeholder="हिन्दी में प्रतिक्रिया…" className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
+          </div>
+        </div>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <div>
+            <label className="text-[11px] font-semibold text-muted-foreground">{placeLabel} — ಕನ್ನಡ (optional)</label>
+            <input value={placeKn} onChange={(e) => setPlaceKn(e.target.value)} className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm" />
+          </div>
+          <div>
+            <label className="text-[11px] font-semibold text-muted-foreground">{placeLabel} — हिन्दी (optional)</label>
+            <input value={placeHi} onChange={(e) => setPlaceHi(e.target.value)} className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm" />
+          </div>
         </div>
         <div className="mt-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2">

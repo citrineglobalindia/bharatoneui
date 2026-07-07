@@ -2812,6 +2812,16 @@ export function getLang(): Lang {
   } catch { return "en"; }
 }
 
+// Let React components react to language changes (for DB content that carries
+// its own per-language translations, e.g. testimonials).
+const LANG_EVENT = "bharatone:langchange";
+export function onLangChange(cb: (l: Lang) => void): () => void {
+  if (typeof window === "undefined") return () => {};
+  const h = (e: Event) => cb((e as CustomEvent).detail as Lang);
+  window.addEventListener(LANG_EVENT, h);
+  return () => window.removeEventListener(LANG_EVENT, h);
+}
+
 function shouldSkip(node: Node): boolean {
   let el = node.parentElement;
   while (el) {
@@ -2875,6 +2885,7 @@ export function applyLanguage(lang: Lang) {
   ensureNoTranslateMeta();
   try { localStorage.setItem(STORAGE_KEY, lang); } catch { /* ignore */ }
   document.documentElement.lang = lang;
+  try { window.dispatchEvent(new CustomEvent(LANG_EVENT, { detail: lang })); } catch { /* ignore */ }
 
   translateNode(document.body, lang);
 
