@@ -464,6 +464,8 @@ export function RegistrationsReview() {
   const { sorted, sort, toggle } = useSort(filtered, (r: RegRow, key) => {
     switch (key) {
       case "app_id": return r.application_id;
+      case "type": return typeLabel(r.registration_type);
+      case "txn": return r.payment_utr || "";
       case "jsko": return r.jsko_id || r.username || "";
       case "name": return [r.first_name, r.middle_name, r.surname].filter(Boolean).join(" ");
       case "amount": return Number(r.payment_amount || 0);
@@ -554,9 +556,11 @@ export function RegistrationsReview() {
           <thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
             <tr>
               <SortTh className="whitespace-nowrap px-3 py-2.5" label="Application ID" sortKey="app_id" sort={sort} onSort={toggle} />
+              <SortTh className="whitespace-nowrap px-3 py-2.5" label="Type" sortKey="type" sort={sort} onSort={toggle} />
               <SortTh className="whitespace-nowrap px-3 py-2.5" label="JSKO ID" sortKey="jsko" sort={sort} onSort={toggle} />
               <SortTh className="whitespace-nowrap px-3 py-2.5" label="JSKO Name" sortKey="name" sort={sort} onSort={toggle} />
               <SortTh className="whitespace-nowrap px-3 py-2.5" label="Amount" sortKey="amount" sort={sort} onSort={toggle} />
+              <SortTh className="whitespace-nowrap px-3 py-2.5" label="Transaction ID" sortKey="txn" sort={sort} onSort={toggle} />
               <th className="whitespace-nowrap px-3 py-2.5">Checks</th>
               <SortTh className="whitespace-nowrap px-3 py-2.5" label="Phone Number" sortKey="phone" sort={sort} onSort={toggle} />
               <SortTh className="whitespace-nowrap px-3 py-2.5" label="Email ID" sortKey="email" sort={sort} onSort={toggle} />
@@ -578,6 +582,7 @@ export function RegistrationsReview() {
                   <td className="px-3 py-3"><Skeleton className="h-4 w-16" /></td>
                   <td className="px-3 py-3"><Skeleton className="h-4 w-32" /></td>
                   <td className="px-3 py-3"><Skeleton className="h-4 w-20" /></td>
+                  <td className="px-3 py-3"><Skeleton className="h-4 w-24" /></td>
                   <td className="px-3 py-3"><Skeleton className="h-3 w-24" /></td>
                   <td className="px-3 py-3"><Skeleton className="h-4 w-24" /></td>
                   <td className="px-3 py-3"><Skeleton className="h-4 w-36" /></td>
@@ -595,7 +600,7 @@ export function RegistrationsReview() {
               ))
             ) : sorted.length === 0 ? (
               <tr>
-                <td colSpan={13} className="px-3 py-10 text-center text-muted-foreground">
+                <td colSpan={14} className="px-3 py-10 text-center text-muted-foreground">
                   No {TAB_LABEL[tab].toLowerCase()} registrations.
                 </td>
               </tr>
@@ -609,11 +614,9 @@ export function RegistrationsReview() {
                     animationFillMode: "backwards",
                   }}
                 >
+                  <td className="whitespace-nowrap px-3 py-3 font-mono text-xs font-semibold">{r.application_id}</td>
                   <td className="px-3 py-3">
-                    <div className="font-mono text-xs font-semibold">{r.application_id}</div>
-                    <span
-                      className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${typeBadge(r.registration_type)}`}
-                    >
+                    <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${typeBadge(r.registration_type)}`}>
                       {typeLabel(r.registration_type)}
                     </span>
                   </td>
@@ -629,8 +632,8 @@ export function RegistrationsReview() {
                     <div className="font-semibold">
                       {r.payment_amount ? `₹${r.payment_amount.toLocaleString("en-IN")}` : "—"}
                     </div>
-                    <div className="text-xs text-muted-foreground">{r.payment_utr || ""}</div>
                   </td>
+                  <td className="whitespace-nowrap px-3 py-3 font-mono text-xs text-muted-foreground">{r.payment_utr || "—"}</td>
                   <td className="px-3 py-3">
                     <div
                       className={`flex items-center gap-1 text-xs ${r.payment_verified ? "text-emerald-700" : "text-muted-foreground"}`}
