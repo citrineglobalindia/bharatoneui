@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { PageShell } from "@/components/site/PageShell";
 import { ApplyDialog, type JobMeta } from "@/components/site/ApplyDialog";
@@ -175,30 +176,6 @@ const benefits = [
   { icon: Globe, title: "Family-first", desc: "Predictable hours. Generous parental leave. Pet-friendly office." },
 ];
 
-const testimonials = [
-  {
-    quote:
-      "I joined BharatOne because I wanted my work to mean something beyond a paycheck. Three years in, the centers we've opened have served families I'll never meet — and that's the point.",
-    name: "Priya Rao",
-    role: "Operations Lead, South Karnataka",
-    avatar: "PR",
-  },
-  {
-    quote:
-      "The product team here treats every village as a first-class user. We do real research, ship real things, and the feedback loops are absurdly fast.",
-    name: "Arjun Mehta",
-    role: "Staff Engineer",
-    avatar: "AM",
-  },
-  {
-    quote:
-      "I came in as a junior designer with zero industry experience. The team invested in me from day one — code reviews, design crits, books, mentorship. I've grown more in a year here than my whole degree.",
-    name: "Fatima Sheikh",
-    role: "Product Designer",
-    avatar: "FS",
-  },
-];
-
 const faqs = [
   {
     q: "Do I need to relocate to Hassan?",
@@ -233,11 +210,39 @@ const stagger: Variants = {
   visible: { transition: { staggerChildren: 0.07 } },
 };
 
+const initialsOf = (name: string) =>
+  name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("") || "•";
+
 function CareersPage() {
   const [openId, setOpenId] = useState<string | null>(null);
   const [applyFor, setApplyFor] = useState<JobMeta | null>(null);
   const [team, setTeam] = useState<(typeof TEAMS)[number]>("All");
   const [q, setQ] = useState("");
+  // "Life at BharatOne" team testimonials — admin-managed (Website Gallery → Careers).
+  const [teamTestimonials, setTeamTestimonials] = useState<{ quote: string; name: string; role: string; avatar: string }[]>([]);
+
+  useEffect(() => {
+    let on = true;
+    (async () => {
+      const { data } = await supabase
+        .from("testimonials")
+        .select("name, place, quote, initials")
+        .eq("is_active", true)
+        .eq("kind", "team")
+        .order("sort_order")
+        .order("created_at");
+      if (!on || !data) return;
+      setTeamTestimonials(
+        (data as { name: string; place: string | null; quote: string; initials: string | null }[]).map((d) => ({
+          quote: d.quote,
+          name: d.name,
+          role: d.place ?? "",
+          avatar: d.initials?.trim() || initialsOf(d.name),
+        })),
+      );
+    })();
+    return () => { on = false; };
+  }, []);
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -599,7 +604,8 @@ function CareersPage() {
         </div>
       </section>
 
-      {/* Testimonials */}
+      {/* Testimonials — admin-managed; hidden until at least one is added */}
+      {teamTestimonials.length > 0 && (
       <section className="container mx-auto px-4 sm:px-6 py-16 sm:py-24">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -621,7 +627,7 @@ function CareersPage() {
           viewport={{ once: true, amount: 0.2 }}
           className="grid md:grid-cols-3 gap-4 sm:gap-6"
         >
-          {testimonials.map((t) => (
+          {teamTestimonials.map((t) => (
             <motion.figure
               key={t.name}
               variants={fadeUp}
@@ -644,6 +650,7 @@ function CareersPage() {
           ))}
         </motion.div>
       </section>
+      )}
 
       {/* FAQ */}
       <section className="bg-muted/40 border-y border-border">

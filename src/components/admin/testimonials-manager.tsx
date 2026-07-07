@@ -3,9 +3,9 @@ import { Loader2, Plus, Trash2, Quote, Eye, EyeOff, ArrowUp, ArrowDown, Star } f
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
-type Row = { id: string; name: string; place: string | null; quote: string; rating: number; initials: string | null; sort_order: number; is_active: boolean };
+type Row = { id: string; name: string; place: string | null; quote: string; rating: number; initials: string | null; sort_order: number; is_active: boolean; kind: string };
 
-export function TestimonialsManager() {
+export function TestimonialsManager({ kind = "partner", placeLabel = "Place (optional)", placePlaceholder = "e.g. Tumakuru, Karnataka" }: { kind?: "partner" | "team"; placeLabel?: string; placePlaceholder?: string }) {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -16,11 +16,11 @@ export function TestimonialsManager() {
 
   async function load() {
     setLoading(true);
-    const { data } = await supabase.from("testimonials").select("*").order("sort_order").order("created_at");
+    const { data } = await supabase.from("testimonials").select("*").eq("kind", kind).order("sort_order").order("created_at");
     setRows((data as Row[]) ?? []);
     setLoading(false);
   }
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [kind]);
 
   const add = async () => {
     if (!name.trim()) { toast.error("Enter the person's name"); return; }
@@ -28,7 +28,7 @@ export function TestimonialsManager() {
     setBusy(true);
     try {
       const { error } = await supabase.from("testimonials").insert({
-        name: name.trim(), place: place.trim() || null, quote: quote.trim(), rating, sort_order: rows.length,
+        name: name.trim(), place: place.trim() || null, quote: quote.trim(), rating, sort_order: rows.length, kind,
       });
       if (error) { toast.error("Save failed", { description: error.message }); return; }
       toast.success("Testimonial added");
@@ -60,8 +60,8 @@ export function TestimonialsManager() {
             <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Rajesh Kumar" className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm" />
           </div>
           <div>
-            <label className="text-[11px] font-semibold text-muted-foreground">Place (optional)</label>
-            <input value={place} onChange={(e) => setPlace(e.target.value)} placeholder="e.g. Tumakuru, Karnataka" className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm" />
+            <label className="text-[11px] font-semibold text-muted-foreground">{placeLabel}</label>
+            <input value={place} onChange={(e) => setPlace(e.target.value)} placeholder={placePlaceholder} className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm" />
           </div>
         </div>
         <div className="mt-3">

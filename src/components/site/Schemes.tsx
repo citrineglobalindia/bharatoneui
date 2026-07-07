@@ -258,6 +258,7 @@ export function Testimonials() {
         .from("testimonials")
         .select("name, place, quote, rating, initials")
         .eq("is_active", true)
+        .eq("kind", "partner")
         .order("sort_order")
         .order("created_at");
       if (!on || !data || data.length === 0) return;

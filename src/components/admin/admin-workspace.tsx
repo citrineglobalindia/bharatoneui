@@ -1166,7 +1166,11 @@ export function AdminWorkspace() {
                 </div>
                 <div>
                   <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted-foreground">Testimonials (What Our JSKO Has to Say?)</h3>
-                  <TestimonialsManager />
+                  <TestimonialsManager kind="partner" />
+                </div>
+                <div>
+                  <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted-foreground">Careers — Life at BharatOne (team)</h3>
+                  <TestimonialsManager kind="team" placeLabel="Role (optional)" placePlaceholder="e.g. Staff Engineer" />
                 </div>
                 <div>
                   <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted-foreground">Awarded &amp; Recognized By</h3>

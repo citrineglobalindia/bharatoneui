@@ -4,6 +4,26 @@ import { supabase } from "@/integrations/supabase/client";
 
 const EMPTY_MESSAGE = "📢 There are no notifications from BharatOne right now.";
 
+// Turn any http(s) URL inside a headline into a clickable link.
+function renderWithLinks(text: string) {
+  return text.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
+    /^https?:\/\//.test(part) ? (
+      <a
+        key={i}
+        href={part}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={(e) => e.stopPropagation()}
+        className="underline underline-offset-2 font-semibold hover:opacity-80"
+      >
+        {part.replace(/[.,)]+$/, "")}
+      </a>
+    ) : (
+      <span key={i}>{part}</span>
+    ),
+  );
+}
+
 export function HeadlinesMarquee() {
   const [items, setItems] = useState<string[]>([]);
 
@@ -36,7 +56,7 @@ export function HeadlinesMarquee() {
           <div className="marquee whitespace-nowrap text-sm font-medium">
             {[...display, ...display].map((t, i) => (
               <span key={i} className="mx-8 inline-block shrink-0">
-                {t}
+                {renderWithLinks(t)}
               </span>
             ))}
           </div>
