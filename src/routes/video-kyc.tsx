@@ -93,6 +93,13 @@ function KycDocsPage() {
   const verified = present.filter((d) => statusFor(docReviews[d.key]?.status, regStatus).label === "Verified").length;
   const pending = present.length - verified;
 
+  // Retailers may only Replace documents that are NOT verified/approved.
+  // Verified = approved at the doc level, or overall KYC approved and not doc-rejected.
+  // If Support/Admin re-opens KYC (status leaves 'approved'), Replace is enabled again.
+  const policeDocStatus = docReviews["police"]?.status as string | undefined;
+  const policeVerified = policeDocStatus === "approved" || (regStatus === "approved" && policeDocStatus !== "rejected");
+  const canReplacePolice = !policeVerified; // View-only once verified
+
   const uploadPolice = async (file: File) => {
     if (file.size > 50 * 1024 * 1024) return toast.error("File too large", { description: "Maximum size is 50 MB." });
     setUploadingPolice(true);
@@ -200,16 +207,28 @@ function KycDocsPage() {
             <div className="flex items-center gap-3">
               <span className="grid h-11 w-11 place-items-center rounded-xl bg-india-green/10 text-india-green"><ShieldCheck className="h-5 w-5" /></span>
               <div>
-                <p className="font-bold text-foreground">Police Verification</p>
-                <p className="text-xs text-muted-foreground">{policePath ? "Uploaded — you can replace it anytime." : "Upload your Police Verification certificate (any format, up to 50 MB)."}</p>
+                <p className="flex items-center gap-2 font-bold text-foreground">Police Verification
+                  {policePath && <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${policeVerified ? "bg-emerald-100 text-emerald-700" : policeDocStatus === "rejected" ? "bg-rose-100 text-rose-700" : "bg-amber-100 text-amber-700"}`}>{policeVerified ? "Verified" : policeDocStatus === "rejected" ? "Rejected" : "Pending"}</span>}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {policeVerified
+                    ? "Verified — this document is locked. Contact support to update it."
+                    : policeDocStatus === "rejected"
+                      ? "Rejected — please upload a corrected document."
+                      : policePath
+                        ? "Uploaded — you can replace it while it's pending or if it's rejected."
+                        : "Upload your Police Verification certificate (any format, up to 50 MB)."}
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               {policeUrl && <a href={policeUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-9 text-xs font-semibold text-india-green hover:bg-muted"><Eye className="h-3.5 w-3.5" /> View</a>}
-              <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-india-green px-3 h-9 text-sm font-semibold text-white hover:bg-india-green/90">
-                {uploadingPolice ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} {policePath ? "Replace" : "Upload"}
-                <input type="file" className="hidden" onChange={(e) => e.target.files?.[0] && uploadPolice(e.target.files[0])} />
-              </label>
+              {canReplacePolice && (
+                <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-india-green px-3 h-9 text-sm font-semibold text-white hover:bg-india-green/90">
+                  {uploadingPolice ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} {policePath ? "Replace" : "Upload"}
+                  <input type="file" className="hidden" onChange={(e) => e.target.files?.[0] && uploadPolice(e.target.files[0])} />
+                </label>
+              )}
             </div>
           </div>
           <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-[13px] text-red-700">
