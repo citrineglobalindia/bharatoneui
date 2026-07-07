@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
+import { useSort, SortTh } from "@/components/ui/sortable";
 import {
   ShieldCheck,
   CreditCard,
@@ -460,6 +461,22 @@ export function RegistrationsReview() {
           ? (["telecaller", "rejected"] as unknown as typeof TABS)
           : TABS;
 
+  const { sorted, sort, toggle } = useSort(filtered, (r: RegRow, key) => {
+    switch (key) {
+      case "app_id": return r.application_id;
+      case "jsko": return r.jsko_id || r.username || "";
+      case "name": return [r.first_name, r.middle_name, r.surname].filter(Boolean).join(" ");
+      case "amount": return Number(r.payment_amount || 0);
+      case "phone": return r.mobile || "";
+      case "email": return r.email || "";
+      case "date": return new Date(r.created_at).getTime();
+      case "district": return r.district || "";
+      case "taluk": return r.taluk || "";
+      case "status": return r.status || "";
+      default: return "";
+    }
+  });
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
@@ -536,17 +553,17 @@ export function RegistrationsReview() {
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
             <tr>
-              <th className="whitespace-nowrap px-3 py-2.5">Application ID</th>
-              <th className="whitespace-nowrap px-3 py-2.5">JSKO ID</th>
-              <th className="whitespace-nowrap px-3 py-2.5">JSKO Name</th>
-              <th className="whitespace-nowrap px-3 py-2.5">Amount</th>
+              <SortTh className="whitespace-nowrap px-3 py-2.5" label="Application ID" sortKey="app_id" sort={sort} onSort={toggle} />
+              <SortTh className="whitespace-nowrap px-3 py-2.5" label="JSKO ID" sortKey="jsko" sort={sort} onSort={toggle} />
+              <SortTh className="whitespace-nowrap px-3 py-2.5" label="JSKO Name" sortKey="name" sort={sort} onSort={toggle} />
+              <SortTh className="whitespace-nowrap px-3 py-2.5" label="Amount" sortKey="amount" sort={sort} onSort={toggle} />
               <th className="whitespace-nowrap px-3 py-2.5">Checks</th>
-              <th className="whitespace-nowrap px-3 py-2.5">Phone Number</th>
-              <th className="whitespace-nowrap px-3 py-2.5">Email ID</th>
-              <th className="whitespace-nowrap px-3 py-2.5">Date &amp; Time</th>
-              <th className="whitespace-nowrap px-3 py-2.5">District</th>
-              <th className="whitespace-nowrap px-3 py-2.5">Taluk</th>
-              <th className="whitespace-nowrap px-3 py-2.5">Status</th>
+              <SortTh className="whitespace-nowrap px-3 py-2.5" label="Phone Number" sortKey="phone" sort={sort} onSort={toggle} />
+              <SortTh className="whitespace-nowrap px-3 py-2.5" label="Email ID" sortKey="email" sort={sort} onSort={toggle} />
+              <SortTh className="whitespace-nowrap px-3 py-2.5" label="Date & Time" sortKey="date" sort={sort} onSort={toggle} />
+              <SortTh className="whitespace-nowrap px-3 py-2.5" label="District" sortKey="district" sort={sort} onSort={toggle} />
+              <SortTh className="whitespace-nowrap px-3 py-2.5" label="Taluk" sortKey="taluk" sort={sort} onSort={toggle} />
+              <SortTh className="whitespace-nowrap px-3 py-2.5" label="Status" sortKey="status" sort={sort} onSort={toggle} />
               <th className="sticky right-0 z-20 whitespace-nowrap bg-muted px-3 py-2.5 text-right shadow-[-8px_0_8px_-8px_rgba(0,0,0,0.15)]">Actions</th>
             </tr>
           </thead>
@@ -576,14 +593,14 @@ export function RegistrationsReview() {
                   </td>
                 </tr>
               ))
-            ) : filtered.length === 0 ? (
+            ) : sorted.length === 0 ? (
               <tr>
                 <td colSpan={13} className="px-3 py-10 text-center text-muted-foreground">
                   No {TAB_LABEL[tab].toLowerCase()} registrations.
                 </td>
               </tr>
             ) : (
-              filtered.map((r, i) => (
+              sorted.map((r, i) => (
                 <tr
                   key={r.id}
                   className="animate-in fade-in slide-in-from-bottom-1 border-t border-border align-top duration-300"

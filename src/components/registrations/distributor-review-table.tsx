@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { downloadRegistrationPDF } from "@/lib/registration-pdf";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 import { useAuth } from "@/hooks/use-auth";
+import { useSort, SortTh } from "@/components/ui/sortable";
 
 type DistRow = {
   id: string; application_id: string; username: string | null; status: string;
@@ -160,6 +161,20 @@ export function DistributorReviewTable({ tab, query = "", fromDate = "", toDate 
 
   const dt = (s: string) => new Date(s);
 
+  const { sorted, sort, toggle } = useSort(filtered, (r: DistRow, key) => {
+    switch (key) {
+      case "app_id": return r.application_id;
+      case "dist_id": return r.username || r.application_id;
+      case "name": return r.distributor_name || r.company_name || r.proprietor_name || "";
+      case "contact": return r.mobile || "";
+      case "email": return r.email || "";
+      case "date": return new Date(r.created_at).getTime();
+      case "district": return r.district || "";
+      case "status": return r.status || "";
+      default: return "";
+    }
+  });
+
   const exportList = () => {
     if (filtered.length === 0) { toast.error("No rows to export"); return; }
     // Same 28-column layout as the retailer / Old JSKO export, so the whole
@@ -204,18 +219,22 @@ export function DistributorReviewTable({ tab, query = "", fromDate = "", toDate 
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
             <tr>
-              {["Application ID", "Distributor ID", "Distributor Name", "Amount", "Checks", "Contact Number", "Email ID", "Date & Time", "District", "Taluk", "Status"].map((h) => (
-                <th key={h} className="whitespace-nowrap px-3 py-2.5">{h}</th>
-              ))}
+              {([
+                ["Application ID", "app_id"], ["Distributor ID", "dist_id"], ["Distributor Name", "name"], ["Amount", null], ["Checks", null],
+                ["Contact Number", "contact"], ["Email ID", "email"], ["Date & Time", "date"], ["District", "district"], ["Taluk", null], ["Status", "status"],
+              ] as [string, string | null][]).map(([h, key]) => key
+                ? <SortTh key={h} className="whitespace-nowrap px-3 py-2.5" label={h} sortKey={key} sort={sort} onSort={toggle} />
+                : <th key={h} className="whitespace-nowrap px-3 py-2.5">{h}</th>
+              )}
               <th className="sticky right-0 z-20 whitespace-nowrap bg-muted px-3 py-2.5 text-right shadow-[-8px_0_8px_-8px_rgba(0,0,0,0.15)]">Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr><td colSpan={12} className="px-3 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr>
-            ) : filtered.length === 0 ? (
+            ) : sorted.length === 0 ? (
               <tr><td colSpan={12} className="px-3 py-10 text-center text-muted-foreground">No distributor registrations in this tab.</td></tr>
-            ) : filtered.map((r) => (
+            ) : sorted.map((r) => (
               <tr key={r.id} className="border-t border-border align-top">
                 <td className="whitespace-nowrap px-3 py-3 font-mono text-xs font-semibold">{r.application_id}</td>
                 <td className="whitespace-nowrap px-3 py-3 font-mono text-xs font-semibold">{r.username || r.application_id}</td>

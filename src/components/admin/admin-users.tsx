@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
+import { useSort, SortTh } from "@/components/ui/sortable";
 
 type U = {
   id: string; email: string; display_name: string; department: string | null; designation: string | null;
@@ -201,6 +202,18 @@ export function AdminUsers() {
   const input = "h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-india-green/30";
   const isBasic = add.role === "distributor" || add.role === "retailer";
 
+  const { sorted, sort, toggle } = useSort(filtered, (u: any, key) => {
+    switch (key) {
+      case "name": return u.display_name || "";
+      case "email": return u.email || "";
+      case "roles": return (u.roles || []).join(",");
+      case "dept": return u.department || "";
+      case "status": return u.is_active ? 1 : 0;
+      case "joined": return new Date(u.created_at).getTime();
+      default: return "";
+    }
+  });
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-1.5 rounded-xl border border-border bg-card p-1.5">
@@ -231,12 +244,12 @@ export function AdminUsers() {
       <div className="overflow-x-auto rounded-xl border border-border bg-card">
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
-            <tr><th className="px-3 py-2.5">User</th><th className="px-3 py-2.5">Email / ID</th><th className="px-3 py-2.5">Roles</th><th className="px-3 py-2.5">Department</th><th className="px-3 py-2.5">Status</th><th className="px-3 py-2.5">Joined</th><th className="px-3 py-2.5 text-right">Actions</th></tr>
+            <tr><SortTh className="px-3 py-2.5" label="User" sortKey="name" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2.5" label="Email / ID" sortKey="email" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2.5" label="Roles" sortKey="roles" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2.5" label="Department" sortKey="dept" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2.5" label="Status" sortKey="status" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2.5" label="Joined" sortKey="joined" sort={sort} onSort={toggle} /><th className="px-3 py-2.5 text-right">Actions</th></tr>
           </thead>
           <tbody>
             {loading ? <tr><td colSpan={7} className="px-3 py-10 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></td></tr>
-              : filtered.length === 0 ? <tr><td colSpan={7} className="px-3 py-10 text-center text-muted-foreground">No users found.</td></tr>
-              : filtered.map((u) => (
+              : sorted.length === 0 ? <tr><td colSpan={7} className="px-3 py-10 text-center text-muted-foreground">No users found.</td></tr>
+              : sorted.map((u) => (
               <tr key={u.id} className="border-t border-border">
                 <td className="px-3 py-3 font-semibold">{u.display_name}</td>
                 <td className="px-3 py-3 text-sm text-muted-foreground"><span className="break-all">{u.email}</span>{u.employee_code ? <span className="ml-1 font-mono text-xs">· {u.employee_code}</span> : null}</td>

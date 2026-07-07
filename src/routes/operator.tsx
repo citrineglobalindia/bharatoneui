@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSort, SortTh } from "@/components/ui/sortable";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { LogOut, RefreshCw, Loader2, FileSearch, IndianRupee, CheckCircle2, Clock3, XCircle, ChevronRight, Upload, Paperclip, Download } from "lucide-react";
@@ -109,6 +110,17 @@ function OperatorPortal() {
     commission: apps.filter((a) => a.status === "completed").reduce((s, a) => s + Number(a.commission_price || 0), 0),
   }), [apps]);
   const filtered = useMemo(() => filter === "all" ? apps : apps.filter((a) => a.status === filter), [apps, filter]);
+  const { sorted, sort, toggle } = useSort(filtered, (a: any, key) => {
+    switch (key) {
+      case "app": return a.application_no || "";
+      case "retailer": return a.submitter_name || "";
+      case "applicant": return a.full_name || "";
+      case "service": return a.service_name || "";
+      case "charge": return Number(a.service_charge || 0);
+      case "status": return a.status || "";
+      default: return "";
+    }
+  });
 
   const setStatus = async (a: App, status: string) => {
     setSaving(true);
@@ -189,10 +201,10 @@ function OperatorPortal() {
           <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-soft">
             <table className="w-full text-sm">
               <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
-                <tr><th className="px-3 py-2">Application ID</th><th className="px-3 py-2">Retailer</th><th className="px-3 py-2">Applicant</th><th className="px-3 py-2">Service</th><th className="px-3 py-2">Charge</th><th className="px-3 py-2">Status</th><th className="px-3 py-2 text-right">Action</th></tr>
+                <tr><SortTh className="px-3 py-2" label="Application ID" sortKey="app" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Retailer" sortKey="retailer" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Applicant" sortKey="applicant" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Service" sortKey="service" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Charge" sortKey="charge" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Status" sortKey="status" sort={sort} onSort={toggle} /><th className="px-3 py-2 text-right">Action</th></tr>
               </thead>
               <tbody>
-                {filtered.map((a) => (
+                {sorted.map((a) => (
                   <tr key={a.id} className="border-t border-border hover:bg-muted/30">
                     <td className="px-3 py-2 font-mono text-xs font-semibold">{a.application_no}</td>
                     <td className="px-3 py-2"><span className="text-xs font-medium">{a.submitter_name || "—"}</span></td>
