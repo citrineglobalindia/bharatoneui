@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Eye, CreditCard, XCircle, X, CheckCircle2 } from "lucide-react";
+import { Loader2, Eye, CreditCard, XCircle, X, CheckCircle2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { downloadRegistrationPDF } from "@/lib/registration-pdf";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -38,7 +39,43 @@ export function DistributorReviewTable({ tab }: { tab: string }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [detail, setDetail] = useState<DistRow | null>(null);
   const [docUrls, setDocUrls] = useState<Record<string, string>>({});
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const canReview = role === "admin";
+
+  const downloadRow = async (r: DistRow) => {
+    setDownloadingId(r.id);
+    try {
+      const cols: [string, string | null][] = [
+        ["Onboarding Form", r.form_doc_path],
+        ["Bank Copy", r.bank_copy_path],
+        ["Aadhaar", r.aadhaar_doc_path],
+        ["PAN Card", r.pan_doc_path],
+      ];
+      const docs: { label: string; url: string; isPdf?: boolean }[] = [];
+      for (const [label, path] of cols) {
+        if (!path) continue;
+        const { data: su } = await db.storage.from("retailer-kyc").createSignedUrl(path, 3600);
+        if (su?.signedUrl) docs.push({ label, url: su.signedUrl, isPdf: /\.pdf$/i.test(String(path).split("?")[0]) });
+      }
+      const mapped: Record<string, any> = {
+        application_id: r.application_id,
+        jsko_id: r.username || r.application_id,
+        distributor_id: r.username || r.application_id,
+        first_name: r.distributor_name || r.proprietor_name || r.company_name || "Distributor",
+        surname: "",
+        mobile: r.mobile, email: r.email,
+        pan_number: r.pan_number,
+        shop_name: r.company_name,
+        registration_type: "distributor", status: r.status,
+        building_shop_no: r.address_line, district: r.district, state: r.state,
+        bank_holder_name: r.proprietor_name, bank_name: r.bank_name, account_number: r.account_number, ifsc: r.ifsc,
+        rejection_reason: r.rejection_reason,
+      };
+      await downloadRegistrationPDF(mapped, docs, r.username || r.application_id);
+    } catch (e) {
+      toast.error("Could not generate PDF", { description: e instanceof Error ? e.message : String(e) });
+    } finally { setDownloadingId(null); }
+  };
 
   useEffect(() => {
     if (!detail) { setDocUrls({}); return; }
@@ -97,7 +134,7 @@ export function DistributorReviewTable({ tab }: { tab: string }) {
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
             <tr>
-              {["Application ID", "Distributor ID", "Distributor Name", "Amount", "Checks", "Contact Number", "Email ID", "Date", "Time", "District", "Taluk", "Status"].map((h) => (
+              {["Application ID", "Distributor ID", "Distributor Name", "Amount", "Checks", "Contact Number", "Email ID", "Date & Time", "District", "Taluk", "Status"].map((h) => (
                 <th key={h} className="whitespace-nowrap px-3 py-2.5">{h}</th>
               ))}
               <th className="sticky right-0 z-20 whitespace-nowrap bg-muted px-3 py-2.5 text-right shadow-[-8px_0_8px_-8px_rgba(0,0,0,0.15)]">Actions</th>
@@ -105,9 +142,9 @@ export function DistributorReviewTable({ tab }: { tab: string }) {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={13} className="px-3 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr>
+              <tr><td colSpan={12} className="px-3 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr>
             ) : filtered.length === 0 ? (
-              <tr><td colSpan={13} className="px-3 py-10 text-center text-muted-foreground">No distributor registrations in this tab.</td></tr>
+              <tr><td colSpan={12} className="px-3 py-10 text-center text-muted-foreground">No distributor registrations in this tab.</td></tr>
             ) : filtered.map((r) => (
               <tr key={r.id} className="border-t border-border align-top">
                 <td className="whitespace-nowrap px-3 py-3 font-mono text-xs font-semibold">{r.application_id}</td>
@@ -117,14 +154,16 @@ export function DistributorReviewTable({ tab }: { tab: string }) {
                 <td className="px-3 py-3 text-xs text-muted-foreground">{r.gst_number ? "GST ✓" : "—"}</td>
                 <td className="whitespace-nowrap px-3 py-3 text-sm">{r.mobile || "—"}</td>
                 <td className="px-3 py-3 text-sm"><span className="block max-w-[200px] truncate" title={r.email || ""}>{r.email || "—"}</span></td>
-                <td className="whitespace-nowrap px-3 py-3 text-xs text-muted-foreground">{dt(r.created_at).toLocaleDateString("en-IN")}</td>
-                <td className="whitespace-nowrap px-3 py-3 text-xs text-muted-foreground">{dt(r.created_at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</td>
+                <td className="whitespace-nowrap px-3 py-3 text-xs text-muted-foreground">{dt(r.created_at).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</td>
                 <td className="px-3 py-3 text-sm">{r.district || "—"}</td>
                 <td className="px-3 py-3 text-sm">—</td>
                 <td className="px-3 py-3"><span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${statusPill(r.status)}`}>{r.status.replace("_", " ")}</span></td>
                 <td className="sticky right-0 z-10 bg-card px-3 py-3 shadow-[-8px_0_8px_-8px_rgba(0,0,0,0.15)]">
                   <div className="flex flex-wrap justify-end gap-1.5">
                     <Button size="sm" variant="outline" className="h-8" onClick={() => setDetail(r)}><Eye className="h-3.5 w-3.5" /> View</Button>
+                    <Button size="sm" variant="outline" className="h-8" disabled={downloadingId === r.id} title="Download PDF" onClick={() => downloadRow(r)}>
+                      {downloadingId === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+                    </Button>
                     {canReview && r.status === "under_review" && (
                       <>
                         <Button size="sm" className="h-8 bg-india-green text-white" disabled={busy === r.id} onClick={() => approve(r)}>
