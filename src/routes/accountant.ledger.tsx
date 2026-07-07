@@ -17,6 +17,7 @@ import { StatCard } from "@/components/retailer/stat-card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession, withTimeout } from "@/integrations/supabase/ensure-session";
+import { useSort, SortTh } from "@/components/ui/sortable";
 import {
   REGISTRATION_PAYMENTS,
   WALLET_REQUESTS,
@@ -186,6 +187,18 @@ function LedgerPage() {
     });
   }, [entries, query, category, direction, status]);
 
+  const { sorted, sort, toggle } = useSort(filtered, (e: LedgerEntry, key) => {
+    switch (key) {
+      case "entry": return e.id;
+      case "category": return e.category;
+      case "party": return e.party;
+      case "methodref": return `${e.method} ${e.reference}`;
+      case "amount": return Number(e.amount || 0);
+      case "status": return e.status;
+      default: return "";
+    }
+  });
+
   const totals = useMemo(() => {
     let credit = 0;
     let debit = 0;
@@ -325,16 +338,16 @@ function LedgerPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-slate-50 text-left text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                  <th className="px-4 py-3">Entry</th>
-                  <th className="px-4 py-3">Category</th>
-                  <th className="px-4 py-3">Party</th>
-                  <th className="px-4 py-3">Method · Reference</th>
-                  <th className="px-4 py-3 text-right">Amount</th>
-                  <th className="px-4 py-3">Status</th>
+                  <SortTh className="px-4 py-3" label="Entry" sortKey="entry" sort={sort} onSort={toggle} />
+                  <SortTh className="px-4 py-3" label="Category" sortKey="category" sort={sort} onSort={toggle} />
+                  <SortTh className="px-4 py-3" label="Party" sortKey="party" sort={sort} onSort={toggle} />
+                  <SortTh className="px-4 py-3" label="Method · Reference" sortKey="methodref" sort={sort} onSort={toggle} />
+                  <SortTh className="px-4 py-3 text-right" label="Amount" sortKey="amount" sort={sort} onSort={toggle} />
+                  <SortTh className="px-4 py-3" label="Status" sortKey="status" sort={sort} onSort={toggle} />
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {filtered.map((e) => (
+                {sorted.map((e) => (
                   <tr key={`${e.category}-${e.id}`} className="hover:bg-muted/40">
                     <td className="px-4 py-3">
                       <p className="font-mono text-xs font-bold text-slate-900">{e.id}</p>
