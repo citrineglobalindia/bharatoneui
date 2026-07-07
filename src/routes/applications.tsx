@@ -62,6 +62,8 @@ function ApplicationsPage() {
   const [sel, setSel] = useState<Row | null>(null);
   const [opContact, setOpContact] = useState<{ name: string; email: string | null; phone: string | null } | null>(null);
   const [reuploading, setReuploading] = useState(false);
+  const [sort, setSort] = useState<{ key: string; dir: "asc" | "desc" }>({ key: "created_at", dir: "desc" });
+  const toggleSort = (key: string) => setSort((s) => s.key === key ? { key, dir: s.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" });
   useEffect(() => {
     if (!sel) { setOpContact(null); return; }
     let on = true;
@@ -86,6 +88,39 @@ function ApplicationsPage() {
     pending: rows.filter((r) => !["completed", "rejected"].includes(r.status)).length,
   }), [rows]);
   const filtered = useMemo(() => filter === "All" ? rows : rows.filter((r) => (statusLabel[r.status] ?? r.status) === filter), [rows, filter]);
+  const sortVal = (r: Row, key: string): string | number => {
+    switch (key) {
+      case "application_no": return r.application_no || "";
+      case "service_name": return r.service_name || "";
+      case "full_name": return r.full_name || "";
+      case "charge": return Number(r.service_charge || 0);
+      case "commission": return Number(r.commission_price || 0);
+      case "status": return statusLabel[r.status] ?? r.status;
+      case "created_at": return new Date(r.created_at).getTime();
+      default: return "";
+    }
+  };
+  const sorted = useMemo(() => {
+    const arr = [...filtered];
+    arr.sort((a, b) => {
+      const av = sortVal(a, sort.key), bv = sortVal(b, sort.key);
+      const c = typeof av === "number" && typeof bv === "number" ? av - bv : String(av).localeCompare(String(bv));
+      return sort.dir === "asc" ? c : -c;
+    });
+    return arr;
+  }, [filtered, sort]);
+  const exportCsv = () => {
+    const esc = (v: any) => { const s = v == null ? "" : String(v); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+    const header = ["Application ID", "Service", "Category", "Applicant", "Charge", "Commission", "Status", "Submitted"];
+    const body = sorted.map((r) => [r.application_no, r.service_name, r.category_name, r.full_name, r.service_charge, r.commission_price, statusLabel[r.status] ?? r.status, new Date(r.created_at).toLocaleString("en-IN")]);
+    const csv = [header, ...body].map((row) => row.map(esc).join(",")).join("\n");
+    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `applied-services-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+    toast.success(`Exported ${sorted.length} application${sorted.length === 1 ? "" : "s"}`);
+  };
 
   const doReupload = async (r: Row, file: File) => {
     if (file.size > 50 * 1024 * 1024) return toast.error("File too large", { description: "Maximum size is 50 MB." });
@@ -106,13 +141,13 @@ function ApplicationsPage() {
     } finally { setReuploading(false); }
   };
   const cols: Column<Row>[] = [
-    { key: "application_no", header: "Application ID", cell: (r) => <span className="font-mono text-xs">{r.application_no}</span> },
-    { key: "service_name", header: "Service", cell: (r) => <span className="font-medium">{r.service_name}</span> },
-    { key: "full_name", header: "Applicant", cell: (r) => <span className="text-sm">{r.full_name || "—"}</span> },
-    { key: "charge", header: "Charge", cell: (r) => <span className="text-xs">{inr(r.service_charge)}</span> },
-    { key: "commission", header: "Commission", cell: (r) => <span className="text-xs font-semibold text-india-green">{inr(r.commission_price)}</span> },
-    { key: "created_at", header: "Submitted", cell: (r) => <span className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString("en-IN")}</span> },
-    { key: "status", header: "Status", cell: (r) => <StatusBadge status={statusLabel[r.status] ?? r.status} /> },
+    { key: "application_no", header: "Application ID", sortable: true, cell: (r) => <span className="font-mono text-xs">{r.application_no}</span> },
+    { key: "service_name", header: "Service", sortable: true, cell: (r) => <span className="font-medium">{r.service_name}</span> },
+    { key: "full_name", header: "Applicant", sortable: true, cell: (r) => <span className="text-sm">{r.full_name || "—"}</span> },
+    { key: "charge", header: "Charge", sortable: true, cell: (r) => <span className="text-xs">{inr(r.service_charge)}</span> },
+    { key: "commission", header: "Commission", sortable: true, cell: (r) => <span className="text-xs font-semibold text-india-green">{inr(r.commission_price)}</span> },
+    { key: "created_at", header: "Submitted", sortable: true, cell: (r) => <span className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString("en-IN")}</span> },
+    { key: "status", header: "Status", sortable: true, cell: (r) => <StatusBadge status={statusLabel[r.status] ?? r.status} /> },
     { key: "act", header: "", cell: (r) => <button onClick={() => setSel(r)} className="inline-flex items-center gap-1 text-xs font-bold text-india-green hover:underline">View <ChevronRight className="h-3.5 w-3.5" /></button>, className: "text-right" },
   ];
 
@@ -131,12 +166,15 @@ function ApplicationsPage() {
 
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap gap-1.5">{FILTERS.map((f) => <button key={f} onClick={() => setFilter(f)} className={`rounded-full px-3 h-8 text-xs font-semibold transition ${filter === f ? "bg-india-green text-white" : "border border-border bg-card hover:bg-muted"}`}>{f}</button>)}</div>
-          <button onClick={load} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-8 text-xs font-semibold hover:bg-muted"><RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} /> Refresh</button>
+          <div className="flex items-center gap-2">
+            <button onClick={exportCsv} disabled={sorted.length === 0} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-8 text-xs font-semibold hover:bg-muted disabled:opacity-50 disabled:pointer-events-none"><Download className="h-3.5 w-3.5" /> Export</button>
+            <button onClick={load} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-8 text-xs font-semibold hover:bg-muted"><RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} /> Refresh</button>
+          </div>
         </div>
 
         {loading ? <div className="flex items-center gap-2 py-10 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Loading…</div>
           : filtered.length === 0 ? <div className="rounded-2xl border border-dashed border-border bg-card p-10 text-center text-sm text-muted-foreground">{rows.length === 0 ? <>No applications yet. Click <b className="text-foreground">Apply Service</b> to get started.</> : "No applications match this filter."}</div>
-          : <DataTable columns={cols} rows={filtered} />}
+          : <DataTable columns={cols} rows={sorted} sort={sort} onSort={toggleSort} />}
       </div>
 
       {sel && (

@@ -177,7 +177,8 @@ function DashboardPage() {
       <div className="space-y-5">
         <NoticeMarquee />
         <PageHeader
-          title={`Hello, JSKO ${retailerName} 👋`}
+          title={`Hello, ${retailerName} 👋`}
+          badge={me.jskoId ? <span className="inline-flex items-center rounded-full bg-india-green px-2.5 py-0.5 text-[11px] font-bold text-white">JSKO ID: {me.jskoId}</span> : undefined}
           subtitle="Here's what's happening with your business today."
           actions={
             <>
@@ -337,10 +338,12 @@ function DashboardPage() {
           <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">All Services</p>
           <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
             {QUICK_LINKS.map((s) => (
-              <Link key={s.label} to={s.to} className="rounded-xl border border-border bg-card px-3 py-4 flex flex-col items-center gap-2 hover:shadow-elev hover:-translate-y-0.5 transition">
-                <div className={`h-10 w-10 rounded-xl ${s.tone} text-white flex items-center justify-center shadow-soft`}>{s.icon}</div>
-                <span className="text-xs font-semibold text-center">{s.label}</span>
-              </Link>
+              <div key={s.label} aria-disabled="true" title="Coming soon" className="relative rounded-xl border border-border bg-muted/40 px-3 py-4 flex flex-col items-center gap-2 cursor-not-allowed opacity-70 select-none">
+                <span className="absolute top-1.5 right-1.5 rounded-full bg-slate-200 text-slate-500 text-[8px] font-bold uppercase tracking-wide px-1.5 py-0.5">Soon</span>
+                <div className="h-10 w-10 rounded-xl bg-slate-300 text-slate-500 flex items-center justify-center">{s.icon}</div>
+                <span className="text-xs font-semibold text-center text-slate-400">{s.label}</span>
+                <span className="text-[9px] font-medium text-slate-400">Coming soon</span>
+              </div>
             ))}
           </div>
         </section>

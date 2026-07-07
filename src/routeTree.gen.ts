@@ -1028,8 +1028,8 @@ export interface FileRoutesByFullPath {
   '/accountant/services-payments': typeof AccountantServicesPaymentsRoute
   '/accountant/settings': typeof AccountantSettingsRoute
   '/accountant/support': typeof AccountantSupportRoute
-  '/accountant/wallet-requests': typeof AccountantWalletRequestsRoute
   '/accountant/wallet-recharge': typeof AccountantWalletRechargeRoute
+  '/accountant/wallet-requests': typeof AccountantWalletRequestsRoute
   '/accountant/withdrawals': typeof AccountantWithdrawalsRoute
   '/admin/registrations': typeof AdminRegistrationsRoute
   '/bde/dashboard': typeof BdeDashboardRoute
@@ -1186,8 +1186,8 @@ export interface FileRoutesByTo {
   '/accountant/services-payments': typeof AccountantServicesPaymentsRoute
   '/accountant/settings': typeof AccountantSettingsRoute
   '/accountant/support': typeof AccountantSupportRoute
-  '/accountant/wallet-requests': typeof AccountantWalletRequestsRoute
   '/accountant/wallet-recharge': typeof AccountantWalletRechargeRoute
+  '/accountant/wallet-requests': typeof AccountantWalletRequestsRoute
   '/accountant/withdrawals': typeof AccountantWithdrawalsRoute
   '/admin/registrations': typeof AdminRegistrationsRoute
   '/bde/dashboard': typeof BdeDashboardRoute
@@ -1345,8 +1345,8 @@ export interface FileRoutesById {
   '/accountant/services-payments': typeof AccountantServicesPaymentsRoute
   '/accountant/settings': typeof AccountantSettingsRoute
   '/accountant/support': typeof AccountantSupportRoute
-  '/accountant/wallet-requests': typeof AccountantWalletRequestsRoute
   '/accountant/wallet-recharge': typeof AccountantWalletRechargeRoute
+  '/accountant/wallet-requests': typeof AccountantWalletRequestsRoute
   '/accountant/withdrawals': typeof AccountantWithdrawalsRoute
   '/admin/registrations': typeof AdminRegistrationsRoute
   '/bde/dashboard': typeof BdeDashboardRoute
@@ -1506,8 +1506,8 @@ export interface FileRouteTypes {
     | '/accountant/services-payments'
     | '/accountant/settings'
     | '/accountant/support'
-    | '/accountant/wallet-requests'
     | '/accountant/wallet-recharge'
+    | '/accountant/wallet-requests'
     | '/accountant/withdrawals'
     | '/admin/registrations'
     | '/bde/dashboard'
@@ -1664,8 +1664,8 @@ export interface FileRouteTypes {
     | '/accountant/services-payments'
     | '/accountant/settings'
     | '/accountant/support'
-    | '/accountant/wallet-requests'
     | '/accountant/wallet-recharge'
+    | '/accountant/wallet-requests'
     | '/accountant/withdrawals'
     | '/admin/registrations'
     | '/bde/dashboard'
@@ -1822,8 +1822,8 @@ export interface FileRouteTypes {
     | '/accountant/services-payments'
     | '/accountant/settings'
     | '/accountant/support'
-    | '/accountant/wallet-requests'
     | '/accountant/wallet-recharge'
+    | '/accountant/wallet-requests'
     | '/accountant/withdrawals'
     | '/admin/registrations'
     | '/bde/dashboard'
@@ -1982,8 +1982,8 @@ export interface RootRouteChildren {
   AccountantServicesPaymentsRoute: typeof AccountantServicesPaymentsRoute
   AccountantSettingsRoute: typeof AccountantSettingsRoute
   AccountantSupportRoute: typeof AccountantSupportRoute
-  AccountantWalletRequestsRoute: typeof AccountantWalletRequestsRoute
   AccountantWalletRechargeRoute: typeof AccountantWalletRechargeRoute
+  AccountantWalletRequestsRoute: typeof AccountantWalletRequestsRoute
   AccountantWithdrawalsRoute: typeof AccountantWithdrawalsRoute
   DistributorApplicationsRoute: typeof DistributorApplicationsRoute
   DistributorCommissionsRoute: typeof DistributorCommissionsRoute
@@ -3354,8 +3354,8 @@ const rootRouteChildren: RootRouteChildren = {
   AccountantServicesPaymentsRoute: AccountantServicesPaymentsRoute,
   AccountantSettingsRoute: AccountantSettingsRoute,
   AccountantSupportRoute: AccountantSupportRoute,
-  AccountantWalletRequestsRoute: AccountantWalletRequestsRoute,
   AccountantWalletRechargeRoute: AccountantWalletRechargeRoute,
+  AccountantWalletRequestsRoute: AccountantWalletRequestsRoute,
   AccountantWithdrawalsRoute: AccountantWithdrawalsRoute,
   DistributorApplicationsRoute: DistributorApplicationsRoute,
   DistributorCommissionsRoute: DistributorCommissionsRoute,

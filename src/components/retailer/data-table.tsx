@@ -1,20 +1,26 @@
 import type { ReactNode } from "react";
+import { ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 
 export type Column<T> = {
   key: string;
-  header: string;
+  header: ReactNode;
   cell: (row: T) => ReactNode;
   className?: string;
+  sortable?: boolean;
 };
 
 export function DataTable<T>({
   columns,
   rows,
   empty = "No records found.",
+  sort,
+  onSort,
 }: {
   columns: Column<T>[];
   rows: T[];
   empty?: string;
+  sort?: { key: string; dir: "asc" | "desc" };
+  onSort?: (key: string) => void;
 }) {
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden">
@@ -24,7 +30,14 @@ export function DataTable<T>({
             <tr>
               {columns.map((c) => (
                 <th key={c.key} className={`px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground ${c.className ?? ""}`}>
-                  {c.header}
+                  {c.sortable && onSort ? (
+                    <button type="button" onClick={() => onSort(c.key)} className="inline-flex items-center gap-1 uppercase tracking-wider hover:text-foreground transition-colors">
+                      {c.header}
+                      {sort?.key === c.key
+                        ? (sort.dir === "asc" ? <ArrowUp className="h-3 w-3 text-india-green" /> : <ArrowDown className="h-3 w-3 text-india-green" />)
+                        : <ArrowUpDown className="h-3 w-3 opacity-40" />}
+                    </button>
+                  ) : c.header}
                 </th>
               ))}
             </tr>
