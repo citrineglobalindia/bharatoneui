@@ -344,7 +344,7 @@ export function Navbar() {
                   }}
                   className="flex flex-col"
                 >
-                  {links.map((l, i) => {
+                  {links.map((l) => {
                     const isActive = active === l.to;
                     return (
                       <motion.div
@@ -362,9 +362,6 @@ export function Navbar() {
                           }`}
                         >
                           <span className="flex items-center gap-3">
-                            <span className="text-[11px] font-mono text-muted-foreground w-6">
-                              0{i + 1}
-                            </span>
                             <span className="text-xl font-display font-semibold">
                               {l.label}
                             </span>
