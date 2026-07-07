@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { sanitizeMobile } from "@/lib/phone";
+import { supabase } from "@/integrations/supabase/client";
 import {
   User,
   Phone,
@@ -81,6 +82,31 @@ export function DistributorSinglePage({
   const [confirmAccount, setConfirmAccount] = useState("");
   const [formFile, setFormFile] = useState<File | null>(null);
   const [attempted, setAttempted] = useState(false);
+
+  // Admin-managed downloadable forms (blank form + sample). Fall back to the
+  // bundled static PDF when the admin hasn't uploaded one.
+  const [forms, setForms] = useState<{ form?: string; sample?: string }>({});
+  useEffect(() => {
+    let on = true;
+    (async () => {
+      const { data } = await supabase
+        .from("distributor_forms")
+        .select("form_path, form_name, sample_path, sample_name")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!on || !data) return;
+      const d = data as { form_path: string | null; form_name: string | null; sample_path: string | null; sample_name: string | null };
+      const url = (p: string, n?: string | null) => supabase.storage.from("gallery").getPublicUrl(p, { download: n || true }).data.publicUrl;
+      setForms({
+        form: d.form_path ? url(d.form_path, d.form_name) : undefined,
+        sample: d.sample_path ? url(d.sample_path, d.sample_name) : undefined,
+      });
+    })();
+    return () => { on = false; };
+  }, []);
+  const formHref = forms.form || "/distributor-onboarding-form.pdf";
 
   const set = <K extends keyof DistributorFormData>(key: K, value: DistributorFormData[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
@@ -454,16 +480,31 @@ export function DistributorSinglePage({
         <div className="rounded-2xl border border-border bg-card p-3 sm:p-4 shadow-elev">
           <div className="flex items-center justify-between gap-2">
             <h3 className="font-display text-sm font-bold text-foreground">Instructions</h3>
-            <Button
-              asChild
-              type="button"
-              size="sm"
-              className="h-7 gap-1 rounded-md bg-saffron-gradient text-xs font-semibold px-2.5"
-            >
-              <a href="/distributor-onboarding-form.pdf" download>
-                Form <Download className="h-3 w-3" />
-              </a>
-            </Button>
+            <div className="flex items-center gap-1.5">
+              <Button
+                asChild
+                type="button"
+                size="sm"
+                className="h-7 gap-1 rounded-md bg-saffron-gradient text-xs font-semibold px-2.5"
+              >
+                <a href={formHref} download target="_blank" rel="noopener noreferrer">
+                  Form <Download className="h-3 w-3" />
+                </a>
+              </Button>
+              {forms.sample && (
+                <Button
+                  asChild
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-7 gap-1 rounded-md text-xs font-semibold px-2.5"
+                >
+                  <a href={forms.sample} download target="_blank" rel="noopener noreferrer">
+                    Sample <Download className="h-3 w-3" />
+                  </a>
+                </Button>
+              )}
+            </div>
           </div>
           <p className="mt-2 text-[11.5px] leading-relaxed text-muted-foreground">
             Please download the distributor onboarding form using the button above and fill it out
