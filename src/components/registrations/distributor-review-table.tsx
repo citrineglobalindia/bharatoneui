@@ -59,17 +59,18 @@ export function DistributorReviewTable({ tab }: { tab: string }) {
       }
       const mapped: Record<string, any> = {
         application_id: r.application_id,
-        jsko_id: r.username || r.application_id,
         distributor_id: r.username || r.application_id,
+        username: r.username,
         first_name: r.distributor_name || r.proprietor_name || r.company_name || "Distributor",
         surname: "",
-        mobile: r.mobile, email: r.email,
-        pan_number: r.pan_number,
+        proprietor_name: r.proprietor_name, company_name: r.company_name, group_name: r.group_name,
+        mobile: r.mobile, alt_mobile: r.alt_mobile, email: r.email,
+        pan_number: r.pan_number, gst_number: r.gst_number,
         shop_name: r.company_name,
         registration_type: "distributor", status: r.status,
-        building_shop_no: r.address_line, district: r.district, state: r.state,
+        address_line: r.address_line, district: r.district, state: r.state,
         bank_holder_name: r.proprietor_name, bank_name: r.bank_name, account_number: r.account_number, ifsc: r.ifsc,
-        rejection_reason: r.rejection_reason,
+        transaction_id: r.transaction_id, rejection_reason: r.rejection_reason,
       };
       await downloadRegistrationPDF(mapped, docs, r.username || r.application_id);
     } catch (e) {

@@ -71,30 +71,44 @@ export async function downloadRegistrationPDF(
     y += 10;
   };
 
-  section("Applicant", [
-    ["Name", [reg.first_name, reg.middle_name, reg.surname].filter(Boolean).join(" ")],
-    ["Date of Birth", reg.dob], ["Mobile", reg.mobile], ["Email", reg.email],
-    ["Application ID", reg.application_id], ["Agent / JSKO ID", reg.jsko_id],
-    ["Registration Type", reg.registration_type], ["Status", reg.status],
-    ["PAN", reg.pan_number], ["Aadhaar", reg.aadhaar_number],
+  section("Applicant / Personal", [
+    ["Name", [reg.first_name, reg.middle_name, reg.surname].filter(Boolean).join(" ") || reg.distributor_name || reg.proprietor_name],
+    ["Proprietor", reg.proprietor_name], ["Company / Firm", reg.company_name],
+    ["Date of Birth", reg.dob], ["Gender", reg.gender],
+    ["Mobile", reg.mobile], ["Alternate Mobile", reg.alt_mobile], ["Email", reg.email],
+    ["Application ID", reg.application_id], ["Agent / JSKO / Distributor ID", reg.jsko_id || reg.distributor_id],
+    ["Username", reg.username], ["Registration Type", reg.registration_type], ["Status", reg.status],
+    ["PAN", reg.pan_number], ["Aadhaar", reg.aadhaar_number], ["GST", reg.gst_number], ["Group", reg.group_name],
   ]);
-  section("Business", [
-    ["Shop Name", reg.shop_name], ["Address Type", reg.address_type],
-    ["Address", [reg.building_shop_no, reg.street_area, reg.village_name, reg.taluk, reg.city, reg.district, reg.state].filter(Boolean).join(", ")],
-    ["Pincode", reg.pincode], ["GPS", (reg.latitude && reg.longitude) ? `${reg.latitude}, ${reg.longitude}` : ""],
+  section("Business / Address", [
+    ["Shop / Firm Name", reg.shop_name || reg.company_name], ["Address Type", reg.address_type],
+    ["Building / Shop No", reg.building_shop_no], ["Street / Area", reg.street_area],
+    ["Ward Number", reg.ward_number], ["Landmark", reg.landmark],
+    ["Village", reg.village_name], ["Gram Panchayat", reg.gram_panchayat], ["Hobli", reg.hobli_name],
+    ["Post Office", reg.post_office_name || reg.post_office], ["Taluk", reg.taluk],
+    ["City", reg.city], ["District", reg.district], ["State", reg.state], ["Pincode", reg.pincode],
+    ["Full Address", reg.address_line],
+    ["GPS", (reg.latitude && reg.longitude) ? `${reg.latitude}, ${reg.longitude}` : (reg.video_kyc_lat && reg.video_kyc_lng) ? `${reg.video_kyc_lat}, ${reg.video_kyc_lng}` : ""],
   ]);
   section("Bank Details", [
-    ["Account Holder", reg.bank_holder_name], ["Bank", reg.bank_name],
+    ["Account Holder", reg.bank_holder_name || reg.proprietor_name], ["Bank", reg.bank_name],
     ["Account No", reg.account_number], ["IFSC", reg.ifsc], ["Account Type", reg.account_type],
   ]);
   section("Payment", [
     ["Amount", reg.payment_amount != null ? `Rs. ${Number(reg.payment_amount).toLocaleString("en-IN")}` : ""],
     ["Method", reg.payment_method], ["UTR / Reference", reg.payment_utr],
-    ["Paid On", reg.payment_paid_on], ["Payer", reg.payer_name],
+    ["Paid On", reg.payment_paid_on], ["Payer Name", reg.payer_name],
+    ["Payer Bank", reg.payer_bank], ["Payer Account", reg.payer_account],
+    ["Transaction ID", reg.transaction_id], ["Payment Remarks", reg.payment_remarks],
   ]);
-  if (reg.accountant_decision || reg.rejection_reason) {
-    section("Review", [["Decision", reg.accountant_decision], ["Remark", reg.rejection_reason]]);
-  }
+  section("Review / Status", [
+    ["Accountant Decision", reg.accountant_decision],
+    ["Remark / Reason", reg.rejection_reason || reg.payment_verification_notes],
+    ["Payment Verified", reg.payment_verified === true ? "Yes" : reg.payment_verified === false ? "No" : ""],
+    ["QC Verified", reg.qc_verified === true ? "Yes" : reg.qc_verified === false ? "No" : ""],
+    ["QC Remarks", reg.qc_notes], ["Declaration Agreed", reg.declaration_agreed === true ? "Yes" : ""],
+    ["Submitted On", reg.created_at ? new Date(reg.created_at).toLocaleString("en-IN") : ""],
+  ]);
 
   // Attachments (images only — Video KYC excluded by caller)
   for (const d of docs) {
