@@ -114,6 +114,19 @@ function RegisterFlow() {
   const [submission, setSubmission] = useState<SubmissionInfo | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Admin-configurable retailer registration fee (System Settings → Registration Fee).
+  const [retailerFee, setRetailerFee] = useState<number>(20060);
+  useEffect(() => {
+    supabase
+      .from("app_settings")
+      .select("value")
+      .eq("key", "registration_fee")
+      .maybeSingle()
+      .then(({ data }) => {
+        const v = Number((data as { value?: string } | null)?.value);
+        if (Number.isFinite(v) && v > 0) setRetailerFee(v);
+      });
+  }, []);
 
   const heading =
     type === "old"
@@ -121,7 +134,7 @@ function RegisterFlow() {
       : type === "distributor"
         ? "Distributor"
         : "New JSKO Retailer Registration";
-  const amount: number | null = type === "distributor" ? 2500000 : type === "old" ? null : 20060;
+  const amount: number | null = type === "distributor" ? 2500000 : type === "old" ? null : retailerFee;
   const subheading =
     type === "old"
       ? "Complete the steps below to migrate your existing JSKO account to the BharatOne portal."

@@ -10,7 +10,7 @@ const FIELDS: [string, string, string][] = [
   ["platform_name", "Platform Name", "BharatOne"],
   ["support_email", "Support Email", "support@mybharatone.com"],
   ["support_phone", "Support Phone", "+91 90711 00311"],
-  ["registration_fee", "Registration Fee (₹)", "4999"],
+  ["registration_fee", "Retailer Registration Fee (₹)", "20060"],
   ["retailer_radius_km", "Retailer Radius (km)", "2"],
 ];
 
