@@ -82,6 +82,7 @@ import { RolesPermissions } from "@/components/admin/roles-permissions";
 import { SystemSettings } from "@/components/admin/system-settings";
 import { GalleryManager } from "@/components/admin/gallery-manager";
 import { HeroManager } from "@/components/admin/hero-manager";
+import { ProjectsManager } from "@/components/admin/projects-manager";
 import { AwardsManager } from "@/components/admin/awards-manager";
 import { HeadlinesManager } from "@/components/admin/headlines-manager";
 import { TestimonialsManager } from "@/components/admin/testimonials-manager";
@@ -143,6 +144,7 @@ const NAVIGATION: NavGroup[] = [
       { label: "CRM", icon: Users },
       { label: "Franchise", icon: Network },
       { label: "Retailer Map", icon: MapPin },
+      { label: "Projects", icon: ClipboardCheck },
       { label: "Roles & Permissions", icon: LockKeyhole },
     ],
   },
@@ -500,6 +502,7 @@ const HEADERLESS_SECTIONS = new Set([
   "Accountant Operations",
   "KYC Approvals",
   "Retailer Network",
+  "Projects",
   "Website Gallery",
 ]);
 
@@ -1119,6 +1122,8 @@ export function AdminWorkspace() {
               <AdminUsers />
             ) : active === "Service Catalog" ? (
               <CatalogManager />
+            ) : active === "Projects" ? (
+              <ProjectsManager />
             ) : active === "Applications" ? (
               <ServiceApplicationsView />
             ) : active === "Application Ledger" ? (
