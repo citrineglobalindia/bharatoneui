@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   motion,
   useScroll,
@@ -8,6 +8,7 @@ import {
   type Variants,
 } from "framer-motion";
 import { Mail, Phone, MapPin, ArrowRight, ArrowUp, Check } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/bharatone-logo.png";
 
 /* -------------------------------------------------------------------------- */
@@ -273,6 +274,27 @@ export function Footer() {
   const prefersReducedMotion = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end end"] });
 
+  // Admin-managed "inspired by" photo + tagline shown below the address.
+  const [inspiration, setInspiration] = useState<{ url: string; tagline: string } | null>(null);
+  useEffect(() => {
+    let on = true;
+    (async () => {
+      const { data } = await supabase
+        .from("footer_inspiration")
+        .select("image_path, tagline")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!on || !data) return;
+      setInspiration({
+        url: supabase.storage.from("gallery").getPublicUrl((data as { image_path: string }).image_path).data.publicUrl,
+        tagline: (data as { tagline: string }).tagline || "Inspired by",
+      });
+    })();
+    return () => { on = false; };
+  }, []);
+
   const animateProps = prefersReducedMotion
     ? { initial: false as const, animate: "visible" as const }
     : {
@@ -376,12 +398,14 @@ export function Footer() {
               <span>10th B Cross, Krishnaraja Puram,<br />Hassan, Karnataka 573201</span>
             </motion.li>
           </motion.ul>
-          <motion.div variants={itemVariants} className="mt-6">
-            <div className="overflow-hidden rounded-xl border border-background/15 bg-background/5">
-              <img src="/ratan-tata.jpg" alt="Ratan Naval TATA" className="h-44 w-full object-cover grayscale" onError={(e) => { const block = e.currentTarget.closest("div")?.parentElement as HTMLElement | null; if (block) block.style.display = "none"; }} />
-            </div>
-            <p className="mt-2 text-center text-sm font-semibold italic text-background/85">&ldquo;Inspired by Ratan Naval TATA&rdquo;</p>
-          </motion.div>
+          {inspiration && (
+            <motion.div variants={itemVariants} className="mt-6">
+              <div className="overflow-hidden rounded-xl border border-background/15 bg-background/5">
+                <img src={inspiration.url} alt={inspiration.tagline} className="h-44 w-full object-cover" />
+              </div>
+              <p className="mt-2 text-center text-sm font-semibold italic text-background/85" translate="no">&ldquo;{inspiration.tagline}&rdquo;</p>
+            </motion.div>
+          )}
         </motion.div>
       </motion.div>
 

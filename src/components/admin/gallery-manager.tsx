@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Loader2, Upload, Trash2, ImageIcon, Eye, EyeOff, Video } from "lucide-react";
+import { Loader2, Upload, Trash2, ImageIcon, Eye, EyeOff, Video, ArrowUp, ArrowDown } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -61,6 +61,16 @@ export function GalleryManager() {
     toast.success("Deleted");
     load();
   };
+  const move = async (r: Row, dir: -1 | 1) => {
+    const idx = rows.findIndex((x) => x.id === r.id);
+    const swap = rows[idx + dir];
+    if (!swap) return;
+    await Promise.all([
+      supabase.from("gallery_images").update({ sort_order: swap.sort_order }).eq("id", r.id),
+      supabase.from("gallery_images").update({ sort_order: r.sort_order }).eq("id", swap.id),
+    ]);
+    load();
+  };
 
   return (
     <div className="space-y-6">
@@ -92,7 +102,7 @@ export function GalleryManager() {
           <p className="py-8 text-center text-sm text-muted-foreground">No images yet. Upload your first gallery photo above.</p>
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {rows.map((r) => (
+            {rows.map((r, i) => (
               <div key={r.id} className={`overflow-hidden rounded-xl border border-border ${r.is_active ? "" : "opacity-50"}`}>
                 <div className="relative aspect-[4/3] bg-muted">
                   {r.media_type === "video" ? (
@@ -106,7 +116,9 @@ export function GalleryManager() {
                 </div>
                 <div className="p-2">
                   <p className="truncate text-xs font-medium">{r.caption || "—"}</p>
-                  <div className="mt-2 flex items-center gap-1.5">
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    <button onClick={() => move(r, -1)} disabled={i === 0} className="rounded-md border border-border px-1.5 py-1 hover:bg-muted disabled:opacity-40" aria-label="Move left"><ArrowUp className="h-3 w-3 -rotate-90" /></button>
+                    <button onClick={() => move(r, 1)} disabled={i === rows.length - 1} className="rounded-md border border-border px-1.5 py-1 hover:bg-muted disabled:opacity-40" aria-label="Move right"><ArrowDown className="h-3 w-3 -rotate-90" /></button>
                     <button onClick={() => toggle(r)} className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[11px] font-semibold hover:bg-muted">
                       {r.is_active ? <><EyeOff className="h-3 w-3" /> Hide</> : <><Eye className="h-3 w-3" /> Show</>}
                     </button>

@@ -88,6 +88,7 @@ import { HeroManager } from "@/components/admin/hero-manager";
 import { AwardsManager } from "@/components/admin/awards-manager";
 import { HeadlinesManager } from "@/components/admin/headlines-manager";
 import { TestimonialsManager } from "@/components/admin/testimonials-manager";
+import { FooterInspirationManager } from "@/components/admin/footer-inspiration-manager";
 import { NoticeBoardManager } from "@/components/admin/notice-board-manager";
 import { SupportCategoriesManager } from "@/components/admin/support-categories-manager";
 import { PlatformAnalytics } from "@/components/admin/platform-analytics";
@@ -1175,6 +1176,10 @@ export function AdminWorkspace() {
                 <div>
                   <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted-foreground">Awarded &amp; Recognized By</h3>
                   <AwardsManager />
+                </div>
+                <div>
+                  <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted-foreground">Footer "Inspired by" Photo</h3>
+                  <FooterInspirationManager />
                 </div>
                 <div>
                   <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted-foreground">Gallery</h3>
