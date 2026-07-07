@@ -15,6 +15,7 @@ type DistRow = {
   gst_number: string | null; pan_number: string | null; bank_name: string | null;
   account_number: string | null; ifsc: string | null; address_line: string | null;
   transaction_id: string | null; rejection_reason: string | null; created_at: string;
+  form_doc_path: string | null; bank_copy_path: string | null; aadhaar_doc_path: string | null; pan_doc_path: string | null;
 };
 
 const db = supabase as any;
@@ -36,7 +37,24 @@ export function DistributorReviewTable({ tab }: { tab: string }) {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [detail, setDetail] = useState<DistRow | null>(null);
+  const [docUrls, setDocUrls] = useState<Record<string, string>>({});
   const canReview = role === "admin";
+
+  useEffect(() => {
+    if (!detail) { setDocUrls({}); return; }
+    let on = true;
+    (async () => {
+      const cols: Record<string, string | null> = {
+        form: detail.form_doc_path, bank: detail.bank_copy_path, aadhaar: detail.aadhaar_doc_path, pan: detail.pan_doc_path,
+      };
+      const out: Record<string, string> = {};
+      for (const [k, p] of Object.entries(cols)) {
+        if (p) { const { data: su } = await db.storage.from("retailer-kyc").createSignedUrl(p, 3600); if (su?.signedUrl) out[k] = su.signedUrl; }
+      }
+      if (on) setDocUrls(out);
+    })();
+    return () => { on = false; };
+  }, [detail]);
 
   async function load() {
     setLoading(true);
@@ -143,6 +161,32 @@ export function DistributorReviewTable({ tab }: { tab: string }) {
                 ] as [string, string | null][]).map(([l, v]) => (
                   <div key={l}><p className="text-[11px] uppercase tracking-wide text-muted-foreground">{l}</p><p className="font-medium break-words">{v || "—"}</p></div>
                 ))}
+              </div>
+              <div className="mt-4">
+                <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Documents</p>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {([
+                    ["Onboarding Form", "form", detail.form_doc_path],
+                    ["Bank Copy", "bank", detail.bank_copy_path],
+                    ["Aadhaar", "aadhaar", detail.aadhaar_doc_path],
+                    ["PAN Card", "pan", detail.pan_doc_path],
+                  ] as [string, string, string | null][]).map(([label, key, path]) => {
+                    const url = docUrls[key];
+                    const isImg = !!path && /\.(jpg|jpeg|jfif|png|webp|gif|bmp|heic|heif|avif)$/i.test(path.split("?")[0]);
+                    return (
+                      <div key={key} className="overflow-hidden rounded-lg border border-border bg-background">
+                        {url ? (
+                          <a href={url} target="_blank" rel="noreferrer" className="block">
+                            {isImg ? <img src={url} alt={label} className="h-24 w-full object-cover" /> : <div className="grid h-24 w-full place-items-center bg-muted/40 text-[10px] font-semibold text-muted-foreground">PDF / File</div>}
+                          </a>
+                        ) : (
+                          <div className="grid h-24 w-full place-items-center text-[10px] text-muted-foreground">{path ? "Loading…" : "Not uploaded"}</div>
+                        )}
+                        <p className="truncate px-2 py-1 text-[10px] font-semibold">{label}</p>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
               {detail.status === "rejected" && detail.rejection_reason && (
                 <p className="mt-3 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">Rejected: {detail.rejection_reason}</p>

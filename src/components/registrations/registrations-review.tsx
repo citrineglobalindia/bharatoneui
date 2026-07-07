@@ -23,6 +23,7 @@ import {
   FileSearch,
   Banknote,
   PauseCircle,
+  Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,6 +35,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { downloadRegistrationPDF } from "@/lib/registration-pdf";
 import { ensureStaffSession, withTimeout } from "@/integrations/supabase/ensure-session";
 import { useAuth } from "@/hooks/use-auth";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -113,7 +115,10 @@ export function RegistrationsReview() {
   const [tab, setTab] = useState<string>("accountant_review");
   const [typeFilter, setTypeFilter] = useState<"all" | "new" | "old" | "distributor">("all");
   const [query, setQuery] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [creds, setCreds] = useState<{ username: string; email: string; password: string } | null>(
     null,
   );
@@ -258,6 +263,13 @@ export function RegistrationsReview() {
       .filter((r) => !(role === "qc" && r.status === "accountant_review"))
       .filter((r) => (typeFilter === "all" ? true : (r.registration_type || "new") === typeFilter))
       .filter((r) => {
+        if (!fromDate && !toDate) return true;
+        const d = new Date(r.created_at);
+        if (fromDate && d < new Date(fromDate + "T00:00:00")) return false;
+        if (toDate && d > new Date(toDate + "T23:59:59")) return false;
+        return true;
+      })
+      .filter((r) => {
         if (!query.trim()) return true;
         const q = query.toLowerCase();
         return (
@@ -290,6 +302,33 @@ export function RegistrationsReview() {
     }
   }
 
+  const downloadRow = async (r: RegRow) => {
+    setDownloadingId(r.id);
+    try {
+      const { data } = await supabase.from("retailer_registrations").select("*").eq("id", r.id).maybeSingle();
+      if (!data) { toast.error("Could not load application"); return; }
+      const full = data as Record<string, any>;
+      const cols: [string, string | null][] = [
+        ["Passport Size Photo", full.passport_photo_path],
+        ["Selfie", full.selfie_path],
+        ["Outside Shop Photo", full.shop_photo_path],
+        ["Inside Shop Photo", full.shop_photo_inside_path],
+        ["Aadhaar", full.aadhaar_doc_path],
+        ["PAN Card", full.pan_doc_path],
+        ["Police Verification", full.police_verification_path],
+        ["Payment Receipt", full.payment_screenshot_path],
+      ];
+      const docs: { label: string; url: string; isPdf?: boolean }[] = [];
+      for (const [label, path] of cols) {
+        if (!path) continue;
+        const { data: su } = await supabase.storage.from("retailer-kyc").createSignedUrl(path, 3600);
+        if (su?.signedUrl) docs.push({ label, url: su.signedUrl, isPdf: /\.pdf$/i.test(String(path).split("?")[0]) });
+      }
+      await downloadRegistrationPDF(full, docs, full.jsko_id || full.application_id);
+    } catch (e) {
+      toast.error("Could not generate PDF", { description: e instanceof Error ? e.message : String(e) });
+    } finally { setDownloadingId(null); }
+  };
   const acctApprove = (r: RegRow) =>
     run(
       r.id,
@@ -427,14 +466,23 @@ export function RegistrationsReview() {
         ))}
       </div>
 
-      <div className="flex items-center gap-2 rounded-lg bg-slate-100 px-3 h-9">
-        <Search className="h-4 w-4 text-muted-foreground" />
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search by ID, name, shop, mobile, email…"
-          className="bg-transparent flex-1 text-sm outline-none placeholder:text-muted-foreground"
-        />
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex min-w-[220px] flex-1 items-center gap-2 rounded-lg bg-slate-100 px-3 h-9">
+          <Search className="h-4 w-4 text-muted-foreground" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search by ID, name, shop, mobile, email…"
+            className="bg-transparent flex-1 text-sm outline-none placeholder:text-muted-foreground"
+          />
+        </div>
+        <div className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-2 h-9 text-xs">
+          <span className="font-semibold text-muted-foreground">From</span>
+          <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="bg-transparent outline-none" />
+          <span className="font-semibold text-muted-foreground">To</span>
+          <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="bg-transparent outline-none" />
+          {(fromDate || toDate) && <button onClick={() => { setFromDate(""); setToDate(""); }} className="ml-1 rounded px-1.5 py-0.5 text-[11px] font-semibold text-rose-600 hover:bg-rose-50">Clear</button>}
+        </div>
       </div>
 
       {typeFilter === "distributor" ? (
@@ -451,8 +499,7 @@ export function RegistrationsReview() {
               <th className="whitespace-nowrap px-3 py-2.5">Checks</th>
               <th className="whitespace-nowrap px-3 py-2.5">Phone Number</th>
               <th className="whitespace-nowrap px-3 py-2.5">Email ID</th>
-              <th className="whitespace-nowrap px-3 py-2.5">Date</th>
-              <th className="whitespace-nowrap px-3 py-2.5">Time</th>
+              <th className="whitespace-nowrap px-3 py-2.5">Date &amp; Time</th>
               <th className="whitespace-nowrap px-3 py-2.5">District</th>
               <th className="whitespace-nowrap px-3 py-2.5">Taluk</th>
               <th className="whitespace-nowrap px-3 py-2.5">Status</th>
@@ -544,10 +591,7 @@ export function RegistrationsReview() {
                     </span>
                   </td>
                   <td className="whitespace-nowrap px-3 py-3 text-xs text-muted-foreground">
-                    {new Date(r.created_at).toLocaleDateString("en-IN")}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-3 text-xs text-muted-foreground">
-                    {new Date(r.created_at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
+                    {new Date(r.created_at).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                   </td>
                   <td className="px-3 py-3 text-sm">{r.district || "—"}</td>
                   <td className="px-3 py-3 text-sm">{r.taluk || "—"}</td>
@@ -567,6 +611,16 @@ export function RegistrationsReview() {
                         onClick={() => navigate({ to: "/review/$id", params: { id: r.id } })}
                       >
                         <Eye className="h-3.5 w-3.5" /> View
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8"
+                        disabled={downloadingId === r.id}
+                        title="Download PDF"
+                        onClick={() => downloadRow(r)}
+                      >
+                        {downloadingId === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
                       </Button>
                       {(role === "admin" || canQc) &&
                         ["approved", "rejected", "telecaller"].includes(r.status) && (
