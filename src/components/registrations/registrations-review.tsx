@@ -302,22 +302,43 @@ export function RegistrationsReview() {
     }
   }
 
-  const exportList = () => {
+  const exportList = async () => {
     if (filtered.length === 0) { toast.error("No rows to export"); return; }
-    const headers = ["Sl.no", "Application ID", "JSKO ID", "Name", "Shop", "Amount", "Phone", "Email", "Date & Time", "District", "Taluk", "Status"];
+    // Fetch the full detail for the visible rows so we can fill every available column.
+    const ids = filtered.map((r) => r.id);
+    const { data } = await supabase
+      .from("retailer_registrations")
+      .select("id, application_id, jsko_id, username, first_name, middle_name, surname, pan_number, district, taluk, hobli_name, gram_panchayat, registration_type, rejection_reason, payment_amount, created_at")
+      .in("id", ids);
+    const byId = new Map((((data as any[]) ?? [])).map((d) => [d.id, d]));
+    const rows = filtered.map((r) => byId.get(r.id) ?? r);
+
+    const HEADERS = [
+      "Sl.no", "User Name", "Old JSKO Id", "New JSKO ID", "Full Name", "Pan", "District", "Taluka", "Hobli", "Gram Panchayat",
+      "Opening Wallet", "CR amount", "DR Amount", "Closing Wallet", "Type", "Service Amount", "SP Amount", "Deduction Amount",
+      "GST", "TDS", "Reference Table", "Reference Id", "Order Id", "Tracking id", "Service Department", "Service", "Remarks", "Creation Date Time",
+    ];
     const esc = (v: any) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-    const lines = filtered.map((r, i) => [
-      i + 1, r.application_id, r.jsko_id || "", [r.first_name, r.middle_name, r.surname].filter(Boolean).join(" "),
-      r.shop_name || "", r.payment_amount != null ? r.payment_amount : "", r.mobile || "", r.email || "",
-      new Date(r.created_at).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }),
-      r.district || "", r.taluk || "", r.status,
+    const fmt = (iso: string) => new Date(iso).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+    const lines = rows.map((d: any, i) => [
+      i + 1,
+      d.username || "",
+      d.registration_type === "old" ? (d.jsko_id || "") : "",
+      d.registration_type === "old" ? (d.username || "") : (d.jsko_id || d.username || ""),
+      [d.first_name, d.middle_name, d.surname].filter(Boolean).join(" "),
+      d.pan_number || "", d.district || "", d.taluk || "", d.hobli_name || "", d.gram_panchayat || "",
+      "", "", "", "", // Opening / CR / DR / Closing wallet — not applicable to registrations
+      d.registration_type === "old" ? "Old JSKO" : d.registration_type === "distributor" ? "Distributor" : "Retailer",
+      "", "", "", "", "", // Service Amount / SP / Deduction / GST / TDS
+      "retailer_registrations", d.id || "", "", "", "", "", // Reference Table/Id, Order/Tracking, Dept/Service
+      d.rejection_reason || "", d.created_at ? fmt(d.created_at) : "",
     ].map(esc).join(","));
-    const csv = ["﻿" + headers.map(esc).join(","), ...lines].join("\n");
+    const csv = ["﻿" + HEADERS.map(esc).join(","), ...lines].join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a"); a.href = url; a.download = `registration-payments-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
     URL.revokeObjectURL(url);
-    toast.success("Exported", { description: `${filtered.length} rows` });
+    toast.success("Exported", { description: `${rows.length} rows` });
   };
 
   const downloadRow = async (r: RegRow) => {
