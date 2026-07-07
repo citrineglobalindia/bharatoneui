@@ -624,7 +624,6 @@ export function RegistrationsReview() {
                     <div className="font-semibold">
                       {[r.first_name, r.middle_name, r.surname].filter(Boolean).join(" ") || "—"}
                     </div>
-                    {r.shop_name && <div className="text-xs text-muted-foreground">{r.shop_name}</div>}
                   </td>
                   <td className="px-3 py-3">
                     <div className="font-semibold">
