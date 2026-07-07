@@ -59,11 +59,16 @@ export function SortTh({
   const active = sort?.key === sortKey;
   return (
     <th className={className}>
-      <button type="button" onClick={() => onSort(sortKey)} className="inline-flex items-center gap-1 font-inherit uppercase tracking-inherit hover:text-foreground transition-colors">
-        {children ?? label}
+      <button
+        type="button"
+        onClick={() => onSort(sortKey)}
+        title="Click to sort"
+        className={`group inline-flex items-center gap-1 whitespace-nowrap rounded px-1 -mx-1 font-[inherit] tracking-[inherit] transition-colors hover:text-foreground ${active ? "text-india-green" : ""}`}
+      >
+        <span>{children ?? label}</span>
         {active
-          ? (sort!.dir === "asc" ? <ArrowUp className="h-3 w-3 text-india-green" /> : <ArrowDown className="h-3 w-3 text-india-green" />)
-          : <ArrowUpDown className="h-3 w-3 opacity-40" />}
+          ? (sort!.dir === "asc" ? <ArrowUp className="h-3.5 w-3.5 text-india-green" /> : <ArrowDown className="h-3.5 w-3.5 text-india-green" />)
+          : <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground/70 group-hover:text-foreground" />}
       </button>
     </th>
   );
