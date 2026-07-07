@@ -16,6 +16,7 @@ import {
   Building2,
   AlertTriangle,
   Loader2,
+  UploadCloud,
 } from "lucide-react";
 import { Field } from "./field";
 import { Button } from "@/components/ui/button";
@@ -67,6 +68,47 @@ const PAN_RE = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
 const IFSC_RE = /^[A-Z]{4}0[A-Z0-9]{6}$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MOBILE_RE = /^[6-9]\d{9}$/;
+
+// Attractive drag-and-drop style upload card with image preview + selected state.
+function UploadDrop({ file, onFile, accept, invalid = false }: { file: File | null; onFile: (f: File | null) => void; accept: string; invalid?: boolean }) {
+  const [preview, setPreview] = useState<string | null>(null);
+  useEffect(() => {
+    if (file && file.type.startsWith("image/")) {
+      const u = URL.createObjectURL(file);
+      setPreview(u);
+      return () => URL.revokeObjectURL(u);
+    }
+    setPreview(null);
+  }, [file]);
+  const isPdf = !!file && file.type === "application/pdf";
+  return (
+    <label
+      className={`group flex cursor-pointer items-center gap-3 rounded-xl border-2 border-dashed p-2.5 transition ${
+        file
+          ? "border-india-green/40 bg-india-green/[0.04]"
+          : invalid
+            ? "border-red-300 bg-red-50/40 hover:border-red-400"
+            : "border-input bg-muted/20 hover:border-saffron/60 hover:bg-muted/40"
+      }`}
+    >
+      <input type="file" accept={accept} className="sr-only" onChange={(e) => onFile(e.target.files?.[0] ?? null)} />
+      {preview ? (
+        <img src={preview} alt="preview" className="h-12 w-12 shrink-0 rounded-lg object-cover shadow-soft" />
+      ) : (
+        <span className={`grid h-12 w-12 shrink-0 place-items-center rounded-lg ${file ? "bg-india-green/10 text-india-green" : "bg-saffron/10 text-saffron"}`}>
+          {isPdf ? <FileText className="h-5 w-5" /> : <UploadCloud className="h-5 w-5" />}
+        </span>
+      )}
+      <div className="min-w-0 flex-1">
+        <p className={`truncate text-xs font-semibold ${file ? "text-foreground" : "text-muted-foreground"}`}>
+          {file ? file.name : "Click to upload"}
+        </p>
+        <p className="text-[10px] text-muted-foreground">{file ? "Tap to change file" : "Image or PDF"}</p>
+      </div>
+      {file && <CheckCircle2 className="h-5 w-5 shrink-0 text-india-green" />}
+    </label>
+  );
+}
 
 export function DistributorSinglePage({
   onSubmit,
@@ -407,62 +449,37 @@ export function DistributorSinglePage({
           </div>
         </div>
 
-        <div className="mt-4 grid gap-3">
-          <Field
-            label="Form PDF"
-            required
-            icon={<FileText className="h-4 w-4" />}
-            hint={
-              <span className="inline-flex items-center gap-1">
-                <Info className="h-3 w-3" /> Upload the filled & signed distributor onboarding form.
-              </span>
-            }
-          >
-            <div className="flex items-center gap-2">
-              <label className="inline-flex h-10 cursor-pointer items-center rounded-lg border border-input bg-background px-3 text-sm font-medium shadow-soft hover:bg-muted">
-                Choose file
-                <input
-                  type="file"
-                  accept="application/pdf"
-                  className="sr-only"
-                  onChange={(e) => setFormFile(e.target.files?.[0] ?? null)}
-                />
-              </label>
-              <span className="text-xs text-muted-foreground truncate max-w-[60%]">
-                {formFile ? formFile.name : "No file chosen"}
-              </span>
-            </div>
+        <div className="mt-5 rounded-2xl border border-border bg-muted/20 p-4">
+          <p className="mb-1 flex items-center gap-2 text-sm font-bold text-foreground">
+            <FileText className="h-4 w-4 text-saffron" /> Documents
+            <span className="text-red-500">*</span>
+          </p>
+          <p className="mb-3 flex items-center gap-1 text-[11px] text-muted-foreground">
+            <Info className="h-3 w-3" /> All documents are required. Upload clear scans or photos.
+          </p>
+
+          <Field label="Onboarding Form (filled & signed)" required icon={<FileText className="h-4 w-4" />}>
+            <UploadDrop file={formFile} onFile={setFormFile} accept="application/pdf" invalid={attempted && !formFile} />
             {err("formFile")}
           </Field>
 
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="mt-3 grid gap-3 sm:grid-cols-3">
             {([
               ["Bank Passbook / Cheque Copy", bankCopyFile, setBankCopyFile, "bankCopyFile", <Landmark className="h-4 w-4" />],
               ["Aadhaar Card", aadhaarFile, setAadhaarFile, "aadhaarFile", <IdCard className="h-4 w-4" />],
               ["PAN Card", panFile, setPanFile, "panFile", <IdCard className="h-4 w-4" />],
             ] as [string, File | null, (f: File | null) => void, "bankCopyFile" | "aadhaarFile" | "panFile", JSX.Element][]).map(
               ([label, file, setter, key, icon]) => (
-                <Field key={key} label={label} required icon={icon} hint={<span className="text-[11px]">Image or PDF</span>}>
-                  <div className="flex items-center gap-2">
-                    <label className="inline-flex h-10 cursor-pointer items-center rounded-lg border border-input bg-background px-3 text-sm font-medium shadow-soft hover:bg-muted">
-                      Choose file
-                      <input
-                        type="file"
-                        accept="image/*,application/pdf"
-                        className="sr-only"
-                        onChange={(e) => setter(e.target.files?.[0] ?? null)}
-                      />
-                    </label>
-                    <span className="truncate max-w-[55%] text-xs text-muted-foreground">
-                      {file ? file.name : "No file chosen"}
-                    </span>
-                  </div>
+                <Field key={key} label={label} required icon={icon}>
+                  <UploadDrop file={file} onFile={setter} accept="image/*,application/pdf" invalid={attempted && !file} />
                   {err(key)}
                 </Field>
               ),
             )}
           </div>
+        </div>
 
+        <div className="mt-4 grid gap-3">
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Password" required>
               <PasswordField value={form.password} onChange={(v) => set("password", v)} />
