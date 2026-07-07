@@ -32,7 +32,7 @@ function statusForTab(tab: string): string[] {
   return [];
 }
 
-export function DistributorReviewTable({ tab }: { tab: string }) {
+export function DistributorReviewTable({ tab, query = "", fromDate = "", toDate = "" }: { tab: string; query?: string; fromDate?: string; toDate?: string }) {
   const { role } = useAuth();
   const [rows, setRows] = useState<DistRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -104,7 +104,25 @@ export function DistributorReviewTable({ tab }: { tab: string }) {
   useEffect(() => { load(); }, []);
 
   const wanted = useMemo(() => statusForTab(tab), [tab]);
-  const filtered = useMemo(() => rows.filter((r) => wanted.includes(r.status)), [rows, wanted]);
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const from = fromDate ? new Date(fromDate + "T00:00:00") : null;
+    const to = toDate ? new Date(toDate + "T23:59:59") : null;
+    return rows.filter((r) => {
+      if (!wanted.includes(r.status)) return false;
+      if (from || to) {
+        const d = new Date(r.created_at);
+        if (from && d < from) return false;
+        if (to && d > to) return false;
+      }
+      if (q) {
+        const hay = [r.application_id, r.username, r.distributor_name, r.company_name, r.proprietor_name, r.mobile, r.alt_mobile, r.email, r.district, r.state, r.pan_number, r.gst_number]
+          .filter(Boolean).join(" ").toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [rows, wanted, query, fromDate, toDate]);
 
   const approve = async (r: DistRow) => {
     setBusy(r.id);
@@ -144,18 +162,33 @@ export function DistributorReviewTable({ tab }: { tab: string }) {
 
   const exportList = () => {
     if (filtered.length === 0) { toast.error("No rows to export"); return; }
-    const headers = ["Sl.no", "Application ID", "Distributor ID", "Distributor Name", "Proprietor", "Company", "GST", "PAN", "Contact", "Alt Contact", "Email", "Bank", "Account No", "IFSC", "Address", "District", "State", "Date & Time", "Status"];
+    // Same 28-column layout as the retailer / Old JSKO export, so the whole
+    // module exports in one consistent format. Columns that don't apply to
+    // distributors (wallet / service / tax) are left blank like the others.
+    const HEADERS = [
+      "Sl.no", "User Name", "Old JSKO Id", "New JSKO ID", "Full Name", "Pan", "District", "Taluka", "Hobli", "Gram Panchayat",
+      "Opening Wallet", "CR amount", "DR Amount", "Closing Wallet", "Type", "Service Amount", "SP Amount", "Deduction Amount",
+      "GST", "TDS", "Reference Table", "Reference Id", "Order Id", "Tracking id", "Service Department", "Service", "Remarks", "Creation Date Time",
+    ];
     const esc = (v: any) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const fmt = (iso: string) => new Date(iso).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
     const lines = filtered.map((r, i) => [
-      i + 1, r.application_id, r.username || r.application_id, r.distributor_name || "", r.proprietor_name || "", r.company_name || "",
-      r.gst_number || "", r.pan_number || "", r.mobile || "", r.alt_mobile || "", r.email || "", r.bank_name || "", r.account_number || "", r.ifsc || "",
-      r.address_line || "", r.district || "", r.state || "",
-      dt(r.created_at).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }), r.status,
+      i + 1,
+      r.username || "",                                                   // User Name
+      "",                                                                 // Old JSKO Id (n/a)
+      r.username || "",                                                   // New JSKO ID (distributor ID)
+      r.distributor_name || r.proprietor_name || r.company_name || "",    // Full Name
+      r.pan_number || "", r.district || "", "", "", "",                   // Pan, District, Taluka, Hobli, Gram Panchayat
+      "", "", "", "",                                                     // Opening / CR / DR / Closing wallet
+      "Distributor",                                                      // Type
+      "", "", "", "", "",                                                 // Service / SP / Deduction / GST / TDS
+      "distributor_registrations", r.id || "", "", "", "", "",            // Reference Table/Id, Order/Tracking, Dept/Service
+      r.rejection_reason || "", r.created_at ? fmt(r.created_at) : "",    // Remarks, Creation Date Time
     ].map(esc).join(","));
-    const csv = ["﻿" + headers.map(esc).join(","), ...lines].join("\n");
+    const csv = ["﻿" + HEADERS.map(esc).join(","), ...lines].join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = `distributor-applications-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+    const a = document.createElement("a"); a.href = url; a.download = `registration-payments-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
     URL.revokeObjectURL(url);
     toast.success("Exported", { description: `${filtered.length} rows` });
   };

@@ -530,7 +530,7 @@ export function RegistrationsReview() {
       </div>
 
       {typeFilter === "distributor" ? (
-        <DistributorReviewTable tab={tab} />
+        <DistributorReviewTable tab={tab} query={query} fromDate={fromDate} toDate={toDate} />
       ) : (
       <div className="overflow-x-auto rounded-xl border border-border bg-card">
         <table className="w-full text-sm">
