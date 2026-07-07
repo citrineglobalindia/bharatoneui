@@ -25,8 +25,6 @@ import {
   UserCircle2,
   KeyRound,
   Settings,
-  TrendingUp,
-  Clock,
   Network,
 } from "lucide-react";
 import { BharatOneLogo } from "@/components/bharatone-logo";
@@ -304,23 +302,6 @@ export function AccountantShell({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="hidden xl:flex items-stretch rounded-xl border border-border bg-white overflow-hidden shadow-soft">
-              <div className="flex items-center gap-2 px-3 py-1.5 border-r border-border">
-                <Clock className="h-3.5 w-3.5 text-amber-600" />
-                <div className="leading-tight">
-                  <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Pending</p>
-                  <p className="text-xs font-extrabold text-slate-900">{totalPending} <span className="text-[10px] font-semibold text-amber-600">to act</span></p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 px-3 py-1.5">
-                <TrendingUp className="h-3.5 w-3.5 text-emerald-600" />
-                <div className="leading-tight">
-                  <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Settled</p>
-                  <p className="text-xs font-extrabold text-slate-900">98.6%</p>
-                </div>
-              </div>
-            </div>
-
             <div className="hidden md:flex items-center gap-2 rounded-xl border border-border bg-white px-3 h-10 shadow-soft">
               <Activity className="h-3.5 w-3.5 text-emerald-600" />
               <div className="leading-tight text-right min-w-[78px]" suppressHydrationWarning>

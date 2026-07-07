@@ -3,8 +3,9 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   ArrowLeft, User, Building2, Landmark, FileText, FileSearch, Banknote, ShieldCheck, MapPin,
-  CheckCircle2, XCircle, Maximize2, ExternalLink, X, Loader2, Phone, Mail, Copy, RefreshCw, Pencil, UserPlus, PauseCircle,
+  CheckCircle2, XCircle, Maximize2, ExternalLink, X, Loader2, Phone, Mail, Copy, RefreshCw, Pencil, UserPlus, PauseCircle, Download,
 } from "lucide-react";
+import { downloadRegistrationPDF } from "@/lib/registration-pdf";
 import { BharatOneLogo } from "@/components/bharatone-logo";
 import { Button } from "@/components/ui/button";
 import {
@@ -116,6 +117,7 @@ function ReviewPage() {
   const [assignList, setAssignList] = useState<{ id: string; name: string }[]>([]);
   const [assignee, setAssignee] = useState("");
   const [busy, setBusy] = useState(false);
+  const [pdfBusy, setPdfBusy] = useState(false);
   const [lightbox, setLightbox] = useState<{ url: string; kind: string; label: string } | null>(null);
   const [creds, setCreds] = useState<{ username: string; email: string; password: string } | null>(null);
 
@@ -254,6 +256,20 @@ function ReviewPage() {
   const gps = reg.video_kyc_lat && reg.video_kyc_lng ? `${reg.video_kyc_lat}, ${reg.video_kyc_lng}`
     : reg.latitude && reg.longitude ? `${reg.latitude}, ${reg.longitude}` : null;
   const mapUrl = gps ? `https://www.google.com/maps?q=${encodeURIComponent(gps)}` : null;
+
+  const downloadPdf = async () => {
+    setPdfBusy(true);
+    try {
+      // All docs except Video KYC; images embedded, PDF attachments noted.
+      const docs = DOCS
+        .filter((d) => d.key !== "video" && d.path && urls[d.key])
+        .map((d) => ({ label: d.label, url: urls[d.key], isPdf: fileKind(d.path) === "pdf" }));
+      const fileBase = reg.jsko_id || reg.application_id || "registration";
+      await downloadRegistrationPDF(reg, docs, fileBase);
+    } catch (e) {
+      toast.error("Could not generate PDF", { description: e instanceof Error ? e.message : String(e) });
+    } finally { setPdfBusy(false); }
+  };
   const ef = (label: string, key: string, type = "text") => editMode
     ? <div className="min-w-0"><p className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</p><input type={type} className="mt-0.5 h-9 w-full rounded-lg border border-border bg-background px-2 text-sm font-semibold outline-none focus-visible:ring-2 focus-visible:ring-india-green/30" value={form[key] ?? ""} onChange={(e) => setForm({ ...form, [key]: e.target.value })} /></div>
     : <Field label={label} value={reg[key]} />;
@@ -270,6 +286,7 @@ function ReviewPage() {
             {role === "admin" && !editMode && <Button size="sm" variant="outline" onClick={() => setEditMode(true)}><Pencil className="h-4 w-4" /> Edit</Button>}
             {role === "admin" && editMode && <><Button size="sm" disabled={savingAll} className="bg-india-green text-white hover:bg-india-green/90" onClick={saveAll}>{savingAll ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} Save all</Button><Button size="sm" variant="outline" onClick={() => { setEditMode(false); setForm(reg); }}><X className="h-4 w-4" /> Cancel</Button></>}
             {(role === "admin" || canQc) && !editMode && ["approved","rejected","telecaller"].includes(reg.status) && <Button size="sm" variant="outline" disabled={busy} onClick={() => act(() => supabase.rpc("resend_to_qc", { reg_id: id, notes: null }), "Sent for re-QC verification", false)}><RefreshCw className="h-4 w-4" /> Re-QC</Button>}
+            {!editMode && <Button size="sm" variant="outline" disabled={pdfBusy} onClick={downloadPdf}>{pdfBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} Download PDF</Button>}
             {role === "admin" && !editMode && <Button size="sm" variant="outline" onClick={openAssign}><UserPlus className="h-4 w-4" /> Assign</Button>}
             <NotificationsBell />
           </div>
