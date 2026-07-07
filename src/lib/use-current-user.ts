@@ -32,17 +32,22 @@ export function useCurrentUser(): CurrentUser {
       const role = roles.find((x) => x !== "employee") || roles[0] || "";
       const name = (p as any)?.display_name || u.user.email?.split("@")[0] || "User";
       const phone = (p as any)?.phone || (u.user.phone ?? "") || "";
-      // JSKO ID for the logged-in user (retailers). Prefer the RLS-safe RPC; fall
-      // back to a direct read of the user's own registration.
+      // JSKO ID for the logged-in retailer. After approval the assigned login ID
+      // lives in `username` (mirrored to auth employee_code). The `jsko_id`
+      // column can hold pre-approval or seed/placeholder values (e.g. "DEMO"),
+      // so prefer username; fall back to a real jsko_id, then application_id.
       let jskoId = "";
       try {
-        const { data: jid, error: jErr } = await (supabase as any).rpc("my_jsko_id");
-        if (!jErr && jid) jskoId = String(jid);
+        const { data: reg } = await supabase.from("retailer_registrations")
+          .select("username, jsko_id, application_id").eq("auth_user_id", u.user.id)
+          .order("created_at", { ascending: false }).limit(1).maybeSingle();
+        const uname = ((reg as any)?.username ?? "").trim();
+        const jid = ((reg as any)?.jsko_id ?? "").trim();
+        const realJid = jid && jid.toUpperCase() !== "DEMO" ? jid : "";
+        jskoId = uname || realJid || (reg as any)?.application_id || "";
         if (!jskoId) {
-          const { data: reg } = await supabase.from("retailer_registrations")
-            .select("jsko_id, application_id").eq("auth_user_id", u.user.id)
-            .order("created_at", { ascending: false }).limit(1).maybeSingle();
-          jskoId = (reg as any)?.jsko_id || (reg as any)?.application_id || "";
+          const code = ((u.user.user_metadata as any)?.employee_code ?? "").trim();
+          if (code) jskoId = code;
         }
       } catch { /* ignore */ }
       if (!on) return;
