@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Heart, GraduationCap, Users, ArrowRight, Sparkles, Quote, Star, X, ZoomIn, ZoomOut } from "lucide-react";
+import { Heart, GraduationCap, Users, ArrowRight, Sparkles, Quote, Star, X, ZoomIn, ZoomOut, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -112,46 +112,58 @@ export function CTA() {
   );
 }
 
-type Award = { name: string; logo: string; certificate?: string };
+type Award = { name: string; logo: string; photos: string[] };
 
 export function Awards() {
   // Blank until an admin adds awards in Website Gallery → Awarded & Recognized By.
   const [awards, setAwards] = useState<Award[]>([]);
   const [active, setActive] = useState<Award | null>(null);
+  const [idx, setIdx] = useState(0);
   const [zoom, setZoom] = useState(1);
 
-  // Admin-managed awards override the defaults when present.
   useEffect(() => {
     let on = true;
     (async () => {
       const { data } = await supabase
         .from("awards")
-        .select("name, logo_path, certificate_path")
+        .select("name, logo_path, certificate_path, photo_paths")
         .eq("is_active", true)
         .order("sort_order")
         .order("created_at");
       if (!on || !data || data.length === 0) return;
       const url = (p: string) => supabase.storage.from("gallery").getPublicUrl(p).data.publicUrl;
       setAwards(
-        (data as { name: string; logo_path: string; certificate_path: string | null }[]).map((d) => ({
-          name: d.name,
-          logo: url(d.logo_path),
-          certificate: d.certificate_path ? url(d.certificate_path) : undefined,
-        })),
+        (data as { name: string; logo_path: string; certificate_path: string | null; photo_paths: string[] | null }[]).map((d) => {
+          const photos = [...(d.photo_paths ?? []), ...(d.certificate_path ? [d.certificate_path] : [])].map(url);
+          return {
+            name: d.name,
+            logo: url(d.logo_path),
+            // Always have at least one image to show on click (fall back to the logo).
+            photos: photos.length ? photos : [url(d.logo_path)],
+          };
+        }),
       );
     })();
     return () => { on = false; };
   }, []);
 
+  const photos = active?.photos ?? [];
+  const step = (dir: 1 | -1) => { setZoom(1); setIdx((n) => (n + dir + photos.length) % photos.length); };
+
   useEffect(() => {
     if (!active) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setActive(null); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setActive(null);
+      else if (e.key === "ArrowRight") step(1);
+      else if (e.key === "ArrowLeft") step(-1);
+    };
     window.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
     return () => { window.removeEventListener("keydown", onKey); document.body.style.overflow = ""; };
-  }, [active]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, photos.length]);
 
-  const open = (a: Award) => { setZoom(1); setActive(a); };
+  const open = (a: Award) => { setZoom(1); setIdx(0); setActive(a); };
 
   // Nothing to show until the admin adds awards — hide the whole section.
   if (awards.length === 0) return null;
@@ -170,8 +182,8 @@ export function Awards() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.1 }}
-              title={`Open ${a.name} certificate`}
-              aria-label={`Open ${a.name} certificate`}
+              title={`Open ${a.name}`}
+              aria-label={`Open ${a.name} photos`}
               className="group flex h-16 sm:h-20 items-center justify-center cursor-pointer transition-transform duration-200 hover:scale-105"
             >
               <img
@@ -201,28 +213,27 @@ export function Awards() {
           aria-label={`${active.name} certificate`}
         >
           {/* Controls */}
-          <div className="absolute right-4 top-4 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+          <div className="absolute right-4 top-4 z-10 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
             <button onClick={() => setZoom((z) => Math.max(1, +(z - 0.25).toFixed(2)))} className="grid h-10 w-10 place-items-center rounded-full bg-white/15 text-white hover:bg-white/25" aria-label="Zoom out"><ZoomOut className="h-5 w-5" /></button>
             <button onClick={() => setZoom((z) => Math.min(3, +(z + 0.25).toFixed(2)))} className="grid h-10 w-10 place-items-center rounded-full bg-white/15 text-white hover:bg-white/25" aria-label="Zoom in"><ZoomIn className="h-5 w-5" /></button>
             <button onClick={() => setActive(null)} className="grid h-10 w-10 place-items-center rounded-full bg-white/15 text-white hover:bg-white/25" aria-label="Close"><X className="h-5 w-5" /></button>
           </div>
+          {photos.length > 1 && (
+            <>
+              <button onClick={(e) => { e.stopPropagation(); step(-1); }} aria-label="Previous" className="absolute left-3 top-1/2 z-10 -translate-y-1/2 grid h-11 w-11 place-items-center rounded-full bg-white/15 text-white hover:bg-white/25"><ChevronLeft className="h-6 w-6" /></button>
+              <button onClick={(e) => { e.stopPropagation(); step(1); }} aria-label="Next" className="absolute right-3 top-1/2 z-10 -translate-y-1/2 grid h-11 w-11 place-items-center rounded-full bg-white/15 text-white hover:bg-white/25"><ChevronRight className="h-6 w-6" /></button>
+            </>
+          )}
           <div className="max-h-[88vh] max-w-[92vw] overflow-auto" onClick={(e) => e.stopPropagation()}>
             <img
-              src={active.certificate ?? active.logo}
-              alt={`${active.name} certificate`}
+              src={photos[idx] ?? active.logo}
+              alt={active.name}
               style={{ transform: `scale(${zoom})`, transformOrigin: "center top" }}
-              className="mx-auto block max-h-[88vh] w-auto max-w-full rounded-lg shadow-2xl transition-transform"
-              onError={(e) => {
-                const img = e.currentTarget;
-                img.style.display = "none";
-                const fb = img.nextElementSibling as HTMLElement | null;
-                if (fb) fb.style.display = "flex";
-              }}
+              className="mx-auto block max-h-[82vh] w-auto max-w-full rounded-lg shadow-2xl transition-transform"
             />
-            <div style={{ display: "none" }} className="mx-auto hidden h-64 w-full max-w-md items-center justify-center rounded-lg border border-white/20 bg-white/5 px-6 text-center text-sm font-medium text-white/80">
-              The {active.name} certificate image will be available soon.
-            </div>
-            <p className="mt-3 text-center text-sm font-semibold text-white/90">{active.name}</p>
+            <p className="mt-3 text-center text-sm font-semibold text-white/90">
+              {active.name}{photos.length > 1 ? ` · ${idx + 1} / ${photos.length}` : ""}
+            </p>
           </div>
         </div>
       )}
