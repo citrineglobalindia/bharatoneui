@@ -244,17 +244,12 @@ export function Awards() {
 
 type Testimonial = { name: string; place: string; text: string; initials: string; rating: number };
 
-const DEFAULT_TESTIMONIALS: Testimonial[] = [
-  { name: "Rajesh Kumar", place: "Tumakuru, Karnataka", text: "Becoming a JSKO partner changed my shop. I now serve banking, Aadhaar and bill payments for my whole village — income has doubled.", initials: "RK", rating: 5 },
-  { name: "Lakshmi Devi", place: "Hassan, Karnataka", text: "The onboarding was simple and the support team is always there. My customers trust BharatOne for government services.", initials: "LD", rating: 5 },
-  { name: "Imran Pasha", place: "Kalaburagi, Karnataka", text: "AEPS and money transfer work smoothly even in my small town. The wallet and ledger make daily accounting effortless.", initials: "IP", rating: 5 },
-];
-
 const initialsOf = (name: string) =>
   name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("") || "•";
 
 export function Testimonials() {
-  const [items, setItems] = useState<Testimonial[]>(DEFAULT_TESTIMONIALS);
+  // Blank until an admin adds testimonials in Website Gallery → Testimonials.
+  const [items, setItems] = useState<Testimonial[]>([]);
 
   useEffect(() => {
     let on = true;
@@ -278,6 +273,9 @@ export function Testimonials() {
     })();
     return () => { on = false; };
   }, []);
+
+  // Nothing to show until the admin adds testimonials — hide the whole section.
+  if (items.length === 0) return null;
 
   return (
     <section className="py-20 bg-gradient-hero">
