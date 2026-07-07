@@ -32,6 +32,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession, withTimeout } from "@/integrations/supabase/ensure-session";
 import { useAuth } from "@/hooks/use-auth";
+import { useSort, SortTh, useColumnFilters, FilterTh } from "@/components/ui/sortable";
 
 type DistRow = {
   id: string;
@@ -233,6 +234,20 @@ export function DistributorApplications() {
     return c;
   }, [rows]);
 
+  const acc = (r: DistRow, key: string) => {
+    switch (key) {
+      case "application": return r.application_id ?? "";
+      case "distributor": return r.distributor_name ?? "";
+      case "company": return r.company_name ?? "";
+      case "contact": return r.mobile ?? "";
+      case "status": return TAB_LABEL[r.status] ?? r.status;
+      default: return "";
+    }
+  };
+  const cf = useColumnFilters<DistRow>();
+  const colFiltered = useMemo(() => cf.apply(filtered, acc), [filtered, cf.filters]);
+  const { sorted, sort, toggle } = useSort(colFiltered, acc);
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -282,11 +297,20 @@ export function DistributorApplications() {
           <table className="w-full min-w-[760px] text-left">
             <thead className="bg-muted/40 text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">
               <tr>
-                {["Application", "Distributor", "Company", "Contact", "Status", ""].map((h) => (
-                  <th key={h} className="px-4 py-2.5">
-                    {h}
-                  </th>
-                ))}
+                <SortTh label="Application" sortKey="application" sort={sort} onSort={toggle} className="px-4 py-2.5" />
+                <SortTh label="Distributor" sortKey="distributor" sort={sort} onSort={toggle} className="px-4 py-2.5" />
+                <SortTh label="Company" sortKey="company" sort={sort} onSort={toggle} className="px-4 py-2.5" />
+                <SortTh label="Contact" sortKey="contact" sort={sort} onSort={toggle} className="px-4 py-2.5" />
+                <SortTh label="Status" sortKey="status" sort={sort} onSort={toggle} className="px-4 py-2.5" />
+                <th className="px-4 py-2.5" />
+              </tr>
+              <tr className="bg-muted/30">
+                <FilterTh filterKey="application" filters={cf.filters} setFilter={cf.setFilter} className="px-2 pb-2" />
+                <FilterTh filterKey="distributor" filters={cf.filters} setFilter={cf.setFilter} className="px-2 pb-2" />
+                <FilterTh filterKey="company" filters={cf.filters} setFilter={cf.setFilter} className="px-2 pb-2" />
+                <FilterTh filterKey="contact" filters={cf.filters} setFilter={cf.setFilter} className="px-2 pb-2" />
+                <FilterTh filterKey="status" filters={cf.filters} setFilter={cf.setFilter} className="px-2 pb-2" />
+                <th className="px-2 pb-2" />
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -315,14 +339,14 @@ export function DistributorApplications() {
                     </td>
                   </tr>
                 ))
-              ) : filtered.length === 0 ? (
+              ) : sorted.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-4 py-10 text-center text-sm text-muted-foreground">
                     No {TAB_LABEL[tab].toLowerCase()} distributor applications.
                   </td>
                 </tr>
               ) : (
-                filtered.map((r, i) => (
+                sorted.map((r, i) => (
                   <tr
                     key={r.id}
                     className="animate-in fade-in slide-in-from-bottom-1 text-[13px] transition-colors duration-300 hover:bg-muted/30"

@@ -4,6 +4,7 @@ import { ArrowUpFromLine, CheckCircle2, XCircle, Loader2, RefreshCw, Banknote } 
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
+import { useSort, SortTh, useColumnFilters, FilterTh } from "@/components/ui/sortable";
 
 type WD = { id: string; user_id: string; amount: number; method: string | null; account_details: string | null; note: string | null; status: string; requested_at: string };
 type RUser = { id: string; name: string; email: string };
@@ -47,6 +48,21 @@ export function WithdrawalsAdmin() {
   const paidTotal = useMemo(() => rows.filter((r) => r.status === "paid").reduce((a, r) => a + Number(r.amount), 0), [rows]);
   const filtered = useMemo(() => tab === "pending" ? rows.filter((r) => r.status === "pending") : rows, [rows, tab]);
 
+  const acc = (r: WD, key: string) => {
+    switch (key) {
+      case "date": return new Date(r.requested_at).getTime();
+      case "retailer": return users[r.user_id]?.name ?? "";
+      case "amount": return Number(r.amount || 0);
+      case "method": return r.method ?? "";
+      case "account": return r.account_details ?? "";
+      case "status": return r.status;
+      default: return "";
+    }
+  };
+  const cf = useColumnFilters<WD>();
+  const colFiltered = useMemo(() => cf.apply(filtered, acc), [filtered, cf.filters]);
+  const { sorted, sort, toggle } = useSort(colFiltered, acc);
+
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -61,11 +77,20 @@ export function WithdrawalsAdmin() {
       <div className="flex gap-1.5">{(["pending", "all"] as const).map((k) => <button key={k} onClick={() => setTab(k)} className={`rounded-full px-3 h-8 text-xs font-semibold capitalize transition ${tab === k ? "bg-india-green text-white" : "border border-border bg-card hover:bg-muted"}`}>{k === "pending" ? "Pending" : "All"}</button>)}</div>
       <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-soft">
         <table className="w-full text-sm">
-          <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground"><tr><th className="px-3 py-2">Date</th><th className="px-3 py-2">Retailer</th><th className="px-3 py-2">Amount</th><th className="px-3 py-2">Method</th><th className="px-3 py-2">Account</th><th className="px-3 py-2">Status</th><th className="px-3 py-2 text-right">Action</th></tr></thead>
+          <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground"><tr><SortTh label="Date" sortKey="date" sort={sort} onSort={toggle} className="px-3 py-2" /><SortTh label="Retailer" sortKey="retailer" sort={sort} onSort={toggle} className="px-3 py-2" /><SortTh label="Amount" sortKey="amount" sort={sort} onSort={toggle} className="px-3 py-2" /><SortTh label="Method" sortKey="method" sort={sort} onSort={toggle} className="px-3 py-2" /><SortTh label="Account" sortKey="account" sort={sort} onSort={toggle} className="px-3 py-2" /><SortTh label="Status" sortKey="status" sort={sort} onSort={toggle} className="px-3 py-2" /><th className="px-3 py-2 text-right">Action</th></tr>
+            <tr className="bg-muted/30">
+              <FilterTh filterKey="date" filters={cf.filters} setFilter={cf.setFilter} className="px-2 pb-2" />
+              <FilterTh filterKey="retailer" filters={cf.filters} setFilter={cf.setFilter} className="px-2 pb-2" />
+              <FilterTh filterKey="amount" filters={cf.filters} setFilter={cf.setFilter} className="px-2 pb-2" />
+              <FilterTh filterKey="method" filters={cf.filters} setFilter={cf.setFilter} className="px-2 pb-2" />
+              <FilterTh filterKey="account" filters={cf.filters} setFilter={cf.setFilter} className="px-2 pb-2" />
+              <FilterTh filterKey="status" filters={cf.filters} setFilter={cf.setFilter} className="px-2 pb-2" />
+              <th className="px-2 pb-2" />
+            </tr></thead>
           <tbody>
             {loading ? <tr><td colSpan={7} className="px-3 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr>
-              : filtered.length === 0 ? <tr><td colSpan={7} className="px-3 py-10 text-center text-muted-foreground">No requests.</td></tr>
-              : filtered.map((w) => (<tr key={w.id} className="border-t border-border">
+              : sorted.length === 0 ? <tr><td colSpan={7} className="px-3 py-10 text-center text-muted-foreground">No requests.</td></tr>
+              : sorted.map((w) => (<tr key={w.id} className="border-t border-border">
                 <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">{new Date(w.requested_at).toLocaleString("en-IN")}</td>
                 <td className="px-3 py-2">{users[w.user_id]?.name ?? "—"}<div className="text-[11px] text-muted-foreground">{users[w.user_id]?.email}</div></td>
                 <td className="px-3 py-2 font-semibold">{inr(w.amount)}</td>

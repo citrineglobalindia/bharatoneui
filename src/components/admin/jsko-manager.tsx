@@ -5,6 +5,7 @@ import { Plus, Pencil, Loader2, Check, X, RefreshCw, Search, IdCard, Upload, Eye
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
+import { useSort, SortTh, useColumnFilters, FilterTh } from "@/components/ui/sortable";
 
 type Row = { id: string; username: string; full_name: string; email: string | null; mobile: string | null; legacy_password: string | null; is_active: boolean; created_at: string };
 const inp = "h-9 w-full rounded-lg border border-border bg-background px-2.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-india-green/30";
@@ -170,6 +171,20 @@ export function JskoManager() {
 
   const filtered = useMemo(() => rows.filter((r) => !q || [r.username, r.full_name, r.email, r.mobile].filter(Boolean).some((v) => String(v).toLowerCase().includes(q.toLowerCase()))), [rows, q]);
 
+  const acc = (r: Row, key: string) => {
+    switch (key) {
+      case "username": return r.username ?? "";
+      case "full_name": return r.full_name ?? "";
+      case "email": return r.email ?? "";
+      case "mobile": return r.mobile ?? "";
+      case "status": return r.is_active ? "Active" : "Inactive";
+      default: return "";
+    }
+  };
+  const cf = useColumnFilters<Row>();
+  const colFiltered = useMemo(() => cf.apply(filtered, acc), [filtered, cf.filters]);
+  const { sorted, sort, toggle: onSort } = useSort(colFiltered, acc);
+
   if (view) {
     return (
       <div className="space-y-3">
@@ -323,12 +338,20 @@ export function JskoManager() {
       <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-soft">
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
-            <tr><th className="px-3 py-2.5">Username</th><th className="px-3 py-2">Full name</th><th className="px-3 py-2">Email</th><th className="px-3 py-2">Mobile</th><th className="px-3 py-2">Status</th><th className="px-3 py-2 text-right">Actions</th></tr>
+            <tr><SortTh label="Username" sortKey="username" sort={sort} onSort={onSort} className="px-3 py-2.5" /><SortTh label="Full name" sortKey="full_name" sort={sort} onSort={onSort} className="px-3 py-2" /><SortTh label="Email" sortKey="email" sort={sort} onSort={onSort} className="px-3 py-2" /><SortTh label="Mobile" sortKey="mobile" sort={sort} onSort={onSort} className="px-3 py-2" /><SortTh label="Status" sortKey="status" sort={sort} onSort={onSort} className="px-3 py-2" /><th className="px-3 py-2 text-right">Actions</th></tr>
+            <tr className="bg-muted/30">
+              <FilterTh filterKey="username" filters={cf.filters} setFilter={cf.setFilter} className="px-2 pb-2" />
+              <FilterTh filterKey="full_name" filters={cf.filters} setFilter={cf.setFilter} className="px-2 pb-2" />
+              <FilterTh filterKey="email" filters={cf.filters} setFilter={cf.setFilter} className="px-2 pb-2" />
+              <FilterTh filterKey="mobile" filters={cf.filters} setFilter={cf.setFilter} className="px-2 pb-2" />
+              <FilterTh filterKey="status" filters={cf.filters} setFilter={cf.setFilter} className="px-2 pb-2" />
+              <th className="px-2 pb-2" />
+            </tr>
           </thead>
           <tbody>
             {loading ? <tr><td colSpan={6} className="px-3 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr>
-              : filtered.length === 0 ? <tr><td colSpan={6} className="px-3 py-10 text-center text-muted-foreground">No JSKO IDs found.</td></tr>
-              : filtered.map((r) => (
+              : sorted.length === 0 ? <tr><td colSpan={6} className="px-3 py-10 text-center text-muted-foreground">No JSKO IDs found.</td></tr>
+              : sorted.map((r) => (
                 <tr key={r.id} className="border-t border-border hover:bg-muted/30">
                   <td className="px-3 py-1.5 font-mono text-xs font-semibold">{r.username}</td>
                   <td className="px-3 py-1.5 text-[13px]">{r.full_name}</td>

@@ -4,6 +4,7 @@ import { Loader2, RefreshCw, Search, IndianRupee, BadgeCheck, Clock3, Wallet, Tr
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
+import { useSort, SortTh, useColumnFilters, FilterTh } from "@/components/ui/sortable";
 
 type Row = {
   id: string; application_no: string; category_name: string; service_name: string;
@@ -68,6 +69,23 @@ export function ApplicationLedger() {
     (!q || [r.application_no, r.full_name, r.service_name, r.submitter_name].filter(Boolean).some((v) => String(v).toLowerCase().includes(q.toLowerCase())))
   ), [rows, q, pay]);
 
+  const acc = (r: Row, key: string) => {
+    switch (key) {
+      case "app": return r.application_no ?? "";
+      case "date": return new Date(r.created_at).getTime();
+      case "retailer": return r.submitter_name ?? "";
+      case "service": return r.service_name ?? "";
+      case "amount": return Number(r.service_charge || 0);
+      case "commission": return Number(r.commission_price || 0);
+      case "status": return statusLabel[r.status] ?? r.status;
+      case "payment": return r.payment_verified ? "Verified" : "Pending";
+      default: return "";
+    }
+  };
+  const cf = useColumnFilters<Row>();
+  const colFiltered = useMemo(() => cf.apply(filtered, acc), [filtered, cf.filters]);
+  const { sorted, sort, toggle } = useSort(colFiltered, acc);
+
   const exportCsv = () => {
     const head = ["Application ID", "Date", "Retailer", "Applicant", "Service", "Category", "Amount", "Commission", "Status", "Payment"].join(",");
     const body = filtered.map((r) => [r.application_no, new Date(r.created_at).toLocaleDateString("en-IN"), r.submitter_name ?? "", r.full_name, r.service_name, r.category_name, r.service_charge, r.commission_price, statusLabel[r.status] ?? r.status, r.payment_verified ? "Verified" : "Pending"].map((x) => `"${String(x ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
@@ -100,12 +118,24 @@ export function ApplicationLedger() {
       <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-soft">
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
-            <tr><th className="px-3 py-2">Application ID</th><th className="px-3 py-2">Date</th><th className="px-3 py-2">Retailer</th><th className="px-3 py-2">Service</th><th className="px-3 py-2">Amount</th><th className="px-3 py-2">Commission</th><th className="px-3 py-2">Status</th><th className="px-3 py-2">Payment</th><th className="px-3 py-2 text-right">Verify Payment</th><th className="px-3 py-2 text-right">Approve</th></tr>
+            <tr><SortTh label="Application ID" sortKey="app" sort={sort} onSort={toggle} className="px-3 py-2" /><SortTh label="Date" sortKey="date" sort={sort} onSort={toggle} className="px-3 py-2" /><SortTh label="Retailer" sortKey="retailer" sort={sort} onSort={toggle} className="px-3 py-2" /><SortTh label="Service" sortKey="service" sort={sort} onSort={toggle} className="px-3 py-2" /><SortTh label="Amount" sortKey="amount" sort={sort} onSort={toggle} className="px-3 py-2" /><SortTh label="Commission" sortKey="commission" sort={sort} onSort={toggle} className="px-3 py-2" /><SortTh label="Status" sortKey="status" sort={sort} onSort={toggle} className="px-3 py-2" /><SortTh label="Payment" sortKey="payment" sort={sort} onSort={toggle} className="px-3 py-2" /><th className="px-3 py-2 text-right">Verify Payment</th><th className="px-3 py-2 text-right">Approve</th></tr>
+            <tr className="bg-muted/30">
+              <FilterTh filterKey="app" filters={cf.filters} setFilter={cf.setFilter} className="px-2 pb-2" />
+              <FilterTh filterKey="date" filters={cf.filters} setFilter={cf.setFilter} className="px-2 pb-2" />
+              <FilterTh filterKey="retailer" filters={cf.filters} setFilter={cf.setFilter} className="px-2 pb-2" />
+              <FilterTh filterKey="service" filters={cf.filters} setFilter={cf.setFilter} className="px-2 pb-2" />
+              <FilterTh filterKey="amount" filters={cf.filters} setFilter={cf.setFilter} className="px-2 pb-2" />
+              <FilterTh filterKey="commission" filters={cf.filters} setFilter={cf.setFilter} className="px-2 pb-2" />
+              <FilterTh filterKey="status" filters={cf.filters} setFilter={cf.setFilter} className="px-2 pb-2" />
+              <FilterTh filterKey="payment" filters={cf.filters} setFilter={cf.setFilter} className="px-2 pb-2" />
+              <th className="px-2 pb-2" />
+              <th className="px-2 pb-2" />
+            </tr>
           </thead>
           <tbody>
             {loading ? <tr><td colSpan={10} className="px-3 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr>
-              : filtered.length === 0 ? <tr><td colSpan={10} className="px-3 py-10 text-center text-muted-foreground">No application transactions found.</td></tr>
-              : filtered.map((r) => (
+              : sorted.length === 0 ? <tr><td colSpan={10} className="px-3 py-10 text-center text-muted-foreground">No application transactions found.</td></tr>
+              : sorted.map((r) => (
               <tr key={r.id} className="border-t border-border hover:bg-muted/30">
                 <td className="px-3 py-2 font-mono text-xs font-semibold">{r.application_no}</td>
                 <td className="px-3 py-2 text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString("en-IN")}</td>
