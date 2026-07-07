@@ -142,8 +142,31 @@ export function DistributorReviewTable({ tab }: { tab: string }) {
 
   const dt = (s: string) => new Date(s);
 
+  const exportList = () => {
+    if (filtered.length === 0) { toast.error("No rows to export"); return; }
+    const headers = ["Sl.no", "Application ID", "Distributor ID", "Distributor Name", "Proprietor", "Company", "GST", "PAN", "Contact", "Alt Contact", "Email", "Bank", "Account No", "IFSC", "Address", "District", "State", "Date & Time", "Status"];
+    const esc = (v: any) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const lines = filtered.map((r, i) => [
+      i + 1, r.application_id, r.username || r.application_id, r.distributor_name || "", r.proprietor_name || "", r.company_name || "",
+      r.gst_number || "", r.pan_number || "", r.mobile || "", r.alt_mobile || "", r.email || "", r.bank_name || "", r.account_number || "", r.ifsc || "",
+      r.address_line || "", r.district || "", r.state || "",
+      dt(r.created_at).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }), r.status,
+    ].map(esc).join(","));
+    const csv = ["﻿" + headers.map(esc).join(","), ...lines].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = `distributor-applications-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Exported", { description: `${filtered.length} rows` });
+  };
+
   return (
     <>
+      <div className="mb-3 flex justify-end">
+        <button onClick={exportList} className="inline-flex items-center gap-1.5 rounded-lg bg-india-green px-3 h-9 text-sm font-semibold text-white hover:bg-india-green/90">
+          <Download className="h-4 w-4" /> Export
+        </button>
+      </div>
       <div className="overflow-x-auto rounded-xl border border-border bg-card">
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">

@@ -302,6 +302,24 @@ export function RegistrationsReview() {
     }
   }
 
+  const exportList = () => {
+    if (filtered.length === 0) { toast.error("No rows to export"); return; }
+    const headers = ["Sl.no", "Application ID", "JSKO ID", "Name", "Shop", "Amount", "Phone", "Email", "Date & Time", "District", "Taluk", "Status"];
+    const esc = (v: any) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const lines = filtered.map((r, i) => [
+      i + 1, r.application_id, r.jsko_id || "", [r.first_name, r.middle_name, r.surname].filter(Boolean).join(" "),
+      r.shop_name || "", r.payment_amount != null ? r.payment_amount : "", r.mobile || "", r.email || "",
+      new Date(r.created_at).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }),
+      r.district || "", r.taluk || "", r.status,
+    ].map(esc).join(","));
+    const csv = ["﻿" + headers.map(esc).join(","), ...lines].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = `registration-payments-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Exported", { description: `${filtered.length} rows` });
+  };
+
   const downloadRow = async (r: RegRow) => {
     setDownloadingId(r.id);
     try {
@@ -483,6 +501,11 @@ export function RegistrationsReview() {
           <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="bg-transparent outline-none" />
           {(fromDate || toDate) && <button onClick={() => { setFromDate(""); setToDate(""); }} className="ml-1 rounded px-1.5 py-0.5 text-[11px] font-semibold text-rose-600 hover:bg-rose-50">Clear</button>}
         </div>
+        {typeFilter !== "distributor" && (
+          <button onClick={exportList} className="inline-flex items-center gap-1.5 rounded-lg bg-india-green px-3 h-9 text-sm font-semibold text-white hover:bg-india-green/90">
+            <Download className="h-4 w-4" /> Export
+          </button>
+        )}
       </div>
 
       {typeFilter === "distributor" ? (
