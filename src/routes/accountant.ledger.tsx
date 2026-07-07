@@ -218,6 +218,54 @@ function LedgerPage() {
     toast.success("Ledger exported", { description: `${filtered.length} entries downloaded` });
   };
 
+  // Full wallet-statement export with the requested column layout. Columns we
+  // don't track yet are exported blank so the file format stays consistent.
+  const exportStatement = async () => {
+    try {
+      await ensureStaffSession();
+      const db2 = supabase as any;
+      const [tx, users] = await Promise.all([
+        db2.from("wallet_transactions").select("user_id, direction, amount, balance_after, reason, ref_type, ref_id, created_at").order("created_at", { ascending: false }).limit(10000),
+        db2.rpc("admin_list_users"),
+      ]);
+      const names: Record<string, string> = {};
+      for (const u of (users.data as any[]) ?? []) names[u.id] = u.display_name || u.email || "";
+      const rows = (tx.data as any[]) ?? [];
+      if (!rows.length) { toast.error("No wallet transactions to export"); return; }
+
+      const HEADERS = [
+        "Sl.no", "User Name", "Old JSKO Id", "New JSKO ID", "Full Name", "Pan", "District", "Taluka", "Hobli", "Gram Panchayat",
+        "Opening Wallet", "CR amount", "DR Amount", "Closing Wallet", "Type", "Service Amount", "SP Amount", "Deduction Amount",
+        "GST", "TDS", "Reference Table", "Reference Id", "Order Id", "Tracking id", "Service Department", "Service", "Remarks", "Date & Time",
+      ];
+      const fmt = (iso: string) => new Date(iso).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+      const esc = (v: any) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+      const lines = rows.map((t, i) => {
+        const isCr = String(t.direction).toLowerCase().startsWith("c");
+        const amt = Number(t.amount) || 0;
+        const closing = Number(t.balance_after) || 0;
+        const opening = isCr ? closing - amt : closing + amt;
+        return [
+          i + 1, names[t.user_id] || "", "", "", "", "", "", "", "", "",
+          opening.toFixed(2), isCr ? amt.toFixed(2) : "", isCr ? "" : amt.toFixed(2), closing.toFixed(2),
+          isCr ? "Credit" : "Debit", "", "", "", "", "",
+          t.ref_type || "", t.ref_id || "", "", "", "", "", t.reason || "", fmt(t.created_at),
+        ].map(esc).join(",");
+      });
+      const csv = [HEADERS.map(esc).join(","), ...lines].join("\n");
+      const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `bharatone-wallet-statement-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Wallet statement exported", { description: `${rows.length} transactions` });
+    } catch (e) {
+      toast.error("Export failed", { description: e instanceof Error ? e.message : String(e) });
+    }
+  };
+
   const reset = () => {
     setQuery("");
     setCategory("All");
@@ -234,9 +282,14 @@ function LedgerPage() {
           subtitle="Unified record of registrations, wallet recharges, withdrawals and main account funding"
           badge={<StatusBadge status="Live" />}
           actions={
-            <Button onClick={exportCsv} className="gap-2">
-              <Download className="h-4 w-4" /> Export CSV
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" onClick={exportStatement} className="gap-2">
+                <Download className="h-4 w-4" /> Export Statement
+              </Button>
+              <Button onClick={exportCsv} className="gap-2">
+                <Download className="h-4 w-4" /> Export CSV
+              </Button>
+            </div>
           }
         />
 
