@@ -20,8 +20,6 @@ import {
   Search,
   Bell,
   Activity,
-  Timer,
-  TrendingUp,
   CheckCircle2,
   ChevronDown,
   Moon,
@@ -269,33 +267,6 @@ export function QcShell({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Live KPI strip */}
-            <div className="hidden xl:flex items-stretch rounded-xl border border-border bg-white overflow-hidden shadow-soft">
-              <div className="flex items-center gap-2 px-3 py-1.5 border-r border-border">
-                <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-                </span>
-                <div className="leading-tight">
-                  <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Queue</p>
-                  <p className="text-xs font-extrabold text-slate-900">12 <span className="text-[10px] font-semibold text-emerald-600">live</span></p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 px-3 py-1.5 border-r border-border">
-                <Timer className="h-3.5 w-3.5 text-amber-600" />
-                <div className="leading-tight">
-                  <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Avg SLA</p>
-                  <p className="text-xs font-extrabold text-slate-900">04:38</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 px-3 py-1.5">
-                <TrendingUp className="h-3.5 w-3.5 text-indigo-600" />
-                <div className="leading-tight">
-                  <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Approval</p>
-                  <p className="text-xs font-extrabold text-slate-900">92.4%</p>
-                </div>
-              </div>
-            </div>
 
             {/* Live clock */}
             <div className="hidden md:flex items-center gap-2 rounded-xl border border-border bg-white px-3 h-10 shadow-soft">

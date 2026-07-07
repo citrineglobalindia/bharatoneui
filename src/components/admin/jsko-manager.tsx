@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { sanitizeMobile } from "@/lib/phone";
 import { toast } from "sonner";
-import { Plus, Pencil, Loader2, Check, X, RefreshCw, Search, IdCard, Upload, Eye, Download, FileText } from "lucide-react";
+import { Plus, Pencil, Loader2, Check, X, RefreshCw, Search, IdCard, Upload, Eye, Download, FileText, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
@@ -28,6 +28,9 @@ export function JskoManager() {
   const [docBucket, setDocBucket] = useState<Record<string, string>>({});
   const [docUrls, setDocUrls] = useState<Record<string, string>>({});
   const [regStatus, setRegStatus] = useState<string | null>(null);
+  const [regId, setRegId] = useState<string | null>(null);
+  const [regAppId, setRegAppId] = useState<string | null>(null);
+  const [deletingReg, setDeletingReg] = useState(false);
   const DOC_DEFS: [string, string][] = [["selfie_path","Selfie"],["shop_photo_path","Shop Photo"],["aadhaar_doc_path","Aadhaar"],["pan_doc_path","PAN Card"],["police_verification_path","Police Verification"],["video_kyc_path","Video KYC"]];
   const uploadDoc = async (key: string, file: File) => {
     if (!view) return;
@@ -68,7 +71,7 @@ export function JskoManager() {
     const f: any = { username: r.username, full_name: r.full_name, email: r.email ?? "", mobile: r.mobile ?? "", legacy_password: r.legacy_password ?? "", is_active: r.is_active };
     FIELDS.forEach((k) => { f[k] = r[k] ?? ""; });
     DOC_DEFS.forEach(([k]) => { f[k] = (r as any)[k] ?? ""; });
-    setView(r); setForm(f); setDocBucket({}); setRegStatus(null);
+    setView(r); setForm(f); setDocBucket({}); setRegStatus(null); setRegId(null); setRegAppId(null);
     // Pull the retailer's completed registration (saved separately) and fill any blanks
     try {
       // Link strictly by the JSKO username so a freshly created ID (or one whose
@@ -83,6 +86,8 @@ export function JskoManager() {
       const reg = (regs as any[] | null)?.[0] ?? null;
       if (reg) {
         setRegStatus((reg as any).status ?? null);
+        setRegId((reg as any).id ?? null);
+        setRegAppId((reg as any).application_id ?? null);
         setForm((prev: any) => {
           const merged = { ...prev };
           [...FIELDS].forEach((k) => { const rv = (reg as any)[k]; if (rv != null && rv !== "" && (merged[k] == null || merged[k] === "")) merged[k] = rv; });
@@ -127,6 +132,30 @@ export function JskoManager() {
     setRows((p) => p.map((x) => x.id === view!.id ? { ...x, ...form } : x)); setView(null);
   };
   const toggle = async (r: Row) => { const { error } = await supabase.from("jsko_legacy_accounts").update({ is_active: !r.is_active }).eq("id", r.id); if (error) return toast.error(error.message); setRows((p) => p.map((x) => x.id === r.id ? { ...x, is_active: !r.is_active } : x)); };
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const delReg = async () => {
+    if (!regId) return;
+    if (!confirm(`Delete the linked retailer registration${regAppId ? ` (${regAppId})` : ""}? This permanently removes the application record from the database. The retailer's login (if any) is not removed.`)) return;
+    setDeletingReg(true);
+    const { data, error } = await (supabase.rpc as any)("admin_delete_registration", { p_reg: regId });
+    setDeletingReg(false);
+    if (error) return toast.error("Delete failed", { description: error.message });
+    if ((data as any) && (data as any).deleted === false) return toast.error("Not deleted");
+    toast.success("Linked registration deleted");
+    setRegId(null); setRegAppId(null); setRegStatus(null);
+  };
+  const del = async (r: Row) => {
+    if (!confirm(`Delete Old JSKO ID "${r.username}"? This permanently removes it from the database and it can no longer be fetched during registration.`)) return;
+    setDeletingId(r.id);
+    // Delete + select confirms rows were actually removed (RLS returns 0 rows silently otherwise).
+    const { data, error } = await supabase.from("jsko_legacy_accounts").delete().eq("id", r.id).select("id");
+    setDeletingId(null);
+    if (error) return toast.error("Delete failed", { description: error.message });
+    if (!data || data.length === 0) return toast.error("Not deleted", { description: "You don't have permission to delete this record." });
+    setRows((p) => p.filter((x) => x.id !== r.id));
+    if (view?.id === r.id) setView(null);
+    toast.success(`Deleted ${r.username}`);
+  };
 
   const importBulk = async () => {
     const lines = bulk.split("\n").map((l) => l.trim()).filter(Boolean);
@@ -153,7 +182,16 @@ export function JskoManager() {
           </div>
           <div className="space-y-3 p-5">
             <p className="text-xs font-semibold text-muted-foreground">All details — edited by admin/QC, or auto-filled from the retailer's completed registration.</p>
-            {regStatus && <div className="rounded-lg border border-india-green/30 bg-india-green/5 px-3 py-2 text-xs font-semibold text-india-green">Linked registration found · status: {regStatus.replace(/_/g, " ")}</div>}
+            {regStatus && (
+              <div className="flex items-center gap-2 rounded-lg border border-india-green/30 bg-india-green/5 px-3 py-2 text-xs font-semibold text-india-green">
+                <span>Linked registration found{regAppId ? ` · ${regAppId}` : ""} · status: {regStatus.replace(/_/g, " ")}</span>
+                {regId && (
+                  <button onClick={delReg} disabled={deletingReg} className="ml-auto inline-flex items-center gap-1 rounded-md border border-red-200 bg-white px-2 py-1 text-[11px] font-bold text-red-600 hover:bg-red-50 disabled:opacity-50">
+                    {deletingReg ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />} Delete registration
+                  </button>
+                )}
+              </div>
+            )}
 
             {/* Account */}
             <div className="rounded-xl border border-border bg-card/50 p-3.5">
@@ -242,6 +280,7 @@ export function JskoManager() {
             <div className="flex gap-2 border-t border-border pt-4">
               <Button onClick={saveEdit} disabled={savingEdit} className="bg-india-green text-white hover:bg-india-green/90">{savingEdit ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Save changes</Button>
               <Button variant="outline" onClick={() => setView(null)}><X className="h-4 w-4" /> Close</Button>
+              <Button variant="outline" onClick={() => view && del(view)} disabled={deletingId === view?.id} className="ml-auto border-red-200 text-red-600 hover:bg-red-50">{deletingId === view?.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />} Delete JSKO ID</Button>
             </div>
           </div>
         </div>
@@ -251,9 +290,7 @@ export function JskoManager() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div><h2 className="flex items-center gap-2 text-lg font-extrabold"><IdCard className="h-5 w-5 text-admin" /> Old JSKO IDs <span className="rounded-full bg-india-green/10 px-2 py-0.5 text-xs font-bold text-india-green">{rows.length}</span></h2>
-          <p className="text-sm text-muted-foreground">Legacy JSKO usernames retailers fetch during Old JSKO onboarding.</p></div>
+      <div className="flex flex-wrap items-center justify-end gap-3">
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => setShowBulk((v) => !v)}><Upload className="h-4 w-4" /> Bulk import</Button>
           <Button variant="outline" size="sm" onClick={load}><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh</Button>
@@ -300,7 +337,8 @@ export function JskoManager() {
                   <td className="px-3 py-1.5"><span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${r.is_active ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>{r.is_active ? "Active" : "Inactive"}</span></td>
                   <td className="px-3 py-1.5 text-right whitespace-nowrap">
                     <button onClick={() => toggle(r)} className="mr-3 text-xs font-semibold text-muted-foreground hover:text-foreground">{r.is_active ? "Deactivate" : "Activate"}</button>
-                    <button onClick={() => openView(r)} className="inline-flex items-center gap-1 text-xs font-semibold text-india-green hover:underline"><Eye className="h-3.5 w-3.5" /> View / Edit</button>
+                    <button onClick={() => openView(r)} className="mr-3 inline-flex items-center gap-1 text-xs font-semibold text-india-green hover:underline"><Eye className="h-3.5 w-3.5" /> View / Edit</button>
+                    <button onClick={() => del(r)} disabled={deletingId === r.id} className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:underline disabled:opacity-50">{deletingId === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />} Delete</button>
                   </td>
                 </tr>
               ))}
