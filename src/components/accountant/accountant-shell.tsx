@@ -297,7 +297,6 @@ export function AccountantShell({ children }: { children: React.ReactNode }) {
                 placeholder="Search by name, UTR, request ID, phone…"
                 className="bg-transparent flex-1 text-sm outline-none placeholder:text-muted-foreground"
               />
-              <kbd className="text-[10px] font-bold text-muted-foreground bg-white border border-border rounded px-1.5 py-0.5">⌘K</kbd>
             </div>
           </div>
 

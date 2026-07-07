@@ -300,7 +300,6 @@ function GlobalSearch() {
           placeholder="Search services, transactions, applications…"
           className="bg-transparent flex-1 text-sm outline-none placeholder:text-muted-foreground"
         />
-        <kbd className="text-[10px] font-bold text-muted-foreground bg-background border border-border rounded px-1.5 py-0.5">⌘K</kbd>
       </div>
       {open && q.trim() && (
         <div className="absolute left-0 mt-2 w-80 overflow-hidden rounded-xl border border-border bg-card shadow-elev z-50">

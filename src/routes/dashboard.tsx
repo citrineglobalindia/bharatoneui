@@ -44,6 +44,8 @@ type Row = {
   full_name: string | null; service_charge: number | null; commission_price: number | null; status: string; created_at: string;
 };
 type Txn = { id: string; service: string; customer: string; amount: number; commission: number; status: string };
+type NoticeItem = { label: string; text: string };
+type DashNotice = { title: string; greeting: string; intro: string; items: NoticeItem[]; footer: string; is_active: boolean };
 
 const statusLabel: Record<string, string> = { submitted: "pending", in_progress: "pending", approved: "success", completed: "success", rejected: "failed" };
 
@@ -64,6 +66,7 @@ function DashboardPage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [kycStatus, setKycStatus] = useState<string | null>(null);
+  const [notice, setNotice] = useState<DashNotice | null>(null);
   const [period, setPeriod] = useState("month");
   const [cFrom, setCFrom] = useState("");
   const [cTo, setCTo] = useState("");
@@ -87,6 +90,15 @@ function DashboardPage() {
       setRows(((apps.data as Row[]) ?? []));
       setKycStatus((reg.data as any)?.status ?? null);
       setLoading(false);
+    })();
+    return () => { on = false; };
+  }, []);
+
+  useEffect(() => {
+    let on = true;
+    (async () => {
+      const { data } = await supabase.from("retailer_dashboard_notice").select("title,greeting,intro,items,footer,is_active").eq("id", 1).maybeSingle();
+      if (on && data) setNotice({ ...(data as any), items: Array.isArray((data as any).items) ? (data as any).items : [] });
     })();
     return () => { on = false; };
   }, []);
@@ -266,15 +278,21 @@ function DashboardPage() {
         {/* Notice + Transaction Summary */}
         <div className="grid lg:grid-cols-3 gap-3">
           <div className="lg:col-span-2 rounded-2xl border border-border bg-card p-5 shadow-soft">
-            <p className="flex items-center gap-2 text-sm font-bold"><span className="grid h-7 w-7 place-items-center rounded-lg bg-saffron/10 text-saffron"><Bell className="h-4 w-4" /></span> Important Notice from BharatOne</p>
-            <p className="mt-3 text-sm font-semibold">Dear Retailer,</p>
-            <p className="mt-1 text-xs text-muted-foreground leading-relaxed">To grow your business and maintain your retailer status, please follow these guidelines:</p>
-            <ul className="mt-2 space-y-1.5 text-xs text-muted-foreground">
-              <li><b className="text-foreground">Timings</b> — Open your center from 8:00 am to 8:00 pm for better service availability (as per SOP).</li>
-              <li><b className="text-foreground">Branding</b> — Use appropriate branding and display posters showing the services offered.</li>
-              <li><b className="text-foreground">Citizen Participation</b> — Regularly review, promote and help customers use digital services available on BharatOne.</li>
-            </ul>
-            <p className="mt-3 text-[11px] text-muted-foreground leading-relaxed">Each retailer should complete a minimum of 10 transactions per day or 300 transactions per month to retain this status and best possible services.</p>
+            {notice && notice.is_active !== false ? (
+              <>
+                <p className="flex items-center gap-2 text-sm font-bold"><span className="grid h-7 w-7 place-items-center rounded-lg bg-saffron/10 text-saffron"><Bell className="h-4 w-4" /></span> {notice.title}</p>
+                {notice.greeting && <p className="mt-3 text-sm font-semibold">{notice.greeting}</p>}
+                {notice.intro && <p className="mt-1 text-xs text-muted-foreground leading-relaxed">{notice.intro}</p>}
+                {notice.items.length > 0 && (
+                  <ul className="mt-2 space-y-1.5 text-xs text-muted-foreground">
+                    {notice.items.map((it, i) => <li key={i}>{it.label && <b className="text-foreground">{it.label}</b>}{it.label ? " — " : ""}{it.text}</li>)}
+                  </ul>
+                )}
+                {notice.footer && <p className="mt-3 text-[11px] text-muted-foreground leading-relaxed">{notice.footer}</p>}
+              </>
+            ) : (
+              <p className="flex items-center gap-2 text-sm font-bold"><span className="grid h-7 w-7 place-items-center rounded-lg bg-saffron/10 text-saffron"><Bell className="h-4 w-4" /></span> Important Notice from BharatOne</p>
+            )}
           </div>
           <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
             <p className="text-sm font-bold">Transaction Summary</p>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Megaphone } from "lucide-react";
+import { Megaphone, X, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 type Notice = { id: string; message: string; link_url: string | null };
@@ -21,19 +21,9 @@ function linkify(text: string) {
   );
 }
 
-function NoticeItem({ n }: { n: Notice }) {
-  if (n.link_url) {
-    return (
-      <a href={href(n.link_url)} target="_blank" rel="noreferrer" className="font-medium underline-offset-2 hover:underline">
-        {n.message}
-      </a>
-    );
-  }
-  return <span className="font-medium">{linkify(n.message)}</span>;
-}
-
 export function NoticeMarquee() {
   const [notices, setNotices] = useState<Notice[]>([]);
+  const [active, setActive] = useState<Notice | null>(null);
 
   useEffect(() => {
     let on = true;
@@ -70,12 +60,33 @@ export function NoticeMarquee() {
         <div className="nb-track flex w-max gap-12 whitespace-nowrap py-2 pl-6 text-sm">
           {seq.map((n, i) => (
             <span key={`${n.id}-${i}`} className="flex items-center gap-12">
-              <NoticeItem n={n} />
+              <button type="button" onClick={() => setActive(n)} title="Click to read full notice" className="font-medium underline-offset-2 hover:underline cursor-pointer">
+                {n.message}
+              </button>
               <span aria-hidden className="text-white/60">●</span>
             </span>
           ))}
         </div>
       </div>
+
+      {active && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setActive(null)}>
+          <div className="w-full max-w-lg rounded-2xl bg-card text-foreground shadow-elev" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-3">
+              <p className="flex items-center gap-2 text-sm font-bold text-india-green"><Megaphone className="h-4 w-4" /> Notice from BharatOne</p>
+              <button type="button" onClick={() => setActive(null)} aria-label="Close" className="text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button>
+            </div>
+            <div className="px-5 py-4">
+              <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{linkify(active.message)}</p>
+              {active.link_url && (
+                <a href={href(active.link_url)} target="_blank" rel="noreferrer" className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-india-green px-4 h-9 text-sm font-semibold text-white hover:opacity-90">
+                  <ExternalLink className="h-4 w-4" /> Open link
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

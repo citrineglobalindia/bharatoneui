@@ -32,7 +32,7 @@ import {
   Wallet,
   Network,
   type LucideIcon,
-  ImageIcon, Megaphone, FolderTree, TrendingUp, Search as SearchIcon, BellRing,
+  ImageIcon, Megaphone, FolderTree, TrendingUp, Search as SearchIcon, BellRing, Bell,
   Server, LayoutGrid, Plus, List, ChevronRight } from "lucide-react";
 import {
   Area,
@@ -88,6 +88,7 @@ import { TestimonialsManager } from "@/components/admin/testimonials-manager";
 import { FooterInspirationManager } from "@/components/admin/footer-inspiration-manager";
 import { DistributorFormManager } from "@/components/admin/distributor-form-manager";
 import { NoticeBoardManager } from "@/components/admin/notice-board-manager";
+import { RetailerNoticeManager } from "@/components/admin/retailer-notice-manager";
 import { SupportCategoriesManager } from "@/components/admin/support-categories-manager";
 import { PlatformAnalytics } from "@/components/admin/platform-analytics";
 import { GlobalSearch } from "@/components/admin/global-search";
@@ -174,6 +175,7 @@ const NAVIGATION: NavGroup[] = [
       { label: "System Settings", icon: Settings },
       { label: "Website Gallery", icon: ImageIcon },
       { label: "Notice Board", icon: Megaphone },
+      { label: "Retailer Notice", icon: Bell },
       { label: "Notification Center", icon: BellRing },
       { label: "Security & 2FA", icon: ShieldCheck },
       { label: "Feedback", icon: MessageSquare },
@@ -495,6 +497,7 @@ const HEADERLESS_SECTIONS = new Set([
   "User Management",
   "System Settings",
   "Notice Board",
+  "Retailer Notice",
   "Support Categories",
   "Feedback",
   "Accountant Operations",
@@ -1178,6 +1181,8 @@ export function AdminWorkspace() {
               </div>
             ) : active === "Notice Board" ? (
               <NoticeBoardManager />
+            ) : active === "Retailer Notice" ? (
+              <RetailerNoticeManager />
             ) : active === "Support Center" ? (
               <SupportAdmin />
             ) : active === "Support Categories" ? (

@@ -265,7 +265,6 @@ export function QcShell({ children }: { children: React.ReactNode }) {
                 placeholder="Search KYC ID, name, PAN, Aadhaar last-4, IFSC…"
                 className="bg-transparent flex-1 text-sm outline-none placeholder:text-muted-foreground"
               />
-              <kbd className="text-[10px] font-bold text-muted-foreground bg-white border border-border rounded px-1.5 py-0.5">⌘K</kbd>
             </div>
           </div>
 
