@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { sanitizeMobile } from "@/lib/phone";
 import { toast } from "sonner";
-import { Users, Search, Loader2, RefreshCw, UserPlus, Eye, X, Check, ShieldCheck, Trash2, AlertTriangle } from "lucide-react";
+import { Users, Search, Loader2, RefreshCw, UserPlus, Eye, X, Check, ShieldCheck, Trash2, AlertTriangle, KeyRound, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -58,6 +58,27 @@ export function AdminUsers() {
   const activeModule = MODULES.find((m) => m.key === moduleKey) ?? MODULES[0];
   const [confirmDel, setConfirmDel] = useState<U | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [resetting, setResetting] = useState(false);
+  const [resetPw, setResetPw] = useState<{ id: string; email: string; password: string; emailed: boolean } | null>(null);
+
+  const resetPassword = async (u: U) => {
+    if (!confirm(`Reset password for ${u.display_name || u.email}?\n\nA new password will be generated and emailed to ${u.email}.`)) return;
+    setResetting(true);
+    try {
+      const { data, error } = await (supabase.rpc as any)("admin_reset_user_password", { target: u.id, new_password: null });
+      if (error) { toast.error("Reset failed", { description: error.message }); return; }
+      const r = data as any;
+      let emailed = false;
+      try {
+        const origin = typeof window !== "undefined" ? window.location.origin : "";
+        const { error: mailErr } = await supabase.functions.invoke("send-password-reset", { body: { email: r.email, name: r.name, password: r.password, loginUrl: origin + "/login" } });
+        emailed = !mailErr;
+        if (mailErr) toast.warning("Password reset, but the email couldn't be sent", { description: "Share the new password with the user manually." });
+        else toast.success("Password reset — new password emailed", { description: r.email });
+      } catch { toast.warning("Password reset, but email failed", { description: "Share the new password manually." }); }
+      setResetPw({ id: u.id, email: r.email, password: r.password, emailed });
+    } finally { setResetting(false); }
+  };
 
   async function load() {
     setLoading(true);
@@ -387,13 +408,23 @@ export function AdminUsers() {
               )}
             </div>
           )}
+          {detail && resetPw && resetPw.id === detail.id && (
+            <div className="mt-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm">
+              <p className="font-semibold text-emerald-800">Password reset {resetPw.emailed ? "— emailed to the user" : "(email not sent — share manually)"}</p>
+              <div className="mt-2 flex items-center gap-2">
+                <span className="rounded-md border border-emerald-300 bg-white px-2 py-1 font-mono text-sm">{resetPw.password}</span>
+                <button onClick={() => { try { navigator.clipboard.writeText(resetPw.password); toast.success("Copied"); } catch {} }} className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs font-semibold hover:bg-muted"><Copy className="h-3.5 w-3.5" /> Copy</button>
+              </div>
+            </div>
+          )}
           <DialogFooter className="gap-2 sm:justify-between">
             <div className="flex flex-wrap gap-2">
+              {detail && <Button variant="outline" className="text-indigo-600" disabled={resetting} onClick={() => resetPassword(detail)}>{resetting ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />} Reset password</Button>}
               {detail && <Button variant="outline" className={detail.is_active ? "text-rose-600" : "text-emerald-700"} onClick={() => toggleActive(detail)}>
                 {detail.is_active ? "Deactivate" : "Activate"}</Button>}
               {detail && !detail.roles.includes("admin") && <Button variant="outline" className="border-rose-200 text-rose-600 hover:bg-rose-50" onClick={() => setConfirmDel(detail)}><Trash2 className="h-4 w-4" /> Delete</Button>}
             </div>
-            <Button onClick={() => setDetail(null)}>Close</Button>
+            <Button onClick={() => { setDetail(null); setResetPw(null); }}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
