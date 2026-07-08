@@ -143,12 +143,12 @@ export function RazorpayLedger() {
           <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
             <tr><SortTh className="px-3 py-2" label="Date" sortKey="date" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Retailer" sortKey="retailer" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Amount" sortKey="amount" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Status" sortKey="status" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Payment ID" sortKey="payment" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Recharge ID" sortKey="recharge" sort={sort} onSort={toggle} /><th className="px-3 py-2 text-right">Action</th></tr>
             <tr className="bg-muted/30">
-              <FilterTh className="px-2 pb-2" filterKey="date" filters={cf.filters} setFilter={cf.setFilter} />
-              <FilterTh className="px-2 pb-2" filterKey="retailer" filters={cf.filters} setFilter={cf.setFilter} />
-              <FilterTh className="px-2 pb-2" filterKey="amount" filters={cf.filters} setFilter={cf.setFilter} />
-              <FilterTh className="px-2 pb-2" filterKey="status" filters={cf.filters} setFilter={cf.setFilter} />
-              <FilterTh className="px-2 pb-2" filterKey="payment" filters={cf.filters} setFilter={cf.setFilter} />
-              <FilterTh className="px-2 pb-2" filterKey="recharge" filters={cf.filters} setFilter={cf.setFilter} />
+              <FilterTh className="px-2 pb-2" filterKey="date" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} />
+              <FilterTh className="px-2 pb-2" filterKey="retailer" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} />
+              <FilterTh className="px-2 pb-2" filterKey="amount" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} />
+              <FilterTh className="px-2 pb-2" filterKey="status" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} />
+              <FilterTh className="px-2 pb-2" filterKey="payment" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} />
+              <FilterTh className="px-2 pb-2" filterKey="recharge" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} />
               <th className="px-2 pb-2" />
             </tr>
           </thead>

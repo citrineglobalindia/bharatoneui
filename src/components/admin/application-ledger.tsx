@@ -120,14 +120,14 @@ export function ApplicationLedger() {
           <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
             <tr><SortTh label="Application ID" sortKey="app" sort={sort} onSort={toggle} className="px-3 py-2" /><SortTh label="Date" sortKey="date" sort={sort} onSort={toggle} className="px-3 py-2" /><SortTh label="Retailer" sortKey="retailer" sort={sort} onSort={toggle} className="px-3 py-2" /><SortTh label="Service" sortKey="service" sort={sort} onSort={toggle} className="px-3 py-2" /><SortTh label="Amount" sortKey="amount" sort={sort} onSort={toggle} className="px-3 py-2" /><SortTh label="Commission" sortKey="commission" sort={sort} onSort={toggle} className="px-3 py-2" /><SortTh label="Status" sortKey="status" sort={sort} onSort={toggle} className="px-3 py-2" /><SortTh label="Payment" sortKey="payment" sort={sort} onSort={toggle} className="px-3 py-2" /><th className="px-3 py-2 text-right">Verify Payment</th><th className="px-3 py-2 text-right">Approve</th></tr>
             <tr className="bg-muted/30">
-              <FilterTh filterKey="app" filters={cf.filters} setFilter={cf.setFilter} className="px-2 pb-2" />
-              <FilterTh filterKey="date" filters={cf.filters} setFilter={cf.setFilter} className="px-2 pb-2" />
-              <FilterTh filterKey="retailer" filters={cf.filters} setFilter={cf.setFilter} className="px-2 pb-2" />
-              <FilterTh filterKey="service" filters={cf.filters} setFilter={cf.setFilter} className="px-2 pb-2" />
-              <FilterTh filterKey="amount" filters={cf.filters} setFilter={cf.setFilter} className="px-2 pb-2" />
-              <FilterTh filterKey="commission" filters={cf.filters} setFilter={cf.setFilter} className="px-2 pb-2" />
-              <FilterTh filterKey="status" filters={cf.filters} setFilter={cf.setFilter} className="px-2 pb-2" />
-              <FilterTh filterKey="payment" filters={cf.filters} setFilter={cf.setFilter} className="px-2 pb-2" />
+              <FilterTh filterKey="app" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} className="px-2 pb-2" />
+              <FilterTh filterKey="date" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} className="px-2 pb-2" />
+              <FilterTh filterKey="retailer" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} className="px-2 pb-2" />
+              <FilterTh filterKey="service" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} className="px-2 pb-2" />
+              <FilterTh filterKey="amount" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} className="px-2 pb-2" />
+              <FilterTh filterKey="commission" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} className="px-2 pb-2" />
+              <FilterTh filterKey="status" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} className="px-2 pb-2" />
+              <FilterTh filterKey="payment" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} className="px-2 pb-2" />
               <th className="px-2 pb-2" />
               <th className="px-2 pb-2" />
             </tr>

@@ -78,13 +78,13 @@ function ReviewersPage() {
                 <SortTh className="text-right px-4 py-3 font-bold" label="SLA" sortKey="sla" sort={sort} onSort={toggle} />
               </tr>
               <tr className="bg-muted/30">
-                <FilterTh className="px-2 pb-2" filterKey="reviewer" filters={cf.filters} setFilter={cf.setFilter} />
-                <FilterTh className="px-2 pb-2" filterKey="level" filters={cf.filters} setFilter={cf.setFilter} />
-                <FilterTh className="px-2 pb-2" filterKey="status" filters={cf.filters} setFilter={cf.setFilter} />
-                <FilterTh className="px-2 pb-2" filterKey="approved" filters={cf.filters} setFilter={cf.setFilter} />
-                <FilterTh className="px-2 pb-2" filterKey="rejected" filters={cf.filters} setFilter={cf.setFilter} />
-                <FilterTh className="px-2 pb-2" filterKey="hold" filters={cf.filters} setFilter={cf.setFilter} />
-                <FilterTh className="px-2 pb-2" filterKey="sla" filters={cf.filters} setFilter={cf.setFilter} />
+                <FilterTh className="px-2 pb-2" filterKey="reviewer" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} />
+                <FilterTh className="px-2 pb-2" filterKey="level" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} />
+                <FilterTh className="px-2 pb-2" filterKey="status" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} />
+                <FilterTh className="px-2 pb-2" filterKey="approved" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} />
+                <FilterTh className="px-2 pb-2" filterKey="rejected" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} />
+                <FilterTh className="px-2 pb-2" filterKey="hold" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} />
+                <FilterTh className="px-2 pb-2" filterKey="sla" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} />
               </tr>
             </thead>
             <tbody>

@@ -206,12 +206,12 @@ function OperatorPortal() {
               <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
                 <tr><SortTh className="px-3 py-2" label="Application ID" sortKey="app" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Retailer" sortKey="retailer" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Applicant" sortKey="applicant" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Service" sortKey="service" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Charge" sortKey="charge" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Status" sortKey="status" sort={sort} onSort={toggle} /><th className="px-3 py-2 text-right">Action</th></tr>
                 <tr className="bg-muted/30">
-                  <FilterTh className="px-2 pb-2" filterKey="app" filters={cf.filters} setFilter={cf.setFilter} />
-                  <FilterTh className="px-2 pb-2" filterKey="retailer" filters={cf.filters} setFilter={cf.setFilter} />
-                  <FilterTh className="px-2 pb-2" filterKey="applicant" filters={cf.filters} setFilter={cf.setFilter} />
-                  <FilterTh className="px-2 pb-2" filterKey="service" filters={cf.filters} setFilter={cf.setFilter} />
-                  <FilterTh className="px-2 pb-2" filterKey="charge" filters={cf.filters} setFilter={cf.setFilter} />
-                  <FilterTh className="px-2 pb-2" filterKey="status" filters={cf.filters} setFilter={cf.setFilter} />
+                  <FilterTh className="px-2 pb-2" filterKey="app" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} />
+                  <FilterTh className="px-2 pb-2" filterKey="retailer" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} />
+                  <FilterTh className="px-2 pb-2" filterKey="applicant" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} />
+                  <FilterTh className="px-2 pb-2" filterKey="service" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} />
+                  <FilterTh className="px-2 pb-2" filterKey="charge" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} />
+                  <FilterTh className="px-2 pb-2" filterKey="status" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} />
                   <th className="px-2 pb-2" />
                 </tr>
               </thead>

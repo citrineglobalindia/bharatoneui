@@ -584,19 +584,19 @@ export function RegistrationsReview() {
               <th className="sticky right-0 z-20 whitespace-nowrap bg-muted px-3 py-2.5 text-right shadow-[-8px_0_8px_-8px_rgba(0,0,0,0.15)]">Actions</th>
             </tr>
             <tr className="bg-muted/30">
-              <FilterTh className="px-2 pb-2" filterKey="app_id" filters={colFilters.filters} setFilter={colFilters.setFilter} />
-              <FilterTh className="px-2 pb-2" filterKey="type" filters={colFilters.filters} setFilter={colFilters.setFilter} />
-              <FilterTh className="px-2 pb-2" filterKey="jsko" filters={colFilters.filters} setFilter={colFilters.setFilter} />
-              <FilterTh className="px-2 pb-2" filterKey="name" filters={colFilters.filters} setFilter={colFilters.setFilter} />
-              <FilterTh className="px-2 pb-2" filterKey="amount" filters={colFilters.filters} setFilter={colFilters.setFilter} />
-              <FilterTh className="px-2 pb-2" filterKey="txn" filters={colFilters.filters} setFilter={colFilters.setFilter} />
+              <FilterTh className="px-2 pb-2" filterKey="app_id" filters={colFilters.filters} setFilter={colFilters.setFilter} optionsFor={colFilters.optionsFor} />
+              <FilterTh className="px-2 pb-2" filterKey="type" filters={colFilters.filters} setFilter={colFilters.setFilter} optionsFor={colFilters.optionsFor} />
+              <FilterTh className="px-2 pb-2" filterKey="jsko" filters={colFilters.filters} setFilter={colFilters.setFilter} optionsFor={colFilters.optionsFor} />
+              <FilterTh className="px-2 pb-2" filterKey="name" filters={colFilters.filters} setFilter={colFilters.setFilter} optionsFor={colFilters.optionsFor} />
+              <FilterTh className="px-2 pb-2" filterKey="amount" filters={colFilters.filters} setFilter={colFilters.setFilter} optionsFor={colFilters.optionsFor} />
+              <FilterTh className="px-2 pb-2" filterKey="txn" filters={colFilters.filters} setFilter={colFilters.setFilter} optionsFor={colFilters.optionsFor} />
               <th className="px-2 pb-2" />
-              <FilterTh className="px-2 pb-2" filterKey="phone" filters={colFilters.filters} setFilter={colFilters.setFilter} />
-              <FilterTh className="px-2 pb-2" filterKey="email" filters={colFilters.filters} setFilter={colFilters.setFilter} />
-              <FilterTh className="px-2 pb-2" filterKey="date" filters={colFilters.filters} setFilter={colFilters.setFilter} />
-              <FilterTh className="px-2 pb-2" filterKey="district" filters={colFilters.filters} setFilter={colFilters.setFilter} />
-              <FilterTh className="px-2 pb-2" filterKey="taluk" filters={colFilters.filters} setFilter={colFilters.setFilter} />
-              <FilterTh className="px-2 pb-2" filterKey="status" filters={colFilters.filters} setFilter={colFilters.setFilter} />
+              <FilterTh className="px-2 pb-2" filterKey="phone" filters={colFilters.filters} setFilter={colFilters.setFilter} optionsFor={colFilters.optionsFor} />
+              <FilterTh className="px-2 pb-2" filterKey="email" filters={colFilters.filters} setFilter={colFilters.setFilter} optionsFor={colFilters.optionsFor} />
+              <FilterTh className="px-2 pb-2" filterKey="date" filters={colFilters.filters} setFilter={colFilters.setFilter} optionsFor={colFilters.optionsFor} />
+              <FilterTh className="px-2 pb-2" filterKey="district" filters={colFilters.filters} setFilter={colFilters.setFilter} optionsFor={colFilters.optionsFor} />
+              <FilterTh className="px-2 pb-2" filterKey="taluk" filters={colFilters.filters} setFilter={colFilters.setFilter} optionsFor={colFilters.optionsFor} />
+              <FilterTh className="px-2 pb-2" filterKey="status" filters={colFilters.filters} setFilter={colFilters.setFilter} optionsFor={colFilters.optionsFor} />
               <th className="sticky right-0 z-20 bg-muted px-2 pb-2" />
             </tr>
           </thead>

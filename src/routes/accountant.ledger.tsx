@@ -349,12 +349,12 @@ function LedgerPage() {
                   <SortTh className="px-4 py-3" label="Status" sortKey="status" sort={sort} onSort={toggle} />
                 </tr>
                 <tr className="bg-muted/30">
-                  <FilterTh className="px-2 pb-2" filterKey="entry" filters={cf.filters} setFilter={cf.setFilter} />
-                  <FilterTh className="px-2 pb-2" filterKey="category" filters={cf.filters} setFilter={cf.setFilter} />
-                  <FilterTh className="px-2 pb-2" filterKey="party" filters={cf.filters} setFilter={cf.setFilter} />
-                  <FilterTh className="px-2 pb-2" filterKey="methodref" filters={cf.filters} setFilter={cf.setFilter} />
-                  <FilterTh className="px-2 pb-2" filterKey="amount" filters={cf.filters} setFilter={cf.setFilter} />
-                  <FilterTh className="px-2 pb-2" filterKey="status" filters={cf.filters} setFilter={cf.setFilter} />
+                  <FilterTh className="px-2 pb-2" filterKey="entry" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} />
+                  <FilterTh className="px-2 pb-2" filterKey="category" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} />
+                  <FilterTh className="px-2 pb-2" filterKey="party" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} />
+                  <FilterTh className="px-2 pb-2" filterKey="methodref" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} />
+                  <FilterTh className="px-2 pb-2" filterKey="amount" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} />
+                  <FilterTh className="px-2 pb-2" filterKey="status" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} />
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">

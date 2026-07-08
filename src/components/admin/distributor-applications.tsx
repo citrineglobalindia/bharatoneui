@@ -305,11 +305,11 @@ export function DistributorApplications() {
                 <th className="px-4 py-2.5" />
               </tr>
               <tr className="bg-muted/30">
-                <FilterTh filterKey="application" filters={cf.filters} setFilter={cf.setFilter} className="px-2 pb-2" />
-                <FilterTh filterKey="distributor" filters={cf.filters} setFilter={cf.setFilter} className="px-2 pb-2" />
-                <FilterTh filterKey="company" filters={cf.filters} setFilter={cf.setFilter} className="px-2 pb-2" />
-                <FilterTh filterKey="contact" filters={cf.filters} setFilter={cf.setFilter} className="px-2 pb-2" />
-                <FilterTh filterKey="status" filters={cf.filters} setFilter={cf.setFilter} className="px-2 pb-2" />
+                <FilterTh filterKey="application" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} className="px-2 pb-2" />
+                <FilterTh filterKey="distributor" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} className="px-2 pb-2" />
+                <FilterTh filterKey="company" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} className="px-2 pb-2" />
+                <FilterTh filterKey="contact" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} className="px-2 pb-2" />
+                <FilterTh filterKey="status" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} className="px-2 pb-2" />
                 <th className="px-2 pb-2" />
               </tr>
             </thead>

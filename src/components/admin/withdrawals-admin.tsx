@@ -79,12 +79,12 @@ export function WithdrawalsAdmin() {
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground"><tr><SortTh label="Date" sortKey="date" sort={sort} onSort={toggle} className="px-3 py-2" /><SortTh label="Retailer" sortKey="retailer" sort={sort} onSort={toggle} className="px-3 py-2" /><SortTh label="Amount" sortKey="amount" sort={sort} onSort={toggle} className="px-3 py-2" /><SortTh label="Method" sortKey="method" sort={sort} onSort={toggle} className="px-3 py-2" /><SortTh label="Account" sortKey="account" sort={sort} onSort={toggle} className="px-3 py-2" /><SortTh label="Status" sortKey="status" sort={sort} onSort={toggle} className="px-3 py-2" /><th className="px-3 py-2 text-right">Action</th></tr>
             <tr className="bg-muted/30">
-              <FilterTh filterKey="date" filters={cf.filters} setFilter={cf.setFilter} className="px-2 pb-2" />
-              <FilterTh filterKey="retailer" filters={cf.filters} setFilter={cf.setFilter} className="px-2 pb-2" />
-              <FilterTh filterKey="amount" filters={cf.filters} setFilter={cf.setFilter} className="px-2 pb-2" />
-              <FilterTh filterKey="method" filters={cf.filters} setFilter={cf.setFilter} className="px-2 pb-2" />
-              <FilterTh filterKey="account" filters={cf.filters} setFilter={cf.setFilter} className="px-2 pb-2" />
-              <FilterTh filterKey="status" filters={cf.filters} setFilter={cf.setFilter} className="px-2 pb-2" />
+              <FilterTh filterKey="date" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} className="px-2 pb-2" />
+              <FilterTh filterKey="retailer" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} className="px-2 pb-2" />
+              <FilterTh filterKey="amount" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} className="px-2 pb-2" />
+              <FilterTh filterKey="method" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} className="px-2 pb-2" />
+              <FilterTh filterKey="account" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} className="px-2 pb-2" />
+              <FilterTh filterKey="status" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} className="px-2 pb-2" />
               <th className="px-2 pb-2" />
             </tr></thead>
           <tbody>

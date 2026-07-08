@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 
 // Shared client-side sorting used across every portal table.
@@ -46,40 +46,52 @@ export function useSort<T>(rows: T[], accessor: (row: T, key: string) => unknown
   return { sorted, sort, toggle };
 }
 
-// Per-column filtering: keeps a { columnKey: text } map and filters rows where
-// each active column's value contains the typed text. Pair with a filter-input
-// row rendered under the header (see <FilterTh/>).
+// Per-column filtering: keeps a { columnKey: value } map and filters rows where
+// each active column's value equals the chosen dropdown value. `apply` also
+// captures the rows+accessor so <FilterTh/> can offer that column's distinct
+// values as a dropdown (call cf.optionsFor(key)).
 export function useColumnFilters<T>() {
   const [filters, setFilters] = useState<Record<string, string>>({});
+  const dataRef = useRef<{ rows: T[]; acc: (r: T, k: string) => unknown }>({ rows: [], acc: () => "" });
   const setFilter = (key: string, v: string) => setFilters((f) => ({ ...f, [key]: v }));
   const clear = () => setFilters({});
   const anyActive = Object.values(filters).some((v) => v.trim());
   const apply = (rows: T[], accessor: (row: T, key: string) => unknown) => {
+    dataRef.current = { rows, acc: accessor };
     const active = Object.entries(filters).filter(([, v]) => v.trim());
     if (!active.length) return rows;
-    return rows.filter((r) => active.every(([k, v]) => String(accessor(r, k) ?? "").toLowerCase().includes(v.trim().toLowerCase())));
+    return rows.filter((r) => active.every(([k, v]) => String(accessor(r, k) ?? "").trim().toLowerCase() === v.trim().toLowerCase()));
   };
-  return { filters, setFilter, clear, anyActive, apply };
+  const optionsFor = (key: string): string[] => {
+    const set = new Set<string>();
+    for (const r of dataRef.current.rows) { const val = String(dataRef.current.acc(r, key) ?? "").trim(); if (val) set.add(val); }
+    return Array.from(set).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }));
+  };
+  return { filters, setFilter, clear, anyActive, apply, optionsFor };
 }
 
 export function FilterTh({
-  filterKey, filters, setFilter, className = "", placeholder = "Filter…",
+  filterKey, filters, setFilter, optionsFor, className = "",
 }: {
   filterKey?: string;
   filters: Record<string, string>;
   setFilter: (key: string, v: string) => void;
+  optionsFor?: (key: string) => string[];
   className?: string;
-  placeholder?: string;
 }) {
   if (!filterKey) return <th className={className} />;
+  const opts = optionsFor ? optionsFor(filterKey) : [];
+  const cls = "h-7 w-full min-w-[80px] rounded border border-border bg-background px-1.5 text-xs font-normal normal-case tracking-normal text-foreground outline-none focus:ring-1 focus:ring-india-green/40";
+  // With options → dropdown; without (not yet wired) → text box fallback.
+  if (opts.length === 0 && !optionsFor) {
+    return <th className={className}><input value={filters[filterKey] ?? ""} onChange={(e) => setFilter(filterKey, e.target.value)} placeholder="Filter…" className={cls} /></th>;
+  }
   return (
     <th className={className}>
-      <input
-        value={filters[filterKey] ?? ""}
-        onChange={(e) => setFilter(filterKey, e.target.value)}
-        placeholder={placeholder}
-        className="h-7 w-full min-w-[70px] rounded border border-border bg-background px-2 text-xs font-normal normal-case tracking-normal outline-none focus:ring-1 focus:ring-india-green/40"
-      />
+      <select value={filters[filterKey] ?? ""} onChange={(e) => setFilter(filterKey, e.target.value)} className={cls}>
+        <option value="">All</option>
+        {opts.map((o) => <option key={o} value={o}>{o}</option>)}
+      </select>
     </th>
   );
 }
