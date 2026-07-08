@@ -9,6 +9,7 @@ import {
 } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
+import { demoApps, demoRetailers, demoDashboard } from "@/components/distributor/distributor-demo";
 
 const inr = (n: number) => "₹" + Number(n || 0).toLocaleString("en-IN");
 const inrK = (n: number) => n >= 1e5 ? `₹${(n / 1e5).toFixed(2)}L` : n >= 1000 ? `₹${(n / 1000).toFixed(0)}k` : `₹${n}`;
@@ -54,6 +55,7 @@ export function DistributorSalesDashboard() {
   const [retailers, setRetailers] = useState<any[]>([]);
   const [dash, setDash] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [demo, setDemo] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -64,9 +66,14 @@ export function DistributorSalesDashboard() {
         supabase.rpc("distributor_retailers"),
         supabase.rpc("distributor_dashboard"),
       ]);
-      setApps((a.data as any[]) ?? []);
-      setRetailers((r.data as any[]) ?? []);
-      setDash((d.data as any) ?? {});
+      const apps0 = (a.data as any[]) ?? [];
+      const rets0 = (r.data as any[]) ?? [];
+      if (apps0.length === 0) {
+        // No real activity yet — show demo data so the portal previews fully.
+        setApps(demoApps); setRetailers(demoRetailers); setDash(demoDashboard); setDemo(true);
+      } else {
+        setApps(apps0); setRetailers(rets0.length ? rets0 : demoRetailers); setDash((d.data as any) ?? {}); setDemo(false);
+      }
     } finally { setLoading(false); }
   }
   useEffect(() => { load(); }, []);
@@ -158,7 +165,7 @@ export function DistributorSalesDashboard() {
         <div className="flex items-center gap-2.5">
           <span className="grid h-9 w-9 place-items-center rounded-xl bg-blue-600 text-white"><BarIcon /></span>
           <div>
-            <h1 className="font-display text-2xl font-extrabold">Distributor Sales Dashboard</h1>
+            <h1 className="flex items-center gap-2 font-display text-2xl font-extrabold">Distributor Sales Dashboard {demo && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-700">Demo data</span>}</h1>
             <p className="text-sm text-muted-foreground">Overview of your business performance</p>
           </div>
         </div>

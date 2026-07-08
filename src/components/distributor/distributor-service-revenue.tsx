@@ -6,6 +6,7 @@ import {
 } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
+import { demoSales } from "@/components/distributor/distributor-demo";
 
 const inr = (n: number) => "₹" + Number(n || 0).toLocaleString("en-IN");
 const COLORS = ["#3b82f6", "#22c55e", "#f59e0b", "#8b5cf6", "#06b6d4", "#94a3b8"];
@@ -33,8 +34,12 @@ export function DistributorServiceRevenue() {
 
   async function load() {
     setLoading(true);
-    try { await ensureStaffSession(); const { data } = await supabase.rpc("distributor_sales"); setSales((data as any) ?? {}); }
-    finally { setLoading(false); }
+    try {
+      await ensureStaffSession();
+      const { data } = await supabase.rpc("distributor_sales");
+      const s = (data as any) ?? {};
+      setSales(((s.by_category as any[]) ?? []).length === 0 ? demoSales : s);
+    } finally { setLoading(false); }
   }
   useEffect(() => { load(); }, []);
 
