@@ -127,8 +127,9 @@ function ReviewPage() {
   async function load() {
     setLoading(true);
     try {
+      await ensureStaffSession();
       const { data, error } = await supabase.from("retailer_registrations").select("*").eq("id", id).maybeSingle();
-      if (error || !data) { toast.error("Could not load application"); setReg(null); return; }
+      if (error || !data) { toast.error("Could not load application", error?.message ? { description: error.message } : undefined); setReg(null); return; }
       setReg(data);
       setPoliceIssue((data as any).police_issue_date || "");
       setPoliceExpiry((data as any).police_expiry_date || "");
@@ -149,7 +150,12 @@ function ReviewPage() {
     } finally { setLoading(false); }
   }
   const loadEvents = async () => { const { data } = await supabase.rpc("registration_events_list", { reg_id: id }); setEvents((data as any[]) ?? []); };
-  useEffect(() => { load(); loadEvents(); ensureStaffSession().then((ok) => { if (ok) { load(); loadEvents(); } }); /* eslint-disable-next-line */ }, [id]);
+  useEffect(() => {
+    let on = true;
+    (async () => { await ensureStaffSession(); if (!on) return; load(); loadEvents(); })();
+    return () => { on = false; };
+    /* eslint-disable-next-line */
+  }, [id]);
   useEffect(() => {
     try { const intent = localStorage.getItem("bharatone:review-intent"); if (intent) { localStorage.removeItem("bharatone:review-intent"); if (intent === "edit") setTimeout(() => setEditMode(true), 300); if (intent === "assign") setTimeout(() => openAssign(), 300); } } catch {}
   }, []);
