@@ -695,168 +695,17 @@ export function RegistrationsReview() {
                     </span>
                   </td>
                   <td className="sticky right-0 z-10 bg-card px-3 py-3 shadow-[-8px_0_8px_-8px_rgba(0,0,0,0.15)]">
-                    <div className="flex flex-wrap justify-end gap-1.5">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-8"
+                    <div className="flex flex-col items-end gap-1.5">
+                      <button
                         onClick={() => navigate({ to: "/review/$id", params: { id: r.id } })}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-india-green to-emerald-600 px-4 h-9 text-sm font-bold text-white shadow-soft transition hover:-translate-y-0.5 hover:shadow-elev"
                       >
-                        <Eye className="h-3.5 w-3.5" /> View
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-8"
-                        disabled={downloadingId === r.id}
-                        title="Download PDF"
-                        onClick={() => downloadRow(r)}
-                      >
-                        {downloadingId === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
-                      </Button>
-                      {(role === "admin" || canQc) &&
-                        ["approved", "rejected", "telecaller"].includes(r.status) && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-8 text-indigo-600"
-                            disabled={busy === r.id}
-                            onClick={async () => {
-                              setBusy(r.id);
-                              const { error } = await supabase.rpc("resend_to_qc", {
-                                reg_id: r.id,
-                                notes: null,
-                              });
-                              setBusy(null);
-                              if (error) {
-                                toast.error(error.message);
-                                return;
-                              }
-                              toast.success("Sent for re-QC");
-                              load();
-                            }}
-                          >
-                            {busy === r.id ? (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            ) : (
-                              <RefreshCw className="h-3.5 w-3.5" />
-                            )}{" "}
-                            Re-QC
-                          </Button>
-                        )}
-                      {role === "admin" && (
-                        <>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-8 text-india-green"
-                            onClick={() => {
-                              try {
-                                localStorage.setItem("bharatone:review-intent", "edit");
-                              } catch {}
-                              navigate({ to: "/review/$id", params: { id: r.id } });
-                            }}
-                          >
-                            <Pencil className="h-3.5 w-3.5" /> Edit
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-8"
-                            onClick={() => {
-                              try {
-                                localStorage.setItem("bharatone:review-intent", "assign");
-                              } catch {}
-                              navigate({ to: "/review/$id", params: { id: r.id } });
-                            }}
-                          >
-                            <UserPlus className="h-3.5 w-3.5" /> Assign
-                          </Button>
-                        </>
-                      )}
-                      {r.status === "accountant_review" && canAccountant && (
-                        <>
-                          <Button
-                            size="sm"
-                            className="h-8 bg-india-green text-white"
-                            disabled={busy === r.id}
-                            onClick={() => acctApprove(r)}
-                          >
-                            {busy === r.id ? (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            ) : (
-                              <CreditCard className="h-3.5 w-3.5" />
-                            )}{" "}
-                            Approve
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-8 text-amber-600"
-                            disabled={busy === r.id}
-                            onClick={() => acctHold(r)}
-                          >
-                            <PauseCircle className="h-3.5 w-3.5" /> Hold
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-8 text-rose-600"
-                            disabled={busy === r.id}
-                            onClick={() => acctReject(r)}
-                          >
-                            <XCircle className="h-3.5 w-3.5" /> Reject
-                          </Button>
-                        </>
-                      )}
-                      {r.status === "qc_review" && canQc && role !== "qc" && (
-                        <>
-                          <Button
-                            size="sm"
-                            className="h-8 bg-saffron-gradient text-white"
-                            disabled={busy === r.id}
-                            onClick={() => qcApprove(r)}
-                          >
-                            {busy === r.id ? (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            ) : (
-                              <CheckCircle2 className="h-3.5 w-3.5" />
-                            )}{" "}
-                            Verify & Approve
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-8 text-rose-600"
-                            disabled={busy === r.id}
-                            onClick={() => qcReject(r)}
-                          >
-                            <XCircle className="h-3.5 w-3.5" /> Reject
-                          </Button>
-                        </>
-                      )}
+                        <Eye className="h-4 w-4" /> View
+                      </button>
                       {r.status === "telecaller" && (
-                        <div className="w-full">
-                          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${r.accountant_decision === "hold" ? "bg-amber-100 text-amber-700" : "bg-rose-100 text-rose-700"}`}>
-                            {r.accountant_decision === "hold" ? <><PauseCircle className="h-3 w-3" /> On Hold</> : <><XCircle className="h-3 w-3" /> Rejected by accountant</>}
-                          </span>
-                          {r.rejection_reason && <p className="mt-1 text-[11px] text-muted-foreground"><b>Remark:</b> {r.rejection_reason}</p>}
-                        </div>
-                      )}
-                      {r.status === "telecaller" && canTele && (
-                        <Button
-                          size="sm"
-                          className="h-8 bg-indigo-600 text-white"
-                          disabled={busy === r.id}
-                          onClick={() => reroute(r)}
-                        >
-                          {busy === r.id ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          ) : (
-                            <RefreshCw className="h-3.5 w-3.5" />
-                          )}{" "}
-                          Re-send to Accountant
-                        </Button>
+                        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${r.accountant_decision === "hold" ? "bg-amber-100 text-amber-700" : "bg-rose-100 text-rose-700"}`}>
+                          {r.accountant_decision === "hold" ? <><PauseCircle className="h-3 w-3" /> On Hold</> : <><XCircle className="h-3 w-3" /> Rejected</>}
+                        </span>
                       )}
                     </div>
                   </td>

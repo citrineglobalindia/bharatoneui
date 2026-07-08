@@ -265,20 +265,10 @@ export function DistributorReviewTable({ tab, query = "", fromDate = "", toDate 
                 <td className="px-3 py-3 text-sm">—</td>
                 <td className="px-3 py-3"><span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${statusPill(r.status)}`}>{r.status.replace("_", " ")}</span></td>
                 <td className="sticky right-0 z-10 bg-card px-3 py-3 shadow-[-8px_0_8px_-8px_rgba(0,0,0,0.15)]">
-                  <div className="flex flex-wrap justify-end gap-1.5">
-                    <Button size="sm" variant="outline" className="h-8" onClick={() => setDetail(r)}><Eye className="h-3.5 w-3.5" /> View</Button>
-                    <Button size="sm" variant="outline" className="h-8" disabled={downloadingId === r.id} title="Download PDF" onClick={() => downloadRow(r)}>
-                      {downloadingId === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
-                    </Button>
-                    {canReview && (r.status === "under_review" || r.status === "on_hold") && (
-                      <>
-                        <Button size="sm" className="h-8 bg-india-green text-white" disabled={busy === r.id} onClick={() => approve(r)}>
-                          {busy === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CreditCard className="h-3.5 w-3.5" />} Approve
-                        </Button>
-                        <Button size="sm" variant="outline" className="h-8 text-amber-600" disabled={busy === r.id} onClick={() => hold(r)}><PauseCircle className="h-3.5 w-3.5" /> Hold</Button>
-                        <Button size="sm" variant="outline" className="h-8 text-rose-600" disabled={busy === r.id} onClick={() => reject(r)}><XCircle className="h-3.5 w-3.5" /> Reject</Button>
-                      </>
-                    )}
+                  <div className="flex justify-end">
+                    <button onClick={() => setDetail(r)} className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-india-green to-emerald-600 px-4 h-9 text-sm font-bold text-white shadow-soft transition hover:-translate-y-0.5 hover:shadow-elev">
+                      <Eye className="h-4 w-4" /> View
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -339,9 +329,9 @@ export function DistributorReviewTable({ tab, query = "", fromDate = "", toDate 
               )}
               {canReview && (detail.status === "under_review" || detail.status === "on_hold") && (
                 <DialogFooter className="mt-4 gap-2">
-                  <Button variant="outline" className="text-rose-600" disabled={busy === detail.id} onClick={() => reject(detail)}><XCircle className="h-4 w-4" /> Reject</Button>
-                  <Button variant="outline" className="text-amber-600" disabled={busy === detail.id} onClick={() => hold(detail)}><PauseCircle className="h-4 w-4" /> Hold</Button>
-                  <Button className="bg-india-green text-white" disabled={busy === detail.id} onClick={() => approve(detail)}>{busy === detail.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} Approve</Button>
+                  <Button className="h-10 bg-rose-600 text-white shadow-soft hover:bg-rose-700" disabled={busy === detail.id} onClick={() => reject(detail)}><XCircle className="h-4 w-4" /> Reject</Button>
+                  <Button className="h-10 bg-amber-500 text-white shadow-soft hover:bg-amber-600" disabled={busy === detail.id} onClick={() => hold(detail)}><PauseCircle className="h-4 w-4" /> Hold</Button>
+                  <Button className="h-10 bg-gradient-to-r from-india-green to-emerald-600 text-white shadow-elev hover:brightness-105" disabled={busy === detail.id} onClick={() => approve(detail)}>{busy === detail.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} Approve</Button>
                 </DialogFooter>
               )}
             </>
