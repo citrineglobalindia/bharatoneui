@@ -98,14 +98,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       // Suppress the browser's Google Translate banner/toolbar — the app has native EN/Kannada.
       { name: "google", content: "notranslate" },
-      { title: "MybharatOne- App" },
+      { title: "BharatOne" },
       {
         name: "description",
         content:
           "BharatOne is a platform for user registration and identity verification, featuring a modern, responsive UI.",
       },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "MybharatOne- App" },
+      { property: "og:title", content: "BharatOne" },
       {
         property: "og:description",
         content:
@@ -114,7 +114,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
-      { name: "twitter:title", content: "MybharatOne- App" },
+      { name: "twitter:title", content: "BharatOne" },
       {
         name: "twitter:description",
         content:
@@ -132,6 +132,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
     ],
     links: [
+      { rel: "icon", href: "/favicon.ico", sizes: "any" },
+      { rel: "icon", type: "image/png", sizes: "32x32", href: "/favicon-32.png" },
+      { rel: "icon", type: "image/png", sizes: "192x192", href: "/favicon-192.png" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
