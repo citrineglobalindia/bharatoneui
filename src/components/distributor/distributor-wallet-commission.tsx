@@ -10,7 +10,20 @@ import {
 import {
   demoWalletTotals, demoWalletTrend, demoWalletTxns, demoCommissionTotals,
   demoCommissionByService, demoTopRetailersByCommission, demoPayouts, demoCommissionStructure,
+  distributorDemoOn,
 } from "@/components/distributor/distributor-demo";
+
+function EmptyWc() {
+  return (
+    <div className="space-y-4">
+      <div>
+        <h1 className="font-display text-2xl font-extrabold">Wallet & Commission Reports</h1>
+        <p className="text-sm text-muted-foreground">Track wallet balance, transactions and commission earnings</p>
+      </div>
+      <div className="grid place-items-center rounded-2xl border border-dashed border-border bg-card p-16 text-center text-sm text-muted-foreground">No wallet or commission activity yet. This will populate as your network transacts.</div>
+    </div>
+  );
+}
 
 const inr = (n: number) => "₹" + Number(n || 0).toLocaleString("en-IN");
 const COLORS = ["#3b82f6", "#22c55e", "#f59e0b", "#8b5cf6", "#06b6d4", "#ec4899", "#94a3b8"];
@@ -118,6 +131,7 @@ function PayoutsTable({ title }: { title: string }) {
 
 export function DistributorWalletCommission() {
   const [tab, setTab] = useState<"wallet" | "commission">("wallet");
+  if (!distributorDemoOn()) return <EmptyWc />;
   const w = demoWalletTotals;
 
   const commTotalRow = demoCommissionByService.reduce(

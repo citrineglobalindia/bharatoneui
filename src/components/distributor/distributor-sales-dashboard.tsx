@@ -9,7 +9,7 @@ import {
 } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
-import { demoApps, demoRetailers, demoDashboard } from "@/components/distributor/distributor-demo";
+import { demoApps, demoRetailers, demoDashboard, distributorDemoOn } from "@/components/distributor/distributor-demo";
 
 const inr = (n: number) => "₹" + Number(n || 0).toLocaleString("en-IN");
 const inrK = (n: number) => n >= 1e5 ? `₹${(n / 1e5).toFixed(2)}L` : n >= 1000 ? `₹${(n / 1000).toFixed(0)}k` : `₹${n}`;
@@ -68,11 +68,11 @@ export function DistributorSalesDashboard() {
       ]);
       const apps0 = (a.data as any[]) ?? [];
       const rets0 = (r.data as any[]) ?? [];
-      if (apps0.length === 0) {
+      if (apps0.length === 0 && distributorDemoOn()) {
         // No real activity yet — show demo data so the portal previews fully.
         setApps(demoApps); setRetailers(demoRetailers); setDash(demoDashboard); setDemo(true);
       } else {
-        setApps(apps0); setRetailers(rets0.length ? rets0 : demoRetailers); setDash((d.data as any) ?? {}); setDemo(false);
+        setApps(apps0); setRetailers(rets0); setDash((d.data as any) ?? {}); setDemo(false);
       }
     } finally { setLoading(false); }
   }

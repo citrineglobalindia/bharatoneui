@@ -7,7 +7,19 @@ import {
   LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid,
   PieChart, Pie, Cell,
 } from "recharts";
-import { demoGst, demoGstInvoices, demoApps } from "@/components/distributor/distributor-demo";
+import { demoGst, demoGstInvoices, demoApps, distributorDemoOn } from "@/components/distributor/distributor-demo";
+
+function EmptyReport({ title, subtitle, note }: { title: string; subtitle: string; note: string }) {
+  return (
+    <div className="space-y-4">
+      <div>
+        <h1 className="font-display text-2xl font-extrabold">{title}</h1>
+        <p className="text-sm text-muted-foreground">{subtitle}</p>
+      </div>
+      <div className="grid place-items-center rounded-2xl border border-dashed border-border bg-card p-16 text-center text-sm text-muted-foreground">{note}</div>
+    </div>
+  );
+}
 
 const inr = (n: number) => "₹" + Number(n || 0).toLocaleString("en-IN");
 const COLORS = ["#3b82f6", "#22c55e", "#f59e0b", "#8b5cf6", "#06b6d4", "#ec4899", "#94a3b8"];
@@ -61,6 +73,7 @@ function TabBtn({ active, onClick, children }: any) {
 
 export function DistributorGstReports() {
   const [tab, setTab] = useState<"gst" | "txn">("gst");
+  if (!distributorDemoOn()) return <EmptyReport title="GST & Transaction Reports" subtitle="View and download GST summary and transaction details" note="No report data yet. GST and transaction reports will appear here once your retailers start transacting." />;
 
   const g = demoGst;
   const taxTypeData = [

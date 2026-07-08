@@ -3,6 +3,19 @@
 // yet (purely for previewing the design). Deterministic (seeded) so the numbers
 // stay stable across renders.
 
+// Demo mode is OFF by default so a real/fresh distributor never sees mock data.
+// Turn it on for a preview by opening any distributor page with ?demo=1 (it is
+// then remembered); ?demo=0 turns it off again.
+export function distributorDemoOn(): boolean {
+  try {
+    if (typeof window === "undefined") return false;
+    const p = new URLSearchParams(window.location.search);
+    if (p.get("demo") === "1") { localStorage.setItem("bharatone:distributor-demo", "1"); return true; }
+    if (p.get("demo") === "0") { localStorage.removeItem("bharatone:distributor-demo"); return false; }
+    return localStorage.getItem("bharatone:distributor-demo") === "1";
+  } catch { return false; }
+}
+
 export type DemoApp = {
   application_no: string; retailer_name: string; service_name: string; category_name: string;
   service_charge: number; distributor_commission_amount: number; status: string; created_at: string;

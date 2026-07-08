@@ -3,7 +3,7 @@ import { Users, IndianRupee, FileText, Wallet, TrendingUp, Clock3, Loader2, Refr
 import { AreaChart, Area, ResponsiveContainer, XAxis, YAxis, Tooltip, PieChart, Pie, Cell } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
-import { demoSales, demoDashboard, demoApps, demoWallet, demoRetailers, demoAppRows, demoCommissionRows, demoOfficers } from "@/components/distributor/distributor-demo";
+import { demoSales, demoDashboard, demoApps, demoWallet, demoRetailers, demoAppRows, demoCommissionRows, demoOfficers, distributorDemoOn } from "@/components/distributor/distributor-demo";
 
 const inr = (n: number) => "₹" + Number(n || 0).toLocaleString("en-IN");
 const statusTone: Record<string, string> = { submitted: "bg-saffron/10 text-saffron", in_progress: "bg-amber-500/10 text-amber-600", approved: "bg-india-green/10 text-india-green", completed: "bg-india-green/10 text-india-green", rejected: "bg-rose-500/10 text-rose-600" };
@@ -53,14 +53,14 @@ export function DistributorDashboardReal() {
       const saleData = (sale.data as any) ?? {};
       const appsData = (apps.data as any[]) ?? [];
       const noRealData = ((saleData.by_category as any[]) ?? []).length === 0 && appsData.length === 0;
-      if (noRealData) {
+      if (noRealData && distributorDemoOn()) {
         // No real activity yet — preview with demo data.
         setD(demoDashboard); setSales(demoSales); setTxns(demoApps.slice(0, 6)); setWallet(demoWallet);
       } else {
-        setD((dash.data as any) ?? demoDashboard);
+        setD((dash.data as any) ?? {});
         setSales(saleData);
         setTxns(appsData.slice(0, 6));
-        setWallet(Number((wal.data as any)?.balance ?? 0) || demoWallet);
+        setWallet(Number((wal.data as any)?.balance ?? 0));
       }
       setNotices((notice.data as any[]) ?? []);
     } finally { setLoading(false); }
@@ -223,7 +223,7 @@ export function DistributorRetailersReal() {
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
-  async function load() { setLoading(true); try { await ensureStaffSession(); const { data } = await supabase.rpc("distributor_retailers"); const d = (data as any[]) ?? []; setRows(d.length ? d : demoRetailers); } finally { setLoading(false); } }
+  async function load() { setLoading(true); try { await ensureStaffSession(); const { data } = await supabase.rpc("distributor_retailers"); const d = (data as any[]) ?? []; setRows(d.length ? d : (distributorDemoOn() ? demoRetailers : [])); } finally { setLoading(false); } }
   useEffect(() => { load(); }, []);
   const filtered = useMemo(() => rows.filter((r) => !q || [r.name, r.retailer_id, r.district].filter(Boolean).some((v) => String(v).toLowerCase().includes(q.toLowerCase()))), [rows, q]);
   return (
@@ -244,7 +244,7 @@ export function DistributorCommissionsReal() {
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"all" | "earned" | "pending">("all");
-  async function load() { setLoading(true); try { await ensureStaffSession(); const { data } = await supabase.rpc("distributor_commissions"); const d = (data as any[]) ?? []; setRows(d.length ? d : demoCommissionRows); } finally { setLoading(false); } }
+  async function load() { setLoading(true); try { await ensureStaffSession(); const { data } = await supabase.rpc("distributor_commissions"); const d = (data as any[]) ?? []; setRows(d.length ? d : (distributorDemoOn() ? demoCommissionRows : [])); } finally { setLoading(false); } }
   useEffect(() => { load(); }, []);
   const totals = useMemo(() => ({ earned: rows.filter((r) => r.earned).reduce((a, r) => a + Number(r.amount || 0), 0), pending: rows.filter((r) => !r.earned && r.status !== "rejected").reduce((a, r) => a + Number(r.amount || 0), 0), count: rows.length }), [rows]);
   const filtered = useMemo(() => tab === "all" ? rows : tab === "earned" ? rows.filter((r) => r.earned) : rows.filter((r) => !r.earned && r.status !== "rejected"), [rows, tab]);
@@ -272,7 +272,7 @@ export function DistributorApplicationsReal() {
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("all");
-  async function load() { setLoading(true); try { await ensureStaffSession(); const { data } = await supabase.rpc("distributor_applications"); const d = (data as any[]) ?? []; setRows(d.length ? d : demoAppRows); } finally { setLoading(false); } }
+  async function load() { setLoading(true); try { await ensureStaffSession(); const { data } = await supabase.rpc("distributor_applications"); const d = (data as any[]) ?? []; setRows(d.length ? d : (distributorDemoOn() ? demoAppRows : [])); } finally { setLoading(false); } }
   useEffect(() => { load(); }, []);
   const filtered = useMemo(() => rows.filter((r) => (status === "all" || r.status === status) && (!q || [r.application_no, r.retailer_name, r.service_name].filter(Boolean).some((v: any) => String(v).toLowerCase().includes(q.toLowerCase())))), [rows, q, status]);
   const today = rows.filter((r) => new Date(r.created_at).toDateString() === new Date().toDateString()).length;
@@ -333,7 +333,7 @@ export function DistributorOfficersReal() {
         supabase.rpc("distributor_team", { _role: "dro" }),
       ]);
       const combined = [...((tro.data as any[]) ?? []), ...((dro.data as any[]) ?? [])];
-      setRows(combined.length ? combined : demoOfficers);
+      setRows(combined.length ? combined : (distributorDemoOn() ? demoOfficers : []));
     } finally { setLoading(false); }
   }
   useEffect(() => { load(); }, []);
