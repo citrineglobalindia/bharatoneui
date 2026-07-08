@@ -180,35 +180,43 @@ export function DistributorReviewTable({ tab, query = "", fromDate = "", toDate 
 
   const exportList = () => {
     if (filtered.length === 0) { toast.error("No rows to export"); return; }
-    // Same 28-column layout as the retailer / Old JSKO export, so the whole
-    // module exports in one consistent format. Columns that don't apply to
-    // distributors (wallet / service / tax) are left blank like the others.
+    // Distributor export layout. Fields we don't track yet (wallet / service /
+    // tax / taluka / hobli / gram panchayat / order / tracking) are exported
+    // blank so the column format stays consistent.
     const HEADERS = [
-      "Sl.no", "User Name", "Old JSKO Id", "New JSKO ID", "Full Name", "Pan", "District", "Taluka", "Hobli", "Gram Panchayat",
-      "Opening Wallet", "CR amount", "DR Amount", "Closing Wallet", "Type", "Service Amount", "SP Amount", "Deduction Amount",
-      "GST", "TDS", "Reference Table", "Reference Id", "Order Id", "Tracking id", "Service Department", "Service", "Remarks", "Creation Date Time",
+      "Sl.no", "Date & Time", "User Name", "Distributor ID", "Distributor Name", "Phone Number", "Email ID", "Pan Number",
+      "District", "Taluka", "Hobli", "Gram Panchayat", "Opening Wallet", "CR amount", "DR Amount", "Closing Wallet", "Type",
+      "Service Amount", "SP Amount", "Deduction Amount", "GST", "TDS", "Reference Table", "Reference Id", "Order Id", "Tracking id",
+      "Service Department", "Service Remarks",
     ];
     const esc = (v: any) => `"${String(v ?? "").replace(/"/g, '""')}"`;
     const fmt = (iso: string) => new Date(iso).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
-    const lines = filtered.map((r, i) => [
+    const lines = sorted.map((r, i) => [
       i + 1,
+      r.created_at ? fmt(r.created_at) : "",                              // Date & Time
       r.username || "",                                                   // User Name
-      "",                                                                 // Old JSKO Id (n/a)
-      r.username || "",                                                   // New JSKO ID (distributor ID)
-      r.distributor_name || r.proprietor_name || r.company_name || "",    // Full Name
-      r.pan_number || "", r.district || "", "", "", "",                   // Pan, District, Taluka, Hobli, Gram Panchayat
-      "", "", "", "",                                                     // Opening / CR / DR / Closing wallet
+      r.username || r.application_id,                                     // Distributor ID
+      r.distributor_name || r.company_name || r.proprietor_name || "",    // Distributor Name
+      r.mobile || "",                                                     // Phone Number
+      r.email || "",                                                      // Email ID
+      r.pan_number || "",                                                 // Pan Number
+      r.district || "",                                                   // District
+      "", "", "",                                                        // Taluka, Hobli, Gram Panchayat
+      "", "", "", "",                                                     // Opening / CR / DR / Closing Wallet
       "Distributor",                                                      // Type
-      "", "", "", "", "",                                                 // Service / SP / Deduction / GST / TDS
-      "distributor_registrations", r.id || "", "", "", "", "",            // Reference Table/Id, Order/Tracking, Dept/Service
-      r.rejection_reason || "", r.created_at ? fmt(r.created_at) : "",    // Remarks, Creation Date Time
+      "", "", "", "", "",                                                 // Service Amount / SP / Deduction / GST / TDS
+      "distributor_registrations",                                        // Reference Table
+      r.id || "",                                                         // Reference Id
+      "", "",                                                             // Order Id, Tracking id
+      "",                                                                 // Service Department
+      r.rejection_reason || "",                                           // Service Remarks
     ].map(esc).join(","));
     const csv = ["﻿" + HEADERS.map(esc).join(","), ...lines].join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = `registration-payments-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+    const a = document.createElement("a"); a.href = url; a.download = `distributor-applications-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
     URL.revokeObjectURL(url);
-    toast.success("Exported", { description: `${filtered.length} rows` });
+    toast.success("Exported", { description: `${sorted.length} rows` });
   };
 
   return (
