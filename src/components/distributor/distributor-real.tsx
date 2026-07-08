@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Users, IndianRupee, FileText, Wallet, TrendingUp, Clock3, Loader2, RefreshCw, Search, Download, Layers, Globe, Cpu, Server, FolderTree, Percent } from "lucide-react";
+import { Users, IndianRupee, FileText, Wallet, TrendingUp, Clock3, Loader2, RefreshCw, Search, Download, Layers, Globe, Cpu, Server, FolderTree, Percent, ShoppingCart, ShoppingBag, Megaphone, CalendarDays, Bell } from "lucide-react";
+import { AreaChart, Area, ResponsiveContainer, XAxis, YAxis, Tooltip, PieChart, Pie, Cell } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 
@@ -10,24 +11,200 @@ function Stat({ icon: Icon, label, value, tone }: any) {
   return <div className="rounded-2xl border border-border bg-card p-4 shadow-soft"><div className="flex items-center gap-2"><span className={`grid h-10 w-10 place-items-center rounded-xl ${tone}`}><Icon className="h-5 w-5" /></span><div><p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p><p className="text-xl font-extrabold">{value}</p></div></div></div>;
 }
 
+const PIE_COLORS = ["#3b82f6", "#22c55e", "#f59e0b", "#8b5cf6", "#06b6d4", "#ef4444", "#14b8a6", "#6366f1"];
+const txnTone: Record<string, string> = { submitted: "bg-sky-100 text-sky-700", in_progress: "bg-amber-100 text-amber-700", on_process: "bg-amber-100 text-amber-700", approved: "bg-emerald-100 text-emerald-700", completed: "bg-emerald-100 text-emerald-700", rejected: "bg-rose-100 text-rose-700" };
+
+function KpiCard({ icon: Icon, label, value, delta, iconBg, iconColor }: any) {
+  return (
+    <div className="rounded-2xl border border-border bg-card p-4 shadow-soft">
+      <div className="flex items-center gap-3">
+        <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ${iconBg}`}><Icon className={`h-5 w-5 ${iconColor}`} /></span>
+        <div className="min-w-0">
+          <p className="truncate text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
+          <p className="text-lg font-extrabold leading-tight">{value}</p>
+          {delta && <p className="text-[10px] font-bold text-emerald-600">{delta}</p>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function DistributorDashboardReal() {
   const [d, setD] = useState<any>(null);
+  const [sales, setSales] = useState<any>(null);
+  const [txns, setTxns] = useState<any[]>([]);
+  const [wallet, setWallet] = useState(0);
+  const [notices, setNotices] = useState<{ message: string; link_url: string | null; created_at?: string }[]>([]);
   const [loading, setLoading] = useState(true);
-  async function load() { setLoading(true); try { await ensureStaffSession(); const { data } = await supabase.rpc("distributor_dashboard"); setD(data ?? {}); } finally { setLoading(false); } }
+
+  async function load() {
+    setLoading(true);
+    try {
+      await ensureStaffSession();
+      const { data: u } = await supabase.auth.getUser();
+      const [dash, sale, apps, notice, wal] = await Promise.all([
+        supabase.rpc("distributor_dashboard"),
+        supabase.rpc("distributor_sales"),
+        supabase.rpc("distributor_applications"),
+        supabase.from("notice_board").select("message,link_url,created_at").eq("is_active", true).order("sort_order").order("created_at", { ascending: false }).limit(4),
+        u?.user ? supabase.from("wallets").select("balance").eq("user_id", u.user.id).maybeSingle() : Promise.resolve({ data: null } as any),
+      ]);
+      setD((dash.data as any) ?? {});
+      setSales((sale.data as any) ?? {});
+      setTxns(((apps.data as any[]) ?? []).slice(0, 6));
+      setNotices((notice.data as any[]) ?? []);
+      setWallet(Number((wal.data as any)?.balance ?? 0));
+    } finally { setLoading(false); }
+  }
   useEffect(() => { load(); }, []);
+
+  const daily = (sales?.daily as any[]) ?? [];
+  const series = daily.map((x) => ({ day: x.d, value: Number(x.amount || 0) }));
+  const cats = ((sales?.by_category as any[]) ?? []).map((x) => ({ name: x.name, value: Number(x.amount || 0), cnt: Number(x.cnt || 0) }));
+  const topServices = [...cats].sort((a, b) => b.value - a.value).slice(0, 5);
+  const revenueMix = [...cats].sort((a, b) => b.value - a.value).slice(0, 6);
+  const weekSales = daily.slice(-7).reduce((a, x) => a + Number(x.amount || 0), 0);
+  const gross = Number(sales?.gross ?? 0);
+  const earned = Number(sales?.earned ?? d?.earned ?? 0);
+  const pending = Number(sales?.pending ?? d?.pending ?? 0);
+  const orders = Number(sales?.apps ?? d?.applications ?? 0);
+
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between"><div><h1 className="font-display text-2xl font-extrabold">Distributor Dashboard</h1><p className="text-sm text-muted-foreground">Your network and commission overview.</p></div><button onClick={load} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-10 text-sm font-semibold hover:bg-muted"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh</button></div>
-      {loading ? <div className="flex items-center gap-2 py-10 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Loading…</div> : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <Stat icon={Users} label="My Retailers" value={d?.retailers ?? 0} tone="bg-blue-500/10 text-blue-600" />
-          <Stat icon={Users} label="Active Retailers" value={d?.active_retailers ?? 0} tone="bg-india-green/10 text-india-green" />
-          <Stat icon={Users} label="TRO Officers" value={d?.tro ?? 0} tone="bg-sky-500/10 text-sky-600" />
-          <Stat icon={Users} label="DRO Officers" value={d?.dro ?? 0} tone="bg-violet-500/10 text-violet-600" />
-          <Stat icon={FileText} label="Applications" value={d?.applications ?? 0} tone="bg-saffron/10 text-saffron" />
-          <Stat icon={TrendingUp} label="Commission Earned" value={inr(d?.earned ?? 0)} tone="bg-india-green/10 text-india-green" />
-          <Stat icon={Clock3} label="Commission Pending" value={inr(d?.pending ?? 0)} tone="bg-amber-500/10 text-amber-600" />
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="font-display text-2xl font-extrabold">Dashboard</h1>
+          <p className="text-sm text-muted-foreground">Overview of your distributor business</p>
         </div>
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 h-10 text-xs font-semibold text-muted-foreground"><CalendarDays className="h-4 w-4" /> This month</span>
+          <button onClick={load} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-10 text-sm font-semibold hover:bg-muted"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh</button>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="flex items-center gap-2 py-10 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Loading…</div>
+      ) : (
+        <>
+          {/* KPI row */}
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+            <KpiCard icon={ShoppingCart} label="Total Sales" value={inr(gross)} delta="Gross network sales" iconBg="bg-blue-100" iconColor="text-blue-600" />
+            <KpiCard icon={IndianRupee} label="Total Revenue" value={inr(earned)} delta="Your commission" iconBg="bg-emerald-100" iconColor="text-emerald-600" />
+            <KpiCard icon={ShoppingBag} label="Total Orders" value={String(orders)} delta="Applications" iconBg="bg-orange-100" iconColor="text-orange-600" />
+            <KpiCard icon={Users} label="Active Retailers" value={String(d?.active_retailers ?? 0)} delta={`${d?.retailers ?? 0} total`} iconBg="bg-violet-100" iconColor="text-violet-600" />
+            <KpiCard icon={Wallet} label="Wallet Balance" value={inr(wallet)} delta="View Wallet →" iconBg="bg-cyan-100" iconColor="text-cyan-600" />
+          </div>
+
+          {/* Sales overview + Top selling services */}
+          <div className="grid gap-3 lg:grid-cols-3">
+            <div className="rounded-2xl border border-border bg-card p-5 shadow-soft lg:col-span-2">
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-sm font-bold">Sales Overview</p>
+                <span className="rounded-lg border border-border bg-muted/40 px-2.5 py-1 text-xs font-semibold text-muted-foreground">Sales Amount</span>
+              </div>
+              <div className="h-56">
+                {series.length === 0 ? <div className="grid h-full place-items-center text-xs text-muted-foreground">No sales activity yet.</div> : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={series} margin={{ top: 10, right: 6, left: -8, bottom: 0 }}>
+                      <defs><linearGradient id="dgrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#3b82f6" stopOpacity={0.35} /><stop offset="100%" stopColor="#3b82f6" stopOpacity={0} /></linearGradient></defs>
+                      <XAxis dataKey="day" tickLine={false} axisLine={false} className="text-xs" />
+                      <YAxis tickLine={false} axisLine={false} className="text-xs" tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
+                      <Tooltip formatter={(v: number) => inr(v)} contentStyle={{ borderRadius: 8, border: "1px solid hsl(var(--border))", fontSize: 12 }} />
+                      <Area type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={2.5} fill="url(#dgrad)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+              <div className="mt-2 grid grid-cols-2 gap-2 border-t border-border pt-3 text-center sm:grid-cols-4">
+                <div><p className="text-[11px] text-muted-foreground">This Week</p><p className="font-extrabold">{inr(weekSales)}</p></div>
+                <div><p className="text-[11px] text-muted-foreground">Gross Sales</p><p className="font-extrabold">{inr(gross)}</p></div>
+                <div><p className="text-[11px] text-muted-foreground">Earned</p><p className="font-extrabold text-emerald-600">{inr(earned)}</p></div>
+                <div><p className="text-[11px] text-muted-foreground">Pending</p><p className="font-extrabold text-amber-600">{inr(pending)}</p></div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
+              <p className="mb-3 text-sm font-bold">Top Selling Services</p>
+              {topServices.length === 0 ? <p className="text-xs text-muted-foreground">No data yet.</p> : (
+                <div className="space-y-2.5">
+                  {topServices.map((s, i) => (
+                    <div key={s.name} className="flex items-center gap-3">
+                      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-blue-50 text-xs font-bold text-blue-600">{i + 1}</span>
+                      <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{s.name}</p><p className="text-[11px] text-muted-foreground">{s.cnt} orders</p></div>
+                      <span className="text-sm font-bold">{inr(s.value)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Recent transactions + Revenue overview + Announcements */}
+          <div className="grid gap-3 lg:grid-cols-3">
+            <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
+              <p className="mb-3 text-sm font-bold">Recent Transactions</p>
+              {txns.length === 0 ? <p className="text-xs text-muted-foreground">No recent transactions.</p> : (
+                <div className="space-y-2.5">
+                  {txns.map((t, i) => (
+                    <div key={i} className="flex items-center gap-2 border-b border-border/60 pb-2 last:border-0 last:pb-0">
+                      <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{t.service_name}</p><p className="truncate text-[11px] text-muted-foreground">{t.retailer_name} · {t.application_no}</p></div>
+                      <div className="text-right"><p className="text-sm font-bold">{inr(t.service_charge)}</p><span className={`rounded-full px-1.5 py-0.5 text-[9px] font-bold capitalize ${txnTone[t.status] ?? "bg-muted"}`}>{String(t.status).replace(/_/g, " ")}</span></div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
+              <p className="mb-2 text-sm font-bold">Revenue Overview</p>
+              <div className="relative h-48">
+                {revenueMix.length === 0 ? <div className="grid h-full place-items-center text-xs text-muted-foreground">No data</div> : (
+                  <>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={revenueMix} dataKey="value" nameKey="name" innerRadius={52} outerRadius={78} paddingAngle={2}>
+                          {revenueMix.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                        </Pie>
+                        <Tooltip formatter={(v: number) => inr(v)} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="pointer-events-none absolute inset-0 grid place-items-center"><div className="text-center"><p className="text-[10px] text-muted-foreground">Total</p><p className="text-sm font-extrabold">{inr(gross)}</p></div></div>
+                  </>
+                )}
+              </div>
+              <div className="mt-2 space-y-1">
+                {revenueMix.map((s, i) => (
+                  <div key={s.name} className="flex items-center gap-2 text-[11px]"><span className="h-2.5 w-2.5 rounded-full" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} /><span className="flex-1 truncate text-muted-foreground">{s.name}</span><span className="font-semibold">{inr(s.value)}</span></div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
+              <p className="mb-3 flex items-center gap-2 text-sm font-bold"><Megaphone className="h-4 w-4 text-blue-600" /> Announcement</p>
+              {notices.length === 0 ? (
+                <div className="rounded-xl bg-blue-50 p-3 text-xs text-blue-800"><p className="font-bold">Welcome to BharatOne 🎉</p><p className="mt-1 text-blue-700/80">New services and payouts appear here as they go live.</p></div>
+              ) : (
+                <div className="space-y-2.5">
+                  {notices.map((n, i) => (
+                    <div key={i} className="flex items-start gap-2.5 border-b border-border/60 pb-2.5 last:border-0 last:pb-0">
+                      <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-blue-50 text-blue-600"><Bell className="h-3.5 w-3.5" /></span>
+                      <p className="text-xs leading-relaxed text-foreground/90">{n.message}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Bottom stat strip */}
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-soft"><span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-100 text-blue-600"><Users className="h-5 w-5" /></span><div><p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Total Retailers</p><p className="text-lg font-extrabold">{d?.retailers ?? 0}</p></div></div>
+            <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-soft"><span className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-100 text-emerald-600"><TrendingUp className="h-5 w-5" /></span><div><p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Retailer Sales (This Week)</p><p className="text-lg font-extrabold">{inr(weekSales)}</p></div></div>
+            <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-soft"><span className="grid h-10 w-10 place-items-center rounded-xl bg-amber-100 text-amber-600"><Clock3 className="h-5 w-5" /></span><div><p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Pending Payout</p><p className="text-lg font-extrabold">{inr(pending)}</p></div></div>
+            <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-soft"><span className="grid h-10 w-10 place-items-center rounded-xl bg-violet-100 text-violet-600"><Percent className="h-5 w-5" /></span><div><p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Total Commission</p><p className="text-lg font-extrabold">{inr(earned)}</p></div></div>
+          </div>
+        </>
       )}
     </div>
   );
