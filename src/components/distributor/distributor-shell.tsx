@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Network, Users, Grid3x3, Coins, LogOut, Menu, X, BarChart3,
   Search, Activity, ChevronDown, ShieldCheck, Bell, UserCircle2,
   UserCog, LifeBuoy, MessageSquare, Settings as SettingsIcon,
-  FileBarChart,
+  FileBarChart, PieChart,
 } from "lucide-react";
 import { BharatOneLogo } from "@/components/bharatone-logo";
 import { useCurrentUser } from "@/lib/use-current-user";
@@ -26,6 +26,7 @@ export const DISTRIBUTOR = {
 const NAV = [
   { label: "Dashboard", icon: <LayoutDashboard className="h-4 w-4" />, to: "/distributor/dashboard" },
   { label: "Sales Dashboard", icon: <BarChart3 className="h-4 w-4" />, to: "/distributor/sales-dashboard" },
+  { label: "Service-wise Revenue", icon: <PieChart className="h-4 w-4" />, to: "/distributor/service-revenue" },
   { label: "Network Map", icon: <Network className="h-4 w-4" />, to: "/distributor/network" },
   { label: "Officers", icon: <UserCog className="h-4 w-4" />, to: "/distributor/officers" },
   { label: "Retailers", icon: <Users className="h-4 w-4" />, to: "/distributor/retailers" },
