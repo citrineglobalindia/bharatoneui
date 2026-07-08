@@ -107,12 +107,44 @@ export function AdminUsers() {
     await load(); setDetail((d) => d && d.id === u.id ? { ...d, is_active: !u.is_active } : d);
   };
   const [distId, setDistId] = useState("");
+  const [curDist, setCurDist] = useState<{ id: string; name: string } | null>(null);
+  const [mapBusy, setMapBusy] = useState(false);
   const assignDistributor = async (u: U) => {
     if (!distId) { toast.error("Select a distributor"); return; }
-    const { error } = await supabase.rpc("set_retailer_distributor", { p_retailer: u.id, p_distributor: distId });
-    if (error) { toast.error("Failed", { description: error.message }); return; }
-    toast.success("Retailer mapped to distributor"); setDistId("");
+    setMapBusy(true);
+    try {
+      const { error } = await supabase.rpc("set_retailer_distributor", { p_retailer: u.id, p_distributor: distId });
+      if (error) { toast.error("Could not map", { description: error.message }); return; }
+      const dp = rows.find((x) => x.id === distId);
+      setCurDist({ id: distId, name: dp ? `${dp.display_name} (${dp.email})` : distId });
+      toast.success("Retailer mapped to distributor"); setDistId("");
+    } finally { setMapBusy(false); }
   };
+  const unlinkDistributor = async (u: U) => {
+    if (!confirm("Unlink this retailer from its current distributor? You can then map it to a new one.")) return;
+    setMapBusy(true);
+    try {
+      const { error } = await supabase.rpc("unlink_retailer_distributor", { p_retailer: u.id });
+      if (error) { toast.error("Unlink failed", { description: error.message }); return; }
+      setCurDist(null); toast.success("Unlinked from distributor");
+    } finally { setMapBusy(false); }
+  };
+  // Load the retailer's current distributor mapping whenever the detail opens.
+  useEffect(() => {
+    const u = detail;
+    if (!u || !(u.roles.includes("retailer") || u.roles.includes("tro") || u.roles.includes("dro"))) { setCurDist(null); return; }
+    let on = true;
+    (async () => {
+      const { data } = await supabase.from("profiles").select("distributor_id").eq("id", u.id).maybeSingle();
+      if (!on) return;
+      const did = (data as any)?.distributor_id;
+      if (!did) { setCurDist(null); return; }
+      const dp = rows.find((x) => x.id === did);
+      setCurDist({ id: did, name: dp ? `${dp.display_name} (${dp.email})` : did });
+    })();
+    return () => { on = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [detail?.id]);
   const setRole = async (u: U, role: string, addRole: boolean) => {
     const { error } = await supabase.rpc("admin_set_user_role", { target: u.id, _role: role, _add: addRole });
     if (error) { toast.error(error.message); return; }
@@ -397,13 +429,21 @@ export function AdminUsers() {
               {(detail.roles.includes("retailer") || detail.roles.includes("tro") || detail.roles.includes("dro")) && (
                 <div>
                   <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Map to Distributor (Retailer / TRO / DRO)</p>
-                  <div className="flex gap-2">
-                    <select className="h-9 flex-1 rounded-lg border border-border bg-background px-2 text-sm" value={distId} onChange={(e) => setDistId(e.target.value)}>
-                      <option value="">Select distributor</option>
-                      {rows.filter((x) => x.roles.includes("distributor")).map((x) => <option key={x.id} value={x.id}>{x.display_name} ({x.email})</option>)}
-                    </select>
-                    <Button size="sm" className="bg-india-green text-white" onClick={() => assignDistributor(detail)}>Map</Button>
-                  </div>
+                  {curDist ? (
+                    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
+                      <span className="text-sm text-emerald-800">Mapped to <b>{curDist.name}</b></span>
+                      <Button size="sm" variant="outline" className="ml-auto text-rose-600" disabled={mapBusy} onClick={() => unlinkDistributor(detail)}>{mapBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null} Unlink</Button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <select className="h-9 flex-1 rounded-lg border border-border bg-background px-2 text-sm" value={distId} onChange={(e) => setDistId(e.target.value)}>
+                        <option value="">Select distributor</option>
+                        {rows.filter((x) => x.roles.includes("distributor")).map((x) => <option key={x.id} value={x.id}>{x.display_name} ({x.email})</option>)}
+                      </select>
+                      <Button size="sm" className="bg-india-green text-white" disabled={mapBusy} onClick={() => assignDistributor(detail)}>{mapBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null} Map</Button>
+                    </div>
+                  )}
+                  <p className="mt-1 text-[11px] text-muted-foreground">A retailer can be mapped to only one distributor at a time. Unlink first to move it to a different distributor.</p>
                 </div>
               )}
             </div>
