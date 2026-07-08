@@ -521,7 +521,6 @@ export function RegistrationsReview() {
             ["all", "All"],
             ["new", "Retailer"],
             ["old", "Old JSKO"],
-            ["distributor", "Distributor"],
           ] as [string, string][]
         ).map(([k, label]) => (
           <button

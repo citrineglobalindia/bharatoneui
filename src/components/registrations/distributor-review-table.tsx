@@ -279,7 +279,7 @@ export function DistributorReviewTable({ tab, query = "", fromDate = "", toDate 
 
       <Dialog open={!!detail} onOpenChange={(o) => !o && setDetail(null)}>
         <DialogContent className="max-h-[90vh] w-[min(720px,96vw)] overflow-y-auto">
-          <DialogHeader><DialogTitle className="flex items-center justify-between gap-2"><span>{detail?.distributor_name || detail?.company_name || "Distributor"}</span><button onClick={() => setDetail(null)}><X className="h-5 w-5 text-muted-foreground" /></button></DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{detail?.distributor_name || detail?.company_name || "Distributor"}</DialogTitle></DialogHeader>
           {detail && (
             <>
               <div className="mb-2 flex items-center gap-2">

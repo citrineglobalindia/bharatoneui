@@ -52,7 +52,7 @@ export function OtpSuccessDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-w-sm overflow-hidden rounded-3xl border-emerald-200/60 p-0 shadow-2xl"
+        className="max-w-sm overflow-hidden rounded-3xl border-emerald-200/60 p-0 shadow-2xl [&>button]:hidden"
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
         {/* Decorative top band */}
