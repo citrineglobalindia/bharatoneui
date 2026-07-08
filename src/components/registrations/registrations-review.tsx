@@ -303,43 +303,69 @@ export function RegistrationsReview() {
     }
   }
 
-  const exportList = async () => {
-    if (sorted.length === 0) { toast.error("No rows to export"); return; }
-    // Fetch the full detail for the visible rows so we can fill every available column.
+  // Build the export matrix (headers + rows) shared by CSV and Excel.
+  const buildExport = async () => {
     const ids = sorted.map((r) => r.id);
     const { data } = await supabase
       .from("retailer_registrations")
-      .select("id, application_id, jsko_id, username, first_name, middle_name, surname, pan_number, district, taluk, hobli_name, gram_panchayat, registration_type, rejection_reason, payment_amount, created_at")
+      .select("id, application_id, jsko_id, username, first_name, middle_name, surname, pan_number, mobile, email, district, taluk, hobli_name, gram_panchayat, registration_type, rejection_reason, payment_amount, created_at")
       .in("id", ids);
     const byId = new Map((((data as any[]) ?? [])).map((d) => [d.id, d]));
     const rows = sorted.map((r) => byId.get(r.id) ?? r);
-
-    const HEADERS = [
-      "Sl.no", "User Name", "Old JSKO Id", "New JSKO ID", "Full Name", "Pan", "District", "Taluka", "Hobli", "Gram Panchayat",
-      "Opening Wallet", "CR amount", "DR Amount", "Closing Wallet", "Type", "Service Amount", "SP Amount", "Deduction Amount",
-      "GST", "TDS", "Reference Table", "Reference Id", "Order Id", "Tracking id", "Service Department", "Service", "Remarks", "Creation Date Time",
-    ];
-    const esc = (v: any) => `"${String(v ?? "").replace(/"/g, '""')}"`;
     const fmt = (iso: string) => new Date(iso).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
-    const lines = rows.map((d: any, i) => [
+    const HEADERS = [
+      "Sl.no", "Date & Time", "User Name", "OLD JSKO ID", "New JSKO ID", "Full Name", "Phone Number", "Email ID", "Pan Number",
+      "District", "Taluka", "Hobli", "Gram Panchayat", "Opening Wallet", "CR amount", "DR Amount", "Closing Wallet", "Type",
+      "Service Amount", "SP Amount", "Deduction Amount", "GST", "TDS", "Reference Table", "Reference Id", "Order Id", "Tracking id",
+      "Service Department", "Service Remarks",
+    ];
+    const matrix = rows.map((d: any, i) => [
       i + 1,
-      d.username || "",
-      d.registration_type === "old" ? (d.jsko_id || "") : "",
-      d.registration_type === "old" ? (d.username || "") : (d.jsko_id || d.username || ""),
-      [d.first_name, d.middle_name, d.surname].filter(Boolean).join(" "),
-      d.pan_number || "", d.district || "", d.taluk || "", d.hobli_name || "", d.gram_panchayat || "",
-      "", "", "", "", // Opening / CR / DR / Closing wallet — not applicable to registrations
-      d.registration_type === "old" ? "Old JSKO" : d.registration_type === "distributor" ? "Distributor" : "Retailer",
-      "", "", "", "", "", // Service Amount / SP / Deduction / GST / TDS
-      "retailer_registrations", d.id || "", "", "", "", "", // Reference Table/Id, Order/Tracking, Dept/Service
-      d.rejection_reason || "", d.created_at ? fmt(d.created_at) : "",
-    ].map(esc).join(","));
-    const csv = ["﻿" + HEADERS.map(esc).join(","), ...lines].join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      d.created_at ? fmt(d.created_at) : "",                                                   // Date & Time
+      d.username || "",                                                                        // User Name
+      d.registration_type === "old" ? (d.jsko_id || "") : "",                                  // OLD JSKO ID
+      d.registration_type === "old" ? (d.username || "") : (d.jsko_id || d.username || ""),    // New JSKO ID
+      [d.first_name, d.middle_name, d.surname].filter(Boolean).join(" "),                      // Full Name
+      d.mobile || "",                                                                          // Phone Number
+      d.email || "",                                                                           // Email ID
+      d.pan_number || "",                                                                      // Pan Number
+      d.district || "", d.taluk || "", d.hobli_name || "", d.gram_panchayat || "",             // District, Taluka, Hobli, Gram Panchayat
+      "", "", "", "",                                                                          // Opening / CR / DR / Closing Wallet
+      d.registration_type === "old" ? "Old JSKO" : "Retailer",                                 // Type
+      "", "", "", "", "",                                                                      // Service Amount / SP / Deduction / GST / TDS
+      "retailer_registrations",                                                                // Reference Table
+      d.id || "",                                                                              // Reference Id
+      "", "",                                                                                  // Order Id, Tracking id
+      "",                                                                                      // Service Department
+      d.rejection_reason || "",                                                                // Service Remarks
+    ]);
+    return { HEADERS, matrix, count: rows.length };
+  };
+
+  const dl = (blob: Blob, ext: string) => {
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = `registration-payments-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+    const a = document.createElement("a"); a.href = url; a.download = `registration-payments-${new Date().toISOString().slice(0, 10)}.${ext}`; a.click();
     URL.revokeObjectURL(url);
-    toast.success("Exported", { description: `${rows.length} rows` });
+  };
+
+  const exportCsv = async () => {
+    if (sorted.length === 0) { toast.error("No rows to export"); return; }
+    const { HEADERS, matrix, count } = await buildExport();
+    const esc = (v: any) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const csv = ["﻿" + HEADERS.map(esc).join(","), ...matrix.map((row) => row.map(esc).join(","))].join("\n");
+    dl(new Blob([csv], { type: "text/csv;charset=utf-8;" }), "csv");
+    toast.success("Exported CSV", { description: `${count} rows` });
+  };
+
+  const exportExcel = async () => {
+    if (sorted.length === 0) { toast.error("No rows to export"); return; }
+    const { HEADERS, matrix, count } = await buildExport();
+    const h = (v: any) => String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const thead = "<tr>" + HEADERS.map((x) => `<th style="background:#0a7d3b;color:#fff;border:1px solid #ccc;padding:4px;font-weight:bold">${h(x)}</th>`).join("") + "</tr>";
+    const tbody = matrix.map((row) => "<tr>" + row.map((c) => `<td style="border:1px solid #ddd;padding:4px;mso-number-format:'\\@'">${h(c)}</td>`).join("") + "</tr>").join("");
+    const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"></head><body><table border="1">${thead}${tbody}</table></body></html>`;
+    dl(new Blob(["﻿" + html], { type: "application/vnd.ms-excel;charset=utf-8;" }), "xls");
+    toast.success("Exported Excel", { description: `${count} rows` });
   };
 
   const downloadRow = async (r: RegRow) => {
@@ -554,9 +580,14 @@ export function RegistrationsReview() {
           {(fromDate || toDate) && <button onClick={() => { setFromDate(""); setToDate(""); }} className="ml-1 rounded px-1.5 py-0.5 text-[11px] font-semibold text-rose-600 hover:bg-rose-50">Clear</button>}
         </div>
         {typeFilter !== "distributor" && (
-          <button onClick={exportList} className="inline-flex items-center gap-1.5 rounded-lg bg-india-green px-3 h-9 text-sm font-semibold text-white hover:bg-india-green/90">
-            <Download className="h-4 w-4" /> Export
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={exportCsv} className="inline-flex items-center gap-1.5 rounded-lg bg-india-green px-3 h-9 text-sm font-semibold text-white hover:bg-india-green/90">
+              <Download className="h-4 w-4" /> CSV
+            </button>
+            <button onClick={exportExcel} className="inline-flex items-center gap-1.5 rounded-lg border border-india-green bg-white px-3 h-9 text-sm font-semibold text-india-green hover:bg-india-green/5">
+              <Download className="h-4 w-4" /> Excel
+            </button>
+          </div>
         )}
       </div>
 
