@@ -32,7 +32,7 @@ import {
   Wallet,
   Network,
   type LucideIcon,
-  ImageIcon, Megaphone, FolderTree, TrendingUp, Search as SearchIcon, BellRing, Bell,
+  ImageIcon, Megaphone, FolderTree, TrendingUp, Search as SearchIcon, BellRing, Bell, IdCard,
   Server, LayoutGrid, Plus, List, ChevronRight } from "lucide-react";
 import {
   Area,
@@ -89,6 +89,7 @@ import { FooterInspirationManager } from "@/components/admin/footer-inspiration-
 import { DistributorFormManager } from "@/components/admin/distributor-form-manager";
 import { NoticeBoardManager } from "@/components/admin/notice-board-manager";
 import { RetailerNoticeManager } from "@/components/admin/retailer-notice-manager";
+import { JskoManager } from "@/components/admin/jsko-manager";
 import { SupportCategoriesManager } from "@/components/admin/support-categories-manager";
 import { PlatformAnalytics } from "@/components/admin/platform-analytics";
 import { GlobalSearch } from "@/components/admin/global-search";
@@ -176,6 +177,7 @@ const NAVIGATION: NavGroup[] = [
       { label: "Website Gallery", icon: ImageIcon },
       { label: "Notice Board", icon: Megaphone },
       { label: "Retailer Notice", icon: Bell },
+      { label: "Old JSKO IDs", icon: IdCard },
       { label: "Notification Center", icon: BellRing },
       { label: "Security & 2FA", icon: ShieldCheck },
       { label: "Feedback", icon: MessageSquare },
@@ -498,6 +500,7 @@ const HEADERLESS_SECTIONS = new Set([
   "System Settings",
   "Notice Board",
   "Retailer Notice",
+  "Old JSKO IDs",
   "Support Categories",
   "Feedback",
   "Accountant Operations",
@@ -1183,6 +1186,8 @@ export function AdminWorkspace() {
               <NoticeBoardManager />
             ) : active === "Retailer Notice" ? (
               <RetailerNoticeManager />
+            ) : active === "Old JSKO IDs" ? (
+              <JskoManager />
             ) : active === "Support Center" ? (
               <SupportAdmin />
             ) : active === "Support Categories" ? (
