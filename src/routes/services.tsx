@@ -85,12 +85,7 @@ function CategorySection({ name, list }: { name: string; list: Service[] }) {
       </div>
       {list.length === 0 ? <p className="py-6 text-center text-sm text-muted-foreground">No services in this category yet.</p> : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          {list.map((s) => (
-            <div key={s.id} className="relative">
-              <ServiceTile s={s} />
-              <span className={`absolute left-2 top-2 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${TYPE_CHIP[s.service_type].cls}`}>{TYPE_CHIP[s.service_type].label}</span>
-            </div>
-          ))}
+          {list.map((s) => <ServiceTile key={s.id} s={s} />)}
         </div>
       )}
     </section>

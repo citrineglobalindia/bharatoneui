@@ -441,7 +441,6 @@ export function DistributorServicesReal({ initialSc }: { initialSc?: string } = 
           <div className="min-w-0"><p className="truncate font-bold leading-tight">{s.name}</p><p className="truncate text-[11px] text-muted-foreground">{s.category || "—"}</p></div>
         </div>
         <div className="space-y-2 p-4">
-          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${tBadge[s.service_type] || "bg-muted text-muted-foreground"}`}><TIcon className="h-3 w-3" /> {TYPE_LABEL[s.service_type] || s.service_type}</span>
           <div className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2 text-sm"><span className="text-muted-foreground">Charge</span><b>{inr(s.service_charge)}</b></div>
           <div className="flex items-center justify-between rounded-lg bg-india-green/5 px-3 py-2 text-sm"><span className="inline-flex items-center gap-1 text-muted-foreground"><Percent className="h-3.5 w-3.5" /> Your commission</span><b className="text-india-green">{s.distributor_commission}%</b></div>
         </div>
@@ -495,11 +494,6 @@ export function DistributorServicesReal({ initialSc }: { initialSc?: string } = 
                 <div className="min-w-0 flex-1">
                   <p className="font-display text-lg font-extrabold leading-tight">{cn}</p>
                   <p className="text-xs text-white/85">{list.length} service{list.length !== 1 ? "s" : ""}</p>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {(["inlink","api","backend"] as const).filter((k) => counts[k] > 0).map((k) => (
-                    <span key={k} className="inline-flex items-center gap-1 rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold">{TYPE_LABEL[k]}: {counts[k]}</span>
-                  ))}
                 </div>
               </div>
               <div className="grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{list.map((sv) => <Card key={sv.id} s={sv} />)}</div>
