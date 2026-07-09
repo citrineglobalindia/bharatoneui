@@ -303,25 +303,39 @@ export function AdminUsers() {
   const isRetailer = moduleKey === "retailer";
   const colCount = 7 + (isRetailer ? 2 : 0);
 
-  const exportCsv = () => {
-    const rows = sorted.map((u: any) => ({
-      Name: u.display_name || "",
-      Email: u.email || "",
-      "JSKO ID / Code": u.employee_code || "",
-      "Mobile Number": u.phone || "",
-      Roles: (u.roles || []).join(" "),
-      Department: u.department || "",
-      Status: u.is_active ? "Active" : "Inactive",
-      Joined: new Date(u.created_at).toLocaleDateString("en-IN"),
-    }));
-    const headers = ["Name", "Email", "JSKO ID / Code", "Mobile Number", "Roles", "Department", "Status", "Joined"];
-    if (!rows.length) { toast.error("Nothing to export"); return; }
-    const csv = [headers.join(","), ...rows.map((r) => headers.map((h) => `"${String((r as any)[h] ?? "").replace(/"/g, '""')}"`).join(","))].join("\r\n");
+  const downloadCsv = (headers: string[], rows: (string | number)[][], name: string) => {
+    const esc = (v: any) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const csv = [headers.map(esc).join(","), ...rows.map((r) => r.map(esc).join(","))].join("\r\n");
     const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download = `${activeModule.label.replace(/[^a-z0-9]+/gi, "_")}_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.href = url; a.download = `${name}_${new Date().toISOString().slice(0, 10)}.csv`;
     a.click(); URL.revokeObjectURL(url);
+  };
+  const exportCsv = async () => {
+    if (isRetailer) {
+      // Full 29-column retailer (JSKO) export — identity/location/PAN/wallet filled; transaction columns blank.
+      await ensureStaffSession();
+      const { data, error } = await (supabase as any).rpc("admin_retailer_export");
+      if (error) { toast.error("Export failed", { description: String(error.message || "").includes("NOT_ADMIN") ? "Please sign in with your admin account." : error.message }); return; }
+      const list = (data as any[]) ?? [];
+      if (!list.length) { toast.error("Nothing to export"); return; }
+      const headers = ["Sl.no", "Date & Time", "User Name", "OLD JSKO ID", "New JSKO ID", "Full Name", "Phone Number", "Email ID", "Pan Number", "District", "Taluka", "Hobli", "Gram Panchayat", "Opening Wallet", "CR amount", "DR Amount", "Closing Wallet", "Type", "Service Amount", "SP Amount", "Deduction Amount", "GST", "TDS", "Reference Table", "Reference Id", "Order Id", "Tracking id", "Service Department", "Service Remarks"];
+      const rows = list.map((r, i) => [
+        i + 1,
+        r.created_at ? new Date(r.created_at).toLocaleString("en-IN") : "",
+        r.user_name ?? "", r.old_jsko_id ?? "", r.new_jsko_id ?? "", r.full_name ?? "",
+        r.phone ?? "", r.email ?? "", r.pan_number ?? "", r.district ?? "", r.taluk ?? "", r.hobli_name ?? "", r.gram_panchayat ?? "",
+        "", "", "", r.closing_wallet ?? "",
+        "", "", "", "", "", "", "", "", "", "", "", "",
+      ]);
+      downloadCsv(headers, rows, "Retailer_JSKO_Staff");
+      return;
+    }
+    if (!sorted.length) { toast.error("Nothing to export"); return; }
+    const headers = ["Name", "Email", "JSKO ID / Code", "Mobile Number", "Roles", "Department", "Status", "Joined"];
+    const rows = sorted.map((u: any) => [u.display_name || "", u.email || "", u.employee_code || "", u.phone || "", (u.roles || []).join(" "), u.department || "", u.is_active ? "Active" : "Inactive", new Date(u.created_at).toLocaleDateString("en-IN")]);
+    downloadCsv(headers, rows, activeModule.label.replace(/[^a-z0-9]+/gi, "_"));
   };
 
   return (
