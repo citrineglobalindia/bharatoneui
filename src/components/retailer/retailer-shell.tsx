@@ -115,9 +115,10 @@ function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: 
             <ul className="space-y-0.5">
               {sec.items.map((it) => {
                 const active = pathname === it.to;
-                // "My Services" children = admin-created service categories (dynamic).
-                const children = it.to === "/services" && frontCats.length
-                  ? [{ label: "All Services", to: "/services" }, ...frontCats.map((c) => ({ label: c.name, to: `/services?sc=${c.id}` }))]
+                // "My Services" and "New Application" children = admin-created Service Categories (dynamic).
+                const scMenu = it.to === "/services" || it.to === "/new-service-request";
+                const children = scMenu && frontCats.length
+                  ? [{ label: it.to === "/services" ? "All Services" : "All Categories", to: it.to }, ...frontCats.map((c) => ({ label: c.name, to: `${it.to}?sc=${c.id}` }))]
                   : it.children;
                 if (children && children.length) {
                   const childActive = children.some((ch) => pathname === ch.to);

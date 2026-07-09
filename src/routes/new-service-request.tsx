@@ -12,11 +12,12 @@ import { downloadReceiptPDF, downloadReceiptPNG, shareReceipt, type AppReceipt }
 
 export const Route = createFileRoute("/new-service-request")({
   head: () => ({ meta: [{ title: "New Application — BharatOne" }] }),
+  validateSearch: (s: Record<string, unknown>): { sc?: string } => ({ sc: typeof s.sc === "string" ? s.sc : undefined }),
   component: NewRequestPage,
 });
 
 type Field = { key: string; label: string; type: string; required: boolean; placeholder?: string; options?: string[] };
-type Svc = { id: string; name: string; category: string | null; service_charge: number; retailer_commission: number; form_schema: Field[] | null };
+type Svc = { id: string; name: string; category: string | null; category_id: string | null; service_charge: number; retailer_commission: number; form_schema: Field[] | null };
 
 const inr = (n: number) => "₹" + Number(n || 0).toLocaleString("en-IN");
 const input = "h-11 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-india-green/30";
@@ -35,7 +36,10 @@ const COMMON: Field[] = [
 
 function NewRequestPage() {
   const navigate = useNavigate();
+  const { sc } = Route.useSearch();
   const [svcs, setSvcs] = useState<Svc[]>([]);
+  const [scName, setScName] = useState<string>("");
+  const [catParent, setCatParent] = useState<Record<string, string | null>>({});
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState("");
   const [serviceId, setServiceId] = useState("");
@@ -49,10 +53,18 @@ function NewRequestPage() {
   useEffect(() => {
     (async () => {
       await ensureStaffSession();
-      const { data } = await (supabase as any).from("services")
-        .select("id,name,category,service_charge,retailer_commission,form_schema")
-        .eq("is_active", true).eq("service_type", "backend").order("sort_order").order("name");
+      const [{ data }, mid, scRow] = await Promise.all([
+        (supabase as any).from("services")
+          .select("id,name,category,category_id,service_charge,retailer_commission,form_schema")
+          .eq("is_active", true).eq("service_type", "backend").order("sort_order").order("name"),
+        (supabase as any).from("service_categories").select("id,parent_id").neq("kind", "frontend"),
+        sc ? (supabase as any).from("service_categories").select("name").eq("id", sc).maybeSingle() : Promise.resolve({ data: null }),
+      ]);
       setSvcs((data as unknown as Svc[]) ?? []);
+      const m: Record<string, string | null> = {};
+      ((mid.data as { id: string; parent_id: string | null }[]) ?? []).forEach((r) => { m[r.id] = r.parent_id; });
+      setCatParent(m);
+      setScName(((scRow as any).data?.name as string) ?? "");
       const { data: sess } = await supabase.auth.getSession();
       const uid = sess?.session?.user?.id;
       if (uid) { const { data: w } = await (supabase as any).from("wallets").select("balance").eq("user_id", uid).maybeSingle(); setBalance(Number((w as any)?.balance ?? 0)); }
@@ -60,8 +72,13 @@ function NewRequestPage() {
     })();
   }, []);
 
-  const categories = useMemo(() => Array.from(new Set(svcs.map((s) => s.category || "Other"))).sort(), [svcs]);
-  const servicesInCat = useMemo(() => svcs.filter((s) => (s.category || "Other") === category), [svcs, category]);
+  // Scope backend services to the selected Service Category (via each Category's parent_id).
+  const scopedSvcs = useMemo(() => {
+    if (!sc) return svcs;
+    return svcs.filter((s) => (s.category_id ? catParent[s.category_id] : null) === sc);
+  }, [svcs, catParent, sc]);
+  const categories = useMemo(() => Array.from(new Set(scopedSvcs.map((s) => s.category || "Other"))).sort(), [scopedSvcs]);
+  const servicesInCat = useMemo(() => scopedSvcs.filter((s) => (s.category || "Other") === category), [scopedSvcs, category]);
   const svc = useMemo(() => svcs.find((s) => s.id === serviceId) || null, [svcs, serviceId]);
   const dynFields: Field[] = (svc?.form_schema as Field[]) ?? [];
   const allFields: Field[] = [...COMMON, ...dynFields];
@@ -161,7 +178,8 @@ function NewRequestPage() {
   return (
     <RetailerShell>
       <div className="space-y-5">
-        <PageHeader icon={<PlusCircle className="h-5 w-5" />} title="New Application Form" subtitle="Please fill all required fields marked with *" />
+        <PageHeader icon={<PlusCircle className="h-5 w-5" />} title={sc && scName ? `New Application — ${scName}` : "New Application Form"} subtitle={sc && scName ? `Backend services under ${scName}. Fill all required fields marked with *` : "Please fill all required fields marked with *"} />
+        {sc && <Link to="/new-service-request" className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 h-9 text-sm font-semibold hover:bg-muted">← All Categories</Link>}
 
         <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
           {/* Applicant details */}

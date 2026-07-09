@@ -108,8 +108,9 @@ function ServicesPage() {
     let on = true;
     (async () => {
       const [sv, ct, mid] = await Promise.all([
+        // My Services = Direct (inlink) + API services only. Backend services live under New Application.
         supabase.from("services").select("id,name,logo_url,redirect_url,backend_route,service_type,category,category_id,service_group")
-          .eq("is_active", true).in("service_type", ["inlink", "api", "backend"]).order("sort_order").order("name"),
+          .eq("is_active", true).in("service_type", ["inlink", "api"]).order("sort_order").order("name"),
         // Service Categories = the top-level retailer menu groups (kind='frontend').
         (supabase as any).from("service_categories").select("id,name")
           .eq("kind", "frontend").eq("is_active", true).order("sort_order").order("name"),
