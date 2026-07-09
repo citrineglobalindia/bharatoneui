@@ -72,25 +72,21 @@ export function CatalogManager() {
 
   const resetForm = () => { setName(""); setActive(true); setParentId(""); setEditId(null); };
   const startEdit = (c: Cat) => { setEditId(c.id); setName(c.name); setActive(c.is_active); setParentId(c.parent_id ?? ""); };
+  const rpcErr = (e: any) => (String(e?.message || "").includes("NOT_ADMIN") ? "Please sign in with your admin account to manage the Service Catalog." : (e?.message || "Something went wrong"));
   const saveCat = async () => {
     if (!name.trim()) return toast.error("Category name required");
     setBusy(true);
     await ensureStaffSession();
     // parent_id = the Service Category this Category belongs under (retailer/distributor menu group).
-    const payload = { name: name.trim(), is_active: active, parent_id: parentId || null };
-    const res = editId
-      ? await db.from("service_categories").update(payload).eq("id", editId)
-      // kind:'backend' → a mid-level Category (operator-managed). Service Categories (the
-      // retailer/distributor menu groups) are created separately as kind:'frontend'.
-      : await db.from("service_categories").insert({ ...payload, kind: "backend", sort_order: cats.length });
+    const { error } = await db.rpc("admin_save_category", { _id: editId, _name: name.trim(), _active: active, _parent: parentId || null });
     setBusy(false);
-    if (res.error) return toast.error("Save failed", { description: res.error.message });
+    if (error) return toast.error("Save failed", { description: rpcErr(error) });
     toast.success(editId ? "Category updated" : "Category added"); resetForm(); load();
   };
   const setCatParent = async (c: Cat, pid: string) => {
     await ensureStaffSession();
-    const { error } = await db.from("service_categories").update({ parent_id: pid || null }).eq("id", c.id);
-    if (error) return toast.error("Mapping failed", { description: error.message });
+    const { error } = await db.rpc("admin_set_category_parent", { _cat: c.id, _parent: pid || null });
+    if (error) return toast.error("Mapping failed", { description: rpcErr(error) });
     toast.success(pid ? "Mapped to Service Category" : "Unmapped"); load();
   };
   const toggleCat = async (c: Cat) => { await db.from("service_categories").update({ is_active: !c.is_active }).eq("id", c.id); load(); };
@@ -245,24 +241,25 @@ function ServiceCategoriesPanel({ svcCats, onChange }: { svcCats: Cat[]; onChang
   const [editId, setEditId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
 
+  const errText = (e: any) => (String(e?.message || "").includes("NOT_ADMIN") ? "Please sign in with your admin account to manage the Service Catalog." : (e?.message || "Something went wrong"));
   const add = async () => {
     if (!name.trim()) return toast.error("Service Category name required");
     setBusy(true);
     await ensureStaffSession();
-    const { error } = await db.from("service_categories").insert({ name: name.trim(), kind: "frontend", is_active: true, sort_order: svcCats.length });
+    const { error } = await db.rpc("admin_save_service_category", { _id: null, _name: name.trim(), _active: true });
     setBusy(false);
-    if (error) return toast.error("Add failed", { description: error.message });
+    if (error) return toast.error("Add failed", { description: errText(error) });
     setName(""); toast.success("Service Category added"); onChange();
   };
   const saveEdit = async (id: string) => {
     if (!editName.trim()) return;
     await ensureStaffSession();
-    const { error } = await db.from("service_categories").update({ name: editName.trim() }).eq("id", id);
-    if (error) return toast.error(error.message);
+    const { error } = await db.rpc("admin_save_service_category", { _id: id, _name: editName.trim() });
+    if (error) return toast.error("Save failed", { description: errText(error) });
     setEditId(null); toast.success("Saved"); onChange();
   };
-  const toggle = async (c: Cat) => { await ensureStaffSession(); await db.from("service_categories").update({ is_active: !c.is_active }).eq("id", c.id); onChange(); };
-  const del = async (c: Cat) => { if (!confirm("Delete this Service Category? Categories mapped under it become unmapped.")) return; await ensureStaffSession(); const { error } = await db.from("service_categories").delete().eq("id", c.id); if (error) return toast.error(error.message); toast.success("Deleted"); onChange(); };
+  const toggle = async (c: Cat) => { await ensureStaffSession(); const { error } = await db.rpc("admin_save_service_category", { _id: c.id, _active: !c.is_active }); if (error) return toast.error(errText(error)); onChange(); };
+  const del = async (c: Cat) => { if (!confirm("Delete this Service Category? Categories mapped under it become unmapped.")) return; await ensureStaffSession(); const { error } = await db.rpc("admin_delete_service_category", { _id: c.id }); if (error) return toast.error(errText(error)); toast.success("Deleted"); onChange(); };
 
   return (
     <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
