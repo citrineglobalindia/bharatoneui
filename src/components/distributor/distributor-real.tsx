@@ -390,8 +390,11 @@ export function DistributorServicesReal({ initialSc }: { initialSc?: string } = 
   ];
   const tBadge: Record<string, string> = { inlink: "bg-sky-100 text-sky-700", api: "bg-violet-100 text-violet-700", backend: "bg-emerald-100 text-emerald-700" };
 
-  // A service's Service Category = its Category's parent_id ("map the category").
-  const scOf = (r: any) => (r.category_id ? catParent[r.category_id] ?? null : null);
+  // A service's Service Category = its own mapping (service_group) if set, else its Category's parent_id.
+  const scOf = (r: any) => {
+    if (r.service_group && scNames[r.service_group]) return r.service_group;
+    return r.category_id ? catParent[r.category_id] ?? null : null;
+  };
   const filtered = useMemo(() => rows.filter((r) =>
     (type === "all" || r.service_type === type) &&
     (!scFilter || scOf(r) === scFilter) &&

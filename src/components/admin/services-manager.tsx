@@ -18,7 +18,7 @@ type Service = {
 
 // Service groups (retailer menu) are the admin-created FRONTEND categories — no
 // hardcoded values. Fetched dynamically from service_categories (kind='frontend').
-type Cat = { id: string; name: string; is_active: boolean };
+type Cat = { id: string; name: string; is_active: boolean; parent_id?: string | null; kind?: string | null };
 type FrontCat = { id: string; name: string };
 
 const emptyForm = {
@@ -52,8 +52,8 @@ export function ServicesManager({ categoryId, subcategoryId, subcategories, fron
       else if (categoryId) sq = sq.eq("category_id", categoryId);
       const [sv, ct, fc] = await Promise.all([
         sq,
-        supabase.from("service_categories").select("id,name,is_active").order("sort_order").order("name"),
-        // Frontend categories = the retailer-menu service groups (dynamic).
+        (supabase as any).from("service_categories").select("id,name,is_active,parent_id,kind").order("sort_order").order("name"),
+        // Service Categories = the retailer/distributor menu groups (kind='frontend').
         (supabase as any).from("service_categories").select("id,name").eq("kind", "frontend").eq("is_active", true).order("sort_order").order("name"),
       ]);
       setRows((sv.data as Service[]) ?? []);
@@ -107,10 +107,10 @@ export function ServicesManager({ categoryId, subcategoryId, subcategories, fron
         redirect_url: form.service_type === "inlink" ? redirect : (redirect || null),
         backend_route: null,
         form_schema: form.service_type === "backend" ? form.form_schema : [],
-        // service_group = the Service Category (retailer/distributor menu group) for ANY service type.
+        // service_group = the Service Category (retailer/distributor menu group) chosen for this service.
         service_group: form.service_group || null,
-        category: (cats.find((c) => c.id === (categoryId || form.category_id))?.name) || form.category || null,
-        category_id: categoryId || form.category_id || null,
+        category: (cats.find((c) => c.id === (form.category_id || categoryId))?.name) || form.category || null,
+        category_id: form.category_id || categoryId || null,
         subcategory_id: subcategoryId || form.subcategory_id || null,
         is_active: form.is_active,
         sort_order: Number(form.sort_order) || 0,
@@ -193,13 +193,23 @@ export function ServicesManager({ categoryId, subcategoryId, subcategories, fron
                 {subcategories.map((sc) => <option key={sc.id} value={sc.id}>{sc.name}</option>)}
               </select></div>
           )}
-          {/* The Service Category (retailer/distributor menu group) is inherited from this
-              service's Category mapping in Service Catalog — no per-service selection needed. */}
-          {!categoryId && <div><label className="text-xs font-semibold text-muted-foreground">Category</label>
-            <select className={input} value={form.category_id} onChange={(e) => set({ category_id: e.target.value })}>
+          {/* Each service maps to a Category AND a Service Category (retailer/distributor menu group). */}
+          <div><label className="text-xs font-semibold text-muted-foreground">Category</label>
+            <select className={input} value={form.category_id} onChange={(e) => {
+              const val = e.target.value;
+              const parent = cats.find((c) => c.id === val)?.parent_id ?? "";
+              // Auto-fill Service Category from the Category's mapping (still overridable below).
+              set({ category_id: val, service_group: parent || form.service_group });
+            }}>
               <option value="">Select category</option>
-              {cats.map((c) => <option key={c.id} value={c.id}>{c.name}{!c.is_active ? " (inactive)" : ""}</option>)}
-            </select></div>}
+              {cats.filter((c) => c.kind !== "frontend").map((c) => <option key={c.id} value={c.id}>{c.name}{!c.is_active ? " (inactive)" : ""}</option>)}
+            </select></div>
+          <div><label className="text-xs font-semibold text-muted-foreground">Service Category (menu group)</label>
+            <select className={input} value={form.service_group} onChange={(e) => set({ service_group: e.target.value })}>
+              <option value="">— None —</option>
+              {frontCats.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+            {frontCats.length === 0 && <p className="mt-1 text-[11px] text-amber-600">Create Service Categories in Service Catalog → Service Categories.</p>}</div>
 
           {form.service_type === "inlink" && (
             <div className="sm:col-span-2"><label className="text-xs font-semibold text-muted-foreground">Redirect URL *</label>

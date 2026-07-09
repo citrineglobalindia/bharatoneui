@@ -17,7 +17,7 @@ export const Route = createFileRoute("/new-service-request")({
 });
 
 type Field = { key: string; label: string; type: string; required: boolean; placeholder?: string; options?: string[] };
-type Svc = { id: string; name: string; category: string | null; category_id: string | null; service_charge: number; retailer_commission: number; form_schema: Field[] | null };
+type Svc = { id: string; name: string; category: string | null; category_id: string | null; service_group: string | null; service_charge: number; retailer_commission: number; form_schema: Field[] | null };
 
 const inr = (n: number) => "₹" + Number(n || 0).toLocaleString("en-IN");
 const input = "h-11 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-india-green/30";
@@ -40,6 +40,7 @@ function NewRequestPage() {
   const [svcs, setSvcs] = useState<Svc[]>([]);
   const [scName, setScName] = useState<string>("");
   const [catParent, setCatParent] = useState<Record<string, string | null>>({});
+  const [frontIds, setFrontIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState("");
   const [serviceId, setServiceId] = useState("");
@@ -53,17 +54,19 @@ function NewRequestPage() {
   useEffect(() => {
     (async () => {
       await ensureStaffSession();
-      const [{ data }, mid, scRow] = await Promise.all([
+      const [{ data }, mid, front, scRow] = await Promise.all([
         (supabase as any).from("services")
-          .select("id,name,category,category_id,service_charge,retailer_commission,form_schema")
+          .select("id,name,category,category_id,service_group,service_charge,retailer_commission,form_schema")
           .eq("is_active", true).eq("service_type", "backend").order("sort_order").order("name"),
         (supabase as any).from("service_categories").select("id,parent_id").neq("kind", "frontend"),
+        (supabase as any).from("service_categories").select("id").eq("kind", "frontend"),
         sc ? (supabase as any).from("service_categories").select("name").eq("id", sc).maybeSingle() : Promise.resolve({ data: null }),
       ]);
       setSvcs((data as unknown as Svc[]) ?? []);
       const m: Record<string, string | null> = {};
       ((mid.data as { id: string; parent_id: string | null }[]) ?? []).forEach((r) => { m[r.id] = r.parent_id; });
       setCatParent(m);
+      setFrontIds(new Set(((front.data as { id: string }[]) ?? []).map((r) => r.id)));
       setScName(((scRow as any).data?.name as string) ?? "");
       const { data: sess } = await supabase.auth.getSession();
       const uid = sess?.session?.user?.id;
@@ -72,11 +75,13 @@ function NewRequestPage() {
     })();
   }, []);
 
-  // Scope backend services to the selected Service Category (via each Category's parent_id).
+  // A service's Service Category = its own mapping (service_group) if set, else its Category's parent_id.
+  const scOf = (s: Svc) => (s.service_group && frontIds.has(s.service_group) ? s.service_group : (s.category_id ? catParent[s.category_id] ?? null : null));
+  // Scope backend services to the selected Service Category.
   const scopedSvcs = useMemo(() => {
     if (!sc) return svcs;
-    return svcs.filter((s) => (s.category_id ? catParent[s.category_id] : null) === sc);
-  }, [svcs, catParent, sc]);
+    return svcs.filter((s) => scOf(s) === sc);
+  }, [svcs, catParent, frontIds, sc]);
   const categories = useMemo(() => Array.from(new Set(scopedSvcs.map((s) => s.category || "Other"))).sort(), [scopedSvcs]);
   const servicesInCat = useMemo(() => scopedSvcs.filter((s) => (s.category || "Other") === category), [scopedSvcs, category]);
   const svc = useMemo(() => svcs.find((s) => s.id === serviceId) || null, [svcs, serviceId]);

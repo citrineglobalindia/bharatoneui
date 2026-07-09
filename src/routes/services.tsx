@@ -129,8 +129,11 @@ function ServicesPage() {
 
   const match = (s: Service) => !q || [s.name, s.category].filter(Boolean).some((v) => String(v).toLowerCase().includes(q.toLowerCase()));
   const typeRank = { inlink: 0, backend: 1, api: 2 } as const;
-  // A service's Service Category comes from its Category's parent_id ("map the category").
-  const scOf = (s: Service) => (s.category_id ? catParent[s.category_id] ?? null : null);
+  // A service's Service Category = its own mapping (service_group) if set, else its Category's parent_id.
+  const scOf = (s: Service) => {
+    if (s.service_group && cats.some((c) => c.id === s.service_group)) return s.service_group;
+    return s.category_id ? catParent[s.category_id] ?? null : null;
+  };
 
   // Build Service Category → services, honoring the selected Service Category (sc) and search (q).
   const sections = useMemo(() => {
