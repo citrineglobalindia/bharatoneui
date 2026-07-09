@@ -90,6 +90,7 @@ export function ServiceApplicationsView() {
   useEffect(() => { load(); }, []);
 
   const updateStatus = async (r: Row, status: string) => {
+    if (r.status === "completed") { toast.error("This application is completed and locked — status can't be changed."); return; }
     setSaving(true);
     const { error } = await supabase.from("service_applications").update({ status }).eq("id", r.id);
     setSaving(false);
@@ -232,12 +233,16 @@ export function ServiceApplicationsView() {
             )}
             <div className="mt-3 flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-sm"><span>Total cost <b>{inr(sel.service_charge)}</b></span><span className="text-india-green">Retailer commission <b>{inr(sel.commission_price)}</b></span></div>
             <div className="mt-4"><p className="mb-1.5 text-xs font-bold uppercase tracking-wide text-muted-foreground">Approve transaction / update status</p>
+              {sel.status === "completed" ? (
+                <div className="rounded-lg border border-india-green/30 bg-india-green/5 px-3 py-2.5 text-sm font-semibold text-india-green">This application is Completed and locked — the status can no longer be changed.</div>
+              ) : (
               <div className="flex flex-wrap gap-2">
                 <Button size="sm" disabled={saving} onClick={() => updateStatus(sel, "in_progress")} className="bg-amber-500 text-white hover:bg-amber-600"><Clock3 className="h-4 w-4" /> In Progress</Button>
                 <Button size="sm" disabled={saving} onClick={() => updateStatus(sel, "approved")} className="bg-india-green text-white hover:bg-india-green/90"><CheckCircle2 className="h-4 w-4" /> Approve</Button>
                 <Button size="sm" disabled={saving} onClick={() => updateStatus(sel, "completed")} variant="outline"><CheckCircle2 className="h-4 w-4" /> Complete</Button>
                 <Button size="sm" disabled={saving} onClick={() => updateStatus(sel, "rejected")} variant="outline" className="text-rose-600"><XCircle className="h-4 w-4" /> Reject</Button>
               </div>
+              )}
             </div>
             {sel.result_note && <p className="mt-3 rounded-lg bg-muted/50 px-3 py-2 text-sm"><b>Operator note:</b> {sel.result_note}</p>}
             {sel.result_doc_path && <button onClick={() => openDoc(sel.result_doc_path!)} className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-9 text-xs font-semibold hover:bg-muted"><Download className="h-3.5 w-3.5" /> Download returned attachment</button>}

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ClipboardList, Plus, Loader2, FileText, IndianRupee, TrendingUp, RefreshCw, Download, ChevronRight, X, FileDown, ImageDown, Share2, Paperclip, Phone, Upload } from "lucide-react";
+import { ClipboardList, Plus, Loader2, FileText, IndianRupee, TrendingUp, RefreshCw, Download, ChevronRight, X, FileDown, ImageDown, Share2, Paperclip, Phone, Upload, Search } from "lucide-react";
 import { toast } from "sonner";
 import { RetailerShell } from "@/components/retailer/retailer-shell";
 import { PageHeader, StatusBadge } from "@/components/retailer/page-header";
@@ -59,6 +59,7 @@ function ApplicationsPage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("All");
+  const [q, setQ] = useState("");
   const [sel, setSel] = useState<Row | null>(null);
   const [opContact, setOpContact] = useState<{ name: string; email: string | null; phone: string | null } | null>(null);
   const [reuploading, setReuploading] = useState(false);
@@ -74,7 +75,7 @@ function ApplicationsPage() {
   async function load() {
     setLoading(true);
     const { data } = await supabase.from("service_applications")
-      .select("id,application_no,service_name,category_name,full_name,father_name,gender,email,phone,address,aadhaar_number,pan_number,status,service_charge,commission_price,created_at,result_doc_path,result_note,form_data,assigned_operator,reupload_requested,reupload_note,reupload_path,reupload_name")
+      .select("id,application_no,service_name,category_name,full_name,father_name,gender,email,phone,address,aadhaar_number,pan_number,status,service_charge,commission_price,created_at,result_doc_path,result_note,result_uploaded_at,form_data,assigned_operator,reupload_requested,reupload_note,reupload_path,reupload_name")
       .order("created_at", { ascending: false });
     setRows((data as Row[]) ?? []);
     setLoading(false);
@@ -87,7 +88,12 @@ function ApplicationsPage() {
     commission: rows.filter((r) => r.status === "completed").reduce((a, r) => a + Number(r.commission_price || 0), 0),
     pending: rows.filter((r) => !["completed", "rejected"].includes(r.status)).length,
   }), [rows]);
-  const filtered = useMemo(() => filter === "All" ? rows : rows.filter((r) => (statusLabel[r.status] ?? r.status) === filter), [rows, filter]);
+  const filtered = useMemo(() => {
+    let base = filter === "All" ? rows : rows.filter((r) => (statusLabel[r.status] ?? r.status) === filter);
+    const s = q.trim().toLowerCase();
+    if (s) base = base.filter((r) => [r.application_no, r.service_name, r.category_name, r.full_name, r.phone, statusLabel[r.status] ?? r.status].filter(Boolean).some((v) => String(v).toLowerCase().includes(s)));
+    return base;
+  }, [rows, filter, q]);
   const sortVal = (r: Row, key: string): string | number => {
     switch (key) {
       case "application_no": return r.application_no || "";
@@ -167,6 +173,7 @@ function ApplicationsPage() {
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap gap-1.5">{FILTERS.map((f) => <button key={f} onClick={() => setFilter(f)} className={`rounded-full px-3 h-8 text-xs font-semibold transition ${filter === f ? "bg-india-green text-white" : "border border-border bg-card hover:bg-muted"}`}>{f}</button>)}</div>
           <div className="flex items-center gap-2">
+            <div className="relative"><Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" /><input className="h-8 w-56 rounded-lg border border-border bg-background pl-8 pr-2 text-xs outline-none focus-visible:ring-2 focus-visible:ring-india-green/30" placeholder="Search app no, service, applicant…" value={q} onChange={(e) => setQ(e.target.value)} /></div>
             <button onClick={exportCsv} disabled={sorted.length === 0} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-8 text-xs font-semibold hover:bg-muted disabled:opacity-50 disabled:pointer-events-none"><Download className="h-3.5 w-3.5" /> Export</button>
             <button onClick={load} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-8 text-xs font-semibold hover:bg-muted"><RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} /> Refresh</button>
           </div>
@@ -191,6 +198,17 @@ function ApplicationsPage() {
               <div><p className="font-mono text-xs font-bold text-muted-foreground">{sel.application_no}</p><p className="font-display text-lg font-extrabold">{sel.service_name}</p><p className="text-sm text-muted-foreground">{sel.category_name}</p></div>
             </div>
 
+            {/* Applicant details */}
+            <div className="mt-3 rounded-lg border border-border p-3">
+              <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Applicant details</p>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div><p className="text-[11px] uppercase tracking-wide text-muted-foreground">Application ID</p><p className="font-mono font-medium">{sel.application_no}</p></div>
+                <div><p className="text-[11px] uppercase tracking-wide text-muted-foreground">Service</p><p className="font-medium">{sel.service_name}</p></div>
+                <div><p className="text-[11px] uppercase tracking-wide text-muted-foreground">Applicant Name</p><p className="font-medium">{sel.full_name || "—"}</p></div>
+                <div><p className="text-[11px] uppercase tracking-wide text-muted-foreground">Applicant Number</p><p className="font-medium">{sel.phone || "—"}</p></div>
+              </div>
+            </div>
+
             {/* Status tracker */}
             <div className="mt-4">
               {sel.status === "rejected"
@@ -209,7 +227,7 @@ function ApplicationsPage() {
 
             {submittedFiles(sel.form_data).length > 0 && (
               <div className="mt-3">
-                <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Documents you submitted</p>
+                <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Documents you submitted <span className="font-normal normal-case">· {new Date(sel.created_at).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span></p>
                 <div className="space-y-1.5">
                   {submittedFiles(sel.form_data).map((f, i) => (
                     <div key={i} className="flex items-center justify-between rounded-lg border border-border bg-muted/30 px-3 py-2">
@@ -237,7 +255,7 @@ function ApplicationsPage() {
 
             {sel.result_doc_path && (
               <div className="mt-3 flex items-center justify-between rounded-lg border border-india-green/30 bg-india-green/5 px-3 py-2">
-                <span className="flex items-center gap-1.5 text-sm font-semibold"><Paperclip className="h-4 w-4 text-india-green" /> Return document from operator</span>
+                <span className="flex items-center gap-1.5 text-sm font-semibold"><Paperclip className="h-4 w-4 text-india-green" /> Return document from operator{(sel as any).result_uploaded_at ? <span className="ml-1 font-normal text-[11px] text-muted-foreground">· {new Date((sel as any).result_uploaded_at).toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</span> : null}</span>
                 <button onClick={() => openResult(sel.result_doc_path!)} className="inline-flex items-center gap-1 text-xs font-bold text-india-green hover:underline"><Download className="h-3.5 w-3.5" /> Download</button>
               </div>
             )}

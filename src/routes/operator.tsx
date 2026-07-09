@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useSort, SortTh, useColumnFilters, FilterTh } from "@/components/ui/sortable";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { LogOut, RefreshCw, Loader2, FileSearch, IndianRupee, CheckCircle2, Clock3, XCircle, ChevronRight, Upload, Paperclip, Download } from "lucide-react";
+import { LogOut, RefreshCw, Loader2, FileSearch, IndianRupee, CheckCircle2, Clock3, XCircle, ChevronRight, Upload, Paperclip, Download, Search, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -42,6 +42,10 @@ function OperatorPortal() {
   const [apps, setApps] = useState<App[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
+  const [q, setQ] = useState("");
+  const [uid, setUid] = useState("");
+  const [scope, setScope] = useState<"assigned" | "all">("assigned");
+  const [subs, setSubs] = useState<Record<string, { jsko_id: string | null; mobile: string | null }>>({});
   const [sel, setSel] = useState<App | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -52,9 +56,14 @@ function OperatorPortal() {
     setLoading(true);
     try {
       await ensureStaffSession();
-      const { data } = await supabase.from("service_applications")
-        .select("*").order("created_at", { ascending: false });
+      const [{ data }, { data: au }, sm] = await Promise.all([
+        supabase.from("service_applications").select("*").order("created_at", { ascending: false }),
+        supabase.auth.getUser(),
+        (supabase as any).rpc("application_submitters"),
+      ]);
       setApps((data as App[]) ?? []);
+      setUid(au.user?.id ?? "");
+      setSubs((sm.data as any) ?? {});
     } finally { setLoading(false); }
   }
   useEffect(() => { load(); }, []);
@@ -109,14 +118,22 @@ function OperatorPortal() {
     done: apps.filter((a) => a.status === "completed").length,
     commission: apps.filter((a) => a.status === "completed").reduce((s, a) => s + Number(a.commission_price || 0), 0),
   }), [apps]);
-  const filtered = useMemo(() => filter === "all" ? apps : apps.filter((a) => a.status === filter), [apps, filter]);
+  const jskoOf = (a: App) => (a.submitted_by && subs[a.submitted_by]?.jsko_id) || "—";
+  const filtered = useMemo(() => apps.filter((a) =>
+    (scope === "all" || a.assigned_operator === uid) &&
+    (filter === "all" || a.status === filter) &&
+    (!q.trim() || [a.application_no, a.submitter_name, a.full_name, a.service_name, a.phone, jskoOf(a)].filter(Boolean).some((v) => String(v).toLowerCase().includes(q.trim().toLowerCase())))
+  ), [apps, filter, scope, uid, q, subs]);
   const acc = (a: any, key: string) => {
     switch (key) {
       case "app": return a.application_no || "";
+      case "jsko": return jskoOf(a);
       case "retailer": return a.submitter_name || "";
       case "applicant": return a.full_name || "";
+      case "applicantno": return a.phone || "";
       case "service": return a.service_name || "";
       case "charge": return Number(a.service_charge || 0);
+      case "received": return new Date(a.created_at).getTime();
       case "status": return a.status || "";
       default: return "";
     }
@@ -125,7 +142,18 @@ function OperatorPortal() {
   const colFiltered = useMemo(() => cf.apply(filtered, acc), [filtered, cf.filters]);
   const { sorted, sort, toggle } = useSort(colFiltered, acc);
 
+  const exportCsv = () => {
+    if (!sorted.length) { toast.error("Nothing to export"); return; }
+    const headers = ["Application ID", "JSKO ID", "Retailer", "Applicant", "Applicant Number", "Service", "Category", "Charge", "Status", "Received"];
+    const esc = (v: any) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const body = sorted.map((a) => [a.application_no, jskoOf(a), a.submitter_name || "", a.full_name || "", a.phone || "", a.service_name || "", a.category_name || "", a.service_charge, label[a.status] ?? a.status, new Date(a.created_at).toLocaleString("en-IN")]);
+    const csv = [headers.map(esc).join(","), ...body.map((r) => r.map(esc).join(","))].join("\r\n");
+    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob); const aEl = document.createElement("a"); aEl.href = url; aEl.download = `operator_applications_${new Date().toISOString().slice(0, 10)}.csv`; aEl.click(); URL.revokeObjectURL(url);
+  };
+
   const setStatus = async (a: App, status: string) => {
+    if (a.status === "completed") { toast.error("This application is completed and locked — status can't be changed."); return; }
     setSaving(true);
     const { error } = await supabase.from("service_applications").update({ status }).eq("id", a.id);
     setSaving(false);
@@ -192,6 +220,17 @@ function OperatorPortal() {
           ))}
         </div>
 
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="inline-flex rounded-xl border border-border bg-muted/40 p-1">
+            <button onClick={() => setScope("assigned")} className={`rounded-lg px-3 h-8 text-xs font-semibold transition ${scope === "assigned" ? "bg-india-green text-white shadow-soft" : "text-muted-foreground hover:text-foreground"}`}>Assigned to me</button>
+            <button onClick={() => setScope("all")} className={`rounded-lg px-3 h-8 text-xs font-semibold transition ${scope === "all" ? "bg-india-green text-white shadow-soft" : "text-muted-foreground hover:text-foreground"}`}>All received</button>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="relative"><Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" /><input className="h-8 w-56 rounded-lg border border-border bg-background pl-8 pr-2 text-xs outline-none focus-visible:ring-2 focus-visible:ring-india-green/30" placeholder="Search app, JSKO, applicant…" value={q} onChange={(e) => setQ(e.target.value)} /></div>
+            <button onClick={exportCsv} disabled={sorted.length === 0} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-8 text-xs font-semibold hover:bg-muted disabled:opacity-50"><Download className="h-3.5 w-3.5" /> Export</button>
+          </div>
+        </div>
+
         <div className="flex flex-wrap gap-1.5">
           {[["all", "All"], ["submitted", "New"], ["on_process", "On Process"], ["waiting_approval", "Waiting for Approval"], ["on_delay", "On Delay"], ["completed", "Completed"], ["rejected", "Rejected"]].map(([k, l]) => (
             <button key={k} onClick={() => setFilter(k)} className={`rounded-full px-3 h-8 text-xs font-semibold transition ${filter === k ? "bg-india-green text-white" : "border border-border bg-card hover:bg-muted"}`}>{l}</button>
@@ -204,13 +243,16 @@ function OperatorPortal() {
           <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-soft">
             <table className="w-full text-sm">
               <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
-                <tr><SortTh className="px-3 py-2" label="Application ID" sortKey="app" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Retailer" sortKey="retailer" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Applicant" sortKey="applicant" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Service" sortKey="service" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Charge" sortKey="charge" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Status" sortKey="status" sort={sort} onSort={toggle} /><th className="px-3 py-2 text-right">Action</th></tr>
+                <tr><SortTh className="px-3 py-2" label="Application ID" sortKey="app" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="JSKO ID" sortKey="jsko" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Retailer" sortKey="retailer" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Applicant" sortKey="applicant" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Applicant No" sortKey="applicantno" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Service" sortKey="service" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Charge" sortKey="charge" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Received" sortKey="received" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2" label="Status" sortKey="status" sort={sort} onSort={toggle} /><th className="px-3 py-2 text-right">Action</th></tr>
                 <tr className="bg-muted/30">
                   <FilterTh className="px-2 pb-2" filterKey="app" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} />
+                  <FilterTh className="px-2 pb-2" filterKey="jsko" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} />
                   <FilterTh className="px-2 pb-2" filterKey="retailer" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} />
                   <FilterTh className="px-2 pb-2" filterKey="applicant" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} />
+                  <FilterTh className="px-2 pb-2" filterKey="applicantno" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} />
                   <FilterTh className="px-2 pb-2" filterKey="service" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} />
                   <FilterTh className="px-2 pb-2" filterKey="charge" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} />
+                  <FilterTh className="px-2 pb-2" filterKey="received" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} />
                   <FilterTh className="px-2 pb-2" filterKey="status" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} />
                   <th className="px-2 pb-2" />
                 </tr>
@@ -219,10 +261,13 @@ function OperatorPortal() {
                 {sorted.map((a) => (
                   <tr key={a.id} className="border-t border-border hover:bg-muted/30">
                     <td className="px-3 py-2 font-mono text-xs font-semibold">{a.application_no}</td>
+                    <td className="px-3 py-2 font-mono text-xs">{jskoOf(a)}</td>
                     <td className="px-3 py-2"><span className="text-xs font-medium">{a.submitter_name || "—"}</span></td>
-                    <td className="px-3 py-2"><div className="font-semibold">{a.full_name}</div><div className="text-[11px] text-muted-foreground">{a.phone}</div></td>
+                    <td className="px-3 py-2"><div className="font-semibold">{a.full_name}</div></td>
+                    <td className="px-3 py-2 text-xs">{a.phone || "—"}</td>
                     <td className="px-3 py-2"><div className="font-medium">{a.service_name}</div><div className="text-[11px] text-muted-foreground">{a.category_name}</div></td>
                     <td className="px-3 py-2">{inr(a.service_charge)}</td>
+                    <td className="px-3 py-2 text-[11px] text-muted-foreground">{new Date(a.created_at).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</td>
                     <td className="px-3 py-2"><span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${tone[a.status] ?? "bg-muted"}`}>{label[a.status] ?? a.status}</span></td>
                     <td className="px-3 py-2 text-right"><button onClick={() => { setSel(a); setNote(a.result_note ?? ""); setReqNote(""); }} className="inline-flex items-center gap-1 text-xs font-semibold text-india-green hover:underline">Open <ChevronRight className="h-3.5 w-3.5" /></button></td>
                   </tr>
@@ -261,12 +306,12 @@ function OperatorPortal() {
               </div>
             </div>
             {sel.form_data && Object.keys(sel.form_data).length > 0 && (
-              <div className="mt-3 rounded-lg border border-border p-3"><p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Submitted form</p>
+              <div className="mt-3 rounded-lg border border-border p-3"><p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Uploaded files & submitted form <span className="font-normal normal-case">· submitted {new Date(sel.created_at).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span></p>
                 <div className="grid grid-cols-2 gap-2 text-sm">{Object.entries(sel.form_data).map(([k, v]: any) => (<div key={k}><p className="text-[11px] text-muted-foreground">{k}</p>{v && typeof v === "object" && v.__file ? <button onClick={() => dlAppFile(v.__file)} className="mt-0.5 inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs font-semibold text-india-green hover:bg-muted"><Download className="h-3.5 w-3.5" /> {v.name || "Download"}</button> : <p className="font-medium break-words">{String(v)}</p>}</div>))}</div>
               </div>
             )}
             <div className="mt-3 flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-sm"><span>Total cost <b>{inr(sel.service_charge)}</b></span><span className="text-india-green">Retailer commission <b>{inr(sel.commission_price)}</b></span></div>
-            <p className="mt-4 mb-1.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-muted-foreground"><Paperclip className="h-3.5 w-3.5" /> Return attachment</p>
+            <p className="mt-4 mb-1.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-muted-foreground"><Paperclip className="h-3.5 w-3.5" /> Return attachment (to retailer){sel.result_uploaded_at ? <span className="font-normal normal-case text-muted-foreground">· {new Date(sel.result_uploaded_at).toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</span> : null}</p>
             <div className="flex flex-wrap items-center gap-2">
               {sel.result_doc_path && <button onClick={() => viewAttachment(sel.result_doc_path!)} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-9 text-xs font-semibold hover:bg-muted"><Download className="h-3.5 w-3.5" /> View current</button>}
               <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-india-green px-3 h-9 text-xs font-semibold text-white hover:bg-india-green/90">
@@ -292,6 +337,9 @@ function OperatorPortal() {
                 </div>}
 
             <p className="mt-4 mb-1.5 text-xs font-bold uppercase tracking-wide text-muted-foreground">Update status</p>
+            {sel.status === "completed" ? (
+              <div className="flex items-center gap-2 rounded-lg border border-india-green/30 bg-india-green/5 px-3 py-2.5 text-sm font-semibold text-india-green"><Lock className="h-4 w-4" /> This application is <b>Completed</b> and locked — the status can no longer be changed.</div>
+            ) : (
             <div className="flex flex-wrap gap-2">
               <Button size="sm" disabled={saving} onClick={() => setStatus(sel, "on_process")} className="bg-amber-500 text-white hover:bg-amber-600"><Loader2 className="h-4 w-4" /> On Process</Button>
               <Button size="sm" disabled={saving} onClick={() => setStatus(sel, "waiting_approval")} className="bg-sky-600 text-white hover:bg-sky-700"><Clock3 className="h-4 w-4" /> Waiting for Approval</Button>
@@ -299,6 +347,7 @@ function OperatorPortal() {
               <Button size="sm" disabled={saving} onClick={() => setStatus(sel, "completed")} className="bg-india-green text-white hover:bg-india-green/90"><CheckCircle2 className="h-4 w-4" /> Completed</Button>
               <Button size="sm" disabled={saving} onClick={() => setStatus(sel, "rejected")} variant="outline" className="text-rose-600"><XCircle className="h-4 w-4" /> Reject</Button>
             </div>
+            )}
             <div className="mt-4"><p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Chat with retailer</p>
               <ApplicationThread applicationId={sel.id} title="Chat with retailer" />
             </div>
