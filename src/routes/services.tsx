@@ -136,19 +136,13 @@ function ServicesPage() {
   };
 
   const byType = (l: Service[]) => l.sort((a, b) => typeRank[a.service_type] - typeRank[b.service_type]);
+  // Always group by the (mid-level) Category. "All Services" = every service; a selected
+  // Service Category = only its services — both shown as Category sections.
   const sections = useMemo(() => {
-    // Selected Service Category → break its services down by their (mid-level) Category.
-    if (sc) {
-      const list = services.filter((s) => scOf(s) === sc && match(s));
-      const m = new Map<string, Service[]>();
-      list.forEach((s) => { const k = s.category || "Other"; if (!m.has(k)) m.set(k, []); m.get(k)!.push(s); });
-      return Array.from(m.entries()).sort((a, b) => a[0].localeCompare(b[0])).map(([name, l]) => ({ name, list: byType(l) }));
-    }
-    // "All" view → one section per Service Category.
-    const byCat = cats.map((c) => ({ name: c.name, list: byType(services.filter((s) => scOf(s) === c.id && match(s))) }));
-    const unmapped = services.filter((s) => !scOf(s) && match(s));
-    if (unmapped.length) byCat.push({ name: "Other Services", list: unmapped });
-    return byCat;
+    const list = services.filter((s) => (sc ? scOf(s) === sc : true) && match(s));
+    const m = new Map<string, Service[]>();
+    list.forEach((s) => { const k = s.category || "Other Services"; if (!m.has(k)) m.set(k, []); m.get(k)!.push(s); });
+    return Array.from(m.entries()).sort((a, b) => a[0].localeCompare(b[0])).map(([name, l]) => ({ name, list: byType(l) }));
   }, [services, cats, catParent, sc, q]);
 
   const selectedName = sc ? (cats.find((c) => c.id === sc)?.name ?? "Service Category") : null;
