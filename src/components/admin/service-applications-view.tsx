@@ -44,6 +44,10 @@ export function ServiceApplicationsView() {
   const [sel, setSel] = useState<Row | null>(null);
   const [saving, setSaving] = useState(false);
   const [submitter, setSubmitter] = useState<{ jskoId: string; name: string; phone: string } | null>(null);
+  const [opInfo, setOpInfo] = useState<Record<string, { name: string; phone: string; email: string }>>({});
+  const [operators, setOperators] = useState<{ id: string; name: string; phone: string }[]>([]);
+  const [transferOp, setTransferOp] = useState("");
+  const [transferring, setTransferring] = useState(false);
 
   // "Submitted From" — the JSKO/retailer who submitted the application.
   useEffect(() => {
@@ -75,8 +79,12 @@ export function ServiceApplicationsView() {
       ]);
       setRows((a.data as Row[]) ?? []);
       const m: Record<string, string> = {};
-      ((u.data as any[]) ?? []).forEach((x) => { m[x.id] = x.display_name || x.email || "User"; });
-      setOps(m);
+      const info: Record<string, { name: string; phone: string; email: string }> = {};
+      const users = ((u.data as any[]) ?? []);
+      users.forEach((x) => { const nm = x.display_name || x.email || "User"; m[x.id] = nm; info[x.id] = { name: nm, phone: x.phone || "", email: x.email || "" }; });
+      setOps(m); setOpInfo(info);
+      // Operators available to receive a transferred application.
+      setOperators(users.filter((x) => Array.isArray(x.roles) && x.roles.includes("operator")).map((x) => ({ id: x.id, name: x.display_name || x.email || "Operator", phone: x.phone || "" })));
     } finally { setLoading(false); }
   }
   useEffect(() => { load(); }, []);
@@ -89,6 +97,19 @@ export function ServiceApplicationsView() {
     toast.success(`Marked ${label[status] ?? status}`);
     setRows((p) => p.map((x) => x.id === r.id ? { ...x, status } : x));
     setSel((s2) => s2 && s2.id === r.id ? { ...s2, status } : s2);
+  };
+
+  const transfer = async () => {
+    if (!sel || !transferOp) return;
+    setTransferring(true);
+    await ensureStaffSession();
+    const { error } = await supabase.from("service_applications").update({ assigned_operator: transferOp }).eq("id", sel.id);
+    setTransferring(false);
+    if (error) return toast.error("Transfer failed", { description: error.message });
+    toast.success(`Transferred to ${opInfo[transferOp]?.name || "operator"}`);
+    setRows((p) => p.map((x) => x.id === sel.id ? { ...x, assigned_operator: transferOp } : x));
+    setSel((s) => s ? { ...s, assigned_operator: transferOp } : s);
+    setTransferOp("");
   };
 
   const opName = (id: string | null) => id ? (ops[id] ?? "Assigned") : "Unassigned";
@@ -185,8 +206,27 @@ export function ServiceApplicationsView() {
                 <div className="col-span-2"><p className="text-[11px] uppercase tracking-wide text-muted-foreground">Contact Number</p><p className="font-medium">{submitter?.phone || "—"}</p></div>
               </div>
             </div>
+            <div className="mt-3 rounded-lg border border-indigo-200 bg-indigo-50/50 p-3">
+              <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Assigned Operator</p>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div><p className="text-[11px] uppercase tracking-wide text-muted-foreground">Name</p><p className="font-medium">{opName(sel.assigned_operator)}</p></div>
+                <div><p className="text-[11px] uppercase tracking-wide text-muted-foreground">Phone</p><p className="font-medium">{sel.assigned_operator && opInfo[sel.assigned_operator]?.phone ? opInfo[sel.assigned_operator].phone : "—"}</p></div>
+                <div className="col-span-2"><p className="text-[11px] uppercase tracking-wide text-muted-foreground">Email</p><p className="font-medium break-all">{sel.assigned_operator && opInfo[sel.assigned_operator]?.email ? opInfo[sel.assigned_operator].email : "—"}</p></div>
+              </div>
+              <div className="mt-3 border-t border-indigo-200 pt-3">
+                <p className="mb-1.5 text-[11px] font-semibold text-muted-foreground">Transfer to another operator (if the assigned operator is on leave / absent)</p>
+                <div className="flex flex-wrap gap-2">
+                  <select className="h-9 min-w-[200px] flex-1 rounded-lg border border-border bg-background px-2 text-sm" value={transferOp} onChange={(e) => setTransferOp(e.target.value)}>
+                    <option value="">Select an operator…</option>
+                    {operators.filter((o) => o.id !== sel.assigned_operator).map((o) => <option key={o.id} value={o.id}>{o.name}{o.phone ? ` · ${o.phone}` : ""}</option>)}
+                  </select>
+                  <Button size="sm" disabled={!transferOp || transferring} onClick={transfer} className="bg-india-green text-white hover:bg-india-green/90">{transferring ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserCog className="h-4 w-4" />} Transfer</Button>
+                </div>
+              </div>
+            </div>
+
             {sel.form_data && Object.keys(sel.form_data).length > 0 && (
-              <div className="mt-3 rounded-lg border border-border p-3"><p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Submitted form</p>
+              <div className="mt-3 rounded-lg border border-border p-3"><p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Uploaded files & submitted form</p>
                 <div className="grid grid-cols-2 gap-2 text-sm">{Object.entries(sel.form_data).map(([k, v]: any) => (<div key={k}><p className="text-[11px] text-muted-foreground">{k}</p>{v && typeof v === "object" && v.__file ? <button onClick={() => dlAppFile(v.__file)} className="mt-0.5 inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs font-semibold text-india-green hover:bg-muted"><Download className="h-3.5 w-3.5" /> {v.name || "Download"}</button> : <p className="font-medium break-words">{String(v)}</p>}</div>))}</div>
               </div>
             )}
