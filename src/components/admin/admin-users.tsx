@@ -228,10 +228,33 @@ export function AdminUsers() {
       sow_signed_date: u.sow_signed_date ?? "", sow_status: u.sow_status ?? "pending",
     });
     setEditLangs(u.languages ?? []); setEditKyc(null); setEditSow(null);
-    // Retailers/distributors keep their real data in the registration record — load it.
+    // Retailers/distributors keep their real data in the registration record — load it and
+    // fill any blank profile fields from it (blank-if-blank).
     setReg(null);
     if (u.roles.includes("retailer") || u.roles.includes("distributor")) {
-      (async () => { await ensureStaffSession(); const { data } = await (supabase as any).rpc("admin_retailer_registration", { _uid: u.id }); setReg(data ?? null); })();
+      (async () => {
+        await ensureStaffSession();
+        const { data } = await (supabase as any).rpc("admin_retailer_registration", { _uid: u.id });
+        setReg(data ?? null);
+        if (!data) return;
+        const rg = data as any;
+        const addr = [rg.building_shop_no, rg.street_area, rg.village_name, rg.gram_panchayat, rg.hobli_name, rg.city].filter(Boolean).join(", ");
+        setEdit((prev) => prev ? {
+          ...prev,
+          phone: prev.phone || rg.mobile || "",
+          dob: prev.dob || (rg.dob ?? ""),
+          aadhaar_number: prev.aadhaar_number || (rg.aadhaar_number ?? ""),
+          pan_number: prev.pan_number || (rg.pan_number ?? ""),
+          bank_name: prev.bank_name || (rg.bank_name ?? ""),
+          account_number: prev.account_number || (rg.account_number ?? ""),
+          ifsc: prev.ifsc || (rg.ifsc ?? ""),
+          district: prev.district || (rg.district ?? ""),
+          state: prev.state || (rg.state ?? ""),
+          pincode: prev.pincode || (rg.pincode ?? ""),
+          street_address: prev.street_address || addr,
+          employee_code: prev.employee_code || rg.username || rg.jsko_id || "",
+        } : prev);
+      })();
     }
   };
   const viewStaffDoc = async (path: string) => { const { data } = await supabase.storage.from("staff-docs").createSignedUrl(path, 3600); if (data) window.open(data.signedUrl, "_blank"); };
@@ -374,29 +397,11 @@ export function AdminUsers() {
                 <Info label="Status" v={detail.is_active ? "Active" : "Inactive"} />
               </div>
 
-              {reg && (
-                <div className="space-y-3 rounded-xl border border-india-green/30 bg-india-green/5 p-3">
-                  <p className="text-xs font-bold uppercase tracking-wider text-india-green">Registration Details (as submitted)</p>
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                    <Info label="Full Name" v={[reg.first_name, reg.middle_name, reg.surname].filter(Boolean).join(" ")} />
-                    <Info label="Mobile" v={reg.mobile} />
-                    <Info label="Email" v={reg.email} />
-                    <Info label="JSKO ID" v={reg.jsko_id} />
-                    <Info label="Username / Code" v={reg.username} />
-                    <Info label="Date of Birth" v={reg.dob} />
-                    <Info label="Shop Name" v={reg.shop_name} />
-                    <Info label="PAN" v={reg.pan_number} />
-                    <Info label="Aadhaar" v={reg.aadhaar_number} />
-                    <Info label="Bank" v={reg.bank_name} />
-                    <Info label="Account No." v={reg.account_number} />
-                    <Info label="IFSC" v={reg.ifsc} />
-                    <Info label="District" v={reg.district} />
-                    <Info label="Taluk" v={reg.taluk} />
-                    <Info label="State" v={reg.state} />
-                    <Info label="Pincode" v={reg.pincode} />
-                    <Info label="Registration" v={reg.status} />
-                  </div>
-                  <Info label="Address" v={[reg.building_shop_no, reg.street_area, reg.village_name, reg.gram_panchayat, reg.hobli_name, reg.city].filter(Boolean).join(", ")} />
+              {reg && (reg.shop_name || reg.jsko_id) && (
+                <div className="grid grid-cols-2 gap-3 rounded-xl border border-india-green/30 bg-india-green/5 p-3 sm:grid-cols-3">
+                  <Info label="Shop Name" v={reg.shop_name} />
+                  <Info label="JSKO ID" v={reg.jsko_id} />
+                  <Info label="Registration" v={reg.status} />
                 </div>
               )}
               {edit && (
