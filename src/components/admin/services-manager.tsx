@@ -63,13 +63,22 @@ export function ServicesManager({ categoryId, subcategoryId, subcategories, fron
   }
   useEffect(() => { load(); ensureStaffSession().then((ok) => { if (ok) load(); }); /* eslint-disable-next-line */ }, [categoryId]);
   useEffect(() => { if (categoryId) setForm((f) => ({ ...f, category_id: categoryId })); /* eslint-disable-next-line */ }, [categoryId]);
+  // When the builder scopes a Category, pre-select its Service Category so the flow reads SC → Category.
+  useEffect(() => {
+    if (!categoryId || !cats.length || editing) return;
+    const parent = cats.find((c) => c.id === categoryId)?.parent_id ?? "";
+    setForm((f) => ({ ...f, category_id: categoryId, service_group: f.service_group || parent }));
+    /* eslint-disable-next-line */
+  }, [categoryId, cats]);
   // Frontend services are redirect-only (Inlink) — no API/Backend, cost or commission.
   useEffect(() => { if (frontend) setForm((f) => ({ ...f, service_type: "inlink" })); /* eslint-disable-next-line */ }, [frontend]);
   // Backend categories only offer Backend services — no Inlink/API option.
   useEffect(() => { if (backendOnly) setForm((f) => ({ ...f, service_type: "backend" })); /* eslint-disable-next-line */ }, [backendOnly]);
 
-  const reset = () => { setForm({ ...emptyForm, category_id: categoryId ?? "" }); setEditing(false); };
+  const reset = () => { const parent = categoryId ? (cats.find((c) => c.id === categoryId)?.parent_id ?? "") : ""; setForm({ ...emptyForm, category_id: categoryId ?? "", service_group: parent }); setEditing(false); };
   const set = (patch: Partial<typeof emptyForm>) => setForm((f) => ({ ...f, ...patch }));
+  // The currently selected Service Category (only if it's a real, active frontend category).
+  const scSel = frontCats.some((f) => f.id === form.service_group) ? form.service_group : "";
   const inr = (n: number) => "\u20b9" + Number(n || 0).toLocaleString("en-IN");
   const commFields: [string, string][] = [["Company","company_commission"],["Distributor","distributor_commission"],["DRO","dro_commission"],["TRO","tro_commission"],["Retailer","retailer_commission"]];
   const charge = Number((form as any).service_charge) || 0;
@@ -193,23 +202,24 @@ export function ServicesManager({ categoryId, subcategoryId, subcategories, fron
                 {subcategories.map((sc) => <option key={sc.id} value={sc.id}>{sc.name}</option>)}
               </select></div>
           )}
-          {/* Each service maps to a Category AND a Service Category (retailer/distributor menu group). */}
-          <div><label className="text-xs font-semibold text-muted-foreground">Category</label>
-            <select className={input} value={form.category_id} onChange={(e) => {
-              const val = e.target.value;
-              const parent = cats.find((c) => c.id === val)?.parent_id ?? "";
-              // Auto-fill Service Category from the Category's mapping (still overridable below).
-              set({ category_id: val, service_group: parent || form.service_group });
-            }}>
-              <option value="">Select category</option>
-              {cats.filter((c) => c.kind !== "frontend").map((c) => <option key={c.id} value={c.id}>{c.name}{!c.is_active ? " (inactive)" : ""}</option>)}
-            </select></div>
+          {/* Flow: Service Category first, then Category (only the ones under that Service Category). */}
           <div><label className="text-xs font-semibold text-muted-foreground">Service Category (menu group)</label>
-            <select className={input} value={form.service_group} onChange={(e) => set({ service_group: e.target.value })}>
-              <option value="">— None —</option>
+            <select className={input} value={scSel} onChange={(e) => {
+              const sc = e.target.value;
+              // Keep the current Category only if it belongs under the newly chosen Service Category.
+              const keep = !!form.category_id && cats.find((c) => c.id === form.category_id)?.parent_id === sc;
+              set({ service_group: sc, category_id: keep ? form.category_id : "" });
+            }}>
+              <option value="">— Select Service Category —</option>
               {frontCats.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
             {frontCats.length === 0 && <p className="mt-1 text-[11px] text-amber-600">Create Service Categories in Service Catalog → Service Categories.</p>}</div>
+          <div><label className="text-xs font-semibold text-muted-foreground">Category</label>
+            <select className={input} value={form.category_id} disabled={!scSel} onChange={(e) => set({ category_id: e.target.value })}>
+              <option value="">{scSel ? "Select category" : "Select a Service Category first"}</option>
+              {cats.filter((c) => c.kind !== "frontend" && c.parent_id === scSel).map((c) => <option key={c.id} value={c.id}>{c.name}{!c.is_active ? " (inactive)" : ""}</option>)}
+            </select>
+            {scSel && cats.filter((c) => c.kind !== "frontend" && c.parent_id === scSel).length === 0 && <p className="mt-1 text-[11px] text-amber-600">No categories under this Service Category yet.</p>}</div>
 
           {form.service_type === "inlink" && (
             <div className="sm:col-span-2"><label className="text-xs font-semibold text-muted-foreground">Redirect URL *</label>
