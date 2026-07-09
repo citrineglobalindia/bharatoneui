@@ -354,14 +354,28 @@ export function DistributorOfficersReal() {
   );
 }
 
-export function DistributorServicesReal({ initialCat }: { initialCat?: string } = {}) {
+export function DistributorServicesReal({ initialSc }: { initialSc?: string } = {}) {
   const [rows, setRows] = useState<any[]>([]); const [loading, setLoading] = useState(true); const [q, setQ] = useState("");
   const [type, setType] = useState<"all" | "inlink" | "api" | "backend">("all");
-  const [cat, setCat] = useState<string>(initialCat || "all");
-  async function load() { setLoading(true); try { await ensureStaffSession(); const { data } = await supabase.from("services").select("id,name,category,service_type,service_charge,distributor_commission,logo_url,is_active").eq("is_active", true).order("category").order("name"); setRows((data as any[]) ?? []); } finally { setLoading(false); } }
+  const [cat, setCat] = useState<string>("all");
+  // Service Category (kind='frontend') = top-level menu group; services map to it via service_group.
+  const [scFilter, setScFilter] = useState<string>(initialSc || "");
+  const [scNames, setScNames] = useState<Record<string, string>>({});
+  async function load() {
+    setLoading(true);
+    try {
+      await ensureStaffSession();
+      const [sv, sc] = await Promise.all([
+        supabase.from("services").select("id,name,category,service_type,service_charge,distributor_commission,logo_url,is_active,service_group").eq("is_active", true).order("category").order("name"),
+        (supabase as any).from("service_categories").select("id,name").eq("kind", "frontend"),
+      ]);
+      setRows((sv.data as any[]) ?? []);
+      const m: Record<string, string> = {}; ((sc.data as any[]) ?? []).forEach((c) => { m[c.id] = c.name; }); setScNames(m);
+    } finally { setLoading(false); }
+  }
   useEffect(() => { load(); }, []);
-  // Sync category filter when navigating via the sidebar sub-menu.
-  useEffect(() => { setCat(initialCat || "all"); }, [initialCat]);
+  // Sync the Service Category filter when navigating via the sidebar sub-menu.
+  useEffect(() => { setScFilter(initialSc || ""); setCat("all"); }, [initialSc]);
 
   const TYPE_LABEL: Record<string, string> = { inlink: "Direct (My Services)", api: "API (Trending)", backend: "Backend (New Applications)" };
   const TYPE_ICON: Record<string, any> = { inlink: Globe, api: Cpu, backend: Server };
@@ -375,9 +389,10 @@ export function DistributorServicesReal({ initialCat }: { initialCat?: string } 
 
   const filtered = useMemo(() => rows.filter((r) =>
     (type === "all" || r.service_type === type) &&
+    (!scFilter || r.service_group === scFilter) &&
     (cat === "all" || (r.category || "Uncategorised") === cat) &&
     (!q || [r.name, r.category].filter(Boolean).some((v) => String(v).toLowerCase().includes(q.toLowerCase())))
-  ), [rows, q, type, cat]);
+  ), [rows, q, type, cat, scFilter]);
 
   const typeCounts = useMemo(() => {
     const m: Record<string, number> = { all: rows.length, inlink: 0, api: 0, backend: 0 };
@@ -428,7 +443,8 @@ export function DistributorServicesReal({ initialCat }: { initialCat?: string } 
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-2"><div><h1 className="font-display text-2xl font-extrabold">Services Live</h1><p className="text-sm text-muted-foreground">All active services your retailers can offer — organised clearly by category and type.</p></div><button onClick={load} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-10 text-sm font-semibold hover:bg-muted"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh</button></div>
+      <div className="flex flex-wrap items-center justify-between gap-2"><div><h1 className="font-display text-2xl font-extrabold">{scFilter ? (scNames[scFilter] || "Service Category") : "Services Live"}</h1><p className="text-sm text-muted-foreground">{scFilter ? "Services in this Service Category." : "All active services your retailers can offer — organised clearly by category and type."}</p></div><button onClick={load} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-10 text-sm font-semibold hover:bg-muted"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh</button></div>
+      {scFilter && <button onClick={() => setScFilter("")} className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 h-9 text-sm font-semibold hover:bg-muted">← All Service Categories</button>}
 
       {/* Summary */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">

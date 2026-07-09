@@ -55,7 +55,7 @@ function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: 
     (async () => {
       const { data } = await (supabase as any)
         .from("service_categories").select("id,name")
-        .eq("is_active", true)
+        .eq("kind", "frontend").eq("is_active", true)
         .order("sort_order").order("name");
       if (on) setCats((data as { id: string; name: string }[]) ?? []);
     })();
@@ -105,7 +105,7 @@ function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: 
                         </li>
                         {cats.map((c) => (
                           <li key={c.id}>
-                            <Link to="/distributor/services" search={{ cat: c.name }} onClick={onNavigate}
+                            <Link to="/distributor/services" search={{ sc: c.id }} onClick={onNavigate}
                               className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[13px] text-slate-300 hover:bg-white/5 hover:text-white">
                               <span className="h-1.5 w-1.5 rounded-full bg-slate-500" /> <span className="truncate">{c.name}</span>
                             </Link>

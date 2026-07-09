@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { sanitizeMobile } from "@/lib/phone";
 import { toast } from "sonner";
-import { Plus, Trash2, Pencil, Loader2, Check, X, FolderTree, ChevronRight, UserCog, ArrowLeft, CornerDownRight } from "lucide-react";
+import { Plus, Trash2, Pencil, Loader2, Check, X, FolderTree, ChevronRight, UserCog, ArrowLeft, CornerDownRight, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 import { ServicesManager } from "@/components/admin/services-manager";
 
-type Cat = { id: string; name: string; is_active: boolean; sort_order: number };
+type Cat = { id: string; name: string; is_active: boolean; sort_order: number; kind?: string | null };
 type Sub = { id: string; category_id: string; name: string; is_active: boolean; sort_order: number };
 type Operator = { id: string; name: string };
 const db = supabase as any;
@@ -18,6 +18,7 @@ const Pill = ({ on }: { on: boolean }) => <span className={`rounded-full px-2 py
 // with operator assignment per category.
 export function CatalogManager() {
   const [cats, setCats] = useState<Cat[]>([]);
+  const [svcCats, setSvcCats] = useState<Cat[]>([]);
   const [subs, setSubs] = useState<Sub[]>([]);
   const [svcCounts, setSvcCounts] = useState<Record<string, number>>({});
   const [opCounts, setOpCounts] = useState<Record<string, { total: number; active: number }>>({});
@@ -37,14 +38,18 @@ export function CatalogManager() {
     try {
       await ensureStaffSession();
       const [c, s, sv, u, co] = await Promise.all([
-        db.from("service_categories").select("id,name,is_active,sort_order").order("sort_order").order("name"),
+        db.from("service_categories").select("id,name,is_active,sort_order,kind").order("sort_order").order("name"),
         db.from("service_subcategories").select("id,category_id,name,is_active,sort_order").order("sort_order").order("name"),
         db.from("services").select("subcategory_id,category_id"),
         db.rpc("admin_list_users"),
         db.from("category_operators").select("category_id,is_active"),
       ]);
-      const cl = (c.data as Cat[]) ?? [];
+      const all = (c.data as Cat[]) ?? [];
+      // Two levels: Service Category (kind='frontend', the retailer/distributor menu group)
+      // and Category (everything else — operator-managed, holds sub-categories & services).
+      const cl = all.filter((x) => x.kind !== "frontend");
       setCats(cl);
+      setSvcCats(all.filter((x) => x.kind === "frontend"));
       const sl = (s.data as Sub[]) ?? [];
       setSubs(sl);
       if (sel) setSel(cl.find((x) => x.id === sel.id) ?? null);
@@ -72,8 +77,9 @@ export function CatalogManager() {
     const payload = { name: name.trim(), is_active: active };
     const res = editId
       ? await db.from("service_categories").update(payload).eq("id", editId)
-      // kind:'frontend' → the category shows in the retailer & distributor "My Services" menu.
-      : await db.from("service_categories").insert({ ...payload, kind: "frontend", sort_order: cats.length });
+      // kind:'backend' → a mid-level Category (operator-managed). Service Categories (the
+      // retailer/distributor menu groups) are created separately as kind:'frontend'.
+      : await db.from("service_categories").insert({ ...payload, kind: "backend", sort_order: cats.length });
     setBusy(false);
     if (res.error) return toast.error("Save failed", { description: res.error.message });
     toast.success(editId ? "Category updated" : "Category added"); resetForm(); load();
@@ -160,9 +166,10 @@ export function CatalogManager() {
   // ---- Category list ----
   return (
     <div className="space-y-5">
+      <ServiceCategoriesPanel svcCats={svcCats} onChange={load} />
       <div>
         <h2 className="text-lg font-extrabold">Service Catalog — Categories</h2>
-        <p className="text-sm text-muted-foreground">Each category is handled by one or more operators. Open a category to manage its sub-categories, and open a sub-category to add Direct / Backend / API services.</p>
+        <p className="text-sm text-muted-foreground">Each category is handled by one or more operators, and belongs under a <b>Service Category</b> (the retailer/distributor menu group above). Open a category to manage its sub-categories, and open a sub-category to add Direct / Backend / API services.</p>
       </div>
       {editId === null && <CatForm {...{ name, setName, active, setActive, busy, saveCat, resetForm, editId }} />}
       {editId && !sel && <CatForm {...{ name, setName, active, setActive, busy, saveCat, resetForm, editId }} />}
@@ -205,6 +212,65 @@ function CatForm({ name, setName, active, setActive, busy, saveCat, resetForm, e
       <div className="mt-4 flex gap-2">
         <Button onClick={saveCat} disabled={busy} className="flex-1 bg-india-green text-white hover:bg-india-green/90">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : editId ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />} {editId ? "Save" : "Add category"}</Button>
         {editId && <Button variant="outline" onClick={resetForm}><X className="h-4 w-4" /></Button>}
+      </div>
+    </div>
+  );
+}
+
+// ---- Service Categories (top level = retailer/distributor "My Services" menu groups) ----
+function ServiceCategoriesPanel({ svcCats, onChange }: { svcCats: Cat[]; onChange: () => void }) {
+  const [name, setName] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+
+  const add = async () => {
+    if (!name.trim()) return toast.error("Service Category name required");
+    setBusy(true);
+    const { error } = await db.from("service_categories").insert({ name: name.trim(), kind: "frontend", is_active: true, sort_order: svcCats.length });
+    setBusy(false);
+    if (error) return toast.error("Add failed", { description: error.message });
+    setName(""); toast.success("Service Category added"); onChange();
+  };
+  const saveEdit = async (id: string) => {
+    if (!editName.trim()) return;
+    const { error } = await db.from("service_categories").update({ name: editName.trim() }).eq("id", id);
+    if (error) return toast.error(error.message);
+    setEditId(null); toast.success("Saved"); onChange();
+  };
+  const toggle = async (c: Cat) => { await db.from("service_categories").update({ is_active: !c.is_active }).eq("id", c.id); onChange(); };
+  const del = async (c: Cat) => { if (!confirm("Delete this Service Category? Categories mapped under it become unmapped.")) return; const { error } = await db.from("service_categories").delete().eq("id", c.id); if (error) return toast.error(error.message); toast.success("Deleted"); onChange(); };
+
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
+      <p className="flex items-center gap-2 font-display text-lg font-extrabold"><Layers className="h-5 w-5 text-india-green" /> Service Categories</p>
+      <p className="mt-1 text-sm text-muted-foreground">Top-level menu groups shown to retailers &amp; distributors under <b>My Services</b> (e.g. B2C Services, G2C Services). Create these first, then map Categories &amp; services to them.</p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. G2C Services" className={inp + " max-w-xs"} onKeyDown={(e) => e.key === "Enter" && add()} />
+        <Button onClick={add} disabled={busy} className="bg-india-green text-white hover:bg-india-green/90">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Add Service Category</Button>
+      </div>
+      <div className="mt-4 flex flex-wrap gap-2">
+        {svcCats.length === 0 ? <p className="text-sm text-muted-foreground">No Service Categories yet. Add one above.</p>
+          : svcCats.map((c) => (
+            <div key={c.id} className={`flex items-center gap-2 rounded-xl border border-border px-3 py-2 ${c.is_active ? "" : "opacity-60"}`}>
+              {editId === c.id ? (
+                <>
+                  <input value={editName} onChange={(e) => setEditName(e.target.value)} className={inp + " h-8 w-40"} onKeyDown={(e) => e.key === "Enter" && saveEdit(c.id)} />
+                  <button onClick={() => saveEdit(c.id)} className="text-india-green"><Check className="h-4 w-4" /></button>
+                  <button onClick={() => setEditId(null)} className="text-muted-foreground"><X className="h-4 w-4" /></button>
+                </>
+              ) : (
+                <>
+                  <Layers className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-semibold">{c.name}</span>
+                  <Pill on={c.is_active} />
+                  <button onClick={() => { setEditId(c.id); setEditName(c.name); }} className="text-muted-foreground hover:text-foreground"><Pencil className="h-3.5 w-3.5" /></button>
+                  <button onClick={() => toggle(c)} className="text-[11px] font-semibold text-muted-foreground hover:text-foreground">{c.is_active ? "Hide" : "Show"}</button>
+                  <button onClick={() => del(c)} className="text-rose-500 hover:text-rose-700"><Trash2 className="h-3.5 w-3.5" /></button>
+                </>
+              )}
+            </div>
+          ))}
       </div>
     </div>
   );

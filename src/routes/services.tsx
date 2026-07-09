@@ -7,9 +7,9 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/services")({
   head: () => ({ meta: [{ title: "My Services — BharatOne" }] }),
-  validateSearch: (s: Record<string, unknown>): { view?: string; cat?: string } => ({
+  validateSearch: (s: Record<string, unknown>): { view?: string; sc?: string } => ({
     view: typeof s.view === "string" ? s.view : undefined,
-    cat: typeof s.cat === "string" ? s.cat : undefined,
+    sc: typeof s.sc === "string" ? s.sc : undefined,
   }),
   component: ServicesPage,
 });
@@ -26,7 +26,7 @@ const CORE = [
   { label: "Gov. Services", to: "/gov-services", icon: <Globe className="h-5 w-5" />, tone: "bg-indigo-500", active: true },
 ];
 
-type Service = { id: string; name: string; logo_url: string | null; redirect_url: string | null; backend_route: string | null; service_type: "inlink" | "api" | "backend"; category: string | null; category_id: string | null };
+type Service = { id: string; name: string; logo_url: string | null; redirect_url: string | null; backend_route: string | null; service_type: "inlink" | "api" | "backend"; category: string | null; category_id: string | null; service_group: string | null };
 type Cat = { id: string; name: string };
 
 const TYPE_CHIP: Record<Service["service_type"], { label: string; cls: string }> = {
@@ -98,7 +98,7 @@ function CategorySection({ name, list }: { name: string; list: Service[] }) {
 }
 
 function ServicesPage() {
-  const { cat } = Route.useSearch();
+  const { sc } = Route.useSearch();
   const [services, setServices] = useState<Service[]>([]);
   const [cats, setCats] = useState<Cat[]>([]);
   const [q, setQ] = useState("");
@@ -107,10 +107,11 @@ function ServicesPage() {
     let on = true;
     (async () => {
       const [sv, ct] = await Promise.all([
-        supabase.from("services").select("id,name,logo_url,redirect_url,backend_route,service_type,category,category_id")
+        supabase.from("services").select("id,name,logo_url,redirect_url,backend_route,service_type,category,category_id,service_group")
           .eq("is_active", true).in("service_type", ["inlink", "api", "backend"]).order("sort_order").order("name"),
+        // Service Categories = the top-level retailer menu groups (kind='frontend').
         (supabase as any).from("service_categories").select("id,name")
-          .eq("is_active", true).order("sort_order").order("name"),
+          .eq("kind", "frontend").eq("is_active", true).order("sort_order").order("name"),
       ]);
       if (!on) return;
       setServices((sv.data as Service[]) ?? []);
@@ -122,22 +123,22 @@ function ServicesPage() {
   const match = (s: Service) => !q || [s.name, s.category].filter(Boolean).some((v) => String(v).toLowerCase().includes(q.toLowerCase()));
   const typeRank = { inlink: 0, backend: 1, api: 2 } as const;
 
-  // Build category → services, honoring the selected category (cat) and search (q).
+  // Build Service Category → services, honoring the selected Service Category (sc) and search (q).
   const sections = useMemo(() => {
-    const shown = cat ? cats.filter((c) => c.id === cat) : cats;
+    const shown = sc ? cats.filter((c) => c.id === sc) : cats;
     const byCat = shown.map((c) => ({
       name: c.name,
-      list: services.filter((s) => s.category_id === c.id && match(s)).sort((a, b) => typeRank[a.service_type] - typeRank[b.service_type]),
+      list: services.filter((s) => s.service_group === c.id && match(s)).sort((a, b) => typeRank[a.service_type] - typeRank[b.service_type]),
     }));
-    // Uncategorised services only when viewing "all".
-    if (!cat) {
-      const uncategorised = services.filter((s) => !s.category_id && match(s));
-      if (uncategorised.length) byCat.push({ name: "Other Services", list: uncategorised });
+    // Services not yet mapped to a Service Category — only when viewing "all".
+    if (!sc) {
+      const unmapped = services.filter((s) => !s.service_group && match(s));
+      if (unmapped.length) byCat.push({ name: "Other Services", list: unmapped });
     }
     return byCat;
-  }, [services, cats, cat, q]);
+  }, [services, cats, sc, q]);
 
-  const selectedName = cat ? (cats.find((c) => c.id === cat)?.name ?? "Category") : null;
+  const selectedName = sc ? (cats.find((c) => c.id === sc)?.name ?? "Service Category") : null;
   const hasAny = sections.some((s) => s.list.length > 0);
 
   return (

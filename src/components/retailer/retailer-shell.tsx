@@ -88,7 +88,7 @@ function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: 
     (async () => {
       const { data } = await (supabase as any)
         .from("service_categories").select("id,name")
-        .eq("is_active", true)
+        .eq("kind", "frontend").eq("is_active", true)
         .order("sort_order").order("name");
       if (on) setFrontCats((data as { id: string; name: string }[]) ?? []);
     })();
@@ -117,7 +117,7 @@ function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: 
                 const active = pathname === it.to;
                 // "My Services" children = admin-created service categories (dynamic).
                 const children = it.to === "/services" && frontCats.length
-                  ? [{ label: "All Services", to: "/services" }, ...frontCats.map((c) => ({ label: c.name, to: `/services?cat=${c.id}` }))]
+                  ? [{ label: "All Services", to: "/services" }, ...frontCats.map((c) => ({ label: c.name, to: `/services?sc=${c.id}` }))]
                   : it.children;
                 if (children && children.length) {
                   const childActive = children.some((ch) => pathname === ch.to);
