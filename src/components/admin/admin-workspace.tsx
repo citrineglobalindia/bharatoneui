@@ -780,6 +780,7 @@ export function AdminWorkspace() {
                   <RefreshCw /> Refresh{" "}
                   <span className="hidden text-muted-foreground sm:inline">· {lastUpdated}</span>
                 </Button>
+                {active === "Executive Overview" && (
                 <Button
                   size="sm"
                   className="bg-admin text-admin-foreground hover:bg-admin/90"
@@ -787,6 +788,7 @@ export function AdminWorkspace() {
                 >
                   <BarChart3 /> Export report
                 </Button>
+                )}
               </div>
             </section>
             )}

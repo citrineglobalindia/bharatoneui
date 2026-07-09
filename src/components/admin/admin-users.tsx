@@ -286,8 +286,9 @@ export function AdminUsers() {
       Joined: new Date(u.created_at).toLocaleDateString("en-IN"),
     }));
     const headers = ["Name", "Email", "JSKO ID / Code", "Mobile Number", "Roles", "Department", "Status", "Joined"];
-    const csv = [headers.join(","), ...rows.map((r) => headers.map((h) => `"${String((r as any)[h] ?? "").replace(/"/g, '""')}"`).join(","))].join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    if (!rows.length) { toast.error("Nothing to export"); return; }
+    const csv = [headers.join(","), ...rows.map((r) => headers.map((h) => `"${String((r as any)[h] ?? "").replace(/"/g, '""')}"`).join(","))].join("\r\n");
+    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url; a.download = `${activeModule.label.replace(/[^a-z0-9]+/gi, "_")}_${new Date().toISOString().slice(0, 10)}.csv`;
@@ -343,7 +344,7 @@ export function AdminUsers() {
               : sorted.map((u) => (
               <tr key={u.id} className="border-t border-border">
                 <td className="px-3 py-3 font-semibold">{u.display_name}</td>
-                <td className="px-3 py-3 text-sm text-muted-foreground"><span className="break-all">{u.email}</span>{u.employee_code ? <span className="ml-1 font-mono text-xs">· {u.employee_code}</span> : null}</td>
+                <td className="px-3 py-3 text-sm text-muted-foreground"><span className="break-all">{u.email}</span>{!isRetailer && u.employee_code ? <span className="ml-1 font-mono text-xs">· {u.employee_code}</span> : null}</td>
                 {isRetailer && <><td className="px-3 py-3 font-mono text-xs">{u.employee_code || "—"}</td><td className="px-3 py-3 text-muted-foreground">{u.phone ? (/^\d{10}$/.test(u.phone) ? `+91 ${u.phone}` : u.phone) : "—"}</td></>}
                 <td className="px-3 py-3"><div className="flex flex-wrap gap-1">{u.roles.length ? u.roles.map((r) => <span key={r} className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${roleColor[r] ?? "bg-slate-100 text-slate-700"}`}>{r}</span>) : <span className="text-xs text-muted-foreground">—</span>}</div></td>
                 <td className="px-3 py-3 text-muted-foreground">{u.department || "—"}</td>
