@@ -44,6 +44,7 @@ export function AdminUsers() {
   const [q, setQ] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [detail, setDetail] = useState<U | null>(null);
+  const [reg, setReg] = useState<any>(null);
   const [showAdd, setShowAdd] = useState(false);
   const blankAdd = { email: "", username: "", password: "", name: "", role: "telecaller", status: "active", department: "", designation: "", employee_code: "",
     gender: "", dob: "", qualification: "", experience: "", phone: "", alt_phone: "", street_address: "", district: "", state: "", pincode: "",
@@ -227,6 +228,11 @@ export function AdminUsers() {
       sow_signed_date: u.sow_signed_date ?? "", sow_status: u.sow_status ?? "pending",
     });
     setEditLangs(u.languages ?? []); setEditKyc(null); setEditSow(null);
+    // Retailers/distributors keep their real data in the registration record — load it.
+    setReg(null);
+    if (u.roles.includes("retailer") || u.roles.includes("distributor")) {
+      (async () => { await ensureStaffSession(); const { data } = await (supabase as any).rpc("admin_retailer_registration", { _uid: u.id }); setReg(data ?? null); })();
+    }
   };
   const viewStaffDoc = async (path: string) => { const { data } = await supabase.storage.from("staff-docs").createSignedUrl(path, 3600); if (data) window.open(data.signedUrl, "_blank"); };
   const saveProfile = async (u: U) => {
@@ -367,6 +373,32 @@ export function AdminUsers() {
                 <Info label="Joined" v={new Date(detail.created_at).toLocaleString("en-IN")} />
                 <Info label="Status" v={detail.is_active ? "Active" : "Inactive"} />
               </div>
+
+              {reg && (
+                <div className="space-y-3 rounded-xl border border-india-green/30 bg-india-green/5 p-3">
+                  <p className="text-xs font-bold uppercase tracking-wider text-india-green">Registration Details (as submitted)</p>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    <Info label="Full Name" v={[reg.first_name, reg.middle_name, reg.surname].filter(Boolean).join(" ")} />
+                    <Info label="Mobile" v={reg.mobile} />
+                    <Info label="Email" v={reg.email} />
+                    <Info label="JSKO ID" v={reg.jsko_id} />
+                    <Info label="Username / Code" v={reg.username} />
+                    <Info label="Date of Birth" v={reg.dob} />
+                    <Info label="Shop Name" v={reg.shop_name} />
+                    <Info label="PAN" v={reg.pan_number} />
+                    <Info label="Aadhaar" v={reg.aadhaar_number} />
+                    <Info label="Bank" v={reg.bank_name} />
+                    <Info label="Account No." v={reg.account_number} />
+                    <Info label="IFSC" v={reg.ifsc} />
+                    <Info label="District" v={reg.district} />
+                    <Info label="Taluk" v={reg.taluk} />
+                    <Info label="State" v={reg.state} />
+                    <Info label="Pincode" v={reg.pincode} />
+                    <Info label="Registration" v={reg.status} />
+                  </div>
+                  <Info label="Address" v={[reg.building_shop_no, reg.street_area, reg.village_name, reg.gram_panchayat, reg.hobli_name, reg.city].filter(Boolean).join(", ")} />
+                </div>
+              )}
               {edit && (
                 <div className="space-y-3 rounded-xl border border-border bg-muted/20 p-3">
                   <p className="text-xs font-bold uppercase tracking-wider text-saffron">Basic Information</p>
