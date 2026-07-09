@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Plus, Layers, FolderTree, UserCog, CornerDownRight, Wrench, Check, ChevronRight } from "lucide-react";
+import { Loader2, Plus, Layers, FolderTree, UserCog, CornerDownRight, Wrench, Check, ChevronRight, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
@@ -81,6 +81,23 @@ export function CatalogBuilder() {
     toast.success("Sub-category created"); setNewSub(""); await load(); setSubId((data as any).id);
   };
 
+  const deleteSC = async () => {
+    if (!scId) return;
+    if (!confirm("Delete this Service Category? Categories mapped under it become unmapped.")) return;
+    await ensureStaffSession();
+    const { error } = await db.rpc("admin_delete_service_category", { _id: scId });
+    if (error) return toast.error("Delete failed", { description: errText(error) });
+    toast.success("Service Category deleted"); setScId(""); setCatId(""); setSubId(""); load();
+  };
+  const deleteCat = async () => {
+    if (!catId) return;
+    if (!confirm("Delete this Category and its sub-categories? Its services become uncategorised.")) return;
+    await ensureStaffSession();
+    const { error } = await db.rpc("admin_delete_category", { _id: catId });
+    if (error) return toast.error("Delete failed", { description: errText(error) });
+    toast.success("Category deleted"); setCatId(""); setSubId(""); load();
+  };
+
   if (loading) return <div className="grid h-40 place-items-center"><Loader2 className="h-5 w-5 animate-spin text-india-green" /></div>;
 
   return (
@@ -104,6 +121,7 @@ export function CatalogBuilder() {
               <Button onClick={createSC} disabled={busy} className="shrink-0 bg-india-green text-white">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}</Button>
             </div></div>
         </div>
+        {scId && <button onClick={deleteSC} className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-rose-600 hover:text-rose-700"><Trash2 className="h-3.5 w-3.5" /> Delete this Service Category</button>}
       </Step>
 
       {/* Step 2 — Category */}
@@ -120,6 +138,7 @@ export function CatalogBuilder() {
               <Button onClick={createCat} disabled={busy || !scId} className="shrink-0 bg-india-green text-white">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}</Button>
             </div></div>
         </div>
+        {catId && <button onClick={deleteCat} className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-rose-600 hover:text-rose-700"><Trash2 className="h-3.5 w-3.5" /> Delete this Category</button>}
       </Step>
 
       {/* Step 3 — Operator */}

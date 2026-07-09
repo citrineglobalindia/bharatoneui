@@ -93,7 +93,7 @@ export function CatalogManager() {
     toast.success(pid ? "Mapped to Service Category" : "Unmapped"); load();
   };
   const toggleCat = async (c: Cat) => { await db.from("service_categories").update({ is_active: !c.is_active }).eq("id", c.id); load(); };
-  const delCat = async (c: Cat) => { if (!confirm("Delete this category and its sub-categories? Services become uncategorised.")) return; const { error } = await db.from("service_categories").delete().eq("id", c.id); if (error) return toast.error(error.message); if (sel?.id === c.id) setSel(null); toast.success("Deleted"); load(); };
+  const delCat = async (c: Cat) => { if (!confirm("Delete this category and its sub-categories? Services become uncategorised.")) return; await ensureStaffSession(); const { error } = await db.rpc("admin_delete_category", { _id: c.id }); if (error) return toast.error("Delete failed", { description: rpcErr(error) }); if (sel?.id === c.id) setSel(null); toast.success("Category deleted"); load(); };
 
   const addSub = async (catId: string) => {
     const nm = (newSub[catId] || "").trim();
