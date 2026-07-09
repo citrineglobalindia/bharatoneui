@@ -361,16 +361,19 @@ export function DistributorServicesReal({ initialSc }: { initialSc?: string } = 
   // Service Category (kind='frontend') = top-level menu group; services map to it via service_group.
   const [scFilter, setScFilter] = useState<string>(initialSc || "");
   const [scNames, setScNames] = useState<Record<string, string>>({});
+  const [catParent, setCatParent] = useState<Record<string, string | null>>({});
   async function load() {
     setLoading(true);
     try {
       await ensureStaffSession();
-      const [sv, sc] = await Promise.all([
-        supabase.from("services").select("id,name,category,service_type,service_charge,distributor_commission,logo_url,is_active,service_group").eq("is_active", true).order("category").order("name"),
+      const [sv, sc, mid] = await Promise.all([
+        supabase.from("services").select("id,name,category,category_id,service_type,service_charge,distributor_commission,logo_url,is_active,service_group").eq("is_active", true).order("category").order("name"),
         (supabase as any).from("service_categories").select("id,name").eq("kind", "frontend"),
+        (supabase as any).from("service_categories").select("id,parent_id").neq("kind", "frontend"),
       ]);
       setRows((sv.data as any[]) ?? []);
       const m: Record<string, string> = {}; ((sc.data as any[]) ?? []).forEach((c) => { m[c.id] = c.name; }); setScNames(m);
+      const p: Record<string, string | null> = {}; ((mid.data as any[]) ?? []).forEach((c) => { p[c.id] = c.parent_id; }); setCatParent(p);
     } finally { setLoading(false); }
   }
   useEffect(() => { load(); }, []);
@@ -387,12 +390,14 @@ export function DistributorServicesReal({ initialSc }: { initialSc?: string } = 
   ];
   const tBadge: Record<string, string> = { inlink: "bg-sky-100 text-sky-700", api: "bg-violet-100 text-violet-700", backend: "bg-emerald-100 text-emerald-700" };
 
+  // A service's Service Category = its Category's parent_id ("map the category").
+  const scOf = (r: any) => (r.category_id ? catParent[r.category_id] ?? null : null);
   const filtered = useMemo(() => rows.filter((r) =>
     (type === "all" || r.service_type === type) &&
-    (!scFilter || r.service_group === scFilter) &&
+    (!scFilter || scOf(r) === scFilter) &&
     (cat === "all" || (r.category || "Uncategorised") === cat) &&
     (!q || [r.name, r.category].filter(Boolean).some((v) => String(v).toLowerCase().includes(q.toLowerCase())))
-  ), [rows, q, type, cat, scFilter]);
+  ), [rows, q, type, cat, scFilter, catParent]);
 
   const typeCounts = useMemo(() => {
     const m: Record<string, number> = { all: rows.length, inlink: 0, api: 0, backend: 0 };

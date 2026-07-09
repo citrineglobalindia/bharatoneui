@@ -193,12 +193,8 @@ export function ServicesManager({ categoryId, subcategoryId, subcategories, fron
                 {subcategories.map((sc) => <option key={sc.id} value={sc.id}>{sc.name}</option>)}
               </select></div>
           )}
-          <div><label className="text-xs font-semibold text-muted-foreground">Service Category (retailer/distributor menu)</label>
-            <select className={input} value={form.service_group} onChange={(e) => set({ service_group: e.target.value })}>
-              <option value="">— Select a Service Category —</option>
-              {frontCats.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-            {frontCats.length === 0 && <p className="mt-1 text-[11px] text-amber-600">No Service Categories yet. Create them in Service Catalog → Service Categories.</p>}</div>
+          {/* The Service Category (retailer/distributor menu group) is inherited from this
+              service's Category mapping in Service Catalog — no per-service selection needed. */}
           {!categoryId && <div><label className="text-xs font-semibold text-muted-foreground">Category</label>
             <select className={input} value={form.category_id} onChange={(e) => set({ category_id: e.target.value })}>
               <option value="">Select category</option>

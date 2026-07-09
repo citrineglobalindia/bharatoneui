@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 import { ServicesManager } from "@/components/admin/services-manager";
 
-type Cat = { id: string; name: string; is_active: boolean; sort_order: number; kind?: string | null };
+type Cat = { id: string; name: string; is_active: boolean; sort_order: number; kind?: string | null; parent_id?: string | null };
 type Sub = { id: string; category_id: string; name: string; is_active: boolean; sort_order: number };
 type Operator = { id: string; name: string };
 const db = supabase as any;
@@ -29,6 +29,7 @@ export function CatalogManager() {
 
   const [name, setName] = useState("");
   const [active, setActive] = useState(true);
+  const [parentId, setParentId] = useState("");
   const [editId, setEditId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [newSub, setNewSub] = useState<Record<string, string>>({});
@@ -38,7 +39,7 @@ export function CatalogManager() {
     try {
       await ensureStaffSession();
       const [c, s, sv, u, co] = await Promise.all([
-        db.from("service_categories").select("id,name,is_active,sort_order,kind").order("sort_order").order("name"),
+        db.from("service_categories").select("id,name,is_active,sort_order,kind,parent_id").order("sort_order").order("name"),
         db.from("service_subcategories").select("id,category_id,name,is_active,sort_order").order("sort_order").order("name"),
         db.from("services").select("subcategory_id,category_id"),
         db.rpc("admin_list_users"),
@@ -69,12 +70,14 @@ export function CatalogManager() {
   }
   useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
 
-  const resetForm = () => { setName(""); setActive(true); setEditId(null); };
-  const startEdit = (c: Cat) => { setEditId(c.id); setName(c.name); setActive(c.is_active); };
+  const resetForm = () => { setName(""); setActive(true); setParentId(""); setEditId(null); };
+  const startEdit = (c: Cat) => { setEditId(c.id); setName(c.name); setActive(c.is_active); setParentId(c.parent_id ?? ""); };
   const saveCat = async () => {
     if (!name.trim()) return toast.error("Category name required");
     setBusy(true);
-    const payload = { name: name.trim(), is_active: active };
+    await ensureStaffSession();
+    // parent_id = the Service Category this Category belongs under (retailer/distributor menu group).
+    const payload = { name: name.trim(), is_active: active, parent_id: parentId || null };
     const res = editId
       ? await db.from("service_categories").update(payload).eq("id", editId)
       // kind:'backend' → a mid-level Category (operator-managed). Service Categories (the
@@ -83,6 +86,12 @@ export function CatalogManager() {
     setBusy(false);
     if (res.error) return toast.error("Save failed", { description: res.error.message });
     toast.success(editId ? "Category updated" : "Category added"); resetForm(); load();
+  };
+  const setCatParent = async (c: Cat, pid: string) => {
+    await ensureStaffSession();
+    const { error } = await db.from("service_categories").update({ parent_id: pid || null }).eq("id", c.id);
+    if (error) return toast.error("Mapping failed", { description: error.message });
+    toast.success(pid ? "Mapped to Service Category" : "Unmapped"); load();
   };
   const toggleCat = async (c: Cat) => { await db.from("service_categories").update({ is_active: !c.is_active }).eq("id", c.id); load(); };
   const delCat = async (c: Cat) => { if (!confirm("Delete this category and its sub-categories? Services become uncategorised.")) return; const { error } = await db.from("service_categories").delete().eq("id", c.id); if (error) return toast.error(error.message); if (sel?.id === c.id) setSel(null); toast.success("Deleted"); load(); };
@@ -127,7 +136,7 @@ export function CatalogManager() {
           </div>
           <Button variant="outline" size="sm" onClick={() => startEdit(sel)}><Pencil className="h-4 w-4" /> Edit category</Button>
         </div>
-        {editId === sel.id && <CatForm {...{ name, setName, active, setActive, busy, saveCat, resetForm, editId }} />}
+        {editId === sel.id && <CatForm {...{ name, setName, active, setActive, busy, saveCat, resetForm, editId, svcCats, parentId, setParentId }} />}
 
         <CategoryOperators categoryId={sel.id} allOperators={operators} onChange={load} />
 
@@ -171,19 +180,25 @@ export function CatalogManager() {
         <h2 className="text-lg font-extrabold">Service Catalog — Categories</h2>
         <p className="text-sm text-muted-foreground">Each category is handled by one or more operators, and belongs under a <b>Service Category</b> (the retailer/distributor menu group above). Open a category to manage its sub-categories, and open a sub-category to add Direct / Backend / API services.</p>
       </div>
-      {editId === null && <CatForm {...{ name, setName, active, setActive, busy, saveCat, resetForm, editId }} />}
-      {editId && !sel && <CatForm {...{ name, setName, active, setActive, busy, saveCat, resetForm, editId }} />}
+      {editId === null && <CatForm {...{ name, setName, active, setActive, busy, saveCat, resetForm, editId, svcCats, parentId, setParentId }} />}
+      {editId && !sel && <CatForm {...{ name, setName, active, setActive, busy, saveCat, resetForm, editId, svcCats, parentId, setParentId }} />}
       <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-soft">
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
-            <tr><th className="px-4 py-2.5">Category</th><th className="px-4 py-2.5">Operators</th><th className="px-4 py-2.5">Sub-categories</th><th className="px-4 py-2.5">Status</th><th className="px-4 py-2.5 text-right">Actions</th></tr>
+            <tr><th className="px-4 py-2.5">Category</th><th className="px-4 py-2.5">Service Category</th><th className="px-4 py-2.5">Operators</th><th className="px-4 py-2.5">Sub-categories</th><th className="px-4 py-2.5">Status</th><th className="px-4 py-2.5 text-right">Actions</th></tr>
           </thead>
           <tbody>
-            {loading ? <tr><td colSpan={5} className="px-4 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr>
-              : cats.length === 0 ? <tr><td colSpan={5} className="px-4 py-10 text-center text-muted-foreground">No categories yet. Add one →</td></tr>
+            {loading ? <tr><td colSpan={6} className="px-4 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr>
+              : cats.length === 0 ? <tr><td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">No categories yet. Add one →</td></tr>
               : cats.map((c) => (
                 <tr key={c.id} className="border-t border-border hover:bg-muted/30">
                   <td className="px-4 py-3"><button onClick={() => setSel(c)} className="inline-flex items-center gap-1.5 font-semibold hover:text-india-green">{c.name} <ChevronRight className="h-4 w-4 text-muted-foreground" /></button></td>
+                  <td className="px-4 py-3">
+                    <select value={c.parent_id ?? ""} onChange={(e) => setCatParent(c, e.target.value)} className="h-8 max-w-[190px] rounded-lg border border-border bg-background px-2 text-xs outline-none focus-visible:ring-2 focus-visible:ring-india-green/30">
+                      <option value="">— Not mapped —</option>
+                      {svcCats.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                    </select>
+                  </td>
                   <td className="px-4 py-3"><span className={`inline-flex items-center gap-1 text-xs ${(opCounts[c.id]?.active ?? 0) ? "text-foreground" : "text-muted-foreground"}`}><UserCog className="h-3.5 w-3.5" /> {(opCounts[c.id]?.active ?? 0) ? `${opCounts[c.id].active} operator(s)` : "Unassigned"}</span></td>
                   <td className="px-4 py-3 text-muted-foreground">{subs.filter((s) => s.category_id === c.id).length}</td>
                   <td className="px-4 py-3"><Pill on={c.is_active} /></td>
@@ -202,12 +217,18 @@ export function CatalogManager() {
   );
 }
 
-function CatForm({ name, setName, active, setActive, busy, saveCat, resetForm, editId }: any) {
+function CatForm({ name, setName, active, setActive, busy, saveCat, resetForm, editId, svcCats = [], parentId, setParentId }: any) {
   return (
     <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
       <p className="mb-3 flex items-center gap-2 text-sm font-bold">{editId ? <Pencil className="h-4 w-4 text-india-green" /> : <Plus className="h-4 w-4 text-india-green" />} {editId ? "Edit category" : "Add category"}</p>
       <label className="text-[11px] font-semibold text-muted-foreground">Category Name</label>
       <input className={inp} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Government Services" onKeyDown={(e) => e.key === "Enter" && saveCat()} />
+      <label className="mt-3 block text-[11px] font-semibold text-muted-foreground">Service Category (retailer/distributor menu)</label>
+      <select className={inp} value={parentId ?? ""} onChange={(e) => setParentId(e.target.value)}>
+        <option value="">— Not mapped —</option>
+        {(svcCats as Cat[]).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+      </select>
+      {svcCats.length === 0 && <p className="mt-1 text-[11px] text-amber-600">Create a Service Category above first.</p>}
       <label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} className="h-4 w-4 accent-[oklch(0.55_0.12_150)]" /> Active</label>
       <div className="mt-4 flex gap-2">
         <Button onClick={saveCat} disabled={busy} className="flex-1 bg-india-green text-white hover:bg-india-green/90">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : editId ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />} {editId ? "Save" : "Add category"}</Button>
@@ -227,6 +248,7 @@ function ServiceCategoriesPanel({ svcCats, onChange }: { svcCats: Cat[]; onChang
   const add = async () => {
     if (!name.trim()) return toast.error("Service Category name required");
     setBusy(true);
+    await ensureStaffSession();
     const { error } = await db.from("service_categories").insert({ name: name.trim(), kind: "frontend", is_active: true, sort_order: svcCats.length });
     setBusy(false);
     if (error) return toast.error("Add failed", { description: error.message });
@@ -234,12 +256,13 @@ function ServiceCategoriesPanel({ svcCats, onChange }: { svcCats: Cat[]; onChang
   };
   const saveEdit = async (id: string) => {
     if (!editName.trim()) return;
+    await ensureStaffSession();
     const { error } = await db.from("service_categories").update({ name: editName.trim() }).eq("id", id);
     if (error) return toast.error(error.message);
     setEditId(null); toast.success("Saved"); onChange();
   };
-  const toggle = async (c: Cat) => { await db.from("service_categories").update({ is_active: !c.is_active }).eq("id", c.id); onChange(); };
-  const del = async (c: Cat) => { if (!confirm("Delete this Service Category? Categories mapped under it become unmapped.")) return; const { error } = await db.from("service_categories").delete().eq("id", c.id); if (error) return toast.error(error.message); toast.success("Deleted"); onChange(); };
+  const toggle = async (c: Cat) => { await ensureStaffSession(); await db.from("service_categories").update({ is_active: !c.is_active }).eq("id", c.id); onChange(); };
+  const del = async (c: Cat) => { if (!confirm("Delete this Service Category? Categories mapped under it become unmapped.")) return; await ensureStaffSession(); const { error } = await db.from("service_categories").delete().eq("id", c.id); if (error) return toast.error(error.message); toast.success("Deleted"); onChange(); };
 
   return (
     <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">

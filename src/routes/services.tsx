@@ -101,42 +101,50 @@ function ServicesPage() {
   const { sc } = Route.useSearch();
   const [services, setServices] = useState<Service[]>([]);
   const [cats, setCats] = useState<Cat[]>([]);
+  const [catParent, setCatParent] = useState<Record<string, string | null>>({});
   const [q, setQ] = useState("");
 
   useEffect(() => {
     let on = true;
     (async () => {
-      const [sv, ct] = await Promise.all([
+      const [sv, ct, mid] = await Promise.all([
         supabase.from("services").select("id,name,logo_url,redirect_url,backend_route,service_type,category,category_id,service_group")
           .eq("is_active", true).in("service_type", ["inlink", "api", "backend"]).order("sort_order").order("name"),
         // Service Categories = the top-level retailer menu groups (kind='frontend').
         (supabase as any).from("service_categories").select("id,name")
           .eq("kind", "frontend").eq("is_active", true).order("sort_order").order("name"),
+        // Mid categories carry parent_id → the Service Category they belong under.
+        (supabase as any).from("service_categories").select("id,parent_id").neq("kind", "frontend"),
       ]);
       if (!on) return;
       setServices((sv.data as Service[]) ?? []);
       setCats((ct.data as Cat[]) ?? []);
+      const m: Record<string, string | null> = {};
+      ((mid.data as { id: string; parent_id: string | null }[]) ?? []).forEach((r) => { m[r.id] = r.parent_id; });
+      setCatParent(m);
     })();
     return () => { on = false; };
   }, []);
 
   const match = (s: Service) => !q || [s.name, s.category].filter(Boolean).some((v) => String(v).toLowerCase().includes(q.toLowerCase()));
   const typeRank = { inlink: 0, backend: 1, api: 2 } as const;
+  // A service's Service Category comes from its Category's parent_id ("map the category").
+  const scOf = (s: Service) => (s.category_id ? catParent[s.category_id] ?? null : null);
 
   // Build Service Category → services, honoring the selected Service Category (sc) and search (q).
   const sections = useMemo(() => {
     const shown = sc ? cats.filter((c) => c.id === sc) : cats;
     const byCat = shown.map((c) => ({
       name: c.name,
-      list: services.filter((s) => s.service_group === c.id && match(s)).sort((a, b) => typeRank[a.service_type] - typeRank[b.service_type]),
+      list: services.filter((s) => scOf(s) === c.id && match(s)).sort((a, b) => typeRank[a.service_type] - typeRank[b.service_type]),
     }));
     // Services not yet mapped to a Service Category — only when viewing "all".
     if (!sc) {
-      const unmapped = services.filter((s) => !s.service_group && match(s));
+      const unmapped = services.filter((s) => !scOf(s) && match(s));
       if (unmapped.length) byCat.push({ name: "Other Services", list: unmapped });
     }
     return byCat;
-  }, [services, cats, sc, q]);
+  }, [services, cats, catParent, sc, q]);
 
   const selectedName = sc ? (cats.find((c) => c.id === sc)?.name ?? "Service Category") : null;
   const hasAny = sections.some((s) => s.list.length > 0);
