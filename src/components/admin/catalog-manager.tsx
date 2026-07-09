@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 import { ServicesManager } from "@/components/admin/services-manager";
+import { CatalogBuilder } from "@/components/admin/catalog-builder";
 
 type Cat = { id: string; name: string; is_active: boolean; sort_order: number; kind?: string | null; parent_id?: string | null };
 type Sub = { id: string; category_id: string; name: string; is_active: boolean; sort_order: number };
@@ -26,6 +27,7 @@ export function CatalogManager() {
   const [loading, setLoading] = useState(true);
   const [sel, setSel] = useState<Cat | null>(null);
   const [selSub, setSelSub] = useState<Sub | null>(null);
+  const [tab, setTab] = useState<"build" | "manage">("build");
 
   const [name, setName] = useState("");
   const [active, setActive] = useState(true);
@@ -171,6 +173,13 @@ export function CatalogManager() {
   // ---- Category list ----
   return (
     <div className="space-y-5">
+      <div className="inline-flex rounded-xl border border-border bg-muted/40 p-1">
+        <button onClick={() => setTab("build")} className={`rounded-lg px-4 h-9 text-sm font-semibold transition ${tab === "build" ? "bg-india-green text-white shadow-soft" : "text-muted-foreground hover:text-foreground"}`}>Guided Builder</button>
+        <button onClick={() => setTab("manage")} className={`rounded-lg px-4 h-9 text-sm font-semibold transition ${tab === "manage" ? "bg-india-green text-white shadow-soft" : "text-muted-foreground hover:text-foreground"}`}>Manage</button>
+      </div>
+
+      {tab === "build" ? <CatalogBuilder /> : (
+      <>
       <ServiceCategoriesPanel svcCats={svcCats} onChange={load} />
       <div>
         <h2 className="text-lg font-extrabold">Service Catalog — Categories</h2>
@@ -209,6 +218,8 @@ export function CatalogManager() {
           </tbody>
         </table>
       </div>
+      </>
+      )}
     </div>
   );
 }
@@ -298,7 +309,7 @@ function ServiceCategoriesPanel({ svcCats, onChange }: { svcCats: Cat[]; onChang
 
 type CatOp = { operator_id: string; name: string; phone: string | null; is_active: boolean; assigned_count: number; pending: number };
 
-function CategoryOperators({ categoryId, allOperators, onChange }: { categoryId: string; allOperators: Operator[]; onChange: () => void }) {
+export function CategoryOperators({ categoryId, allOperators, onChange }: { categoryId: string; allOperators: Operator[]; onChange: () => void }) {
   const [rows, setRows] = useState<CatOp[]>([]);
   const [loading, setLoading] = useState(true);
   const [addId, setAddId] = useState("");
