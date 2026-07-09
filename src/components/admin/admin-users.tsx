@@ -397,11 +397,17 @@ export function AdminUsers() {
                 <Info label="Status" v={detail.is_active ? "Active" : "Inactive"} />
               </div>
 
-              {reg && (reg.shop_name || reg.jsko_id) && (
-                <div className="grid grid-cols-2 gap-3 rounded-xl border border-india-green/30 bg-india-green/5 p-3 sm:grid-cols-3">
-                  <Info label="Shop Name" v={reg.shop_name} />
-                  <Info label="JSKO ID" v={reg.jsko_id} />
-                  <Info label="Registration" v={reg.status} />
+              {reg && (
+                <div className="space-y-2 rounded-xl border border-india-green/30 bg-india-green/5 p-3">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-india-green">From registration {reg.status ? `· ${reg.status}` : ""}</p>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    <Info label="Full Name" v={[reg.first_name, reg.middle_name, reg.surname].filter(Boolean).join(" ")} />
+                    <Info label="Mobile" v={reg.mobile} />
+                    <Info label="Shop Name" v={reg.shop_name} />
+                    <Info label="JSKO ID" v={reg.jsko_id} />
+                    <Info label="PAN" v={reg.pan_number} />
+                    <Info label="Aadhaar" v={reg.aadhaar_number} />
+                  </div>
                 </div>
               )}
               {edit && (
