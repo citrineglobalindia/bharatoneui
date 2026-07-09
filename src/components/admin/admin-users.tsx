@@ -386,9 +386,9 @@ export function AdminUsers() {
                     <div><label className="text-[11px] font-semibold text-muted-foreground">District</label><input className={input} value={edit.district} onChange={(e) => setEdit({ ...edit, district: e.target.value })} placeholder="District" /></div>
                     <div><label className="text-[11px] font-semibold text-muted-foreground">State</label><input className={input} value={edit.state} onChange={(e) => setEdit({ ...edit, state: e.target.value })} placeholder="State" /></div>
                     <div><label className="text-[11px] font-semibold text-muted-foreground">Pincode</label><input className={input} value={edit.pincode} onChange={(e) => setEdit({ ...edit, pincode: e.target.value })} placeholder="Pincode" /></div>
+                    {(detail.roles.includes("retailer") || detail.roles.includes("distributor")) && <div><label className="text-[11px] font-semibold text-muted-foreground">JSKO ID / Code</label><input className={input} value={edit.employee_code} onChange={(e) => setEdit({ ...edit, employee_code: e.target.value })} placeholder="JSKO ID" /></div>}
                   </div>
 
-                  {!(detail.roles.includes("distributor") || detail.roles.includes("retailer")) && <>
                   <p className="pt-1 text-xs font-bold uppercase tracking-wider text-saffron">Identity & Bank</p>
                   <div className="grid gap-2.5 sm:grid-cols-2">
                     <div><label className="text-[11px] font-semibold text-muted-foreground">Aadhaar Number</label><input className={input} value={edit.aadhaar_number} onChange={(e) => setEdit({ ...edit, aadhaar_number: e.target.value.replace(/\D/g, "").slice(0, 12) })} inputMode="numeric" maxLength={12} placeholder="XXXX XXXX XXXX" /></div>
@@ -399,6 +399,7 @@ export function AdminUsers() {
                     <div><label className="text-[11px] font-semibold text-muted-foreground">UPI ID</label><input className={input} value={edit.upi_id} onChange={(e) => setEdit({ ...edit, upi_id: e.target.value })} placeholder="name@upi" /></div>
                   </div>
 
+                  {!(detail.roles.includes("distributor") || detail.roles.includes("retailer")) && <>
                   <p className="pt-1 text-xs font-bold uppercase tracking-wider text-saffron">Role & Compensation</p>
                   <div className="grid gap-2.5 sm:grid-cols-2">
                     <div><label className="text-[11px] font-semibold text-muted-foreground">Department</label><input className={input} value={edit.department} onChange={(e) => setEdit({ ...edit, department: e.target.value })} placeholder="Department" /></div>
