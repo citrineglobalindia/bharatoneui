@@ -152,7 +152,8 @@ function ServicesPage() {
   }, [services, cats, catParent, sc, q]);
 
   const selectedName = sc ? (cats.find((c) => c.id === sc)?.name ?? "Service Category") : null;
-  const hasAny = sections.some((s) => s.list.length > 0);
+  // Only show sections that actually have services.
+  const visibleSections = sections.filter((s) => s.list.length > 0);
 
   return (
     <RetailerShell>
@@ -166,9 +167,9 @@ function ServicesPage() {
           <div className="relative w-60"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><input className="h-9 w-full rounded-lg border border-border bg-background pl-8 pr-2 text-sm outline-none" placeholder="Search service" value={q} onChange={(e) => setQ(e.target.value)} /></div>
         </div>
 
-        {sections.length === 0 || !hasAny
+        {visibleSections.length === 0
           ? <div className="rounded-2xl border border-dashed border-border bg-card p-10 text-center text-sm text-muted-foreground">No services available yet. Your admin adds services under each category from the Service Catalog.</div>
-          : sections.map((sec) => <CategorySection key={sec.name} name={sec.name} list={sec.list} />)}
+          : visibleSections.map((sec) => <CategorySection key={sec.name} name={sec.name} list={sec.list} />)}
       </div>
     </RetailerShell>
   );

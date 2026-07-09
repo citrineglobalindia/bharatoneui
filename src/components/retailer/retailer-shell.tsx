@@ -81,16 +81,29 @@ function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: 
   const navigate = useNavigate();
   const me = useCurrentUser();
   const [openKey, setOpenKey] = useState<string | null>(null);
-  // Admin-created frontend categories = the retailer "My Services" sub-menu (dynamic).
-  const [frontCats, setFrontCats] = useState<{ id: string; name: string }[]>([]);
+  // Service Categories that actually have services — split by the menu they belong to:
+  // My Services = Direct/API services, New Application = Backend services. Empty ones are hidden.
+  const [myServiceCats, setMyServiceCats] = useState<{ id: string; name: string }[]>([]);
+  const [applicationCats, setApplicationCats] = useState<{ id: string; name: string }[]>([]);
   useEffect(() => {
     let on = true;
     (async () => {
-      const { data } = await (supabase as any)
-        .from("service_categories").select("id,name")
-        .eq("kind", "frontend").eq("is_active", true)
-        .order("sort_order").order("name");
-      if (on) setFrontCats((data as { id: string; name: string }[]) ?? []);
+      const [fc, mid, sv] = await Promise.all([
+        (supabase as any).from("service_categories").select("id,name").eq("kind", "frontend").eq("is_active", true).order("sort_order").order("name"),
+        (supabase as any).from("service_categories").select("id,parent_id").neq("kind", "frontend"),
+        (supabase as any).from("services").select("service_type,category_id,service_group").eq("is_active", true),
+      ]);
+      if (!on) return;
+      const front = (fc.data as { id: string; name: string }[]) ?? [];
+      const frontIds = new Set(front.map((f) => f.id));
+      const catParent: Record<string, string | null> = {};
+      ((mid.data as { id: string; parent_id: string | null }[]) ?? []).forEach((r) => { catParent[r.id] = r.parent_id; });
+      const scOf = (s: any): string | null => (s.service_group && frontIds.has(s.service_group) ? s.service_group : (s.category_id ? catParent[s.category_id] ?? null : null));
+      const hasDirectApi = new Set<string>();
+      const hasBackend = new Set<string>();
+      ((sv.data as any[]) ?? []).forEach((s) => { const g = scOf(s); if (!g) return; if (s.service_type === "backend") hasBackend.add(g); else hasDirectApi.add(g); });
+      setMyServiceCats(front.filter((f) => hasDirectApi.has(f.id)));
+      setApplicationCats(front.filter((f) => hasBackend.has(f.id)));
     })();
     return () => { on = false; };
   }, []);
@@ -115,10 +128,10 @@ function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: 
             <ul className="space-y-0.5">
               {sec.items.map((it) => {
                 const active = pathname === it.to;
-                // "My Services" and "New Application" children = admin-created Service Categories (dynamic).
-                const scMenu = it.to === "/services" || it.to === "/new-service-request";
-                const children = scMenu && frontCats.length
-                  ? [{ label: it.to === "/services" ? "All Services" : "All Categories", to: it.to }, ...frontCats.map((c) => ({ label: c.name, to: `${it.to}?sc=${c.id}` }))]
+                // "My Services" / "New Application" children = Service Categories that have the right services.
+                const scList = it.to === "/services" ? myServiceCats : it.to === "/new-service-request" ? applicationCats : null;
+                const children = scList && scList.length
+                  ? [{ label: it.to === "/services" ? "All Services" : "All Categories", to: it.to }, ...scList.map((c) => ({ label: c.name, to: `${it.to}?sc=${c.id}` }))]
                   : it.children;
                 if (children && children.length) {
                   const childActive = children.some((ch) => pathname === ch.to);
