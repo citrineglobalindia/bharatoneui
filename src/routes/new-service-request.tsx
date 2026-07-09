@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { PlusCircle, Loader2, Send, Upload, Wallet, CheckCircle2, FileDown, ImageDown, Share2 } from "lucide-react";
+import { PlusCircle, Loader2, Send, Upload, Wallet, CheckCircle2, FileDown, ImageDown, Share2, FolderTree } from "lucide-react";
 import { RetailerShell } from "@/components/retailer/retailer-shell";
 import { PageHeader } from "@/components/retailer/page-header";
 import { Button } from "@/components/ui/button";
@@ -84,6 +84,12 @@ function NewRequestPage() {
   }, [svcs, catParent, frontIds, sc]);
   const categories = useMemo(() => Array.from(new Set(scopedSvcs.map((s) => s.category || "Other"))).sort(), [scopedSvcs]);
   const servicesInCat = useMemo(() => scopedSvcs.filter((s) => (s.category || "Other") === category), [scopedSvcs, category]);
+  // Category-wise grouping of the backend services for the picker.
+  const groups = useMemo(() => {
+    const m = new Map<string, Svc[]>();
+    scopedSvcs.forEach((s) => { const k = s.category || "Other"; if (!m.has(k)) m.set(k, []); m.get(k)!.push(s); });
+    return Array.from(m.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [scopedSvcs]);
   const svc = useMemo(() => svcs.find((s) => s.id === serviceId) || null, [svcs, serviceId]);
   const dynFields: Field[] = (svc?.form_schema as Field[]) ?? [];
   const allFields: Field[] = [...COMMON, ...dynFields];
@@ -186,7 +192,39 @@ function NewRequestPage() {
         <PageHeader icon={<PlusCircle className="h-5 w-5" />} title={sc && scName ? `New Application — ${scName}` : "New Application Form"} subtitle={sc && scName ? `Backend services under ${scName}. Fill all required fields marked with *` : "Please fill all required fields marked with *"} />
         {sc && <Link to="/new-service-request" className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 h-9 text-sm font-semibold hover:bg-muted">← All Categories</Link>}
 
+        {!serviceId ? (
+          <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
+            <p className="mb-3 text-sm font-semibold">{sc ? "Choose a service" : "Choose a service by category"}</p>
+            {groups.length === 0
+              ? <p className="rounded-lg border border-dashed border-border bg-muted/30 px-3 py-8 text-center text-sm text-muted-foreground">No backend services{sc && scName ? ` under ${scName}` : ""} available yet.</p>
+              : <div className="space-y-5">
+                  {groups.map(([cat, list]) => (
+                    <section key={cat}>
+                      <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 to-green-600 pl-2 pr-3 py-1 text-white shadow-soft">
+                        <FolderTree className="h-4 w-4" />
+                        <span className="font-display text-sm font-bold uppercase tracking-wide">{cat}</span>
+                        <span className="rounded-full bg-white/25 px-1.5 text-[11px] font-semibold">{list.length}</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                        {list.map((s) => (
+                          <button key={s.id} onClick={() => { setServiceId(s.id); setCategory(s.category || "Other"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                            className="group flex flex-col items-start gap-1.5 rounded-xl border border-border bg-card p-3 text-left transition hover:-translate-y-0.5 hover:shadow-elev">
+                            <span className="grid h-9 w-9 place-items-center rounded-lg bg-india-green/10 font-bold text-india-green">{(s.name?.[0] || "S").toUpperCase()}</span>
+                            <p className="text-xs font-semibold leading-tight">{s.name}</p>
+                            {Number(s.service_charge) > 0 && <p className="text-[11px] text-muted-foreground">{inr(Number(s.service_charge))}</p>}
+                          </button>
+                        ))}
+                      </div>
+                    </section>
+                  ))}
+                </div>}
+          </div>
+        ) : (
         <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm"><span className="text-muted-foreground">Applying for </span><b>{svc?.name}</b>{svc?.category ? <span className="text-muted-foreground"> · {svc.category}</span> : null}</p>
+            <button onClick={() => setServiceId("")} className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 h-9 text-sm font-semibold hover:bg-muted">← Choose another service</button>
+          </div>
           {/* Applicant details */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {COMMON.map((f) => (
@@ -195,24 +233,6 @@ function NewRequestPage() {
                 <div className="mt-1">{renderField(f)}</div>
               </div>
             ))}
-          </div>
-
-          {/* Category + Service */}
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="text-xs font-semibold text-foreground">Category <span className="text-rose-500">*</span></label>
-              <select className={`${input} mt-1`} value={category} onChange={(e) => { setCategory(e.target.value); setServiceId(""); }}>
-                <option value="">Select A Category</option>
-                {categories.map((c) => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-foreground">Service <span className="text-rose-500">*</span></label>
-              <select className={`${input} mt-1`} value={serviceId} disabled={!category} onChange={(e) => { setServiceId(e.target.value); setValues((v) => ({ ...v })); }}>
-                <option value="">{category ? "Select A Service" : "Select a category first"}</option>
-                {servicesInCat.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
-            </div>
           </div>
 
           {/* Dynamic admin-configured fields */}
@@ -245,6 +265,7 @@ function NewRequestPage() {
             </>
           )}
         </div>
+        )}
       </div>
 
       {lowBalOpen && (
