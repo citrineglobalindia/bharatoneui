@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 import { ServicesManager } from "@/components/admin/services-manager";
 import { CatalogBuilder } from "@/components/admin/catalog-builder";
+import { ServiceMapping } from "@/components/admin/service-mapping";
 
 type Cat = { id: string; name: string; is_active: boolean; sort_order: number; kind?: string | null; parent_id?: string | null };
 type Sub = { id: string; category_id: string; name: string; is_active: boolean; sort_order: number };
@@ -27,7 +28,7 @@ export function CatalogManager() {
   const [loading, setLoading] = useState(true);
   const [sel, setSel] = useState<Cat | null>(null);
   const [selSub, setSelSub] = useState<Sub | null>(null);
-  const [tab, setTab] = useState<"build" | "manage">("build");
+  const [tab, setTab] = useState<"build" | "map" | "manage">("build");
 
   const [name, setName] = useState("");
   const [active, setActive] = useState(true);
@@ -175,10 +176,11 @@ export function CatalogManager() {
     <div className="space-y-5">
       <div className="inline-flex rounded-xl border border-border bg-muted/40 p-1">
         <button onClick={() => setTab("build")} className={`rounded-lg px-4 h-9 text-sm font-semibold transition ${tab === "build" ? "bg-india-green text-white shadow-soft" : "text-muted-foreground hover:text-foreground"}`}>Guided Builder</button>
+        <button onClick={() => setTab("map")} className={`rounded-lg px-4 h-9 text-sm font-semibold transition ${tab === "map" ? "bg-india-green text-white shadow-soft" : "text-muted-foreground hover:text-foreground"}`}>Service Mapping</button>
         <button onClick={() => setTab("manage")} className={`rounded-lg px-4 h-9 text-sm font-semibold transition ${tab === "manage" ? "bg-india-green text-white shadow-soft" : "text-muted-foreground hover:text-foreground"}`}>Manage</button>
       </div>
 
-      {tab === "build" ? <CatalogBuilder /> : (
+      {tab === "build" ? <CatalogBuilder /> : tab === "map" ? <ServiceMapping /> : (
       <>
       <ServiceCategoriesPanel svcCats={svcCats} onChange={load} />
       <div>
