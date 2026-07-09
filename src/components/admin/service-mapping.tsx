@@ -62,6 +62,16 @@ export function ServiceMapping() {
     save(s, catId || null, sg);
   };
   const onServiceCategory = (s: Svc, scId: string) => save(s, s.category_id, scId || null);
+  const onType = async (s: Svc, t: string) => {
+    if (t === s.service_type) return;
+    setSavingId(s.id);
+    setSvcs((xs) => xs.map((x) => (x.id === s.id ? { ...x, service_type: t as Svc["service_type"] } : x)));
+    await ensureStaffSession();
+    const { error } = await db.rpc("admin_set_service_type", { _service: s.id, _type: t });
+    setSavingId(null);
+    if (error) { toast.error("Type change failed", { description: errText(error) }); load(); return; }
+    toast.success(`Type set to ${TYPE_META[t].label}`);
+  };
 
   const rows = useMemo(() => svcs.filter((s) =>
     (type === "all" || s.service_type === type) &&
@@ -100,7 +110,16 @@ export function ServiceMapping() {
                 return (
                   <tr key={s.id} className={`border-t border-border hover:bg-muted/30 ${s.is_active ? "" : "opacity-60"}`}>
                     <td className="px-4 py-2.5 font-semibold">{s.name}{s.is_active ? "" : <span className="ml-1 text-[10px] font-normal text-muted-foreground">(inactive)</span>}{savingId === s.id && <Loader2 className="ml-2 inline h-3.5 w-3.5 animate-spin text-india-green" />}</td>
-                    <td className="px-4 py-2.5"><span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${M.cls}`}><M.icon className="h-3 w-3" /> {M.label}</span></td>
+                    <td className="px-4 py-2.5">
+                      <div className="flex items-center gap-1.5">
+                        <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-full ${M.cls}`}><M.icon className="h-3 w-3" /></span>
+                        <select className={sel + " min-w-[120px]"} value={s.service_type} onChange={(e) => onType(s, e.target.value)}>
+                          <option value="inlink">Direct Service</option>
+                          <option value="api">API Service</option>
+                          <option value="backend">Backend Service</option>
+                        </select>
+                      </div>
+                    </td>
                     <td className="px-4 py-2.5">
                       <select className={sel} value={s.category_id ?? ""} onChange={(e) => onCategory(s, e.target.value)}>
                         <option value="">— None —</option>
