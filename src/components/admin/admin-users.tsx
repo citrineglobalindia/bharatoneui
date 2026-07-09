@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { sanitizeMobile } from "@/lib/phone";
 import { toast } from "sonner";
-import { Users, Search, Loader2, RefreshCw, UserPlus, Eye, X, Check, ShieldCheck, Trash2, AlertTriangle, KeyRound, Copy } from "lucide-react";
+import { Users, Search, Loader2, RefreshCw, UserPlus, Eye, X, Check, ShieldCheck, Trash2, AlertTriangle, KeyRound, Copy, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -263,12 +263,36 @@ export function AdminUsers() {
       case "dept": return u.department || "";
       case "status": return u.is_active ? 1 : 0;
       case "joined": return new Date(u.created_at).getTime();
+      case "jsko": return u.employee_code || "";
+      case "mobile": return u.phone || "";
       default: return "";
     }
   };
   const cf = useColumnFilters<any>();
   const colFiltered = useMemo(() => cf.apply(filtered, acc), [filtered, cf.filters]);
   const { sorted, sort, toggle } = useSort(colFiltered, acc);
+  const isRetailer = moduleKey === "retailer";
+  const colCount = 7 + (isRetailer ? 2 : 0);
+
+  const exportCsv = () => {
+    const rows = sorted.map((u: any) => ({
+      Name: u.display_name || "",
+      Email: u.email || "",
+      "JSKO ID / Code": u.employee_code || "",
+      "Mobile Number": u.phone || "",
+      Roles: (u.roles || []).join(" "),
+      Department: u.department || "",
+      Status: u.is_active ? "Active" : "Inactive",
+      Joined: new Date(u.created_at).toLocaleDateString("en-IN"),
+    }));
+    const headers = ["Name", "Email", "JSKO ID / Code", "Mobile Number", "Roles", "Department", "Status", "Joined"];
+    const csv = [headers.join(","), ...rows.map((r) => headers.map((h) => `"${String((r as any)[h] ?? "").replace(/"/g, '""')}"`).join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `${activeModule.label.replace(/[^a-z0-9]+/gi, "_")}_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="space-y-4">
@@ -294,16 +318,18 @@ export function AdminUsers() {
           <option value="all">{moduleKey === "all" ? "All roles" : "All roles in module"}</option>{activeModule.roles.map((r) => <option key={r} value={r}>{r}</option>)}
         </select>
         <Button variant="outline" size="sm" onClick={load} disabled={loading}><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh</Button>
+        <Button variant="outline" size="sm" onClick={exportCsv} disabled={!sorted.length}><Download className="h-4 w-4" /> Export</Button>
         <Button size="sm" className="bg-india-green text-white" onClick={() => { setAdd({ ...blankAdd, role: activeModule.defaultRole }); setLangs([]); setKycFile(null); setSowFile(null); setShowAdd(true); }}><UserPlus className="h-4 w-4" /> Add user</Button>
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-border bg-card">
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
-            <tr><SortTh className="px-3 py-2.5" label="User" sortKey="name" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2.5" label="Email / ID" sortKey="email" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2.5" label="Roles" sortKey="roles" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2.5" label="Department" sortKey="dept" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2.5" label="Status" sortKey="status" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2.5" label="Joined" sortKey="joined" sort={sort} onSort={toggle} /><th className="px-3 py-2.5 text-right">Actions</th></tr>
+            <tr><SortTh className="px-3 py-2.5" label="User" sortKey="name" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2.5" label="Email / ID" sortKey="email" sort={sort} onSort={toggle} />{isRetailer && <><SortTh className="px-3 py-2.5" label="JSKO ID" sortKey="jsko" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2.5" label="Mobile" sortKey="mobile" sort={sort} onSort={toggle} /></>}<SortTh className="px-3 py-2.5" label="Roles" sortKey="roles" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2.5" label="Department" sortKey="dept" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2.5" label="Status" sortKey="status" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2.5" label="Joined" sortKey="joined" sort={sort} onSort={toggle} /><th className="px-3 py-2.5 text-right">Actions</th></tr>
             <tr className="bg-muted/30">
               <FilterTh className="px-2 pb-2" filterKey="name" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} />
               <FilterTh className="px-2 pb-2" filterKey="email" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} />
+              {isRetailer && <><FilterTh className="px-2 pb-2" filterKey="jsko" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} /><FilterTh className="px-2 pb-2" filterKey="mobile" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} /></>}
               <FilterTh className="px-2 pb-2" filterKey="roles" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} />
               <FilterTh className="px-2 pb-2" filterKey="dept" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} />
               <FilterTh className="px-2 pb-2" filterKey="status" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} />
@@ -312,12 +338,13 @@ export function AdminUsers() {
             </tr>
           </thead>
           <tbody>
-            {loading ? <tr><td colSpan={7} className="px-3 py-10 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></td></tr>
-              : sorted.length === 0 ? <tr><td colSpan={7} className="px-3 py-10 text-center text-muted-foreground">No users found.</td></tr>
+            {loading ? <tr><td colSpan={colCount} className="px-3 py-10 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></td></tr>
+              : sorted.length === 0 ? <tr><td colSpan={colCount} className="px-3 py-10 text-center text-muted-foreground">No users found.</td></tr>
               : sorted.map((u) => (
               <tr key={u.id} className="border-t border-border">
                 <td className="px-3 py-3 font-semibold">{u.display_name}</td>
                 <td className="px-3 py-3 text-sm text-muted-foreground"><span className="break-all">{u.email}</span>{u.employee_code ? <span className="ml-1 font-mono text-xs">· {u.employee_code}</span> : null}</td>
+                {isRetailer && <><td className="px-3 py-3 font-mono text-xs">{u.employee_code || "—"}</td><td className="px-3 py-3 text-muted-foreground">{u.phone ? (/^\d{10}$/.test(u.phone) ? `+91 ${u.phone}` : u.phone) : "—"}</td></>}
                 <td className="px-3 py-3"><div className="flex flex-wrap gap-1">{u.roles.length ? u.roles.map((r) => <span key={r} className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${roleColor[r] ?? "bg-slate-100 text-slate-700"}`}>{r}</span>) : <span className="text-xs text-muted-foreground">—</span>}</div></td>
                 <td className="px-3 py-3 text-muted-foreground">{u.department || "—"}</td>
                 <td className="px-3 py-3"><span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${u.is_active ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>{u.is_active ? "Active" : "Inactive"}</span></td>
