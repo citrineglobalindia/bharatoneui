@@ -326,7 +326,7 @@ export function AdminUsers() {
       <div className="overflow-x-auto rounded-xl border border-border bg-card">
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
-            <tr><SortTh className="px-3 py-2.5" label="User" sortKey="name" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2.5" label="Email / ID" sortKey="email" sort={sort} onSort={toggle} />{isRetailer && <><SortTh className="px-3 py-2.5" label="JSKO ID" sortKey="jsko" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2.5" label="Mobile" sortKey="mobile" sort={sort} onSort={toggle} /></>}<SortTh className="px-3 py-2.5" label="Roles" sortKey="roles" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2.5" label="Department" sortKey="dept" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2.5" label="Status" sortKey="status" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2.5" label="Joined" sortKey="joined" sort={sort} onSort={toggle} /><th className="px-3 py-2.5 text-right">Actions</th></tr>
+            <tr><SortTh className="px-3 py-2.5" label="User" sortKey="name" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2.5" label="Email" sortKey="email" sort={sort} onSort={toggle} />{isRetailer && <><SortTh className="px-3 py-2.5" label="JSKO ID" sortKey="jsko" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2.5" label="Mobile" sortKey="mobile" sort={sort} onSort={toggle} /></>}<SortTh className="px-3 py-2.5" label="Roles" sortKey="roles" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2.5" label="Department" sortKey="dept" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2.5" label="Status" sortKey="status" sort={sort} onSort={toggle} /><SortTh className="px-3 py-2.5" label="Joined" sortKey="joined" sort={sort} onSort={toggle} /><th className="px-3 py-2.5 text-right">Actions</th></tr>
             <tr className="bg-muted/30">
               <FilterTh className="px-2 pb-2" filterKey="name" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} />
               <FilterTh className="px-2 pb-2" filterKey="email" filters={cf.filters} setFilter={cf.setFilter} optionsFor={cf.optionsFor} />
@@ -344,7 +344,7 @@ export function AdminUsers() {
               : sorted.map((u) => (
               <tr key={u.id} className="border-t border-border">
                 <td className="px-3 py-3 font-semibold">{u.display_name}</td>
-                <td className="px-3 py-3 text-sm text-muted-foreground"><span className="break-all">{u.email}</span>{!isRetailer && u.employee_code ? <span className="ml-1 font-mono text-xs">· {u.employee_code}</span> : null}</td>
+                <td className="px-3 py-3 text-sm text-muted-foreground"><span className="break-all">{u.email}</span></td>
                 {isRetailer && <><td className="px-3 py-3 font-mono text-xs">{u.employee_code || "—"}</td><td className="px-3 py-3 text-muted-foreground">{u.phone ? (/^\d{10}$/.test(u.phone) ? `+91 ${u.phone}` : u.phone) : "—"}</td></>}
                 <td className="px-3 py-3"><div className="flex flex-wrap gap-1">{u.roles.length ? u.roles.map((r) => <span key={r} className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${roleColor[r] ?? "bg-slate-100 text-slate-700"}`}>{r}</span>) : <span className="text-xs text-muted-foreground">—</span>}</div></td>
                 <td className="px-3 py-3 text-muted-foreground">{u.department || "—"}</td>
