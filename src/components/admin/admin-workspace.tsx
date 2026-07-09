@@ -33,7 +33,7 @@ import {
   Network,
   type LucideIcon,
   ImageIcon, Megaphone, FolderTree, TrendingUp, Search as SearchIcon, BellRing, Bell, IdCard,
-  Server, LayoutGrid, Plus, List, ChevronRight } from "lucide-react";
+  Server, LayoutGrid, Plus, List, ChevronRight, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import {
   Area,
   AreaChart,
@@ -512,6 +512,7 @@ const HEADERLESS_SECTIONS = new Set([
 export function AdminWorkspace() {
   const [active, setActive] = useState("Executive Overview");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [deskCollapsed, setDeskCollapsed] = useState(false);
   const [lastUpdated, setLastUpdated] = useState("Just now");
   const [globalQuery, setGlobalQuery] = useState("");
   const navigate = useNavigate();
@@ -655,7 +656,7 @@ export function AdminWorkspace() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      <aside className="hidden w-72 shrink-0 lg:block">
+      <aside className={`hidden w-72 shrink-0 ${deskCollapsed ? "" : "lg:block"}`}>
         <Sidebar active={active} onChange={setActive} />
       </aside>
       {sidebarOpen && (
@@ -687,6 +688,16 @@ export function AdminWorkspace() {
             onClick={() => setSidebarOpen(true)}
           >
             <Menu />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hidden lg:inline-flex"
+            title={deskCollapsed ? "Open menu" : "Close menu"}
+            aria-label={deskCollapsed ? "Open menu" : "Close menu"}
+            onClick={() => setDeskCollapsed((v) => !v)}
+          >
+            {deskCollapsed ? <PanelLeftOpen /> : <PanelLeftClose />}
           </Button>
           <div className="hidden max-w-xl flex-1 items-center gap-2 rounded-xl border border-border bg-muted/50 px-3 md:flex">
             <Search className="h-4 w-4 text-muted-foreground" />
