@@ -8,6 +8,7 @@ import {
   FileBarChart, PieChart, Wallet,
 } from "lucide-react";
 import { BharatOneLogo } from "@/components/bharatone-logo";
+import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/lib/use-current-user";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
@@ -46,6 +47,20 @@ const HELP_NAV = [
 
 function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
   const navigate = useNavigate();
+  // Admin-created service categories = the distributor "Services Live" sub-menu (dynamic).
+  const [cats, setCats] = useState<{ id: string; name: string }[]>([]);
+  const [openSvc, setOpenSvc] = useState(false);
+  useEffect(() => {
+    let on = true;
+    (async () => {
+      const { data } = await (supabase as any)
+        .from("service_categories").select("id,name")
+        .or("kind.eq.frontend,kind.is.null").eq("is_active", true)
+        .order("sort_order").order("name");
+      if (on) setCats((data as { id: string; name: string }[]) ?? []);
+    })();
+    return () => { on = false; };
+  }, []);
   return (
     <div className="flex h-full flex-col bg-slate-900 text-slate-100">
       <div className="relative px-4 py-4 border-b border-white/10 overflow-hidden">
@@ -69,6 +84,38 @@ function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: 
           <ul className="space-y-0.5">
             {NAV.map((it) => {
               const active = pathname === it.to || pathname.startsWith(it.to + "/");
+              // "Services Live" gets a dynamic category sub-menu.
+              if (it.to === "/distributor/services" && cats.length) {
+                const expanded = openSvc || active;
+                return (
+                  <li key={it.label}>
+                    <button type="button" onClick={() => setOpenSvc((v) => !v)}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${active ? "bg-sky-500/15 text-sky-200 ring-1 ring-sky-400/30" : "text-slate-300 hover:bg-white/5 hover:text-white"}`}>
+                      <span className={active ? "text-sky-300" : "text-slate-400"}>{it.icon}</span>
+                      <span className="truncate flex-1 text-left">{it.label}</span>
+                      <ChevronDown className={`h-3.5 w-3.5 transition-transform ${expanded ? "rotate-180" : ""} ${active ? "text-sky-300" : "text-slate-400"}`} />
+                    </button>
+                    {expanded && (
+                      <ul className="mt-0.5 ml-4 space-y-0.5 border-l border-white/10 pl-2">
+                        <li>
+                          <Link to="/distributor/services" onClick={onNavigate}
+                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[13px] text-slate-300 hover:bg-white/5 hover:text-white">
+                            <span className="h-1.5 w-1.5 rounded-full bg-slate-500" /> All Services
+                          </Link>
+                        </li>
+                        {cats.map((c) => (
+                          <li key={c.id}>
+                            <Link to="/distributor/services" search={{ cat: c.name }} onClick={onNavigate}
+                              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[13px] text-slate-300 hover:bg-white/5 hover:text-white">
+                              <span className="h-1.5 w-1.5 rounded-full bg-slate-500" /> <span className="truncate">{c.name}</span>
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                );
+              }
               return (
                 <li key={it.label}>
                   <Link

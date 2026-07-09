@@ -54,7 +54,7 @@ export function ServicesManager({ categoryId, subcategoryId, subcategories, fron
         sq,
         supabase.from("service_categories").select("id,name,is_active").order("sort_order").order("name"),
         // Frontend categories = the retailer-menu service groups (dynamic).
-        (supabase as any).from("service_categories").select("id,name").eq("kind", "frontend").eq("is_active", true).order("sort_order").order("name"),
+        (supabase as any).from("service_categories").select("id,name").or("kind.eq.frontend,kind.is.null").eq("is_active", true).order("sort_order").order("name"),
       ]);
       setRows((sv.data as Service[]) ?? []);
       setCats((ct.data as Cat[]) ?? []);

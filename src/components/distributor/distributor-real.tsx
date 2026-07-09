@@ -354,12 +354,14 @@ export function DistributorOfficersReal() {
   );
 }
 
-export function DistributorServicesReal() {
+export function DistributorServicesReal({ initialCat }: { initialCat?: string } = {}) {
   const [rows, setRows] = useState<any[]>([]); const [loading, setLoading] = useState(true); const [q, setQ] = useState("");
   const [type, setType] = useState<"all" | "inlink" | "api" | "backend">("all");
-  const [cat, setCat] = useState<string>("all");
+  const [cat, setCat] = useState<string>(initialCat || "all");
   async function load() { setLoading(true); try { await ensureStaffSession(); const { data } = await supabase.from("services").select("id,name,category,service_type,service_charge,distributor_commission,logo_url,is_active").eq("is_active", true).order("category").order("name"); setRows((data as any[]) ?? []); } finally { setLoading(false); } }
   useEffect(() => { load(); }, []);
+  // Sync category filter when navigating via the sidebar sub-menu.
+  useEffect(() => { setCat(initialCat || "all"); }, [initialCat]);
 
   const TYPE_LABEL: Record<string, string> = { inlink: "Direct (My Services)", api: "API (Trending)", backend: "Backend (New Applications)" };
   const TYPE_ICON: Record<string, any> = { inlink: Globe, api: Cpu, backend: Server };

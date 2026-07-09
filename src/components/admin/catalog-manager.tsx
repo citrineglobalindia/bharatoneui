@@ -72,7 +72,8 @@ export function CatalogManager() {
     const payload = { name: name.trim(), is_active: active };
     const res = editId
       ? await db.from("service_categories").update(payload).eq("id", editId)
-      : await db.from("service_categories").insert({ ...payload, sort_order: cats.length });
+      // kind:'frontend' → the category shows in the retailer & distributor "My Services" menu.
+      : await db.from("service_categories").insert({ ...payload, kind: "frontend", sort_order: cats.length });
     setBusy(false);
     if (res.error) return toast.error("Save failed", { description: res.error.message });
     toast.success(editId ? "Category updated" : "Category added"); resetForm(); load();
