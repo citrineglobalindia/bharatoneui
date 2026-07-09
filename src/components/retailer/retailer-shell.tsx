@@ -88,7 +88,7 @@ function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: 
     (async () => {
       const { data } = await (supabase as any)
         .from("service_categories").select("id,name")
-        .or("kind.eq.frontend,kind.is.null").eq("is_active", true)
+        .eq("is_active", true)
         .order("sort_order").order("name");
       if (on) setFrontCats((data as { id: string; name: string }[]) ?? []);
     })();

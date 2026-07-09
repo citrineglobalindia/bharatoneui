@@ -110,7 +110,7 @@ function ServicesPage() {
         supabase.from("services").select("id,name,logo_url,redirect_url,backend_route,service_type,category,category_id")
           .eq("is_active", true).in("service_type", ["inlink", "api", "backend"]).order("sort_order").order("name"),
         (supabase as any).from("service_categories").select("id,name")
-          .or("kind.eq.frontend,kind.is.null").eq("is_active", true).order("sort_order").order("name"),
+          .eq("is_active", true).order("sort_order").order("name"),
       ]);
       if (!on) return;
       setServices((sv.data as Service[]) ?? []);

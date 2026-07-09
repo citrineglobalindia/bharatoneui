@@ -54,7 +54,7 @@ export function ServicesManager({ categoryId, subcategoryId, subcategories, fron
         sq,
         supabase.from("service_categories").select("id,name,is_active").order("sort_order").order("name"),
         // Frontend categories = the retailer-menu service groups (dynamic).
-        (supabase as any).from("service_categories").select("id,name").or("kind.eq.frontend,kind.is.null").eq("is_active", true).order("sort_order").order("name"),
+        (supabase as any).from("service_categories").select("id,name").eq("is_active", true).order("sort_order").order("name"),
       ]);
       setRows((sv.data as Service[]) ?? []);
       setCats((ct.data as Cat[]) ?? []);
@@ -198,7 +198,7 @@ export function ServicesManager({ categoryId, subcategoryId, subcategories, fron
                 <option value="">— Select a frontend category —</option>
                 {frontCats.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
-              {frontCats.length === 0 && <p className="mt-1 text-[11px] text-amber-600">No frontend categories yet. Create them in Service Catalog → Frontend → Add Category.</p>}</div>
+              {frontCats.length === 0 && <p className="mt-1 text-[11px] text-amber-600">No categories yet. Create them in Service Catalog → Add category.</p>}</div>
           )}
           {!categoryId && <div><label className="text-xs font-semibold text-muted-foreground">Category</label>
             <select className={input} value={form.category_id} onChange={(e) => set({ category_id: e.target.value })}>
