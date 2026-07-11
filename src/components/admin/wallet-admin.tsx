@@ -1,12 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Wallet, CheckCircle2, XCircle, Loader2, RefreshCw, Plus, Download } from "lucide-react";
+import { Wallet, CheckCircle2, XCircle, Loader2, RefreshCw, Plus, Download, ChevronDown, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 
 type Topup = { id: string; user_id: string; amount: number; method: string | null; reference: string | null; note: string | null; status: string; created_at: string; txn_date: string | null; receipt_path: string | null };
 type RUser = { id: string; name: string; email: string };
+type Account = { user_id: string; jsko_id: string | null; name: string; balance: number };
 const inr = (n: number) => "₹" + Number(n || 0).toLocaleString("en-IN");
 const tone: Record<string, string> = { pending: "bg-amber-100 text-amber-700", verified: "bg-emerald-100 text-emerald-700", rejected: "bg-rose-100 text-rose-700" };
 
@@ -14,6 +15,7 @@ export function WalletAdmin() {
   const [rows, setRows] = useState<Topup[]>([]);
   const [users, setUsers] = useState<Record<string, RUser>>({});
   const [retailers, setRetailers] = useState<RUser[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [balances, setBalances] = useState<{ user_id: string; balance: number }[]>([]);
   const [mainBal, setMainBal] = useState(0);
   const [rcAmt, setRcAmt] = useState(""); const [rcBusy, setRcBusy] = useState(false);
@@ -26,17 +28,20 @@ export function WalletAdmin() {
     setLoading(true);
     try {
       await ensureStaffSession();
-      const [t, u, w, cb] = await Promise.all([
+      const [t, acc, w, cb] = await Promise.all([
         supabase.from("wallet_topups").select("*").order("created_at", { ascending: false }),
-        supabase.rpc("admin_list_users"),
+        (supabase as any).rpc("wallet_topup_accounts"),
         supabase.from("wallets").select("user_id,balance"),
         supabase.rpc("company_balance"),
       ]);
       setMainBal(Number((cb.data as any) ?? 0));
       setRows((t.data as Topup[]) ?? []);
       setBalances((w.data as any[]) ?? []);
+      // Retailer accounts (JSKO IDs) available for direct top-up — accountant/admin-safe RPC.
+      const list = (acc.data as Account[]) ?? [];
+      setAccounts(list);
       const map: Record<string, RUser> = {}; const rets: RUser[] = [];
-      ((u.data as any[]) ?? []).forEach((x) => { const role = (Array.isArray(x.roles) ? x.roles.find((r:string)=>r!=="employee") : "") || ""; const ru = { id: x.id, name: (x.display_name || x.email || "User") + (role ? ` · ${role}` : ""), email: x.email }; map[x.id] = ru; rets.push(ru); });
+      list.forEach((a) => { const label = a.jsko_id ? `${a.jsko_id} · ${a.name}` : a.name; const ru = { id: a.user_id, name: label, email: "" }; map[a.user_id] = ru; rets.push(ru); });
       setUsers(map); setRetailers(rets);
     } finally { setLoading(false); }
   }
@@ -99,7 +104,7 @@ export function WalletAdmin() {
         <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
           <p className="mb-2 flex items-center gap-2 text-sm font-bold"><Plus className="h-4 w-4 text-india-green" /> Direct top-up</p>
           <form onSubmit={directTopup} className="space-y-2">
-            <select className="h-9 w-full rounded-lg border border-border bg-background px-2 text-sm" value={tuUser} onChange={(e) => setTuUser(e.target.value)}><option value="">Select account</option>{retailers.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}</select>
+            <AccountPicker accounts={accounts} value={tuUser} onChange={setTuUser} />
             <div className="flex gap-2"><input type="number" min="1" className="h-9 flex-1 rounded-lg border border-border bg-background px-2 text-sm" placeholder="Amount" value={tuAmt} onChange={(e) => setTuAmt(e.target.value)} /><Button type="submit" disabled={tuBusy} className="bg-india-green text-white hover:bg-india-green/90">{tuBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Top-up"}</Button></div>
           </form>
         </div>
@@ -131,6 +136,52 @@ export function WalletAdmin() {
           </tbody>
         </table>
       </div>
+    </div>
+  );
+}
+
+// Searchable account picker for Direct Top-up — filters by JSKO ID / name, handles thousands of rows.
+function AccountPicker({ accounts, value, onChange }: { accounts: Account[]; value: string; onChange: (id: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const onDoc = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, []);
+  const selected = accounts.find((a) => a.user_id === value) || null;
+  const s = q.trim().toLowerCase();
+  const results = useMemo(() => {
+    const base = s ? accounts.filter((a) => `${a.jsko_id ?? ""} ${a.name}`.toLowerCase().includes(s)) : accounts;
+    return base.slice(0, 60);
+  }, [accounts, s]);
+  const label = (a: Account) => (a.jsko_id ? `${a.jsko_id} · ${a.name}` : a.name);
+  return (
+    <div ref={ref} className="relative">
+      <button type="button" onClick={() => setOpen((o) => !o)} className="flex h-9 w-full items-center justify-between gap-2 rounded-lg border border-border bg-background px-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-india-green/30">
+        <span className={`truncate ${selected ? "font-medium" : "text-muted-foreground"}`}>{selected ? label(selected) : "Select account"}</span>
+        <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+      </button>
+      {open && (
+        <div className="absolute z-40 mt-1 w-full overflow-hidden rounded-lg border border-border bg-card shadow-elev">
+          <div className="flex items-center gap-1.5 border-b border-border px-2 py-1.5">
+            <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+            <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search JSKO ID or name…" className="h-7 w-full bg-transparent text-sm outline-none" />
+          </div>
+          <div className="max-h-64 overflow-y-auto py-1">
+            {accounts.length === 0 ? <p className="px-3 py-3 text-center text-xs text-muted-foreground">No retailer accounts yet.</p>
+              : results.length === 0 ? <p className="px-3 py-3 text-center text-xs text-muted-foreground">No match for “{q}”.</p>
+              : results.map((a) => (
+                <button key={a.user_id} type="button" onClick={() => { onChange(a.user_id); setOpen(false); setQ(""); }} className={`flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left text-sm hover:bg-muted ${a.user_id === value ? "bg-muted" : ""}`}>
+                  <span className="min-w-0 truncate"><span className="font-mono font-semibold">{a.jsko_id || "—"}</span> <span className="text-muted-foreground">· {a.name}</span></span>
+                  <span className="shrink-0 text-[11px] text-muted-foreground">{inr(a.balance)}</span>
+                </button>
+              ))}
+            {!s && accounts.length > 60 && <p className="px-3 py-1.5 text-center text-[11px] text-muted-foreground">Showing 60 of {accounts.length} — type to search.</p>}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
