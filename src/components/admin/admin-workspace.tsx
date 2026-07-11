@@ -1145,7 +1145,7 @@ export function AdminWorkspace() {
             ) : active === "Wallet & Top-ups" ? (
               <WalletAdmin allowMainRecharge />
             ) : active === "Withdrawals" ? (
-              <WithdrawalsAdmin />
+              <WithdrawalsAdmin allowWindowConfig />
             ) : active === "Accountant Operations" ? (
               <RegistrationsReview />
             ) : active === "KYC Approvals" ? (

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { Wallet, Plus, Loader2, ArrowDownToLine, ArrowUpFromLine, Clock3, RefreshCw, Send, Upload } from "lucide-react";
+import { Wallet, Plus, Loader2, ArrowDownToLine, ArrowUpFromLine, Clock3, RefreshCw, Send, Upload, CalendarDays, Lock } from "lucide-react";
 import { RetailerShell } from "@/components/retailer/retailer-shell";
 import { PageHeader } from "@/components/retailer/page-header";
 import { SectionCard, Field, Input, Select, PrimaryButton } from "@/components/retailer/section-card";
@@ -36,21 +36,25 @@ function WalletPage() {
   const [submitting, setSubmitting] = useState(false);
   const [withdrawals, setWithdrawals] = useState<any[]>([]);
   const [wAmt, setWAmt] = useState(""); const [wMethod, setWMethod] = useState("Bank Transfer"); const [wAcct, setWAcct] = useState(""); const [wBusy, setWBusy] = useState(false);
+  const [win, setWin] = useState<{ enabled: boolean; days: number[]; open_today: boolean; next_open: string | null } | null>(null);
+  const wOpen = !win || (win.enabled && win.open_today);
 
   async function load() {
     setLoading(true);
     const { data: u } = await supabase.auth.getUser();
     if (!u.user) { setLoading(false); return; }
-    const [w, t, tp, wd] = await Promise.all([
+    const [w, t, tp, wd, win] = await Promise.all([
       supabase.from("wallets").select("balance").eq("user_id", u.user.id).maybeSingle(),
       supabase.from("wallet_transactions").select("id,direction,amount,balance_after,reason,created_at").order("created_at", { ascending: false }).limit(50),
       supabase.from("wallet_topups").select("id,amount,method,reference,status,created_at").order("created_at", { ascending: false }).limit(20),
       supabase.from("wallet_withdrawals").select("id,amount,method,account_details,status,requested_at").order("requested_at", { ascending: false }).limit(20),
+      (supabase as any).rpc("withdrawal_window"),
     ]);
     setBalance(Number((w.data as any)?.balance ?? 0));
     setTxns((t.data as Tx[]) ?? []);
     setTopups((tp.data as Topup[]) ?? []);
     setWithdrawals((wd.data as any[]) ?? []);
+    setWin((win.data as any) ?? null);
     setLoading(false);
   }
   useEffect(() => { load(); }, []);
@@ -105,7 +109,11 @@ function WalletPage() {
     setWBusy(true);
     const { error } = await supabase.rpc("request_withdrawal", { p_amount: amt, p_method: wMethod, p_account: wAcct, p_note: null });
     setWBusy(false);
-    if (error) { if (String(error.message).includes("INSUFFICIENT_FUNDS")) return toast.error("Insufficient balance"); return toast.error("Request failed", { description: error.message }); }
+    if (error) {
+      if (String(error.message).includes("WITHDRAWAL_CLOSED")) return toast.error("Withdrawals are closed today", { description: win?.days?.length ? `Allowed only on day ${win.days.join(", ")} of each month.` : "Please try again during the withdrawal window." });
+      if (String(error.message).includes("INSUFFICIENT_FUNDS")) return toast.error("Insufficient balance");
+      return toast.error("Request failed", { description: error.message });
+    }
     toast.success("Withdrawal request sent", { description: "Awaiting approval." });
     setWAmt(""); setWAcct(""); load();
   };
@@ -146,11 +154,19 @@ function WalletPage() {
         </div>
 
         <SectionCard title="Withdraw Funds">
-          <form onSubmit={withdraw} className="grid gap-3 sm:grid-cols-4">
-            <Field label="Amount (₹)"><Input type="number" min="1" value={wAmt} onChange={(e) => setWAmt(e.target.value)} placeholder="500" /></Field>
-            <Field label="Method"><Select value={wMethod} onChange={(e) => setWMethod(e.target.value)}><option>Bank Transfer</option><option>UPI</option><option>NEFT/IMPS</option></Select></Field>
-            <div className="sm:col-span-2"><Field label="Payout account (A/C no, IFSC or UPI)"><Input value={wAcct} onChange={(e) => setWAcct(e.target.value)} placeholder="Account / UPI details" /></Field></div>
-            <div className="sm:col-span-4 flex justify-end"><PrimaryButton type="submit" disabled={wBusy}>{wBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Request Withdrawal</PrimaryButton></div>
+          {win && (
+            <div className={`mb-3 flex flex-wrap items-center gap-2 rounded-xl border px-3 py-2 text-sm ${wOpen ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-amber-200 bg-amber-50 text-amber-800"}`}>
+              {wOpen ? <CalendarDays className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
+              <span className="font-semibold">{!win.enabled ? "Withdrawals are currently turned off." : win.open_today ? "Withdrawal window is open today." : "Withdrawals are closed today."}</span>
+              {win.enabled && win.days?.length > 0 && <span>Allowed only on day <b>{win.days.join(", ")}</b> of each month.</span>}
+              {win.enabled && !win.open_today && win.next_open && <span>Next open: <b>{new Date(win.next_open).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</b></span>}
+            </div>
+          )}
+          <form onSubmit={withdraw} className={`grid gap-3 sm:grid-cols-4 ${wOpen ? "" : "pointer-events-none opacity-50"}`}>
+            <Field label="Amount (₹)"><Input type="number" min="1" value={wAmt} onChange={(e) => setWAmt(e.target.value)} placeholder="500" disabled={!wOpen} /></Field>
+            <Field label="Method"><Select value={wMethod} onChange={(e) => setWMethod(e.target.value)} disabled={!wOpen}><option>Bank Transfer</option><option>UPI</option><option>NEFT/IMPS</option></Select></Field>
+            <div className="sm:col-span-2"><Field label="Payout account (A/C no, IFSC or UPI)"><Input value={wAcct} onChange={(e) => setWAcct(e.target.value)} placeholder="Account / UPI details" disabled={!wOpen} /></Field></div>
+            <div className="sm:col-span-4 flex justify-end"><PrimaryButton type="submit" disabled={wBusy || !wOpen}>{wBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Request Withdrawal</PrimaryButton></div>
           </form>
           {withdrawals.length > 0 && (
             <div className="mt-3 overflow-x-auto"><table className="w-full text-sm">
