@@ -69,6 +69,7 @@ const NAV: NavSection[] = [
   {
     heading: "Finance",
     items: [
+      { label: "Razorpay Payments", icon: <BadgeIndianRupee className="h-4 w-4" />, to: "/accountant/razorpay-payments" },
       { label: "Services & Commission", icon: <Wrench className="h-4 w-4" />, to: "/accountant/services" },
       { label: "Services Payments", icon: <Receipt className="h-4 w-4" />, to: "/accountant/services-payments" },
       { label: "Main Account Recharge", icon: <Banknote className="h-4 w-4" />, to: "/accountant/main-recharge" },

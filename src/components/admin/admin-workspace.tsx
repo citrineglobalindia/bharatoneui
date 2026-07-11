@@ -1143,7 +1143,7 @@ export function AdminWorkspace() {
             ) : active === "Application Ledger" ? (
               <ApplicationLedger />
             ) : active === "Wallet & Top-ups" ? (
-              <WalletAdmin />
+              <WalletAdmin allowMainRecharge />
             ) : active === "Withdrawals" ? (
               <WithdrawalsAdmin />
             ) : active === "Accountant Operations" ? (

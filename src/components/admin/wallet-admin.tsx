@@ -11,7 +11,8 @@ type Account = { user_id: string; jsko_id: string | null; name: string; balance:
 const inr = (n: number) => "₹" + Number(n || 0).toLocaleString("en-IN");
 const tone: Record<string, string> = { pending: "bg-amber-100 text-amber-700", verified: "bg-emerald-100 text-emerald-700", rejected: "bg-rose-100 text-rose-700" };
 
-export function WalletAdmin() {
+// allowMainRecharge: only the admin portal may add funds to the main company account.
+export function WalletAdmin({ allowMainRecharge = false }: { allowMainRecharge?: boolean } = {}) {
   const [rows, setRows] = useState<Topup[]>([]);
   const [users, setUsers] = useState<Record<string, RUser>>({});
   const [retailers, setRetailers] = useState<RUser[]>([]);
@@ -94,11 +95,13 @@ export function WalletAdmin() {
         <div className="rounded-2xl border border-india-green/30 bg-india-green/5 p-4 shadow-soft">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Main account balance</p>
           <p className="text-2xl font-extrabold text-india-green">{inr(mainBal)}</p>
-          <form onSubmit={recharge} className="mt-2 flex gap-2">
-            <input type="number" min="1" className="h-8 w-24 rounded-lg border border-border bg-background px-2 text-sm" placeholder="Amount" value={rcAmt} onChange={(e) => setRcAmt(e.target.value)} />
-            <Button type="submit" size="sm" variant="outline" disabled={rcBusy}>{rcBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />} Recharge</Button>
-          </form>
-          <p className="mt-1 text-[10px] text-muted-foreground">Approvals & top-ups deduct from this.</p>
+          {allowMainRecharge && (
+            <form onSubmit={recharge} className="mt-2 flex gap-2">
+              <input type="number" min="1" className="h-8 w-24 rounded-lg border border-border bg-background px-2 text-sm" placeholder="Amount" value={rcAmt} onChange={(e) => setRcAmt(e.target.value)} />
+              <Button type="submit" size="sm" variant="outline" disabled={rcBusy}>{rcBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />} Recharge</Button>
+            </form>
+          )}
+          <p className="mt-1 text-[10px] text-muted-foreground">{allowMainRecharge ? "Approvals & top-ups deduct from this." : "Approvals & top-ups deduct from this. Only an admin can add funds."}</p>
         </div>
         <div className="rounded-2xl border border-border bg-card p-4 shadow-soft"><p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Retailer wallet float</p><p className="text-2xl font-extrabold">{inr(floatTotal)}</p><p className="text-xs text-muted-foreground">{balances.length} wallet(s) · {rows.filter((r) => r.status === "pending").length} pending ({inr(pendingTotal)})</p></div>
         <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
