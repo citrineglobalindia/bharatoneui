@@ -63,7 +63,6 @@ const NAV: NavSection[] = [
       { label: "Registration Payments", icon: <FileCheck2 className="h-4 w-4" />, to: "/accountant/registrations", badge: regPending },
       { label: "Distributor Applications", icon: <Network className="h-4 w-4" />, to: "/accountant/distributor-applications" },
       { label: "Wallet Requests", icon: <Wallet className="h-4 w-4" />, to: "/accountant/wallet-requests", badge: walPending },
-      { label: "Wallet Recharge", icon: <BadgeIndianRupee className="h-4 w-4" />, to: "/accountant/wallet-recharge" },
       { label: "Withdrawals", icon: <ArrowDownToLine className="h-4 w-4" />, to: "/accountant/withdrawals", badge: wdlPending },
     ],
   },
