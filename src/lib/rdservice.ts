@@ -27,8 +27,9 @@ export type CaptureResult = {
   error?: string;
 };
 
-// Ports used by the common Indian RD services.
-const RD_PORTS = [11100, 11101, 11102, 11103, 11104, 11105];
+// UIDAI RD services bind somewhere in 11100-11120; vendors differ, and a second
+// device on the same PC takes the next free port. Probe the whole documented range.
+const RD_PORTS = Array.from({ length: 21 }, (_, i) => 11100 + i);
 
 // NPCI/UIDAI wadh value for AePS FIR+FMR single-PID-block authentication.
 export const AEPS_WADH = "E0jzJ/P8UopUHAieZn8CKqS4WPMi5ZSYXgfnlfkWjrc=";
@@ -49,25 +50,71 @@ async function rdFetch(url: string, method: string, body?: string, timeoutMs = 3
   }
 }
 
-/** Find the RD service by probing the known localhost ports. */
-export async function discoverDevice(): Promise<RdDevice | null> {
+export type DiscoveryReport = {
+  device: RdDevice | null;
+  /** Ports that answered but weren't usable, with why. */
+  found: { base: string; status: string; info: string }[];
+  /** True if at least one port responded at all — i.e. an RD service exists. */
+  anyResponse: boolean;
+  hint: string;
+};
+
+/**
+ * Probe localhost for an RD service and report what was actually seen, so the
+ * retailer gets a real reason rather than a generic "not found".
+ */
+export async function discoverDeviceVerbose(): Promise<DiscoveryReport> {
+  const found: DiscoveryReport["found"] = [];
+
   for (const scheme of ["http", "https"]) {
-    for (const port of RD_PORTS) {
+    // Probe the ports in parallel — serial probing of 42 endpoints is far too slow.
+    const results = await Promise.all(RD_PORTS.map(async (port) => {
       const base = `${scheme}://127.0.0.1:${port}`;
       try {
-        const xml = await rdFetch(`${base}/`, "RDSERVICE", undefined, 2500);
-        if (!xml || !xml.includes("RDService")) continue;
+        const xml = await rdFetch(`${base}/`, "RDSERVICE", undefined, 2000);
+        if (!xml || !xml.includes("RDService")) return null;
         const doc = new DOMParser().parseFromString(xml, "text/xml");
         const node = doc.getElementsByTagName("RDService")[0];
-        const status = node?.getAttribute("status") ?? "";
-        const info = node?.getAttribute("info") ?? "";
-        if (status.toUpperCase() === "READY") return { port, base, info, status };
+        return {
+          port, base,
+          status: node?.getAttribute("status") ?? "",
+          info: node?.getAttribute("info") ?? "",
+        };
       } catch {
-        // port closed / blocked — keep probing
+        return null;                       // closed, blocked, or CORS-refused
+      }
+    }));
+
+    for (const r of results.filter(Boolean) as any[]) {
+      found.push({ base: r.base, status: r.status, info: r.info });
+      if (String(r.status).toUpperCase() === "READY") {
+        return { device: r, found, anyResponse: true, hint: "" };
       }
     }
   }
-  return null;
+
+  // Nothing usable. Work out the most likely reason and say so plainly.
+  let hint: string;
+  if (found.length > 0) {
+    const st = found[0].status.toUpperCase();
+    hint = st === "NOTREADY"
+      ? "The RD service is running but the scanner is not ready — plug the device in, or its RD licence may have expired."
+      : st === "USED"
+        ? "The scanner is in use by another application. Close any other biometric software and try again."
+        : `The RD service replied with status "${found[0].status}". Check the device driver.`;
+  } else if (!window.isSecureContext) {
+    hint = "The page is not on a secure origin, so the browser is blocking the scanner. Open the portal over HTTPS.";
+  } else if (!/Chrome|Edg/i.test(navigator.userAgent)) {
+    hint = "Use Google Chrome or Microsoft Edge. Firefox and Safari block the local scanner connection from an HTTPS page.";
+  } else {
+    hint = "No RD service is responding. Install and start the scanner's RD service (Mantra RD, Morpho RD, Startek RD…), then plug the device in.";
+  }
+  return { device: null, found, anyResponse: found.length > 0, hint };
+}
+
+/** Find the RD service by probing the known localhost ports. */
+export async function discoverDevice(): Promise<RdDevice | null> {
+  return (await discoverDeviceVerbose()).device;
 }
 
 /**

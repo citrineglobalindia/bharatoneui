@@ -8,7 +8,7 @@ import { RetailerShell } from "@/components/retailer/retailer-shell";
 import { PageHeader } from "@/components/retailer/page-header";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { discoverDevice, captureFingerprint, getLatLong, type RdDevice } from "@/lib/rdservice";
+import { discoverDeviceVerbose, captureFingerprint, getLatLong, type RdDevice } from "@/lib/rdservice";
 import { AEPS_BANKS } from "@/lib/aeps-banks";
 
 export const Route = createFileRoute("/aeps")({
@@ -53,6 +53,7 @@ function AepsPage() {
   const [scanning, setScanning] = useState(false);
   const [pid, setPid] = useState<string | null>(null);
   const [quality, setQuality] = useState<number | null>(null);
+  const [deviceHint, setDeviceHint] = useState<string | null>(null);
 
   // form
   const [op, setOp] = useState<string>("cash_withdrawal");
@@ -96,24 +97,28 @@ function AepsPage() {
 
   const connect = async () => {
     setScanning(true);
-    const d = await discoverDevice();
+    setDeviceHint(null);
+    const r = await discoverDeviceVerbose();
     setScanning(false);
-    if (!d) {
-      return toast.error("No fingerprint scanner found", {
-        description: "Start the device's RD service, plug the scanner in, and use Chrome or Edge.",
-      });
+    if (!r.device) {
+      setDeviceHint(r.hint);
+      return toast.error("No fingerprint scanner found", { description: r.hint });
     }
-    setDevice(d);
-    toast.success("Scanner connected", { description: d.info || `Port ${d.port}` });
+    setDevice(r.device);
+    toast.success("Scanner connected", { description: r.device.info || `Port ${r.device.port}` });
   };
 
   const scan = async () => {
     let d = device;
     if (!d) {
       setScanning(true);
-      d = await discoverDevice();
+      const r = await discoverDeviceVerbose();
       setScanning(false);
-      if (!d) return toast.error("No fingerprint scanner found. Start the RD service and try again.");
+      if (!r.device) {
+        setDeviceHint(r.hint);
+        return toast.error("No fingerprint scanner found", { description: r.hint });
+      }
+      d = r.device;
       setDevice(d);
     }
     setScanning(true);
@@ -247,20 +252,34 @@ function AepsPage() {
         )}
 
         {/* Scanner */}
-        <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-soft">
-          <Usb className={`h-5 w-5 ${device ? "text-emerald-600" : "text-muted-foreground"}`} />
-          <div className="flex-1 min-w-[180px]">
-            <p className="text-sm font-semibold">{device ? "Scanner connected" : "Fingerprint scanner"}</p>
-            <p className="text-xs text-muted-foreground">{device ? (device.info || `127.0.0.1:${device.port}`) : "Mantra, Morpho, Startek and other UIDAI-registered devices"}</p>
+        <div className="rounded-2xl border border-border bg-card p-4 shadow-soft">
+          <div className="flex flex-wrap items-center gap-3">
+            <Usb className={`h-5 w-5 ${device ? "text-emerald-600" : "text-muted-foreground"}`} />
+            <div className="flex-1 min-w-[180px]">
+              <p className="text-sm font-semibold">{device ? "Scanner connected" : "Fingerprint scanner"}</p>
+              <p className="text-xs text-muted-foreground">{device ? (device.info || `127.0.0.1:${device.port}`) : "Mantra, Morpho, Startek and other UIDAI-registered devices"}</p>
+            </div>
+            {pid && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-1 text-[11px] font-bold text-emerald-700">
+                <CheckCircle2 className="h-3 w-3" /> Captured{quality != null ? ` · quality ${quality}` : ""}
+              </span>
+            )}
+            <button onClick={connect} disabled={scanning} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-9 text-xs font-semibold hover:bg-muted disabled:opacity-50">
+              {scanning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />} Detect device
+            </button>
           </div>
-          {pid && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-1 text-[11px] font-bold text-emerald-700">
-              <CheckCircle2 className="h-3 w-3" /> Captured{quality != null ? ` · quality ${quality}` : ""}
-            </span>
+
+          {!device && deviceHint && (
+            <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-900">
+              <p className="flex items-start gap-1.5 font-semibold"><AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" /> {deviceHint}</p>
+              <p className="mt-2 font-semibold">To use AEPS you need:</p>
+              <ol className="mt-1 list-decimal space-y-0.5 pl-4">
+                <li>A UIDAI-registered fingerprint scanner (Mantra MFS100, Morpho MSO 1300, Startek FM220 or similar), plugged in.</li>
+                <li>That device's <b>RD service</b> installed and running, with a valid (unexpired) RD licence.</li>
+                <li>Google Chrome or Microsoft Edge — other browsers block the connection to the scanner.</li>
+              </ol>
+            </div>
           )}
-          <button onClick={connect} disabled={scanning} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-9 text-xs font-semibold hover:bg-muted disabled:opacity-50">
-            {scanning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />} Detect device
-          </button>
         </div>
 
         {/* Transaction */}
