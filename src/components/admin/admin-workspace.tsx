@@ -59,6 +59,7 @@ import { CatalogManager } from "@/components/admin/catalog-manager";
 import { ApplicationLedger } from "@/components/admin/application-ledger";
 import { WalletAdmin } from "@/components/admin/wallet-admin";
 import { WithdrawalsAdmin } from "@/components/admin/withdrawals-admin";
+import { AepsAdmin } from "@/components/admin/aeps-admin";
 import { SupportAdmin } from "@/components/admin/support-admin";
 import { LiveChatAdmin } from "@/components/admin/live-chat-admin";
 import { ServiceApplicationsView } from "@/components/admin/service-applications-view";
@@ -158,6 +159,7 @@ const NAVIGATION: NavGroup[] = [
       { label: "Wallet & Top-ups", icon: Wallet },
       { label: "Razorpay Payments", icon: WalletCards },
       { label: "Withdrawals", icon: WalletCards },
+      { label: "AEPS Banking", icon: Landmark },
       { label: "Risk & Fraud", icon: ShieldCheck, badge: "8" },
     ],
   },
@@ -1144,6 +1146,8 @@ export function AdminWorkspace() {
               <ApplicationLedger />
             ) : active === "Wallet & Top-ups" ? (
               <WalletAdmin allowMainRecharge />
+            ) : active === "AEPS Banking" ? (
+              <AepsAdmin />
             ) : active === "Withdrawals" ? (
               <WithdrawalsAdmin allowWindowConfig />
             ) : active === "Accountant Operations" ? (
