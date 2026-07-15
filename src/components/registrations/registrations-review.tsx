@@ -84,13 +84,14 @@ const TAB_LABEL: Record<string, string> = {
   approved: "Approved",
   rejected: "Rejected",
 };
-// A registration is "awaiting requested documents" when at least one re-requested
-// doc has not yet been re-uploaded.
-const isDocsPending = (r: { doc_request_keys: string[] | null; doc_reuploaded_keys: string[] | null }) => {
+// Any registration for which documents were ever re-requested.
+const hasDocRequest = (r: { doc_request_keys: string[] | null }) =>
+  Array.isArray(r.doc_request_keys) && r.doc_request_keys.length > 0;
+// ...and how many of those are still awaited (not yet re-uploaded).
+const docsPendingCount = (r: { doc_request_keys: string[] | null; doc_reuploaded_keys: string[] | null }) => {
   const reqd = Array.isArray(r.doc_request_keys) ? r.doc_request_keys : [];
-  if (reqd.length === 0) return false;
   const reup = Array.isArray(r.doc_reuploaded_keys) ? r.doc_reuploaded_keys : [];
-  return reqd.some((k) => !reup.includes(k));
+  return reqd.filter((k) => !reup.includes(k)).length;
 };
 const PRIMARY_TAB: Record<string, string> = {
   accountant: "accountant_review",
@@ -273,8 +274,8 @@ export function RegistrationsReview() {
 
   const filtered = useMemo(() => {
     return rows
-      .filter((r) => (tab === "docs_requested" ? isDocsPending(r) : r.status === tab))
-      .filter((r) => !(role === "qc" && r.status === "accountant_review"))
+      .filter((r) => (tab === "docs_requested" ? hasDocRequest(r) : r.status === tab))
+      .filter((r) => tab === "docs_requested" || !(role === "qc" && r.status === "accountant_review"))
       .filter((r) => (typeFilter === "all" ? true : (r.registration_type || "new") === typeFilter))
       .filter((r) => {
         if (!fromDate && !toDate) return true;
@@ -293,7 +294,9 @@ export function RegistrationsReview() {
           (r.mobile ?? "").includes(q) ||
           (r.email ?? "").toLowerCase().includes(q)
         );
-      });
+      })
+      // In the Requested Documents tab, put still-awaited applications first.
+      .sort((a, b) => (tab === "docs_requested" ? (docsPendingCount(b) > 0 ? 1 : 0) - (docsPendingCount(a) > 0 ? 1 : 0) : 0));
   }, [rows, tab, query, typeFilter]);
 
   async function run(
@@ -543,7 +546,7 @@ export function RegistrationsReview() {
             {TAB_LABEL[t]}{" "}
             {(() => {
               const c = t === "docs_requested"
-                ? rows.filter(isDocsPending).length
+                ? rows.filter(hasDocRequest).length
                 : rows.filter((r) => r.status === t).length;
               return c ? `(${c})` : "";
             })()}
