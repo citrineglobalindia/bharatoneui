@@ -387,6 +387,51 @@ function ReviewPage() {
           </div>
         </div>
 
+        {/* Re-requested documents — visible to QC/Admin so they know exactly what was asked for */}
+        {(() => {
+          const reqd: string[] = Array.isArray(reg.doc_request_keys) ? reg.doc_request_keys : [];
+          if (reqd.length === 0) return null;
+          const reup: string[] = Array.isArray(reg.doc_reuploaded_keys) ? reg.doc_reuploaded_keys : [];
+          const labelOf = (k: string) => DOC_KEYS.find((d) => d.key === k)?.label ?? k;
+          const pending = reqd.filter((k) => !reup.includes(k));
+          const reqAt = reg.doc_request_at ? new Date(reg.doc_request_at).toLocaleString("en-IN") : null;
+          return (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-5 shadow-soft">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <p className="flex items-center gap-2 text-sm font-bold text-amber-900">
+                  <span className="grid h-6 w-6 place-items-center rounded-lg bg-amber-200 text-amber-800"><FileText className="h-4 w-4" /></span>
+                  Documents re-requested from retailer
+                </p>
+                <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${pending.length === 0 ? "bg-emerald-100 text-emerald-700" : "bg-amber-200 text-amber-800"}`}>
+                  {pending.length === 0 ? "All re-uploaded" : `${pending.length} of ${reqd.length} pending`}
+                </span>
+              </div>
+              {reqAt && <p className="mb-2 text-xs text-muted-foreground">Requested on {reqAt}{reg.reviewed_by ? "" : ""}.</p>}
+              {reg.doc_request_note && (
+                <p className="mb-3 rounded-lg border border-amber-200 bg-white/70 px-3 py-2 text-sm text-amber-900">
+                  <span className="font-semibold">Reason / message:</span> {reg.doc_request_note}
+                </p>
+              )}
+              <ul className="grid gap-1.5 sm:grid-cols-2">
+                {reqd.map((k) => {
+                  const done = reup.includes(k);
+                  return (
+                    <li key={k} className="flex items-center gap-2 rounded-lg border border-amber-200 bg-white/70 px-3 py-2 text-sm">
+                      {done
+                        ? <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+                        : <span className="h-4 w-4 shrink-0 rounded-full border-2 border-amber-400" />}
+                      <span className={done ? "text-muted-foreground" : "font-medium text-amber-900"}>{labelOf(k)}</span>
+                      <span className={`ml-auto rounded-full px-2 py-0.5 text-[10px] font-bold ${done ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+                        {done ? "Re-uploaded" : "Awaiting"}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          );
+        })()}
+
         {/* KYC documents */}
         <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">

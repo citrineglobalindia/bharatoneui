@@ -68,6 +68,10 @@ export type RegRow = {
   shop_photo_path: string | null;
   selfie_path: string | null;
   payment_screenshot_path: string | null;
+  doc_request_keys: string[] | null;
+  doc_reuploaded_keys: string[] | null;
+  doc_request_note: string | null;
+  doc_request_at: string | null;
   created_at: string;
 };
 
@@ -224,7 +228,7 @@ export function RegistrationsReview() {
         supabase
           .from("retailer_registrations")
           .select(
-            "id, application_id, registration_type, jsko_id, username, first_name, middle_name, surname, shop_name, email, mobile, district, taluk, status, accountant_decision, rejection_reason, payment_verified, qc_verified, payment_amount, payment_utr, pan_doc_path, aadhaar_doc_path, shop_photo_path, selfie_path, payment_screenshot_path, created_at",
+            "id, application_id, registration_type, jsko_id, username, first_name, middle_name, surname, shop_name, email, mobile, district, taluk, status, accountant_decision, rejection_reason, payment_verified, qc_verified, payment_amount, payment_utr, pan_doc_path, aadhaar_doc_path, shop_photo_path, selfie_path, payment_screenshot_path, doc_request_keys, doc_reuploaded_keys, doc_request_note, doc_request_at, created_at",
           )
           .order("created_at", { ascending: false }),
       );
@@ -723,6 +727,20 @@ export function RegistrationsReview() {
                     >
                       {r.status.replace("_", " ")}
                     </span>
+                    {(() => {
+                      const reqd: string[] = Array.isArray(r.doc_request_keys) ? r.doc_request_keys : [];
+                      if (reqd.length === 0) return null;
+                      const reup: string[] = Array.isArray(r.doc_reuploaded_keys) ? r.doc_reuploaded_keys : [];
+                      const pending = reqd.filter((k) => !reup.includes(k)).length;
+                      return (
+                        <div className="mt-1">
+                          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${pending === 0 ? "bg-sky-100 text-sky-700" : "bg-amber-100 text-amber-700"}`} title={`Re-requested: ${reqd.join(", ")}`}>
+                            <FileText className="h-3 w-3" />
+                            {pending === 0 ? `${reqd.length} doc${reqd.length > 1 ? "s" : ""} re-uploaded` : `${pending}/${reqd.length} doc${reqd.length > 1 ? "s" : ""} awaited`}
+                          </span>
+                        </div>
+                      );
+                    })()}
                   </td>
                   <td className="sticky right-0 z-10 bg-card px-3 py-3 shadow-[-8px_0_8px_-8px_rgba(0,0,0,0.15)]">
                     <div className="flex flex-col items-end gap-1.5">
