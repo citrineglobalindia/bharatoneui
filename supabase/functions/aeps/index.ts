@@ -192,31 +192,30 @@ async function ekoPing() {
     };
   }
   const { headers } = await ekoAuth();
-  const url = `${EKO_BASE}/user/balance?initiator_id=${encodeURIComponent(EKO_INITIATOR_ID)}`;
-  const res = await fetch(url, { method: "GET", headers });
-  const text = await res.text();
-  let data: any = null;
-  try { data = JSON.parse(text); } catch { /* not JSON */ }
-
-  // A signature rejection comes back as HTTP 401/403 or an "invalid" message.
-  const authRejected = res.status === 401 || res.status === 403 ||
-    /invalid.*(developer|secret|signature|key)|unauthor/i.test(text);
-
-  if (authRejected) {
-    return { ok: false, env: EKO_ENV, http: res.status,
-      error: "Eko rejected the credentials — check EKO_DEVELOPER_KEY and EKO_AUTH_KEY.",
-      detail: (data?.message ?? text).toString().slice(0, 300) };
+  const id = encodeURIComponent(EKO_INITIATOR_ID);
+  // Probe auth-only GET endpoints; the signature is validated by Eko's auth layer
+  // regardless of the business result.
+  const probes = [
+    { label: "balance", url: `${EKO_BASE}/user/account/balance?initiator_id=${id}&customer_id_type=mobile_number&customer_id=${id}` },
+    { label: "transaction_inquiry", url: `${EKO_BASE}/transactions/PINGCHK000?initiator_id=${id}` },
+  ];
+  const attempts: any[] = [];
+  for (const p of probes) {
+    const res = await fetch(p.url, { method: "GET", headers });
+    const text = await res.text();
+    let data: any = null;
+    try { data = JSON.parse(text); } catch { /* not JSON */ }
+    const msg = (data?.message ?? text).toString();
+    attempts.push({ probe: p.label, http: res.status, message: msg.slice(0, 160) });
+    if (res.status === 401 || res.status === 403 || /invalid.*(developer|secret|signature|key)|unauthor|not.*whitelist/i.test(text)) {
+      return { ok: false, env: EKO_ENV, accepted: false, error: "Eko REJECTED the credentials — check EKO_DEVELOPER_KEY and EKO_AUTH_KEY.", via: p.label, detail: msg.slice(0, 300) };
+    }
+    // A structured Eko business reply means the signature passed the auth layer.
+    if (data && (data.response_status_id !== undefined || /transaction|not found|param|invalid request/i.test(msg))) {
+      return { ok: true, env: EKO_ENV, accepted: true, via: p.label, message: msg.slice(0, 200), response_status_id: data.response_status_id ?? null, attempts };
+    }
   }
-  // Any structured JSON reply means the signature passed Eko's auth layer, even if
-  // the business call then complains (e.g. balance not available on this account).
-  return {
-    ok: !!data,
-    env: EKO_ENV,
-    http: res.status,
-    accepted: !!data,
-    message: data ? ekoMsg(data) : text.slice(0, 200),
-    response_status_id: data?.response_status_id ?? null,
-  };
+  return { ok: false, env: EKO_ENV, accepted: null, message: "Reached Eko but could not confirm the signature from these endpoints. The first onboarding call will confirm.", attempts };
 }
 
 // Never persist raw biometrics or the full Aadhaar.
