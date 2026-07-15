@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import {
   ShoppingBag, ShoppingCart, Search, Loader2, RefreshCw, Plus, Minus, Trash2,
   Package, Truck, CheckCircle2, IndianRupee, Tag, X, ChevronRight, Wallet,
+  ArrowLeft, Star, ShieldCheck, Zap, BadgeCheck, ChevronDown,
 } from "lucide-react";
 import { RetailerShell } from "@/components/retailer/retailer-shell";
 import { PageHeader } from "@/components/retailer/page-header";
@@ -17,10 +18,10 @@ export const Route = createFileRoute("/estore")({
 
 type Cat = { id: string; parent_id: string | null; name: string; sort_order: number };
 type Product = {
-  id: string; category_id: string | null; name: string; brand: string | null; description: string | null;
-  image_paths: string[]; mrp: number; offer_price: number | null; selling_price: number;
-  gst_rate: number; retailer_margin: number; stock_qty: number; low_stock_at: number;
-  is_exclusive: boolean; featured: boolean;
+  id: string; category_id: string | null; name: string; brand: string | null; sku: string | null; hsn: string | null;
+  description: string | null; image_paths: string[]; mrp: number; offer_price: number | null; selling_price: number;
+  gst_rate: number; retailer_margin: number; distributor_commission: number; bharatone_commission: number;
+  stock_qty: number; low_stock_at: number; is_exclusive: boolean; featured: boolean; created_at?: string;
 };
 type Order = {
   id: string; order_no: string; status: string; payment_status: string; total: number;
@@ -56,6 +57,8 @@ function EstorePage() {
   const [topCat, setTopCat] = useState<string | null>(null);
   const [subCat, setSubCat] = useState<string | null>(null);
   const [q, setQ] = useState("");
+  const [sort, setSort] = useState<"popular" | "price_asc" | "price_desc" | "discount">("popular");
+  const [detail, setDetail] = useState<Product | null>(null);
   const [cart, setCart] = useState<CartLine[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [checkingOut, setCheckingOut] = useState(false);
@@ -80,27 +83,42 @@ function EstorePage() {
   const topCats = useMemo(() => cats.filter((c) => !c.parent_id), [cats]);
   const subCats = useMemo(() => (topCat ? cats.filter((c) => c.parent_id === topCat) : []), [cats, topCat]);
 
+  const discountOf = (p: Product) => (p.mrp > priceOf(p) ? Math.round((1 - priceOf(p) / p.mrp) * 100) : 0);
+  const featured = useMemo(() => products.filter((p) => p.featured && p.stock_qty > 0).slice(0, 8), [products]);
+
   const shown = useMemo(() => {
     const s = q.trim().toLowerCase();
-    return products.filter((p) => {
+    const list = products.filter((p) => {
       if (subCat) { if (p.category_id !== subCat) return false; }
       else if (topCat) { const subIds = cats.filter((c) => c.parent_id === topCat).map((c) => c.id); if (!subIds.includes(p.category_id ?? "")) return false; }
       if (s && !`${p.name} ${p.brand ?? ""} ${p.description ?? ""}`.toLowerCase().includes(s)) return false;
       return true;
     });
-  }, [products, topCat, subCat, q, cats]);
+    const by = [...list];
+    if (sort === "price_asc") by.sort((a, b) => priceOf(a) - priceOf(b));
+    else if (sort === "price_desc") by.sort((a, b) => priceOf(b) - priceOf(a));
+    else if (sort === "discount") by.sort((a, b) => discountOf(b) - discountOf(a));
+    return by;
+  }, [products, topCat, subCat, q, cats, sort]);
 
-  const addToCart = (p: Product) => {
+  const related = useMemo(() => {
+    if (!detail) return [] as Product[];
+    return products.filter((p) => p.id !== detail.id && p.category_id === detail.category_id).slice(0, 6);
+  }, [detail, products]);
+  const cartQtyOf = (id: string) => cart.find((l) => l.product.id === id)?.qty ?? 0;
+
+  const addToCart = (p: Product, n = 1) => {
     setCart((c) => {
       const ex = c.find((l) => l.product.id === p.id);
-      if (ex) {
-        if (ex.qty >= p.stock_qty) { toast.error("No more stock"); return c; }
-        return c.map((l) => l.product.id === p.id ? { ...l, qty: l.qty + 1 } : l);
-      }
-      return [...c, { product: p, qty: 1 }];
+      const have = ex?.qty ?? 0;
+      if (have >= p.stock_qty) { toast.error("No more stock"); return c; }
+      const want = Math.min(have + n, p.stock_qty);
+      if (ex) return c.map((l) => l.product.id === p.id ? { ...l, qty: want } : l);
+      return [...c, { product: p, qty: want }];
     });
-    toast.success("Added to cart");
+    toast.success(`Added to cart${n > 1 ? ` · ${n} units` : ""}`);
   };
+  const buyNow = (p: Product, n = 1) => { addToCart(p, n); setDetail(null); setCartOpen(true); };
   const setQty = (id: string, qty: number) => setCart((c) => c.flatMap((l) => l.product.id === id ? (qty <= 0 ? [] : [{ ...l, qty: Math.min(qty, l.product.stock_qty) }]) : [l]));
 
   const cartCount = cart.reduce((a, l) => a + l.qty, 0);
@@ -206,6 +224,30 @@ function EstorePage() {
               </div>
             )}
 
+            {/* Featured strip */}
+            {!topCat && !q.trim() && featured.length > 0 && (
+              <div>
+                <div className="mb-2 flex items-center gap-2"><Zap className="h-4 w-4 text-saffron" /><p className="text-sm font-bold">Featured picks</p></div>
+                <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
+                  {featured.map((p) => {
+                    const price = priceOf(p); const off = discountOf(p);
+                    return (
+                      <button key={p.id} onClick={() => setDetail(p)} className="group w-40 shrink-0 overflow-hidden rounded-2xl border border-border bg-card text-left shadow-soft transition hover:-translate-y-0.5 hover:shadow-elev">
+                        <div className="relative aspect-square bg-muted/40">
+                          {p.image_paths?.[0] ? <img src={imgUrl(p.image_paths[0])} className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center text-muted-foreground"><Package className="h-8 w-8" /></div>}
+                          {off > 0 && <span className="absolute right-1.5 top-1.5 rounded-full bg-rose-600 px-1.5 py-0.5 text-[9px] font-bold text-white">{off}% OFF</span>}
+                        </div>
+                        <div className="p-2">
+                          <p className="line-clamp-1 text-xs font-semibold">{p.name}</p>
+                          <p className="text-sm font-extrabold">{inr(price)}</p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Selected category → breadcrumb + subcategory chips */}
             {topCat && (
               <div className="rounded-2xl border border-border bg-card p-3 shadow-soft">
@@ -236,41 +278,65 @@ function EstorePage() {
                 {(topCat || subCat || q) && <button onClick={() => { setTopCat(null); setSubCat(null); setQ(""); }} className="mt-4 rounded-lg bg-india-green px-4 h-9 text-xs font-semibold text-white">Browse all categories</button>}
               </div>
             ) : (
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {shown.map((p) => {
-                  const price = priceOf(p);
-                  const off = p.mrp > price ? Math.round((1 - price / p.mrp) * 100) : 0;
-                  const out = p.stock_qty <= 0;
-                  return (
-                    <div key={p.id} className="flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-soft">
-                      <div className="relative aspect-square bg-muted/40">
-                        {p.image_paths?.[0]
-                          ? <img src={imgUrl(p.image_paths[0])} alt={p.name} className="h-full w-full object-cover" />
-                          : <div className="grid h-full place-items-center text-muted-foreground"><Package className="h-10 w-10" /></div>}
-                        {p.is_exclusive && <span className="absolute left-2 top-2 rounded-full bg-saffron px-2 py-0.5 text-[10px] font-bold text-white">Exclusive</span>}
-                        {off > 0 && <span className="absolute right-2 top-2 rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-bold text-white">{off}% OFF</span>}
-                      </div>
-                      <div className="flex flex-1 flex-col p-3">
-                        {p.brand && <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{p.brand}</p>}
-                        <p className="line-clamp-2 text-sm font-semibold">{p.name}</p>
-                        <div className="mt-1 flex items-baseline gap-2">
-                          <span className="text-base font-extrabold">{inr(price)}</span>
-                          {p.mrp > price && <span className="text-xs text-muted-foreground line-through">{inr(p.mrp)}</span>}
+              <>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-semibold text-muted-foreground">{shown.length} product{shown.length !== 1 ? "s" : ""}</p>
+                  <label className="relative inline-flex items-center">
+                    <select value={sort} onChange={(e) => setSort(e.target.value as any)} className="h-8 appearance-none rounded-lg border border-border bg-card pl-3 pr-8 text-xs font-semibold outline-none">
+                      <option value="popular">Sort: Featured</option>
+                      <option value="price_asc">Price: Low to High</option>
+                      <option value="price_desc">Price: High to Low</option>
+                      <option value="discount">Biggest Discount</option>
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-2 h-4 w-4 text-muted-foreground" />
+                  </label>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {shown.map((p) => {
+                    const price = priceOf(p);
+                    const off = p.mrp > price ? Math.round((1 - price / p.mrp) * 100) : 0;
+                    const out = p.stock_qty <= 0;
+                    const inCart = cartQtyOf(p.id);
+                    return (
+                      <div key={p.id} className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-soft transition hover:-translate-y-0.5 hover:shadow-elev">
+                        <button onClick={() => setDetail(p)} className="relative block aspect-square bg-muted/40 text-left">
+                          {p.image_paths?.[0]
+                            ? <img src={imgUrl(p.image_paths[0])} alt={p.name} className="h-full w-full object-cover transition group-hover:scale-[1.03]" />
+                            : <div className="grid h-full place-items-center text-muted-foreground"><Package className="h-10 w-10" /></div>}
+                          {p.is_exclusive && <span className="absolute left-2 top-2 rounded-full bg-saffron px-2 py-0.5 text-[10px] font-bold text-white">Exclusive</span>}
+                          {off > 0 && <span className="absolute right-2 top-2 rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-bold text-white">{off}% OFF</span>}
+                          {out && <span className="absolute inset-0 grid place-items-center bg-white/60 text-sm font-bold text-muted-foreground">Out of stock</span>}
+                        </button>
+                        <div className="flex flex-1 flex-col p-3">
+                          {p.brand && <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{p.brand}</p>}
+                          <button onClick={() => setDetail(p)} className="line-clamp-2 text-left text-sm font-semibold hover:text-india-green">{p.name}</button>
+                          <div className="mt-1 flex items-baseline gap-2">
+                            <span className="text-base font-extrabold">{inr(price)}</span>
+                            {p.mrp > price && <span className="text-xs text-muted-foreground line-through">{inr(p.mrp)}</span>}
+                          </div>
+                          {p.retailer_margin > 0 && <p className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600"><Tag className="h-3 w-3" /> You earn {inr(p.retailer_margin)}/unit</p>}
+                          <div className="mt-auto pt-2">
+                            {out ? (
+                              <button disabled className="w-full rounded-lg bg-muted px-3 h-9 text-xs font-semibold text-muted-foreground">Out of stock</button>
+                            ) : inCart > 0 ? (
+                              <div className="flex items-center gap-2">
+                                <div className="flex flex-1 items-center justify-between rounded-lg border border-india-green">
+                                  <button onClick={() => setQty(p.id, inCart - 1)} className="grid h-9 w-9 place-items-center text-india-green"><Minus className="h-4 w-4" /></button>
+                                  <span className="text-sm font-bold text-india-green">{inCart}</span>
+                                  <button onClick={() => setQty(p.id, inCart + 1)} className="grid h-9 w-9 place-items-center text-india-green"><Plus className="h-4 w-4" /></button>
+                                </div>
+                              </div>
+                            ) : (
+                              <button onClick={() => addToCart(p)} className="w-full rounded-lg bg-india-green px-3 h-9 text-xs font-semibold text-white hover:bg-india-green/90">Add to cart</button>
+                            )}
+                            {!out && p.stock_qty <= p.low_stock_at && <p className="mt-1 text-center text-[10px] font-semibold text-amber-600">Only {p.stock_qty} left</p>}
+                          </div>
                         </div>
-                        {p.retailer_margin > 0 && <p className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600"><Tag className="h-3 w-3" /> You earn {inr(p.retailer_margin)}/unit</p>}
-                        <div className="mt-auto pt-2">
-                          {out ? (
-                            <button disabled className="w-full rounded-lg bg-muted px-3 h-9 text-xs font-semibold text-muted-foreground">Out of stock</button>
-                          ) : (
-                            <button onClick={() => addToCart(p)} className="w-full rounded-lg bg-india-green px-3 h-9 text-xs font-semibold text-white hover:bg-india-green/90">Add to cart</button>
-                          )}
-                          {!out && p.stock_qty <= p.low_stock_at && <p className="mt-1 text-center text-[10px] font-semibold text-amber-600">Only {p.stock_qty} left</p>}
-                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              </>
             )}
           </>
         )}
@@ -314,8 +380,23 @@ function EstorePage() {
         )}
       </div>
 
+      {/* Product detail */}
+      {detail && (
+        <ProductDetail
+          p={detail}
+          related={related}
+          inCart={cartQtyOf(detail.id)}
+          cartCount={cartCount}
+          onClose={() => setDetail(null)}
+          onAdd={(n) => addToCart(detail, n)}
+          onBuy={(n) => buyNow(detail, n)}
+          onOpen={(pp) => setDetail(pp)}
+          onOpenCart={() => { setDetail(null); setCartOpen(true); }}
+        />
+      )}
+
       {/* Cart drawer */}
-      {cartOpen && (
+      {cartOpen && !detail && (
         <div className="fixed inset-0 z-50 flex justify-end bg-black/40" onClick={() => setCartOpen(false)}>
           <div className="flex h-full w-full max-w-md flex-col bg-card shadow-elev" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-border p-4">
@@ -375,5 +456,159 @@ function EstorePage() {
         </div>
       )}
     </RetailerShell>
+  );
+}
+
+// ---------------------------------------------------------------- product detail
+function ProductDetail({ p, related, inCart, cartCount, onClose, onAdd, onBuy, onOpen, onOpenCart }: {
+  p: Product; related: Product[]; inCart: number; cartCount: number;
+  onClose: () => void; onAdd: (n: number) => void; onBuy: (n: number) => void;
+  onOpen: (p: Product) => void; onOpenCart: () => void;
+}) {
+  const [img, setImg] = useState(0);
+  const [qty, setQty] = useState(1);
+  useEffect(() => { setImg(0); setQty(1); window.scrollTo?.({ top: 0 }); }, [p.id]);
+  const price = priceOf(p);
+  const off = p.mrp > price ? Math.round((1 - price / p.mrp) * 100) : 0;
+  const out = p.stock_qty <= 0;
+  const low = !out && p.stock_qty <= p.low_stock_at;
+  const maxQty = Math.max(1, p.stock_qty);
+  const imgs = p.image_paths?.length ? p.image_paths : [];
+
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-background">
+      {/* top bar */}
+      <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-card/95 px-4 py-3 backdrop-blur">
+        <button onClick={onClose} className="inline-flex items-center gap-1.5 text-sm font-semibold hover:text-india-green"><ArrowLeft className="h-4 w-4" /> Back to shop</button>
+        <button onClick={onOpenCart} className="relative inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-9 text-sm font-semibold hover:bg-muted">
+          <ShoppingCart className="h-4 w-4" /> Cart
+          {cartCount > 0 && <span className="absolute -right-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-saffron px-1 text-[11px] font-bold text-white">{cartCount}</span>}
+        </button>
+      </div>
+
+      <div className="mx-auto max-w-6xl px-4 py-5">
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* gallery */}
+          <div className="lg:sticky lg:top-20 lg:self-start">
+            <div className="relative aspect-square overflow-hidden rounded-2xl border border-border bg-muted/30">
+              {imgs[img]
+                ? <img src={imgUrl(imgs[img])} alt={p.name} className="h-full w-full object-contain" />
+                : <div className="grid h-full place-items-center text-muted-foreground"><Package className="h-16 w-16" /></div>}
+              {p.is_exclusive && <span className="absolute left-3 top-3 rounded-full bg-saffron px-2.5 py-1 text-[11px] font-bold text-white">BharatOne Exclusive</span>}
+              {off > 0 && <span className="absolute right-3 top-3 rounded-full bg-rose-600 px-2.5 py-1 text-[11px] font-bold text-white">{off}% OFF</span>}
+            </div>
+            {imgs.length > 1 && (
+              <div className="mt-3 flex gap-2 overflow-x-auto">
+                {imgs.map((ip, i) => (
+                  <button key={i} onClick={() => setImg(i)} className={`h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 ${i === img ? "border-india-green" : "border-border"}`}>
+                    <img src={imgUrl(ip)} className="h-full w-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* info */}
+          <div>
+            {p.brand && <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">{p.brand}</p>}
+            <h1 className="mt-0.5 font-display text-xl font-extrabold leading-snug sm:text-2xl">{p.name}</h1>
+            <div className="mt-1 flex items-center gap-1 text-amber-500">
+              {[0, 1, 2, 3, 4].map((i) => <Star key={i} className="h-4 w-4 fill-current" />)}
+              <span className="ml-1 text-xs font-semibold text-muted-foreground">Retailer favourite</span>
+            </div>
+
+            <div className="mt-3 flex items-end gap-3">
+              <span className="text-3xl font-extrabold">{inr(price)}</span>
+              {p.mrp > price && <span className="pb-1 text-base text-muted-foreground line-through">{inr(p.mrp)}</span>}
+              {off > 0 && <span className="pb-1 text-sm font-bold text-emerald-600">{off}% off</span>}
+            </div>
+            <p className="text-[11px] text-muted-foreground">Inclusive of {p.gst_rate || 0}% GST</p>
+
+            {p.retailer_margin > 0 && (
+              <div className="mt-3 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-emerald-700">
+                <Tag className="h-5 w-5" />
+                <div><p className="text-sm font-bold">You earn {inr(p.retailer_margin)} per unit</p><p className="text-[11px]">Margin credited to your wallet on delivery</p></div>
+              </div>
+            )}
+
+            {/* stock + qty */}
+            <div className="mt-4">
+              {out ? <p className="text-sm font-bold text-rose-600">Out of stock</p>
+                : <p className={`text-sm font-semibold ${low ? "text-amber-600" : "text-emerald-600"}`}>{low ? `Hurry — only ${p.stock_qty} left` : "In stock"}</p>}
+            </div>
+            {!out && (
+              <div className="mt-2 flex items-center gap-3">
+                <span className="text-sm font-semibold">Qty</span>
+                <div className="flex items-center rounded-lg border border-border">
+                  <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="grid h-10 w-10 place-items-center hover:bg-muted"><Minus className="h-4 w-4" /></button>
+                  <span className="w-10 text-center text-sm font-bold">{qty}</span>
+                  <button onClick={() => setQty((q) => Math.min(maxQty, q + 1))} className="grid h-10 w-10 place-items-center hover:bg-muted"><Plus className="h-4 w-4" /></button>
+                </div>
+              </div>
+            )}
+
+            {/* actions */}
+            <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+              <button disabled={out} onClick={() => onAdd(qty)} className="flex-1 rounded-xl border-2 border-india-green px-4 h-12 text-sm font-bold text-india-green hover:bg-india-green/5 disabled:opacity-40">
+                <ShoppingCart className="mr-1 inline h-4 w-4" /> {inCart > 0 ? `In cart (${inCart}) · Add more` : "Add to cart"}
+              </button>
+              <button disabled={out} onClick={() => onBuy(qty)} className="flex-1 rounded-xl bg-saffron-gradient px-4 h-12 text-sm font-bold text-white shadow-elev disabled:opacity-40">
+                <Zap className="mr-1 inline h-4 w-4" /> Buy now
+              </button>
+            </div>
+
+            {/* trust badges */}
+            <div className="mt-4 grid grid-cols-3 gap-2 text-center text-[11px]">
+              <div className="rounded-xl border border-border p-2"><ShieldCheck className="mx-auto h-5 w-5 text-india-green" /><p className="mt-1 font-semibold">Secure payment</p></div>
+              <div className="rounded-xl border border-border p-2"><Truck className="mx-auto h-5 w-5 text-india-green" /><p className="mt-1 font-semibold">Doorstep delivery</p></div>
+              <div className="rounded-xl border border-border p-2"><BadgeCheck className="mx-auto h-5 w-5 text-india-green" /><p className="mt-1 font-semibold">Genuine product</p></div>
+            </div>
+
+            {/* description */}
+            {p.description && (
+              <div className="mt-5">
+                <p className="mb-1 text-sm font-bold">Description</p>
+                <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{p.description}</p>
+              </div>
+            )}
+
+            {/* specs */}
+            <div className="mt-5">
+              <p className="mb-1 text-sm font-bold">Product details</p>
+              <div className="overflow-hidden rounded-xl border border-border text-sm">
+                {[["Brand", p.brand], ["SKU", p.sku], ["HSN code", p.hsn], ["GST", p.gst_rate ? `${p.gst_rate}%` : null], ["MRP", inr(p.mrp)]]
+                  .filter(([, v]) => v)
+                  .map(([k, v], i) => (
+                    <div key={k as string} className={`flex justify-between px-3 py-2 ${i % 2 ? "bg-muted/30" : ""}`}>
+                      <span className="text-muted-foreground">{k}</span><span className="font-semibold">{v as string}</span>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* related */}
+        {related.length > 0 && (
+          <div className="mt-8">
+            <p className="mb-3 text-base font-bold">You may also like</p>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+              {related.map((r) => {
+                const rp = priceOf(r); const roff = r.mrp > rp ? Math.round((1 - rp / r.mrp) * 100) : 0;
+                return (
+                  <button key={r.id} onClick={() => onOpen(r)} className="group overflow-hidden rounded-2xl border border-border bg-card text-left shadow-soft transition hover:-translate-y-0.5 hover:shadow-elev">
+                    <div className="relative aspect-square bg-muted/40">
+                      {r.image_paths?.[0] ? <img src={imgUrl(r.image_paths[0])} className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center text-muted-foreground"><Package className="h-8 w-8" /></div>}
+                      {roff > 0 && <span className="absolute right-1.5 top-1.5 rounded-full bg-rose-600 px-1.5 py-0.5 text-[9px] font-bold text-white">{roff}%</span>}
+                    </div>
+                    <div className="p-2"><p className="line-clamp-2 text-xs font-semibold">{r.name}</p><p className="text-sm font-extrabold">{inr(rp)}</p></div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
