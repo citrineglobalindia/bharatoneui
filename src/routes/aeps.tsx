@@ -65,6 +65,17 @@ function AepsPage() {
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<any>(null);
 
+  // AEPS onboarding / eKYC wizard
+  const [setupOpen, setSetupOpen] = useState(false);
+  const [obFirst, setObFirst] = useState("");
+  const [obLast, setObLast] = useState("");
+  const [obMobile, setObMobile] = useState("");
+  const [obPan, setObPan] = useState("");
+  const [otp, setOtp] = useState("");
+  const [otpRef, setOtpRef] = useState<string | null>(null);
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpVerified, setOtpVerified] = useState(false);
+
   const needsAmount = OPS.find((o) => o.key === op)?.needsAmount ?? false;
 
   const call = useCallback(async (action: string, extra: Record<string, unknown> = {}) => {
@@ -146,6 +157,61 @@ function AepsPage() {
     } finally { setBusy(false); }
   };
 
+  // --- AEPS setup wizard steps ---
+  const doOnboard = async () => {
+    if (!obFirst.trim()) return toast.error("Enter your first name");
+    if (!/^[A-Z]{5}[0-9]{4}[A-Z]$/i.test(obPan.trim())) return toast.error("Enter a valid PAN (e.g. ABCDE1234F)");
+    if (!/^\d{10}$/.test(obMobile)) return toast.error("Enter your 10-digit mobile number");
+    setBusy(true);
+    try {
+      await call("onboard", { first_name: obFirst.trim(), last_name: obLast.trim(), mobile: obMobile, pan: obPan.trim().toUpperCase() });
+      toast.success("Registered with the banking partner");
+      await load();
+    } catch (e: any) { toast.error("Registration failed", { description: e.message }); }
+    finally { setBusy(false); }
+  };
+
+  const doActivate = async () => {
+    setBusy(true);
+    try { await call("activate"); toast.success("AEPS service activated"); await load(); }
+    catch (e: any) { toast.error("Activation failed", { description: e.message }); }
+    finally { setBusy(false); }
+  };
+
+  const doSendOtp = async () => {
+    setBusy(true);
+    try {
+      const r = await call("kyc_send_otp");
+      setOtpSent(true); setOtpRef(r.otp_ref_id ?? null);
+      toast.success("OTP sent to your registered mobile");
+    } catch (e: any) { toast.error("Could not send OTP", { description: e.message }); }
+    finally { setBusy(false); }
+  };
+
+  const doVerifyOtp = async () => {
+    if (!/^\d{4,8}$/.test(otp)) return toast.error("Enter the OTP");
+    setBusy(true);
+    try {
+      await call("kyc_verify_otp", { otp, otp_ref_id: otpRef });
+      setOtpVerified(true);
+      toast.success("OTP verified — now scan your fingerprint");
+    } catch (e: any) { toast.error("OTP verification failed", { description: e.message }); }
+    finally { setBusy(false); }
+  };
+
+  const doBiometricKyc = async () => {
+    if (!pid) return toast.error("Scan your fingerprint first");
+    setBusy(true);
+    try {
+      const latlong = await getLatLong();
+      await call("kyc_biometric", { piddata: pid, latlong });
+      toast.success("Biometric eKYC complete");
+      setPid(null); setQuality(null); setOtpSent(false); setOtpVerified(false); setOtp("");
+      await load();
+    } catch (e: any) { toast.error("Biometric eKYC failed", { description: e.message }); }
+    finally { setBusy(false); }
+  };
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!/^\d{12}$/.test(aadhaar)) return toast.error("Enter the customer's 12-digit Aadhaar number");
@@ -222,17 +288,77 @@ function AepsPage() {
 
         {status?.keys_set && blocked && (
           <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
-            <p className="mb-3 flex items-center gap-2 text-sm font-bold"><ShieldCheck className="h-4 w-4 text-india-green" /> Before you can transact</p>
+            <p className="mb-3 flex items-center gap-2 text-sm font-bold"><ShieldCheck className="h-4 w-4 text-india-green" /> One-time AEPS setup</p>
             <div className="space-y-2 text-sm">
-              <Step done={status.onboarded} label="Retailer registered with the banking partner" />
-              <Step done={status.service_activated} label="AEPS service activated" />
-              <Step done={status.ekyc_done} label="One-time biometric eKYC completed" />
+              <Step done={status.onboarded} label="Register with the banking partner" />
+              <Step done={status.service_activated} label="Activate the AEPS service" />
+              <Step done={status.ekyc_done} label="One-time biometric eKYC (OTP + fingerprint)" />
               <Step done={status.daily_kyc_done} label="Today's biometric authentication" />
             </div>
+
+            {/* Step 1 — onboard */}
+            {!status.onboarded && (
+              <div className="mt-4 rounded-xl bg-muted/40 p-4">
+                <p className="mb-2 text-xs font-semibold text-muted-foreground">Step 1 — Register yourself as an AEPS agent</p>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <input value={obFirst} onChange={(e) => setObFirst(e.target.value)} placeholder="First name *" className="h-9 rounded-lg border border-border bg-background px-3 text-sm" />
+                  <input value={obLast} onChange={(e) => setObLast(e.target.value)} placeholder="Last name" className="h-9 rounded-lg border border-border bg-background px-3 text-sm" />
+                  <input value={obMobile} onChange={(e) => setObMobile(e.target.value.replace(/\D/g, ""))} maxLength={10} placeholder="Mobile number *" className="h-9 rounded-lg border border-border bg-background px-3 text-sm" />
+                  <input value={obPan} onChange={(e) => setObPan(e.target.value.toUpperCase())} maxLength={10} placeholder="PAN *" className="h-9 rounded-lg border border-border bg-background px-3 text-sm" />
+                </div>
+                <button onClick={doOnboard} disabled={busy} className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-india-green px-4 h-9 text-xs font-semibold text-white disabled:opacity-50">
+                  {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5" />} Register for AEPS
+                </button>
+              </div>
+            )}
+
+            {/* Step 2 — activate */}
+            {status.onboarded && !status.service_activated && (
+              <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl bg-muted/40 p-4">
+                <p className="flex-1 text-xs font-semibold text-muted-foreground">Step 2 — Activate the AEPS (cash-out) service on your account.</p>
+                <button onClick={doActivate} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg bg-india-green px-4 h-9 text-xs font-semibold text-white disabled:opacity-50">
+                  {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5" />} Activate AEPS
+                </button>
+              </div>
+            )}
+
+            {/* Step 3 — one-time eKYC (OTP then fingerprint) */}
+            {status.onboarded && status.service_activated && !status.ekyc_done && (
+              <div className="mt-4 rounded-xl bg-muted/40 p-4">
+                <p className="mb-2 text-xs font-semibold text-muted-foreground">Step 3 — One-time biometric eKYC</p>
+                {!otpVerified ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button onClick={doSendOtp} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 h-9 text-xs font-semibold hover:bg-muted disabled:opacity-50">
+                      {busy && !otpSent ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null} {otpSent ? "Resend OTP" : "Send OTP to my mobile"}
+                    </button>
+                    {otpSent && (
+                      <>
+                        <input value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))} maxLength={8} placeholder="Enter OTP" className="h-9 w-28 rounded-lg border border-border bg-background px-3 text-sm" />
+                        <button onClick={doVerifyOtp} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg bg-india-green px-3 h-9 text-xs font-semibold text-white disabled:opacity-50">
+                          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />} Verify OTP
+                        </button>
+                      </>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="flex-1 text-xs text-muted-foreground">OTP verified. Now place your finger on the scanner and capture.</p>
+                    <button onClick={scan} disabled={scanning} className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 h-9 text-xs font-semibold hover:bg-muted disabled:opacity-50">
+                      {scanning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Fingerprint className="h-3.5 w-3.5" />} {pid ? "Re-scan" : "Scan my finger"}
+                    </button>
+                    <button onClick={doBiometricKyc} disabled={!pid || busy} className="inline-flex items-center gap-1.5 rounded-lg bg-india-green px-3 h-9 text-xs font-semibold text-white disabled:opacity-50">
+                      {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5" />} Complete eKYC
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Step 4 — daily auth */}
             {status.onboarded && status.service_activated && status.ekyc_done && !status.daily_kyc_done && (
               <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl bg-muted/50 p-3">
                 <p className="text-xs text-muted-foreground flex-1">
-                  NPCI requires you to authenticate with your own fingerprint once each day before serving customers.
+                  Step 4 — NPCI requires you to authenticate with your own fingerprint once each day before serving customers.
                 </p>
                 <button onClick={scan} disabled={scanning} className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 h-9 text-xs font-semibold hover:bg-muted disabled:opacity-50">
                   {scanning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Fingerprint className="h-3.5 w-3.5" />} Scan my finger
@@ -242,12 +368,8 @@ function AepsPage() {
                 </button>
               </div>
             )}
-            {(!status.onboarded || !status.service_activated || !status.ekyc_done) && (
-              <p className="mt-3 text-xs text-muted-foreground">
-                Contact BharatOne support to complete your AEPS onboarding and one-time eKYC.
-              </p>
-            )}
-            {status.last_error && <p className="mt-2 text-xs text-rose-600">Last error: {status.last_error}</p>}
+
+            {status.last_error && <p className="mt-3 text-xs text-rose-600">Banking partner said: {status.last_error}</p>}
           </div>
         )}
 
