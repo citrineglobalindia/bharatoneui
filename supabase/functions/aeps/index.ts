@@ -164,8 +164,11 @@ function rsaEncryptPkcs1(message: string, spkiB64: string): string {
 // ---------------------------------------------------------------------------
 async function ekoCall(path: string, body: Record<string, unknown> | null, opts: { hash?: string; method?: string } = {}) {
   const { headers } = await ekoAuth(opts.hash);
+  const method = opts.method ?? "POST";
+  // Eko's server 415s on a Content-Type header for GET requests.
+  if (method === "GET") delete (headers as any)["Content-Type"];
   const res = await fetch(`${EKO_BASE}${path}`, {
-    method: opts.method ?? "POST",
+    method,
     headers,
     ...(body ? { body: JSON.stringify(body) } : {}),
   });
@@ -192,16 +195,19 @@ async function ekoPing() {
     };
   }
   const { headers } = await ekoAuth();
+  // Eko's Tomcat rejects a Content-Type header on a GET (415), so strip it for GETs.
+  const getHeaders = { ...headers };
+  delete (getHeaders as any)["Content-Type"];
   const id = encodeURIComponent(EKO_INITIATOR_ID);
   // Probe auth-only GET endpoints; the signature is validated by Eko's auth layer
   // regardless of the business result.
   const probes = [
-    { label: "balance", url: `${EKO_BASE}/user/account/balance?initiator_id=${id}&customer_id_type=mobile_number&customer_id=${id}` },
     { label: "transaction_inquiry", url: `${EKO_BASE}/transactions/PINGCHK000?initiator_id=${id}` },
+    { label: "balance", url: `${EKO_BASE}/user/account/balance?initiator_id=${id}&customer_id_type=mobile_number&customer_id=${id}` },
   ];
   const attempts: any[] = [];
   for (const p of probes) {
-    const res = await fetch(p.url, { method: "GET", headers });
+    const res = await fetch(p.url, { method: "GET", headers: getHeaders });
     const text = await res.text();
     let data: any = null;
     try { data = JSON.parse(text); } catch { /* not JSON */ }
