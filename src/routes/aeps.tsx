@@ -73,6 +73,8 @@ function AepsPage() {
   const [obPan, setObPan] = useState("");
   const [obDob, setObDob] = useState("");
   const [obPincode, setObPincode] = useState("");
+  const [obCity, setObCity] = useState("");
+  const [obState, setObState] = useState("");
   const [otp, setOtp] = useState("");
   const [otpRef, setOtpRef] = useState<string | null>(null);
   const [otpSent, setOtpSent] = useState(false);
@@ -177,9 +179,11 @@ function AepsPage() {
     if (!/^\d{10}$/.test(obMobile)) return toast.error("Enter your 10-digit mobile number");
     if (!obDob) return toast.error("Select your date of birth");
     if (!/^\d{6}$/.test(obPincode)) return toast.error("Enter your 6-digit shop pincode");
+    if (!obCity.trim()) return toast.error("Enter your city");
+    if (!obState.trim()) return toast.error("Enter your state");
     setBusy(true);
     try {
-      await call("onboard", { first_name: obFirst.trim(), last_name: obLast.trim(), mobile: obMobile, pan: obPan.trim().toUpperCase(), dob: obDob, pincode: obPincode });
+      await call("onboard", { first_name: obFirst.trim(), last_name: obLast.trim(), mobile: obMobile, pan: obPan.trim().toUpperCase(), dob: obDob, pincode: obPincode, city: obCity.trim(), state: obState.trim() });
       toast.success("Registered with the banking partner");
       await load();
     } catch (e: any) { toast.error("Registration failed", { description: e.message }); }

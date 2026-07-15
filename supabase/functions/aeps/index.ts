@@ -188,6 +188,20 @@ Deno.serve(async (req) => {
   if (action === "ping") {
     try { return json(await ekoPing()); } catch (e) { return json({ ok: false, error: String(e) }, 500); }
   }
+  // Diagnostic dry-run of onboard against Eko (no DB writes, no user needed).
+  if (action === "onboard_test") {
+    try {
+      const p = body.payload ?? {};
+      const uc = String(p.mobile ?? EKO_INITIATOR_ID);
+      const data = await ekoForm(`${V1}/user/onboard`, "PUT", {
+        initiator_id: EKO_INITIATOR_ID, user_code: uc, pan_number: p.pan, mobile: uc,
+        first_name: p.first_name, last_name: p.last_name ?? "", email: p.email, dob: p.dob,
+        shop_name: p.shop_name ?? p.first_name,
+        residence_address: { line: p.line ?? "NA", city: p.city ?? "NA", state: p.state ?? "NA", pincode: p.pincode ?? "000000" },
+      });
+      return json({ eko_ok: ekoOk(data), message: ekoMsg(data), raw: data });
+    } catch (e) { return json({ error: String(e) }, 500); }
+  }
 
   const userClient = createClient(SUPABASE_URL, ANON_KEY, { global: { headers: { Authorization: authHeader } } });
   const { data: u } = await userClient.auth.getUser();
