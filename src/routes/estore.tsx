@@ -32,6 +32,13 @@ type CartLine = { product: Product; qty: number };
 const inr = (n: number) => "₹" + Number(n || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 });
 const imgUrl = (p?: string) => p ? supabase.storage.from("estore").getPublicUrl(p).data.publicUrl : "";
 const priceOf = (p: Product) => (p.offer_price && p.offer_price > 0 ? p.offer_price : p.selling_price);
+const CAT_ICON: Record<string, string> = {
+  "Electronics & Gadgets": "📱", "Home Appliances": "🧺", "Mobile Accessories": "🎧", "Fashion": "👕",
+  "Beauty & Personal Care": "💄", "Grocery & FMCG": "🛒", "Healthcare & Wellness": "🩺", "Agriculture": "🌾",
+  "Automobile": "🏍️", "Home & Kitchen": "🍳", "Stationery & Office": "✏️", "Toys & Baby Care": "🧸",
+  "Books & Education": "📚", "Sports & Fitness": "🏏", "Pet Care": "🐾", "BharatOne Exclusive": "⭐",
+};
+const catIcon = (n: string) => CAT_ICON[n] ?? "🛍️";
 const STAGES = ["placed", "confirmed", "packed", "shipped", "delivered"];
 const stageTone: Record<string, string> = {
   pending_payment: "bg-amber-100 text-amber-700", placed: "bg-sky-100 text-sky-700",
@@ -71,7 +78,7 @@ function EstorePage() {
   useEffect(() => { load(); }, []);
 
   const topCats = useMemo(() => cats.filter((c) => !c.parent_id), [cats]);
-  const subCats = useMemo(() => cats.filter((c) => c.parent_id === topCat), [cats, topCat]);
+  const subCats = useMemo(() => (topCat ? cats.filter((c) => c.parent_id === topCat) : []), [cats, topCat]);
 
   const shown = useMemo(() => {
     const s = q.trim().toLowerCase();
@@ -169,32 +176,65 @@ function EstorePage() {
 
         {tab === "shop" && (
           <>
-            {/* Category rail */}
-            <div className="flex flex-wrap gap-1.5">
-              <button onClick={() => { setTopCat(null); setSubCat(null); }} className={`rounded-full px-3 h-8 text-xs font-semibold ${!topCat ? "bg-india-green text-white" : "border border-border bg-card hover:bg-muted"}`}>All</button>
-              {topCats.map((c) => (
-                <button key={c.id} onClick={() => { setTopCat(c.id); setSubCat(null); }} className={`rounded-full px-3 h-8 text-xs font-semibold ${topCat === c.id ? "bg-india-green text-white" : "border border-border bg-card hover:bg-muted"}`}>{c.name}</button>
-              ))}
+            {/* Hero banner */}
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[oklch(0.62_0.16_45)] via-[oklch(0.58_0.15_60)] to-[oklch(0.55_0.13_150)] p-6 text-white shadow-elev sm:p-8">
+              <div className="relative z-10 max-w-xl">
+                <span className="inline-flex items-center gap-1 rounded-full bg-white/20 px-3 py-1 text-xs font-bold backdrop-blur">🎉 BharatOne E-Store</span>
+                <h2 className="mt-3 font-display text-2xl font-extrabold leading-tight sm:text-3xl">Everything for your shop — at retailer prices.</h2>
+                <p className="mt-1 text-sm text-white/85">Order from 100+ categories, pay securely with Razorpay, and earn your margin on every delivery.</p>
+                <div className="relative mt-4 max-w-md">
+                  <Search className="absolute left-3.5 top-3.5 h-5 w-5 text-muted-foreground" />
+                  <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search for products, brands and more…" className="h-12 w-full rounded-xl border border-white/40 bg-white pl-11 pr-4 text-sm text-foreground shadow-soft outline-none placeholder:text-muted-foreground" />
+                </div>
+              </div>
+              <ShoppingBag className="pointer-events-none absolute -right-6 -bottom-8 h-48 w-48 text-white/10" />
             </div>
-            {subCats.length > 0 && (
-              <div className="flex flex-wrap gap-1.5">
-                <button onClick={() => setSubCat(null)} className={`rounded-full px-3 h-7 text-[11px] font-semibold ${!subCat ? "bg-muted" : "border border-border bg-card hover:bg-muted"}`}>All {topCats.find((c) => c.id === topCat)?.name}</button>
-                {subCats.map((c) => (
-                  <button key={c.id} onClick={() => setSubCat(c.id)} className={`rounded-full px-3 h-7 text-[11px] font-semibold ${subCat === c.id ? "bg-india-green text-white" : "border border-border bg-card hover:bg-muted"}`}>{c.name}</button>
-                ))}
+
+            {/* Category tiles (only when nothing selected) */}
+            {!topCat && !q.trim() && (
+              <div>
+                <p className="mb-2 text-sm font-bold">Shop by category</p>
+                <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8">
+                  {topCats.map((c) => (
+                    <button key={c.id} onClick={() => { setTopCat(c.id); setSubCat(null); }}
+                      className="group flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-card p-3 text-center shadow-soft transition hover:-translate-y-0.5 hover:border-india-green/40 hover:shadow-elev">
+                      <span className="grid h-11 w-11 place-items-center rounded-full bg-muted text-2xl transition group-hover:bg-india-green/10">{catIcon(c.name)}</span>
+                      <span className="line-clamp-2 text-[11px] font-semibold leading-tight">{c.name}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 
-            <div className="relative max-w-md">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search products…" className="h-10 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm outline-none" />
-            </div>
+            {/* Selected category → breadcrumb + subcategory chips */}
+            {topCat && (
+              <div className="rounded-2xl border border-border bg-card p-3 shadow-soft">
+                <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
+                  <button onClick={() => { setTopCat(null); setSubCat(null); }} className="text-muted-foreground hover:text-foreground">All</button>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  <span className="flex items-center gap-1">{catIcon(topCats.find((c) => c.id === topCat)?.name ?? "")} {topCats.find((c) => c.id === topCat)?.name}</span>
+                </div>
+                {subCats.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    <button onClick={() => setSubCat(null)} className={`rounded-full px-3 h-7 text-[11px] font-semibold ${!subCat ? "bg-india-green text-white" : "border border-border bg-background hover:bg-muted"}`}>All</button>
+                    {subCats.map((c) => (
+                      <button key={c.id} onClick={() => setSubCat(c.id)} className={`rounded-full px-3 h-7 text-[11px] font-semibold ${subCat === c.id ? "bg-india-green text-white" : "border border-border bg-background hover:bg-muted"}`}>{c.name}</button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Product grid */}
             {loading ? (
               <div className="py-16 text-center text-muted-foreground"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></div>
             ) : shown.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-border py-16 text-center text-sm text-muted-foreground">No products here yet. Check back soon.</div>
+              <div className="grid place-items-center rounded-3xl border border-dashed border-border bg-card/50 py-20 text-center">
+                <div className="grid h-16 w-16 place-items-center rounded-2xl bg-muted"><Package className="h-8 w-8 text-muted-foreground" /></div>
+                <p className="mt-3 text-base font-bold">No products here yet</p>
+                <p className="mt-1 max-w-sm text-sm text-muted-foreground">New products are added regularly. Try another category or check back soon.</p>
+                {(topCat || subCat || q) && <button onClick={() => { setTopCat(null); setSubCat(null); setQ(""); }} className="mt-4 rounded-lg bg-india-green px-4 h-9 text-xs font-semibold text-white">Browse all categories</button>}
+              </div>
             ) : (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {shown.map((p) => {
