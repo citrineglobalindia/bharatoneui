@@ -71,6 +71,7 @@ function AepsPage() {
   const [obLast, setObLast] = useState("");
   const [obMobile, setObMobile] = useState("");
   const [obPan, setObPan] = useState("");
+  const [obDob, setObDob] = useState("");
   const [otp, setOtp] = useState("");
   const [otpRef, setOtpRef] = useState<string | null>(null);
   const [otpSent, setOtpSent] = useState(false);
@@ -162,9 +163,10 @@ function AepsPage() {
     if (!obFirst.trim()) return toast.error("Enter your first name");
     if (!/^[A-Z]{5}[0-9]{4}[A-Z]$/i.test(obPan.trim())) return toast.error("Enter a valid PAN (e.g. ABCDE1234F)");
     if (!/^\d{10}$/.test(obMobile)) return toast.error("Enter your 10-digit mobile number");
+    if (!obDob) return toast.error("Select your date of birth");
     setBusy(true);
     try {
-      await call("onboard", { first_name: obFirst.trim(), last_name: obLast.trim(), mobile: obMobile, pan: obPan.trim().toUpperCase() });
+      await call("onboard", { first_name: obFirst.trim(), last_name: obLast.trim(), mobile: obMobile, pan: obPan.trim().toUpperCase(), dob: obDob });
       toast.success("Registered with the banking partner");
       await load();
     } catch (e: any) { toast.error("Registration failed", { description: e.message }); }
@@ -305,6 +307,9 @@ function AepsPage() {
                   <input value={obLast} onChange={(e) => setObLast(e.target.value)} placeholder="Last name" className="h-9 rounded-lg border border-border bg-background px-3 text-sm" />
                   <input value={obMobile} onChange={(e) => setObMobile(e.target.value.replace(/\D/g, ""))} maxLength={10} placeholder="Mobile number *" className="h-9 rounded-lg border border-border bg-background px-3 text-sm" />
                   <input value={obPan} onChange={(e) => setObPan(e.target.value.toUpperCase())} maxLength={10} placeholder="PAN *" className="h-9 rounded-lg border border-border bg-background px-3 text-sm" />
+                  <label className="flex items-center gap-2 text-xs text-muted-foreground">Date of birth *
+                    <input type="date" value={obDob} max={new Date().toISOString().slice(0, 10)} onChange={(e) => setObDob(e.target.value)} className="h-9 flex-1 rounded-lg border border-border bg-background px-3 text-sm" />
+                  </label>
                 </div>
                 <button onClick={doOnboard} disabled={busy} className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-india-green px-4 h-9 text-xs font-semibold text-white disabled:opacity-50">
                   {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5" />} Register for AEPS

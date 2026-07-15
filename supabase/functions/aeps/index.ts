@@ -301,26 +301,27 @@ Deno.serve(async (req) => {
     if (action === "onboard") {
       const { mobile, first_name, last_name, email, pan, dob, address, city, state, pincode, shop_name } = body;
       if (!mobile || !first_name || !pan) return json({ error: "Mobile, first name and PAN are required" }, 400);
-
-      const data = await ekoCall("/user/onboard", {
+      if (!dob) return json({ error: "Date of birth (YYYY-MM-DD) is required" }, 400);
+      // Eko uses the agent's mobile number as their unique user_code.
+      const uc = String(mobile);
+      const data = await ekoCall("/users/network/eps-agent", {
         initiator_id: EKO_INITIATOR_ID,
+        user_code: uc,
         pan_number: pan,
-        mobile: String(mobile),
+        mobile: uc,
         first_name,
         last_name: last_name ?? "",
         email: email ?? user.email ?? "",
-        dob: dob ?? "",
+        dob,
         shop_name: shop_name ?? first_name,
-        residence_address: JSON.stringify({
-          line: address ?? "", city: city ?? "", state: state ?? "", pincode: pincode ?? "",
-        }),
+        residence_address: { line: address ?? "NA", city: city ?? "NA", state: state ?? "NA", pincode: pincode ?? "000000" },
       });
       if (!ekoOk(data)) {
         await setAgent({ last_error: ekoMsg(data), raw: scrub(data) });
         return json({ error: ekoMsg(data), raw: scrub(data) }, 400);
       }
-      const code = data?.data?.user_code ?? data?.data?.usercode ?? null;
-      await setAgent({ eko_user_code: code, mobile: String(mobile), onboarded: true, last_error: null, raw: scrub(data) });
+      const code = data?.data?.user_code ?? data?.data?.usercode ?? uc;
+      await setAgent({ eko_user_code: code, mobile: uc, onboarded: true, last_error: null, raw: scrub(data) });
       return json({ ok: true, user_code: code, message: ekoMsg(data) });
     }
 
