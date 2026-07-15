@@ -75,13 +75,22 @@ export type RegRow = {
   created_at: string;
 };
 
-const TABS = ["accountant_review", "qc_review", "telecaller", "approved", "rejected"] as const;
+const TABS = ["accountant_review", "qc_review", "docs_requested", "telecaller", "approved", "rejected"] as const;
 const TAB_LABEL: Record<string, string> = {
   accountant_review: "Accountant",
   qc_review: "QC",
+  docs_requested: "Requested Documents",
   telecaller: "Telecaller",
   approved: "Approved",
   rejected: "Rejected",
+};
+// A registration is "awaiting requested documents" when at least one re-requested
+// doc has not yet been re-uploaded.
+const isDocsPending = (r: { doc_request_keys: string[] | null; doc_reuploaded_keys: string[] | null }) => {
+  const reqd = Array.isArray(r.doc_request_keys) ? r.doc_request_keys : [];
+  if (reqd.length === 0) return false;
+  const reup = Array.isArray(r.doc_reuploaded_keys) ? r.doc_reuploaded_keys : [];
+  return reqd.some((k) => !reup.includes(k));
 };
 const PRIMARY_TAB: Record<string, string> = {
   accountant: "accountant_review",
@@ -264,7 +273,7 @@ export function RegistrationsReview() {
 
   const filtered = useMemo(() => {
     return rows
-      .filter((r) => r.status === tab)
+      .filter((r) => (tab === "docs_requested" ? isDocsPending(r) : r.status === tab))
       .filter((r) => !(role === "qc" && r.status === "accountant_review"))
       .filter((r) => (typeFilter === "all" ? true : (r.registration_type || "new") === typeFilter))
       .filter((r) => {
@@ -532,9 +541,12 @@ export function RegistrationsReview() {
             className={`rounded-lg px-3 h-9 text-sm font-semibold transition ${tab === t ? "bg-india-green text-white" : "bg-muted text-foreground hover:bg-muted/70"}`}
           >
             {TAB_LABEL[t]}{" "}
-            {rows.filter((r) => r.status === t).length
-              ? `(${rows.filter((r) => r.status === t).length})`
-              : ""}
+            {(() => {
+              const c = t === "docs_requested"
+                ? rows.filter(isDocsPending).length
+                : rows.filter((r) => r.status === t).length;
+              return c ? `(${c})` : "";
+            })()}
           </button>
         ))}
         <Button variant="outline" size="sm" className="ml-auto" onClick={load} disabled={loading}>
