@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import {
   ShoppingBag, ShoppingCart, Search, Loader2, RefreshCw, Plus, Minus, Trash2,
   Package, Truck, CheckCircle2, IndianRupee, Tag, X, ChevronRight, Wallet,
-  ArrowLeft, Star, ShieldCheck, Zap, BadgeCheck, ChevronDown,
+  ArrowLeft, Star, ShieldCheck, Zap, BadgeCheck, ChevronDown, User, Users, Mail,
 } from "lucide-react";
 import { RetailerShell } from "@/components/retailer/retailer-shell";
 import { PageHeader } from "@/components/retailer/page-header";
@@ -16,12 +16,13 @@ export const Route = createFileRoute("/estore")({
   component: EstorePage,
 });
 
-type Cat = { id: string; parent_id: string | null; name: string; sort_order: number };
+type Cat = { id: string; parent_id: string | null; name: string; sort_order: number; icon?: string | null };
+type TagT = { id: string; name: string; color: string };
 type Product = {
   id: string; category_id: string | null; name: string; brand: string | null; sku: string | null; hsn: string | null;
   description: string | null; image_paths: string[]; mrp: number; offer_price: number | null; selling_price: number;
   gst_rate: number; retailer_margin: number; distributor_commission: number; bharatone_commission: number;
-  stock_qty: number; low_stock_at: number; is_exclusive: boolean; featured: boolean; created_at?: string;
+  stock_qty: number; low_stock_at: number; is_exclusive: boolean; featured: boolean; tags: string[]; created_at?: string;
 };
 type Order = {
   id: string; order_no: string; status: string; payment_status: string; total: number;
@@ -51,34 +52,54 @@ const stageTone: Record<string, string> = {
 function EstorePage() {
   const [cats, setCats] = useState<Cat[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [tagList, setTagList] = useState<TagT[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"shop" | "orders">("shop");
   const [topCat, setTopCat] = useState<string | null>(null);
   const [subCat, setSubCat] = useState<string | null>(null);
+  const [activeTag, setActiveTag] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [sort, setSort] = useState<"popular" | "price_asc" | "price_desc" | "discount">("popular");
   const [detail, setDetail] = useState<Product | null>(null);
   const [cart, setCart] = useState<CartLine[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [checkingOut, setCheckingOut] = useState(false);
-  // shipping
-  const [ship, setShip] = useState({ name: "", phone: "", line: "", city: "", state: "", pincode: "", landmark: "" });
+  // order booking
+  const [orderFor, setOrderFor] = useState<"retailer" | "customer">("retailer");
+  const [myContact, setMyContact] = useState<any>(null);
+  const [ship, setShip] = useState({ name: "", phone: "", line: "", city: "", state: "", pincode: "", landmark: "", email: "" });
+  const tagColor = useMemo(() => Object.fromEntries(tagList.map((t) => [t.name, t.color])), [tagList]);
 
   async function load() {
     setLoading(true);
     try {
-      const [c, p, o] = await Promise.all([
-        supabase.from("estore_categories").select("id,parent_id,name,sort_order").eq("active", true).order("sort_order"),
+      const [c, p, o, t] = await Promise.all([
+        supabase.from("estore_categories").select("id,parent_id,name,sort_order,icon").eq("active", true).order("sort_order"),
         supabase.from("estore_products").select("*").eq("active", true).order("featured", { ascending: false }).order("created_at", { ascending: false }),
         (supabase as any).rpc("estore_my_orders", { _limit: 50 }),
+        supabase.from("estore_tags").select("id,name,color").eq("active", true).order("sort_order"),
       ]);
       setCats((c.data as Cat[]) ?? []);
       setProducts((p.data as Product[]) ?? []);
       setOrders((o.data as Order[]) ?? []);
+      setTagList((t.data as TagT[]) ?? []);
     } finally { setLoading(false); }
   }
   useEffect(() => { load(); }, []);
+
+  // fetch retailer's own contact for "for myself" auto-fill
+  useEffect(() => {
+    (async () => {
+      const { data } = await (supabase as any).rpc("estore_my_contact");
+      if (data) setMyContact(data);
+    })();
+  }, []);
+  const fillFromRetailer = () => {
+    const m = myContact || {};
+    setShip((s) => ({ ...s, name: m.name || s.name, phone: m.phone || s.phone, line: m.line || s.line, city: m.city || s.city, state: m.state || s.state, pincode: m.pincode || s.pincode, email: m.email || s.email }));
+  };
+  useEffect(() => { if (orderFor === "retailer" && myContact) fillFromRetailer(); /* eslint-disable-next-line */ }, [orderFor, myContact]);
 
   const topCats = useMemo(() => cats.filter((c) => !c.parent_id), [cats]);
   const subCats = useMemo(() => (topCat ? cats.filter((c) => c.parent_id === topCat) : []), [cats, topCat]);
@@ -91,7 +112,8 @@ function EstorePage() {
     const list = products.filter((p) => {
       if (subCat) { if (p.category_id !== subCat) return false; }
       else if (topCat) { const subIds = cats.filter((c) => c.parent_id === topCat).map((c) => c.id); if (!subIds.includes(p.category_id ?? "")) return false; }
-      if (s && !`${p.name} ${p.brand ?? ""} ${p.description ?? ""}`.toLowerCase().includes(s)) return false;
+      if (activeTag && !(p.tags ?? []).includes(activeTag)) return false;
+      if (s && !`${p.name} ${p.brand ?? ""} ${p.description ?? ""} ${(p.tags ?? []).join(" ")}`.toLowerCase().includes(s)) return false;
       return true;
     });
     const by = [...list];
@@ -99,7 +121,7 @@ function EstorePage() {
     else if (sort === "price_desc") by.sort((a, b) => priceOf(b) - priceOf(a));
     else if (sort === "discount") by.sort((a, b) => discountOf(b) - discountOf(a));
     return by;
-  }, [products, topCat, subCat, q, cats, sort]);
+  }, [products, topCat, subCat, activeTag, q, cats, sort]);
 
   const related = useMemo(() => {
     if (!detail) return [] as Product[];
@@ -131,16 +153,18 @@ function EstorePage() {
     if (cart.length === 0) return toast.error("Your cart is empty");
     if (!ship.name.trim() || !/^\d{10}$/.test(ship.phone) || !ship.line.trim() || !/^\d{6}$/.test(ship.pincode))
       return toast.error("Fill name, 10-digit phone, address and 6-digit pincode");
+    if (orderFor === "customer" && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(ship.email.trim()))
+      return toast.error("Enter a valid customer email for the confirmation");
     setCheckingOut(true);
     try {
       const { data, error } = await (supabase as any).rpc("estore_place_order", {
         _items: cart.map((l) => ({ product_id: l.product.id, qty: l.qty })),
-        _ship: ship, _shipping_fee: 0,
+        _ship: { ...ship, email: ship.email.trim(), order_for: orderFor }, _shipping_fee: 0,
       });
       if (error) throw error;
       const orderId = (data as any).order_id;
       const { data: au } = await supabase.auth.getUser();
-      const r = await payEstoreOrder({ orderId, name: ship.name, contact: ship.phone, email: au.user?.email });
+      const r = await payEstoreOrder({ orderId, name: ship.name, contact: ship.phone, email: (orderFor === "customer" ? ship.email : "") || au.user?.email });
       if (r.status === "paid") {
         toast.success("Order placed!", { description: "Payment successful. Track it under My Orders." });
         setCart([]); setCartOpen(false); setTab("orders"); load();
@@ -194,29 +218,35 @@ function EstorePage() {
 
         {tab === "shop" && (
           <>
-            {/* Hero banner */}
-            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[oklch(0.62_0.16_45)] via-[oklch(0.58_0.15_60)] to-[oklch(0.55_0.13_150)] p-6 text-white shadow-elev sm:p-8">
-              <div className="relative z-10 max-w-xl">
-                <span className="inline-flex items-center gap-1 rounded-full bg-white/20 px-3 py-1 text-xs font-bold backdrop-blur">🎉 BharatOne E-Store</span>
-                <h2 className="mt-3 font-display text-2xl font-extrabold leading-tight sm:text-3xl">Everything for your shop — at retailer prices.</h2>
-                <p className="mt-1 text-sm text-white/85">Order from 100+ categories, pay securely with Razorpay, and earn your margin on every delivery.</p>
-                <div className="relative mt-4 max-w-md">
-                  <Search className="absolute left-3.5 top-3.5 h-5 w-5 text-muted-foreground" />
-                  <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search for products, brands and more…" className="h-12 w-full rounded-xl border border-white/40 bg-white pl-11 pr-4 text-sm text-foreground shadow-soft outline-none placeholder:text-muted-foreground" />
-                </div>
-              </div>
-              <ShoppingBag className="pointer-events-none absolute -right-6 -bottom-8 h-48 w-48 text-white/10" />
+            {/* Search bar */}
+            <div className="relative">
+              <Search className="absolute left-3.5 top-3.5 h-5 w-5 text-muted-foreground" />
+              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search for products, brands and more…" className="h-12 w-full rounded-xl border border-border bg-card pl-11 pr-10 text-sm shadow-soft outline-none focus:border-india-green/50" />
+              {q && <button onClick={() => setQ("")} className="absolute right-3 top-3.5 text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button>}
             </div>
 
+            {/* Tag filter */}
+            {tagList.length > 0 && !q.trim() && (
+              <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-0.5">
+                <button onClick={() => setActiveTag(null)} className={`shrink-0 rounded-full px-3 h-8 text-xs font-semibold ${!activeTag ? "bg-india-green text-white" : "border border-border bg-card hover:bg-muted"}`}>All</button>
+                {tagList.map((t) => (
+                  <button key={t.id} onClick={() => setActiveTag(activeTag === t.name ? null : t.name)}
+                    className={`shrink-0 rounded-full px-3 h-8 text-xs font-semibold transition ${activeTag === t.name ? "text-white" : "border border-border bg-card hover:bg-muted"}`}
+                    style={activeTag === t.name ? { background: t.color } : undefined}>{t.name}</button>
+                ))}
+              </div>
+            )}
+
             {/* Category tiles (only when nothing selected) */}
-            {!topCat && !q.trim() && (
+            {!topCat && !q.trim() && !activeTag && (
               <div>
                 <p className="mb-2 text-sm font-bold">Shop by category</p>
                 <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8">
-                  {topCats.map((c) => (
+                  {loading ? Array.from({ length: 8 }).map((_, i) => <div key={i} className="h-24 animate-pulse rounded-2xl border border-border bg-muted/40" />)
+                    : topCats.map((c) => (
                     <button key={c.id} onClick={() => { setTopCat(c.id); setSubCat(null); }}
                       className="group flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-card p-3 text-center shadow-soft transition hover:-translate-y-0.5 hover:border-india-green/40 hover:shadow-elev">
-                      <span className="grid h-11 w-11 place-items-center rounded-full bg-muted text-2xl transition group-hover:bg-india-green/10">{catIcon(c.name)}</span>
+                      <span className="grid h-11 w-11 place-items-center rounded-full bg-muted text-2xl transition group-hover:bg-india-green/10">{c.icon || catIcon(c.name)}</span>
                       <span className="line-clamp-2 text-[11px] font-semibold leading-tight">{c.name}</span>
                     </button>
                   ))}
@@ -254,7 +284,7 @@ function EstorePage() {
                 <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
                   <button onClick={() => { setTopCat(null); setSubCat(null); }} className="text-muted-foreground hover:text-foreground">All</button>
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                  <span className="flex items-center gap-1">{catIcon(topCats.find((c) => c.id === topCat)?.name ?? "")} {topCats.find((c) => c.id === topCat)?.name}</span>
+                  <span className="flex items-center gap-1">{topCats.find((c) => c.id === topCat)?.icon || catIcon(topCats.find((c) => c.id === topCat)?.name ?? "")} {topCats.find((c) => c.id === topCat)?.name}</span>
                 </div>
                 {subCats.length > 0 && (
                   <div className="flex flex-wrap gap-1.5">
@@ -269,7 +299,19 @@ function EstorePage() {
 
             {/* Product grid */}
             {loading ? (
-              <div className="py-16 text-center text-muted-foreground"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></div>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <div key={i} className="overflow-hidden rounded-2xl border border-border bg-card shadow-soft">
+                    <div className="aspect-square animate-pulse bg-muted/50" />
+                    <div className="space-y-2 p-3">
+                      <div className="h-3 w-1/3 animate-pulse rounded bg-muted/60" />
+                      <div className="h-4 w-3/4 animate-pulse rounded bg-muted/60" />
+                      <div className="h-5 w-1/2 animate-pulse rounded bg-muted/60" />
+                      <div className="h-9 w-full animate-pulse rounded-lg bg-muted/50" />
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : shown.length === 0 ? (
               <div className="grid place-items-center rounded-3xl border border-dashed border-border bg-card/50 py-20 text-center">
                 <div className="grid h-16 w-16 place-items-center rounded-2xl bg-muted"><Package className="h-8 w-8 text-muted-foreground" /></div>
@@ -310,6 +352,13 @@ function EstorePage() {
                         <div className="flex flex-1 flex-col p-3">
                           {p.brand && <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{p.brand}</p>}
                           <button onClick={() => setDetail(p)} className="line-clamp-2 text-left text-sm font-semibold hover:text-india-green">{p.name}</button>
+                          {(p.tags?.length ?? 0) > 0 && (
+                            <div className="mt-1 flex flex-wrap gap-1">
+                              {p.tags.slice(0, 3).map((tg) => (
+                                <span key={tg} className="rounded-full px-1.5 py-0.5 text-[9px] font-bold text-white" style={{ background: tagColor[tg] || "#64748b" }}>{tg}</span>
+                              ))}
+                            </div>
+                          )}
                           <div className="mt-1 flex items-baseline gap-2">
                             <span className="text-base font-extrabold">{inr(price)}</span>
                             {p.mrp > price && <span className="text-xs text-muted-foreground line-through">{inr(p.mrp)}</span>}
@@ -385,6 +434,7 @@ function EstorePage() {
         <ProductDetail
           p={detail}
           related={related}
+          tagColor={tagColor}
           inCart={cartQtyOf(detail.id)}
           cartCount={cartCount}
           onClose={() => setDetail(null)}
@@ -425,16 +475,30 @@ function EstorePage() {
                   ))}
 
                   <div className="rounded-xl border border-border p-3">
-                    <p className="mb-2 text-xs font-bold text-muted-foreground">Delivery address</p>
+                    <p className="mb-2 text-xs font-bold text-muted-foreground">Who is this order for?</p>
+                    <div className="mb-3 grid grid-cols-2 gap-2">
+                      <button onClick={() => setOrderFor("retailer")} className={`flex items-center gap-2 rounded-xl border p-2.5 text-left text-xs font-semibold transition ${orderFor === "retailer" ? "border-india-green bg-india-green/5 text-india-green" : "border-border hover:bg-muted"}`}>
+                        <User className="h-4 w-4" /> <span>Myself<br /><span className="text-[10px] font-normal text-muted-foreground">Auto-filled</span></span>
+                      </button>
+                      <button onClick={() => { setOrderFor("customer"); setShip({ name: "", phone: "", line: "", city: "", state: "", pincode: "", landmark: "", email: "" }); }} className={`flex items-center gap-2 rounded-xl border p-2.5 text-left text-xs font-semibold transition ${orderFor === "customer" ? "border-india-green bg-india-green/5 text-india-green" : "border-border hover:bg-muted"}`}>
+                        <Users className="h-4 w-4" /> <span>A customer<br /><span className="text-[10px] font-normal text-muted-foreground">Enter details</span></span>
+                      </button>
+                    </div>
+                    <p className="mb-2 text-xs font-bold text-muted-foreground">{orderFor === "retailer" ? "Delivery address (yours)" : "Customer delivery details"}</p>
                     <div className="grid gap-2 sm:grid-cols-2">
-                      <input value={ship.name} onChange={(e) => setShip({ ...ship, name: e.target.value })} placeholder="Full name *" className="h-9 rounded-lg border border-border bg-background px-3 text-sm" />
+                      <input value={ship.name} onChange={(e) => setShip({ ...ship, name: e.target.value })} placeholder={orderFor === "customer" ? "Customer name *" : "Full name *"} className="h-9 rounded-lg border border-border bg-background px-3 text-sm" />
                       <input value={ship.phone} onChange={(e) => setShip({ ...ship, phone: e.target.value.replace(/\D/g, "") })} maxLength={10} placeholder="Phone *" className="h-9 rounded-lg border border-border bg-background px-3 text-sm" />
+                      <div className="relative sm:col-span-2">
+                        <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <input value={ship.email} onChange={(e) => setShip({ ...ship, email: e.target.value })} type="email" placeholder={orderFor === "customer" ? "Customer email * (for confirmation)" : "Email (for confirmation)"} className="h-9 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm" />
+                      </div>
                       <input value={ship.line} onChange={(e) => setShip({ ...ship, line: e.target.value })} placeholder="Address *" className="sm:col-span-2 h-9 rounded-lg border border-border bg-background px-3 text-sm" />
                       <input value={ship.city} onChange={(e) => setShip({ ...ship, city: e.target.value })} placeholder="City" className="h-9 rounded-lg border border-border bg-background px-3 text-sm" />
                       <input value={ship.state} onChange={(e) => setShip({ ...ship, state: e.target.value })} placeholder="State" className="h-9 rounded-lg border border-border bg-background px-3 text-sm" />
                       <input value={ship.pincode} onChange={(e) => setShip({ ...ship, pincode: e.target.value.replace(/\D/g, "") })} maxLength={6} placeholder="Pincode *" className="h-9 rounded-lg border border-border bg-background px-3 text-sm" />
                       <input value={ship.landmark} onChange={(e) => setShip({ ...ship, landmark: e.target.value })} placeholder="Landmark" className="h-9 rounded-lg border border-border bg-background px-3 text-sm" />
                     </div>
+                    {orderFor === "retailer" && <button onClick={fillFromRetailer} className="mt-2 text-[11px] font-semibold text-india-green hover:underline">↻ Re-fill my details</button>}
                   </div>
                 </div>
               )}
@@ -460,8 +524,8 @@ function EstorePage() {
 }
 
 // ---------------------------------------------------------------- product detail
-function ProductDetail({ p, related, inCart, cartCount, onClose, onAdd, onBuy, onOpen, onOpenCart }: {
-  p: Product; related: Product[]; inCart: number; cartCount: number;
+function ProductDetail({ p, related, tagColor, inCart, cartCount, onClose, onAdd, onBuy, onOpen, onOpenCart }: {
+  p: Product; related: Product[]; tagColor: Record<string, string>; inCart: number; cartCount: number;
   onClose: () => void; onAdd: (n: number) => void; onBuy: (n: number) => void;
   onOpen: (p: Product) => void; onOpenCart: () => void;
 }) {
@@ -516,6 +580,11 @@ function ProductDetail({ p, related, inCart, cartCount, onClose, onAdd, onBuy, o
               {[0, 1, 2, 3, 4].map((i) => <Star key={i} className="h-4 w-4 fill-current" />)}
               <span className="ml-1 text-xs font-semibold text-muted-foreground">Retailer favourite</span>
             </div>
+            {(p.tags?.length ?? 0) > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {p.tags.map((tg) => <span key={tg} className="rounded-full px-2 py-0.5 text-[10px] font-bold text-white" style={{ background: tagColor[tg] || "#64748b" }}>{tg}</span>)}
+              </div>
+            )}
 
             <div className="mt-3 flex items-end gap-3">
               <span className="text-3xl font-extrabold">{inr(price)}</span>

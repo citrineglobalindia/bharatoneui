@@ -5,18 +5,19 @@ import {
   ShoppingBag, Loader2, RefreshCw, Plus, Trash2, Save, X, Upload, Package,
   Search, Download, Boxes, IndianRupee, TrendingUp, Truck, Layers, LayoutGrid,
   Warehouse, CreditCard, FileText, ArrowUp, ArrowDown, AlertTriangle, ChevronRight,
-  Wallet, ClipboardList, CheckCircle2,
+  Wallet, ClipboardList, CheckCircle2, Tag, Tags, Pencil, Eye, EyeOff, Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 
-type Cat = { id: string; parent_id: string | null; name: string; sort_order: number; active: boolean };
+type Cat = { id: string; parent_id: string | null; name: string; sort_order: number; active: boolean; icon: string | null };
+type TagT = { id: string; name: string; color: string; active: boolean; sort_order: number };
 type Product = {
   id: string; category_id: string | null; name: string; brand: string | null; sku: string | null; hsn: string | null;
   description: string | null; image_paths: string[]; mrp: number; offer_price: number | null; selling_price: number;
   gst_rate: number; retailer_margin: number; distributor_commission: number; bharatone_commission: number;
-  stock_qty: number; low_stock_at: number; is_exclusive: boolean; featured: boolean; active: boolean;
+  stock_qty: number; low_stock_at: number; is_exclusive: boolean; featured: boolean; active: boolean; tags: string[];
 };
 type OrderRow = {
   id: string; order_no: string; created_at: string; placed_at: string | null; delivered_at: string | null;
@@ -50,6 +51,7 @@ const TABS = [
   ["overview", "Overview", LayoutGrid],
   ["products", "Products", Package],
   ["categories", "Categories", Layers],
+  ["tags", "Tags", Tags],
   ["inventory", "Inventory", Warehouse],
   ["orders", "Orders", ClipboardList],
   ["payments", "Payments", CreditCard],
@@ -77,6 +79,7 @@ export function EstoreAdmin() {
           {tab === "overview" ? <Overview go={setTab} />
             : tab === "products" ? <Products />
             : tab === "categories" ? <Categories />
+            : tab === "tags" ? <TagsManager />
             : tab === "inventory" ? <Inventory />
             : tab === "orders" ? <Orders />
             : <Payments />}
@@ -186,11 +189,12 @@ function Overview({ go }: { go: (t: TabKey) => void }) {
 const blankProduct = (): Product => ({
   id: "", category_id: null, name: "", brand: "", sku: "", hsn: "", description: "", image_paths: [],
   mrp: 0, offer_price: null, selling_price: 0, gst_rate: 0, retailer_margin: 0, distributor_commission: 0,
-  bharatone_commission: 0, stock_qty: 0, low_stock_at: 5, is_exclusive: false, featured: false, active: true,
+  bharatone_commission: 0, stock_qty: 0, low_stock_at: 5, is_exclusive: false, featured: false, active: true, tags: [],
 });
 
 function Products() {
   const [cats, setCats] = useState<Cat[]>([]);
+  const [tagCatalog, setTagCatalog] = useState<TagT[]>([]);
   const [rows, setRows] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
@@ -200,12 +204,14 @@ function Products() {
 
   async function load() {
     setLoading(true);
-    const [c, p] = await Promise.all([
+    const [c, p, t] = await Promise.all([
       supabase.from("estore_categories").select("*").order("sort_order"),
       supabase.from("estore_products").select("*").order("created_at", { ascending: false }),
+      supabase.from("estore_tags").select("*").eq("active", true).order("sort_order"),
     ]);
     setCats((c.data as Cat[]) ?? []);
     setRows((p.data as Product[]) ?? []);
+    setTagCatalog((t.data as TagT[]) ?? []);
     setLoading(false);
   }
   useEffect(() => { load(); }, []);
@@ -236,6 +242,7 @@ function Products() {
       payload.bharatone_commission = Number(form.bharatone_commission) || 0;
       payload.stock_qty = Number(form.stock_qty) || 0;
       payload.low_stock_at = Number(form.low_stock_at) || 0;
+      payload.tags = Array.isArray(form.tags) ? form.tags : [];
       payload.updated_at = new Date().toISOString();
       let error;
       if (form.id) ({ error } = await supabase.from("estore_products").update(payload).eq("id", form.id));
@@ -349,6 +356,25 @@ function Products() {
                   </div>
                 </div>
 
+                <div className="sm:col-span-2 rounded-xl bg-muted/40 p-3">
+                  <p className="mb-2 flex items-center gap-1.5 text-xs font-bold text-muted-foreground"><Tag className="h-3.5 w-3.5" /> Tags</p>
+                  {tagCatalog.length === 0 ? <p className="text-[11px] text-muted-foreground">No tags yet — create some in the Tags tab.</p> : (
+                    <div className="flex flex-wrap gap-1.5">
+                      {tagCatalog.map((t) => {
+                        const on = form.tags?.includes(t.name);
+                        return (
+                          <button key={t.id} type="button"
+                            onClick={() => setForm({ ...form, tags: on ? form.tags.filter((x) => x !== t.name) : [...(form.tags ?? []), t.name] })}
+                            className={`inline-flex items-center gap-1 rounded-full px-2.5 h-7 text-[11px] font-semibold transition ${on ? "text-white" : "border border-border bg-background hover:bg-muted"}`}
+                            style={on ? { background: t.color } : undefined}>
+                            {on && <Check className="h-3 w-3" />} {t.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
                 <div className="sm:col-span-2">
                   <p className="mb-1 text-xs font-semibold text-muted-foreground">Images</p>
                   <div className="flex flex-wrap gap-2">
@@ -387,39 +413,199 @@ function L({ label, children, span2 }: { label: string; children: React.ReactNod
   return <label className={`block ${span2 ? "sm:col-span-2" : ""}`}><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">{label}</span>{children}</label>;
 }
 
-// ================================================================ CATEGORIES
+// ================================================================ CATEGORIES (advanced)
 function Categories() {
   const [cats, setCats] = useState<Cat[]>([]);
   const [loading, setLoading] = useState(true);
-  const [name, setName] = useState(""); const [parent, setParent] = useState("");
+  const [name, setName] = useState(""); const [icon, setIcon] = useState(""); const [parent, setParent] = useState("");
+  const [edit, setEdit] = useState<{ id: string; name: string; icon: string } | null>(null);
+  const [subInput, setSubInput] = useState<Record<string, string>>({});
+
   async function load() { setLoading(true); const { data } = await supabase.from("estore_categories").select("*").order("sort_order"); setCats((data as Cat[]) ?? []); setLoading(false); }
   useEffect(() => { load(); }, []);
-  const tops = cats.filter((c) => !c.parent_id);
+  const tops = cats.filter((c) => !c.parent_id).sort((a, b) => a.sort_order - b.sort_order);
+
   const add = async () => {
     if (!name.trim()) return toast.error("Enter a name");
     await ensureStaffSession();
-    const { error } = await supabase.from("estore_categories").insert({ name: name.trim(), parent_id: parent || null, sort_order: cats.length + 1, active: true });
+    const sibs = cats.filter((c) => (c.parent_id ?? null) === (parent || null));
+    const { error } = await supabase.from("estore_categories").insert({ name: name.trim(), icon: icon.trim() || null, parent_id: parent || null, sort_order: sibs.length + 1, active: true });
     if (error) return toast.error("Could not add", { description: error.message });
-    setName(""); toast.success("Category added"); load();
+    setName(""); setIcon(""); toast.success("Category added"); load();
   };
-  const del = async (c: Cat) => { if (!confirm(`Delete "${c.name}" and its subcategories?`)) return; await ensureStaffSession(); const { error } = await supabase.from("estore_categories").delete().eq("id", c.id); if (error) return toast.error(error.message); toast.success("Deleted"); load(); };
+  const saveEdit = async () => {
+    if (!edit || !edit.name.trim()) return toast.error("Enter a name");
+    await ensureStaffSession();
+    const { error } = await supabase.from("estore_categories").update({ name: edit.name.trim(), icon: edit.icon.trim() || null }).eq("id", edit.id);
+    if (error) return toast.error(error.message);
+    setEdit(null); toast.success("Saved"); load();
+  };
+  const toggleActive = async (c: Cat) => { await ensureStaffSession(); await supabase.from("estore_categories").update({ active: !c.active }).eq("id", c.id); load(); };
+  const move = async (c: Cat, dir: -1 | 1) => {
+    const idx = tops.findIndex((x) => x.id === c.id); const swap = tops[idx + dir];
+    if (!swap) return;
+    await ensureStaffSession();
+    await supabase.from("estore_categories").update({ sort_order: swap.sort_order }).eq("id", c.id);
+    await supabase.from("estore_categories").update({ sort_order: c.sort_order }).eq("id", swap.id);
+    load();
+  };
+  const addSub = async (parentId: string) => {
+    const val = (subInput[parentId] || "").trim(); if (!val) return;
+    await ensureStaffSession();
+    const sibs = cats.filter((c) => c.parent_id === parentId);
+    const { error } = await supabase.from("estore_categories").insert({ name: val, parent_id: parentId, sort_order: sibs.length + 1, active: true });
+    if (error) return toast.error(error.message);
+    setSubInput((s) => ({ ...s, [parentId]: "" })); load();
+  };
+  const del = async (c: Cat) => { if (!confirm(`Delete "${c.name}"${!c.parent_id ? " and its subcategories" : ""}?`)) return; await ensureStaffSession(); const { error } = await supabase.from("estore_categories").delete().eq("id", c.id); if (error) return toast.error(error.message); toast.success("Deleted"); load(); };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-2 rounded-2xl border border-border bg-card p-4 shadow-soft">
-        <label className="flex-1"><span className="mb-1 block text-xs font-semibold text-muted-foreground">Category name</span><input value={name} onChange={(e) => setName(e.target.value)} className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm" /></label>
+        <label className="w-20"><span className="mb-1 block text-xs font-semibold text-muted-foreground">Icon</span><input value={icon} onChange={(e) => setIcon(e.target.value)} placeholder="🛍️" maxLength={2} className="h-9 w-full rounded-lg border border-border bg-background px-3 text-center text-base" /></label>
+        <label className="flex-1"><span className="mb-1 block text-xs font-semibold text-muted-foreground">Category name</span><input value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm" /></label>
         <label><span className="mb-1 block text-xs font-semibold text-muted-foreground">Parent (for subcategory)</span><select value={parent} onChange={(e) => setParent(e.target.value)} className="h-9 rounded-lg border border-border bg-background px-2 text-sm"><option value="">— top level —</option>{tops.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
         <Button size="sm" onClick={add} className="bg-india-green text-white"><Plus className="h-4 w-4" /> Add</Button>
       </div>
-      {loading ? <div className="py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></div> : (
+
+      {loading ? <SkeletonGrid /> : (
         <motion.div variants={listV} initial="initial" animate="animate" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {tops.map((t) => (
-            <motion.div key={t.id} variants={itemV} className="rounded-2xl border border-border bg-card p-4 shadow-soft">
-              <div className="mb-2 flex items-center justify-between"><p className="flex items-center gap-1.5 font-bold"><Layers className="h-4 w-4 text-india-green" /> {t.name}</p><button onClick={() => del(t)} className="text-rose-600"><Trash2 className="h-4 w-4" /></button></div>
-              <div className="flex flex-wrap gap-1">{cats.filter((c) => c.parent_id === t.id).map((s) => <span key={s.id} className="group inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px]">{s.name}<button onClick={() => del(s)} className="text-rose-500 opacity-0 group-hover:opacity-100"><X className="h-3 w-3" /></button></span>)}</div>
+          {tops.map((t, i) => (
+            <motion.div key={t.id} variants={itemV} layout className={`rounded-2xl border border-border bg-card p-4 shadow-soft ${!t.active ? "opacity-60" : ""}`}>
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <p className="flex min-w-0 items-center gap-1.5 font-bold"><span className="text-lg">{t.icon || "📦"}</span> <span className="truncate">{t.name}</span></p>
+                <div className="flex shrink-0 items-center gap-1 text-muted-foreground">
+                  <button title="Move up" disabled={i === 0} onClick={() => move(t, -1)} className="rounded p-1 hover:bg-muted disabled:opacity-30"><ArrowUp className="h-3.5 w-3.5" /></button>
+                  <button title="Move down" disabled={i === tops.length - 1} onClick={() => move(t, 1)} className="rounded p-1 hover:bg-muted disabled:opacity-30"><ArrowDown className="h-3.5 w-3.5" /></button>
+                  <button title={t.active ? "Hide" : "Show"} onClick={() => toggleActive(t)} className="rounded p-1 hover:bg-muted">{t.active ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}</button>
+                  <button title="Edit" onClick={() => setEdit({ id: t.id, name: t.name, icon: t.icon || "" })} className="rounded p-1 hover:bg-muted"><Pencil className="h-3.5 w-3.5" /></button>
+                  <button title="Delete" onClick={() => del(t)} className="rounded p-1 text-rose-600 hover:bg-rose-50"><Trash2 className="h-3.5 w-3.5" /></button>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {cats.filter((c) => c.parent_id === t.id).map((s) => (
+                  <span key={s.id} className="group inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px]">{s.name}<button onClick={() => del(s)} className="text-rose-500 opacity-0 group-hover:opacity-100"><X className="h-3 w-3" /></button></span>
+                ))}
+              </div>
+              <div className="mt-2 flex items-center gap-1">
+                <input value={subInput[t.id] || ""} onChange={(e) => setSubInput((s) => ({ ...s, [t.id]: e.target.value }))} onKeyDown={(e) => e.key === "Enter" && addSub(t.id)} placeholder="Add subcategory…" className="h-7 flex-1 rounded-lg border border-border bg-background px-2 text-[11px] outline-none" />
+                <button onClick={() => addSub(t.id)} className="grid h-7 w-7 place-items-center rounded-lg bg-india-green text-white"><Plus className="h-3.5 w-3.5" /></button>
+              </div>
             </motion.div>
           ))}
         </motion.div>
       )}
+
+      <AnimatePresence>
+        {edit && (
+          <motion.div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" onClick={() => setEdit(null)} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <motion.div className="w-full max-w-sm rounded-2xl bg-card p-5 shadow-elev" onClick={(e) => e.stopPropagation()} initial={{ scale: 0.95, y: 16, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }} exit={{ scale: 0.95, y: 16, opacity: 0 }}>
+              <p className="mb-3 text-sm font-bold">Edit category</p>
+              <div className="flex gap-2">
+                <input value={edit.icon} onChange={(e) => setEdit({ ...edit, icon: e.target.value })} placeholder="🛍️" maxLength={2} className="h-9 w-14 rounded-lg border border-border bg-background text-center text-base" />
+                <input value={edit.name} onChange={(e) => setEdit({ ...edit, name: e.target.value })} onKeyDown={(e) => e.key === "Enter" && saveEdit()} className="h-9 flex-1 rounded-lg border border-border bg-background px-3 text-sm" />
+              </div>
+              <div className="mt-4 flex justify-end gap-2"><Button size="sm" variant="outline" onClick={() => setEdit(null)}>Cancel</Button><Button size="sm" onClick={saveEdit} className="bg-india-green text-white"><Save className="h-4 w-4" /> Save</Button></div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ================================================================ TAGS
+function TagsManager() {
+  const [tags, setTags] = useState<TagT[]>([]);
+  const [counts, setCounts] = useState<Record<string, number>>({});
+  const [loading, setLoading] = useState(true);
+  const [name, setName] = useState(""); const [color, setColor] = useState("#1F7A3D");
+  const [edit, setEdit] = useState<TagT | null>(null);
+  const PALETTE = ["#1F7A3D", "#2563eb", "#f59e0b", "#e11d48", "#7c3aed", "#EA580C", "#0891b2", "#65a30d"];
+
+  async function load() {
+    setLoading(true);
+    const [t, p] = await Promise.all([
+      supabase.from("estore_tags").select("*").order("sort_order"),
+      supabase.from("estore_products").select("tags"),
+    ]);
+    setTags((t.data as TagT[]) ?? []);
+    const c: Record<string, number> = {};
+    ((p.data as { tags: string[] }[]) ?? []).forEach((row) => (row.tags ?? []).forEach((tag) => { c[tag] = (c[tag] || 0) + 1; }));
+    setCounts(c);
+    setLoading(false);
+  }
+  useEffect(() => { load(); }, []);
+
+  const add = async () => {
+    if (!name.trim()) return toast.error("Enter a tag name");
+    await ensureStaffSession();
+    const { error } = await supabase.from("estore_tags").insert({ name: name.trim(), color, sort_order: tags.length + 1, active: true });
+    if (error) return toast.error(error.message.includes("duplicate") ? "Tag already exists" : "Could not add", { description: error.message });
+    setName(""); toast.success("Tag created"); load();
+  };
+  const saveEdit = async () => {
+    if (!edit || !edit.name.trim()) return;
+    await ensureStaffSession();
+    const { error } = await supabase.from("estore_tags").update({ name: edit.name.trim(), color: edit.color, active: edit.active }).eq("id", edit.id);
+    if (error) return toast.error(error.message);
+    setEdit(null); toast.success("Saved"); load();
+  };
+  const toggleActive = async (t: TagT) => { await ensureStaffSession(); await supabase.from("estore_tags").update({ active: !t.active }).eq("id", t.id); load(); };
+  const del = async (t: TagT) => { if (!confirm(`Delete tag "${t.name}"?`)) return; await ensureStaffSession(); const { error } = await supabase.from("estore_tags").delete().eq("id", t.id); if (error) return toast.error(error.message); toast.success("Deleted"); load(); };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-border bg-card p-4 shadow-soft">
+        <label className="flex-1"><span className="mb-1 block text-xs font-semibold text-muted-foreground">Tag name</span><input value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} placeholder="e.g. Bestseller" className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm" /></label>
+        <div><span className="mb-1 block text-xs font-semibold text-muted-foreground">Colour</span>
+          <div className="flex items-center gap-1">
+            {PALETTE.map((c) => <button key={c} onClick={() => setColor(c)} className={`h-7 w-7 rounded-full ring-2 ring-offset-1 ${color === c ? "ring-foreground" : "ring-transparent"}`} style={{ background: c }} />)}
+          </div>
+        </div>
+        <Button size="sm" onClick={add} className="bg-india-green text-white"><Plus className="h-4 w-4" /> Create tag</Button>
+      </div>
+
+      {loading ? <SkeletonGrid /> : tags.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-border py-12 text-center text-sm text-muted-foreground">No tags yet. Create your first above.</div>
+      ) : (
+        <motion.div variants={listV} initial="initial" animate="animate" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {tags.map((t) => (
+            <motion.div key={t.id} variants={itemV} layout className={`flex items-center justify-between rounded-2xl border border-border bg-card p-3 shadow-soft ${!t.active ? "opacity-60" : ""}`}>
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold text-white" style={{ background: t.color }}><Tag className="h-3 w-3" /> {t.name}</span>
+                <span className="text-[11px] text-muted-foreground">{counts[t.name] || 0} product{(counts[t.name] || 0) !== 1 ? "s" : ""}</span>
+              </div>
+              <div className="flex items-center gap-1 text-muted-foreground">
+                <button title={t.active ? "Hide" : "Show"} onClick={() => toggleActive(t)} className="rounded p-1 hover:bg-muted">{t.active ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}</button>
+                <button title="Edit" onClick={() => setEdit(t)} className="rounded p-1 hover:bg-muted"><Pencil className="h-3.5 w-3.5" /></button>
+                <button title="Delete" onClick={() => del(t)} className="rounded p-1 text-rose-600 hover:bg-rose-50"><Trash2 className="h-3.5 w-3.5" /></button>
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
+      )}
+
+      <AnimatePresence>
+        {edit && (
+          <motion.div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" onClick={() => setEdit(null)} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <motion.div className="w-full max-w-sm rounded-2xl bg-card p-5 shadow-elev" onClick={(e) => e.stopPropagation()} initial={{ scale: 0.95, y: 16, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }} exit={{ scale: 0.95, y: 16, opacity: 0 }}>
+              <p className="mb-3 text-sm font-bold">Edit tag</p>
+              <input value={edit.name} onChange={(e) => setEdit({ ...edit, name: e.target.value })} className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm" />
+              <div className="mt-3 flex items-center gap-1">{PALETTE.map((c) => <button key={c} onClick={() => setEdit({ ...edit, color: c })} className={`h-7 w-7 rounded-full ring-2 ring-offset-1 ${edit.color === c ? "ring-foreground" : "ring-transparent"}`} style={{ background: c }} />)}</div>
+              <label className="mt-3 flex items-center gap-2 text-sm font-semibold"><input type="checkbox" checked={edit.active} onChange={(e) => setEdit({ ...edit, active: e.target.checked })} className="h-4 w-4" /> Active</label>
+              <div className="mt-4 flex justify-end gap-2"><Button size="sm" variant="outline" onClick={() => setEdit(null)}>Cancel</Button><Button size="sm" onClick={saveEdit} className="bg-india-green text-white"><Save className="h-4 w-4" /> Save</Button></div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+function SkeletonGrid() {
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-24 animate-pulse rounded-2xl border border-border bg-muted/40" />)}
     </div>
   );
 }
