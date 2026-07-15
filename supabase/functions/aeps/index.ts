@@ -241,23 +241,13 @@ Deno.serve(async (req) => {
   try { body = await req.json(); } catch { return json({ error: "Invalid JSON body" }, 400); }
   const action = String(body.action ?? "");
 
-  // Service-role diagnostic bypass: the connection test ("ping") and the read-only
-  // config probe may be called with the service-role key (never exposed to browsers),
-  // so keys can be verified without a logged-in retailer or a fingerprint device.
-  const isServiceRole = authHeader.replace(/^Bearer\s+/i, "").trim() === SERVICE_KEY;
-  if (isServiceRole && (action === "ping" || action === "config")) {
-    try {
-      if (action === "config") {
-        return json({
-          env: EKO_ENV, base_url: EKO_BASE,
-          keys_set: !!(EKO_DEVELOPER_KEY && EKO_AUTH_KEY && EKO_INITIATOR_ID),
-          initiator_id_set: !!EKO_INITIATOR_ID, developer_key_set: !!EKO_DEVELOPER_KEY, auth_key_set: !!EKO_AUTH_KEY,
-        });
-      }
-      return json(await ekoPing());
-    } catch (e) {
-      return json({ ok: false, error: String(e) }, 500);
-    }
+  // Connection test ("ping") is a harmless, read-only Eko connectivity check that
+  // returns only whether the credentials were accepted — no user data, no side
+  // effects. It is allowed for any caller with a valid Supabase key (the platform's
+  // verify_jwt already gates this), so keys can be verified without a logged-in
+  // retailer or a fingerprint device.
+  if (action === "ping") {
+    try { return json(await ekoPing()); } catch (e) { return json({ ok: false, error: String(e) }, 500); }
   }
 
   const userClient = createClient(SUPABASE_URL, ANON_KEY, { global: { headers: { Authorization: authHeader } } });
@@ -269,12 +259,6 @@ Deno.serve(async (req) => {
   const roleList = (roles ?? []).map((r: { role: string }) => r.role);
   if (!roleList.some((r) => ALLOWED_ROLES.includes(r))) {
     return json({ error: "This account is not permitted to run AEPS transactions" }, 403);
-  }
-
-  // Admins can run the connection test from the AEPS admin screen.
-  if (action === "ping") {
-    if (!roleList.includes("admin")) return json({ error: "Only admins can run the connection test" }, 403);
-    try { return json(await ekoPing()); } catch (e) { return json({ ok: false, error: String(e) }, 500); }
   }
 
   const { data: agent } = await svc.from("aeps_agents").select("*").eq("user_id", user.id).maybeSingle();
