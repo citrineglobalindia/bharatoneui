@@ -8,6 +8,7 @@ import {
   Wallet, ClipboardList, CheckCircle2, Tag, Tags, Pencil, Eye, EyeOff, Check,
   Printer, UserPlus, Circle, UserCheck, Bike,
 } from "lucide-react";
+import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, CartesianGrid } from "recharts";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
@@ -47,6 +48,10 @@ const tone: Record<string, string> = {
   paid: "bg-emerald-100 text-emerald-700", pending: "bg-amber-100 text-amber-700", failed: "bg-rose-100 text-rose-700",
 };
 const SELLER = { name: "BharatOne Services and Affiliates Private Limited", brand: "BharatOne E-Store" };
+const STATUS_HEX: Record<string, string> = {
+  pending_payment: "#f59e0b", placed: "#0ea5e9", confirmed: "#6366f1", packed: "#8b5cf6",
+  shipped: "#3b82f6", delivered: "#10b981", cancelled: "#f43f5e", paid: "#10b981", failed: "#f43f5e",
+};
 
 // framer variants
 const pageV = { initial: { opacity: 0, y: 10 }, animate: { opacity: 1, y: 0 }, exit: { opacity: 0, y: -10 } };
@@ -132,7 +137,20 @@ function Overview({ go }: { go: (t: TabKey) => void }) {
     toShip: orders.filter((o) => ["placed", "confirmed", "packed"].includes(o.status)).length,
   };
 
-  if (loading) return <div className="py-16 text-center text-muted-foreground"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></div>;
+  const trend = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (let i = 13; i >= 0; i--) { const d = new Date(Date.now() - i * 864e5); map[d.toISOString().slice(0, 10)] = 0; }
+    orders.filter((o) => o.payment_status === "paid").forEach((o) => { const k = new Date(o.created_at).toISOString().slice(0, 10); if (k in map) map[k] += Number(o.total || 0); });
+    return Object.entries(map).map(([d, v]) => ({ d: new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short" }), revenue: Math.round(v) }));
+  }, [orders]);
+  const statusData = useMemo(() => {
+    const ord = ["placed", "confirmed", "packed", "shipped", "delivered", "cancelled", "pending_payment"];
+    const m: Record<string, number> = {};
+    orders.forEach((o) => { m[o.status] = (m[o.status] || 0) + 1; });
+    return ord.filter((s) => m[s]).map((s) => ({ name: s.replace(/_/g, " "), value: m[s], color: STATUS_HEX[s] || "#94a3b8" }));
+  }, [orders]);
+
+  if (loading) return <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{Array.from({ length: 8 }).map((_, i) => <div key={i} className="h-24 animate-pulse rounded-2xl border border-border bg-muted/40" />)}</div>;
 
   const cards = [
     { icon: <IndianRupee className="h-4 w-4" />, label: "Revenue (paid)", value: inr(stats.revenue), tint: "from-emerald-500/15 to-emerald-500/5", sub: `${paid.length} paid orders` },
@@ -160,6 +178,39 @@ function Overview({ go }: { go: (t: TabKey) => void }) {
           </motion.button>
         ))}
       </motion.div>
+
+      {/* charts */}
+      <div className="grid gap-4 lg:grid-cols-3">
+        <div className="rounded-2xl border border-border bg-card p-4 shadow-soft lg:col-span-2">
+          <p className="mb-3 flex items-center gap-1.5 text-sm font-bold"><TrendingUp className="h-4 w-4 text-india-green" /> Revenue — last 14 days</p>
+          <ResponsiveContainer width="100%" height={220}>
+            <AreaChart data={trend} margin={{ left: -18, right: 8, top: 4 }}>
+              <defs><linearGradient id="rev" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#1F7A3D" stopOpacity={0.35} /><stop offset="100%" stopColor="#1F7A3D" stopOpacity={0} /></linearGradient></defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+              <XAxis dataKey="d" tick={{ fontSize: 10 }} interval={1} tickLine={false} axisLine={false} />
+              <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} tickLine={false} axisLine={false} width={40} />
+              <Tooltip formatter={(v: any) => [inr(Number(v)), "Revenue"]} contentStyle={{ borderRadius: 12, border: "1px solid hsl(var(--border))", fontSize: 12 }} />
+              <Area type="monotone" dataKey="revenue" stroke="#1F7A3D" strokeWidth={2.5} fill="url(#rev)" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="rounded-2xl border border-border bg-card p-4 shadow-soft">
+          <p className="mb-3 flex items-center gap-1.5 text-sm font-bold"><ClipboardList className="h-4 w-4 text-india-green" /> Orders by status</p>
+          {statusData.length === 0 ? <p className="py-14 text-center text-sm text-muted-foreground">No orders yet.</p> : (
+            <ResponsiveContainer width="100%" height={220}>
+              <PieChart>
+                <Pie data={statusData} dataKey="value" nameKey="name" innerRadius={48} outerRadius={80} paddingAngle={2}>
+                  {statusData.map((s, i) => <Cell key={i} fill={s.color} />)}
+                </Pie>
+                <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid hsl(var(--border))", fontSize: 12 }} />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
+          <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+            {statusData.map((s) => <span key={s.name} className="flex items-center gap-1 text-[11px] capitalize text-muted-foreground"><span className="h-2 w-2 rounded-full" style={{ background: s.color }} /> {s.name} ({s.value})</span>)}
+          </div>
+        </div>
+      </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="rounded-2xl border border-border bg-card p-4 shadow-soft">
@@ -209,6 +260,7 @@ function Products() {
   const [form, setForm] = useState<Product | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [view, setView] = useState<"cards" | "table">("cards");
 
   async function load() {
     setLoading(true);
@@ -289,20 +341,77 @@ function Products() {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="relative"><Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search products…" className="h-8 w-56 rounded-lg border border-border bg-background pl-8 pr-2 text-xs outline-none" /></div>
         <div className="flex gap-2">
+          <div className="flex rounded-lg border border-border p-0.5">
+            <button onClick={() => setView("cards")} title="Card view" className={`grid h-7 w-7 place-items-center rounded ${view === "cards" ? "bg-india-green text-white" : "text-muted-foreground hover:bg-muted"}`}><LayoutGrid className="h-4 w-4" /></button>
+            <button onClick={() => setView("table")} title="Table view" className={`grid h-7 w-7 place-items-center rounded ${view === "table" ? "bg-india-green text-white" : "text-muted-foreground hover:bg-muted"}`}><ClipboardList className="h-4 w-4" /></button>
+          </div>
           <Button size="sm" variant="outline" onClick={load}><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /></Button>
           <Button size="sm" onClick={() => setForm(blankProduct())} className="bg-india-green text-white"><Plus className="h-4 w-4" /> Add product</Button>
         </div>
       </div>
 
+      {loading ? (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{Array.from({ length: 8 }).map((_, i) => <div key={i} className="h-72 animate-pulse rounded-2xl border border-border bg-muted/40" />)}</div>
+      ) : filtered.length === 0 ? (
+        <div className="grid place-items-center rounded-2xl border border-dashed border-border bg-card/50 py-16 text-center">
+          <div className="grid h-14 w-14 place-items-center rounded-2xl bg-muted"><Package className="h-7 w-7 text-muted-foreground" /></div>
+          <p className="mt-3 text-sm font-bold">No products yet</p>
+          <button onClick={() => setForm(blankProduct())} className="mt-3 rounded-lg bg-india-green px-4 h-9 text-xs font-bold text-white">Add your first product</button>
+        </div>
+      ) : view === "cards" ? (
+        <motion.div variants={listV} initial="initial" animate="animate" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {filtered.map((p) => {
+            const price = p.offer_price || p.selling_price;
+            const off = p.mrp > price ? Math.round((1 - price / p.mrp) * 100) : 0;
+            const out = p.stock_qty <= 0, low = !out && p.stock_qty <= p.low_stock_at;
+            const stockPct = Math.max(4, Math.min(100, (p.stock_qty / Math.max(p.low_stock_at * 4, p.stock_qty, 1)) * 100));
+            return (
+              <motion.div key={p.id} variants={itemV} className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-soft transition hover:-translate-y-0.5 hover:shadow-elev">
+                <div className="relative aspect-[4/3] bg-muted/30">
+                  {p.image_paths?.[0] ? <img src={imgUrl(p.image_paths[0])} className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center text-muted-foreground"><Package className="h-10 w-10" /></div>}
+                  <div className="absolute left-2 top-2 flex gap-1">
+                    {off > 0 && <span className="rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-bold text-white">{off}% OFF</span>}
+                    {p.is_exclusive && <span className="rounded-full bg-saffron px-2 py-0.5 text-[10px] font-bold text-white">Excl</span>}
+                  </div>
+                  <span className={`absolute right-2 top-2 rounded-full px-2 py-0.5 text-[10px] font-bold ${p.active ? "bg-emerald-100 text-emerald-700" : "bg-black/60 text-white"}`}>{p.active ? "Active" : "Hidden"}</span>
+                  <div className="absolute inset-x-0 bottom-0 flex items-center justify-end gap-1 bg-gradient-to-t from-black/40 to-transparent p-2 opacity-0 transition group-hover:opacity-100">
+                    <button onClick={() => setForm(p)} className="grid h-8 w-8 place-items-center rounded-lg bg-white text-india-green shadow"><Pencil className="h-4 w-4" /></button>
+                    <button onClick={() => del(p)} className="grid h-8 w-8 place-items-center rounded-lg bg-white text-rose-600 shadow"><Trash2 className="h-4 w-4" /></button>
+                  </div>
+                </div>
+                <div className="flex flex-1 flex-col p-3">
+                  {p.brand && <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{p.brand}</p>}
+                  <p className="line-clamp-1 text-sm font-bold">{p.name}</p>
+                  <p className="text-[11px] text-muted-foreground">{catName(p.category_id)}</p>
+                  <div className="mt-1.5 flex items-baseline gap-2">
+                    <span className="text-base font-extrabold">{inr(price)}</span>
+                    {p.mrp > price && <span className="text-xs text-muted-foreground line-through">{inr(p.mrp)}</span>}
+                  </div>
+                  <div className="mt-1.5 flex flex-wrap gap-1 text-[10px] font-semibold">
+                    <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-emerald-700">R {inr(p.retailer_margin)}</span>
+                    <span className="rounded bg-indigo-50 px-1.5 py-0.5 text-indigo-700">D {inr(p.distributor_commission)}</span>
+                    <span className="rounded bg-saffron/10 px-1.5 py-0.5 text-saffron">Co {inr(p.bharatone_commission)}</span>
+                  </div>
+                  <div className="mt-auto pt-2.5">
+                    <div className="mb-1 flex items-center justify-between text-[11px]">
+                      <span className="text-muted-foreground">Stock</span>
+                      <span className={`font-bold ${out ? "text-rose-600" : low ? "text-amber-600" : "text-emerald-600"}`}>{out ? "Out of stock" : `${p.stock_qty} units`}</span>
+                    </div>
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted"><div className={`h-full rounded-full ${out ? "bg-rose-500" : low ? "bg-amber-500" : "bg-emerald-500"}`} style={{ width: `${stockPct}%` }} /></div>
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+        </motion.div>
+      ) : (
       <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-soft">
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
             <tr><th className="px-3 py-2">Product</th><th className="px-3 py-2">Category</th><th className="px-3 py-2">MRP / Selling</th><th className="px-3 py-2">Margins (R/D/Co)</th><th className="px-3 py-2">Stock</th><th className="px-3 py-2">Status</th><th className="px-3 py-2 text-right">Actions</th></tr>
           </thead>
           <tbody>
-            {loading ? <tr><td colSpan={7} className="px-3 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr>
-              : filtered.length === 0 ? <tr><td colSpan={7} className="px-3 py-10 text-center text-muted-foreground">No products yet.</td></tr>
-              : filtered.map((p) => (
+            {filtered.map((p) => (
                 <tr key={p.id} className="border-t border-border hover:bg-muted/30">
                   <td className="px-3 py-2">
                     <div className="flex items-center gap-2">
@@ -321,6 +430,7 @@ function Products() {
           </tbody>
         </table>
       </div>
+      )}
 
       <AnimatePresence>
         {form && (
@@ -1272,6 +1382,17 @@ function Payments() {
   const pending = rows.filter((r) => r.payment_status === "pending_payment" || r.payment_status === "pending");
   const failed = rows.filter((r) => r.payment_status === "failed");
   const collected = paid.reduce((a, r) => a + Number(r.total || 0), 0);
+  const payTrend = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (let i = 13; i >= 0; i--) { const d = new Date(Date.now() - i * 864e5); map[d.toISOString().slice(0, 10)] = 0; }
+    rows.filter((r) => r.payment_status === "paid").forEach((r) => { const k = new Date(r.created_at).toISOString().slice(0, 10); if (k in map) map[k] += Number(r.total || 0); });
+    return Object.entries(map).map(([d, v]) => ({ d: new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short" }), amount: Math.round(v) }));
+  }, [rows]);
+  const payPie = [
+    { name: "Paid", value: paid.length, color: "#10b981" },
+    { name: "Pending", value: pending.length, color: "#f59e0b" },
+    { name: "Failed", value: failed.length, color: "#f43f5e" },
+  ].filter((x) => x.value > 0);
 
   const filtered = rows.filter((r) => {
     if (st !== "all" && r.payment_status !== st) return false;
@@ -1305,6 +1426,38 @@ function Payments() {
           </motion.div>
         ))}
       </motion.div>
+
+      {rows.length > 0 && (
+        <div className="grid gap-4 lg:grid-cols-3">
+          <div className="rounded-2xl border border-border bg-card p-4 shadow-soft lg:col-span-2">
+            <p className="mb-3 flex items-center gap-1.5 text-sm font-bold"><IndianRupee className="h-4 w-4 text-emerald-600" /> Collected — last 14 days</p>
+            <ResponsiveContainer width="100%" height={200}>
+              <AreaChart data={payTrend} margin={{ left: -18, right: 8, top: 4 }}>
+                <defs><linearGradient id="col" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#10b981" stopOpacity={0.35} /><stop offset="100%" stopColor="#10b981" stopOpacity={0} /></linearGradient></defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                <XAxis dataKey="d" tick={{ fontSize: 10 }} interval={1} tickLine={false} axisLine={false} />
+                <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} tickLine={false} axisLine={false} width={40} />
+                <Tooltip formatter={(v: any) => [inr(Number(v)), "Collected"]} contentStyle={{ borderRadius: 12, border: "1px solid hsl(var(--border))", fontSize: 12 }} />
+                <Area type="monotone" dataKey="amount" stroke="#10b981" strokeWidth={2.5} fill="url(#col)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="rounded-2xl border border-border bg-card p-4 shadow-soft">
+            <p className="mb-3 flex items-center gap-1.5 text-sm font-bold"><CreditCard className="h-4 w-4 text-india-green" /> Payment mix</p>
+            <ResponsiveContainer width="100%" height={200}>
+              <PieChart>
+                <Pie data={payPie} dataKey="value" nameKey="name" innerRadius={44} outerRadius={76} paddingAngle={2}>
+                  {payPie.map((s, i) => <Cell key={i} fill={s.color} />)}
+                </Pie>
+                <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid hsl(var(--border))", fontSize: 12 }} />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
+              {payPie.map((s) => <span key={s.name} className="flex items-center gap-1 text-[11px] text-muted-foreground"><span className="h-2 w-2 rounded-full" style={{ background: s.color }} /> {s.name} ({s.value})</span>)}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap gap-1.5">
