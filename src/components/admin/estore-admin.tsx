@@ -6,6 +6,7 @@ import {
   Search, Download, Boxes, IndianRupee, TrendingUp, Truck, Layers, LayoutGrid,
   Warehouse, CreditCard, FileText, ArrowUp, ArrowDown, AlertTriangle, ChevronRight,
   Wallet, ClipboardList, CheckCircle2, Tag, Tags, Pencil, Eye, EyeOff, Check,
+  Printer, UserPlus, Circle, UserCheck, Bike,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,11 +27,16 @@ type OrderRow = {
   retailer_margin_total: number; distributor_commission_total: number; bharatone_commission_total: number;
   commission_settled: boolean; courier: string | null; tracking_no: string | null;
   razorpay_order_id: string | null; razorpay_payment_id: string | null;
+  order_for: string | null; assigned_staff: string | null; assigned_agent: string | null;
+  assigned_staff_name: string | null; assigned_agent_name: string | null;
   ship_name: string | null; ship_phone: string | null; ship_line: string | null;
   ship_city: string | null; ship_state: string | null; ship_pincode: string | null;
 };
 type Movement = { id: string; product_id: string; product_name: string; change: number; reason: string; balance_after: number; created_at: string; by_name: string | null };
-type OrderDetail = { order: any; retailer_name: string | null; jsko_id: string | null; items: any[] };
+type OrderDetail = { order: any; retailer_name: string | null; jsko_id: string | null; assigned_staff_name?: string | null; assigned_agent_name?: string | null; items: any[] };
+type OrderEvent = { status: string | null; note: string | null; actor_name: string | null; created_at: string };
+type StaffT = { id: string; name: string; role: string };
+type AgentT = { id: string; name: string; phone: string | null; area: string | null; active: boolean };
 
 const inr = (n: number) => "₹" + Number(n || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 });
 const imgUrl = (p?: string) => p ? supabase.storage.from("estore").getPublicUrl(p).data.publicUrl : "";
@@ -54,6 +60,7 @@ const TABS = [
   ["tags", "Tags", Tags],
   ["inventory", "Inventory", Warehouse],
   ["orders", "Orders", ClipboardList],
+  ["invoices", "Invoices", FileText],
   ["payments", "Payments", CreditCard],
 ] as const;
 type TabKey = typeof TABS[number][0];
@@ -82,6 +89,7 @@ export function EstoreAdmin() {
             : tab === "tags" ? <TagsManager />
             : tab === "inventory" ? <Inventory />
             : tab === "orders" ? <Orders />
+            : tab === "invoices" ? <Invoices />
             : <Payments />}
         </motion.div>
       </AnimatePresence>
@@ -767,15 +775,35 @@ function Orders() {
   const [busy, setBusy] = useState<string | null>(null);
   const [detail, setDetail] = useState<OrderDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [events, setEvents] = useState<OrderEvent[]>([]);
+  const [staff, setStaff] = useState<StaffT[]>([]);
+  const [agents, setAgents] = useState<AgentT[]>([]);
+  const [invoice, setInvoice] = useState<OrderDetail | null>(null);
+  const [agentsOpen, setAgentsOpen] = useState(false);
 
   async function load() { setLoading(true); try { await ensureStaffSession(); const { data, error } = await (supabase as any).rpc("estore_admin_orders", { _limit: 1000 }); if (error) throw error; setRows((data as OrderRow[]) ?? []); } catch (e: any) { toast.error("Could not load orders", { description: e.message }); } finally { setLoading(false); } }
-  useEffect(() => { load(); }, []);
-
-  const openDetail = async (o: OrderRow) => {
-    setDetailLoading(true); setDetail({ order: { id: o.id, order_no: o.order_no }, retailer_name: o.retailer_name, jsko_id: o.jsko_id, items: [] });
+  async function loadRefs() {
     try {
       await ensureStaffSession();
-      const { data, error } = await (supabase as any).rpc("estore_order_detail", { _order: o.id });
+      const [s, a] = await Promise.all([
+        (supabase as any).rpc("estore_staff_list"),
+        supabase.from("estore_delivery_agents").select("*").order("name"),
+      ]);
+      setStaff((s.data as StaffT[]) ?? []);
+      setAgents((a.data as AgentT[]) ?? []);
+    } catch { /* ignore */ }
+  }
+  useEffect(() => { load(); loadRefs(); }, []);
+
+  const loadEvents = async (orderId: string) => {
+    try { const { data } = await (supabase as any).rpc("estore_order_events", { _order: orderId }); setEvents((data as OrderEvent[]) ?? []); }
+    catch { setEvents([]); }
+  };
+  const openDetail = async (o: { id: string; order_no?: string; retailer_name?: string | null; jsko_id?: string | null }) => {
+    setDetailLoading(true); setEvents([]); setDetail({ order: { id: o.id, order_no: o.order_no }, retailer_name: o.retailer_name ?? null, jsko_id: o.jsko_id ?? null, items: [] });
+    try {
+      await ensureStaffSession();
+      const [{ data, error }] = await Promise.all([(supabase as any).rpc("estore_order_detail", { _order: o.id }), loadEvents(o.id)]);
       if (error) throw error;
       setDetail(data as OrderDetail);
     } catch (e: any) { toast.error("Could not load order", { description: e.message }); setDetail(null); }
@@ -795,7 +823,16 @@ function Orders() {
     if (error) return toast.error("Could not update", { description: error.message });
     toast.success(`Order ${status}${status === "delivered" ? " — margins credited" : ""}`);
     load();
-    if (detail) openDetail({ ...(detail.order as any), id: o.id } as OrderRow);
+    if (detail) openDetail({ id: o.id });
+  };
+
+  const assign = async (orderId: string, staffId: string | null, agentId: string | null) => {
+    setBusy(orderId);
+    const { error } = await (supabase as any).rpc("estore_assign_order", { _order: orderId, _staff: staffId, _agent: agentId, _note: "Order assignment updated" });
+    setBusy(null);
+    if (error) return toast.error("Could not assign", { description: error.message });
+    toast.success("Assignment saved");
+    load(); if (detail) openDetail({ id: orderId });
   };
 
   const filtered = rows.filter((r) => {
@@ -871,29 +908,39 @@ function Orders() {
 
       <AnimatePresence>
         {detail && (
-          <OrderDrawer detail={detail} loading={detailLoading} busy={busy}
+          <OrderDrawer detail={detail} loading={detailLoading} busy={busy} events={events} staff={staff} agents={agents}
             onClose={() => setDetail(null)}
             onStatus={(status) => setStatus({ id: detail.order.id }, status, rows.find((r) => r.id === detail.order.id))}
-            onInvoice={() => printInvoice(detail)} />
+            onAssign={(s, a) => assign(detail.order.id, s, a)}
+            onManageAgents={() => setAgentsOpen(true)}
+            onInvoice={() => setInvoice(detail)} />
         )}
       </AnimatePresence>
+      <AnimatePresence>{invoice && <InvoiceModal detail={invoice} onClose={() => setInvoice(null)} />}</AnimatePresence>
+      <AnimatePresence>{agentsOpen && <AgentsModal onClose={() => setAgentsOpen(false)} onChanged={loadRefs} />}</AnimatePresence>
     </div>
   );
 }
 
-function OrderDrawer({ detail, loading, busy, onClose, onStatus, onInvoice }: {
-  detail: OrderDetail; loading: boolean; busy: string | null; onClose: () => void; onStatus: (s: string) => void; onInvoice: () => void;
+function OrderDrawer({ detail, loading, busy, events, staff, agents, onClose, onStatus, onAssign, onManageAgents, onInvoice }: {
+  detail: OrderDetail; loading: boolean; busy: string | null; events: OrderEvent[]; staff: StaffT[]; agents: AgentT[];
+  onClose: () => void; onStatus: (s: string) => void; onAssign: (staffId: string | null, agentId: string | null) => void; onManageAgents: () => void; onInvoice: () => void;
 }) {
   const o = detail.order || {};
   const nextStatuses = STATUSES.filter((s) => s !== o.status);
   const isPaid = o.payment_status === "paid";
   const closed = o.status === "delivered" || o.status === "cancelled";
+  const [selStaff, setSelStaff] = useState<string>(o.assigned_staff || "");
+  const [selAgent, setSelAgent] = useState<string>(o.assigned_agent || "");
+  useEffect(() => { setSelStaff(o.assigned_staff || ""); setSelAgent(o.assigned_agent || ""); }, [o.id, o.assigned_staff, o.assigned_agent]);
+  const dirty = selStaff !== (o.assigned_staff || "") || selAgent !== (o.assigned_agent || "");
+
   return (
     <motion.div className="fixed inset-0 z-50 flex justify-end bg-black/40" onClick={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
       <motion.div className="flex h-full w-full max-w-lg flex-col bg-card shadow-elev" onClick={(e) => e.stopPropagation()}
         initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", stiffness: 320, damping: 34 }}>
         <div className="flex items-center justify-between border-b border-border p-4">
-          <div><p className="text-sm font-bold">{o.order_no}</p><p className="text-[11px] text-muted-foreground">{o.created_at ? new Date(o.created_at).toLocaleString("en-IN") : ""}</p></div>
+          <div><p className="text-sm font-bold">{o.order_no}</p><p className="text-[11px] text-muted-foreground">{o.created_at ? new Date(o.created_at).toLocaleString("en-IN") : ""}{o.order_for ? ` · for ${o.order_for}` : ""}</p></div>
           <div className="flex items-center gap-2">
             <button onClick={onInvoice} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-8 text-xs font-semibold hover:bg-muted"><FileText className="h-3.5 w-3.5" /> Invoice</button>
             <button onClick={onClose}><X className="h-5 w-5" /></button>
@@ -908,9 +955,49 @@ function OrderDrawer({ detail, loading, busy, onClose, onStatus, onInvoice }: {
               {o.commission_settled && <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-bold text-emerald-700">Margins settled</span>}
             </div>
 
+            {/* Assignment */}
+            <Section title="Assignment">
+              <label className="mb-1 block text-[11px] font-semibold text-muted-foreground">Processing staff</label>
+              <div className="flex items-center gap-2">
+                <UserCheck className="h-4 w-4 shrink-0 text-india-green" />
+                <select value={selStaff} onChange={(e) => setSelStaff(e.target.value)} className="h-9 flex-1 rounded-lg border border-border bg-background px-2 text-sm">
+                  <option value="">— unassigned —</option>
+                  {staff.map((s) => <option key={s.id} value={s.id}>{s.name} · {s.role}</option>)}
+                </select>
+              </div>
+              <label className="mb-1 mt-3 block text-[11px] font-semibold text-muted-foreground">Delivery agent</label>
+              <div className="flex items-center gap-2">
+                <Bike className="h-4 w-4 shrink-0 text-india-green" />
+                <select value={selAgent} onChange={(e) => setSelAgent(e.target.value)} className="h-9 flex-1 rounded-lg border border-border bg-background px-2 text-sm">
+                  <option value="">— unassigned —</option>
+                  {agents.filter((a) => a.active || a.id === selAgent).map((a) => <option key={a.id} value={a.id}>{a.name}{a.area ? ` · ${a.area}` : ""}</option>)}
+                </select>
+                <button onClick={onManageAgents} title="Manage agents" className="grid h-9 w-9 place-items-center rounded-lg border border-border hover:bg-muted"><UserPlus className="h-4 w-4" /></button>
+              </div>
+              <button disabled={!dirty || !!busy} onClick={() => onAssign(selStaff || null, selAgent || null)} className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-india-green px-3 h-9 text-xs font-bold text-white disabled:opacity-40">
+                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save assignment
+              </button>
+            </Section>
+
+            {/* Tracking timeline */}
+            <Section title="Tracking timeline">
+              {events.length === 0 ? <p className="text-xs text-muted-foreground">No updates yet.</p> : (
+                <ol className="relative ml-1 space-y-3 border-l border-border pl-4">
+                  {events.map((e, i) => (
+                    <li key={i} className="relative">
+                      <span className={`absolute -left-[21px] top-0.5 grid h-3.5 w-3.5 place-items-center rounded-full ${i === events.length - 1 ? "bg-india-green" : "bg-muted-foreground/40"}`}><Circle className="h-1.5 w-1.5 fill-white text-white" /></span>
+                      <p className="text-sm font-semibold capitalize">{e.status ? e.status.replace(/_/g, " ") : e.note}</p>
+                      {e.status && e.note && <p className="text-[11px] text-muted-foreground">{e.note}</p>}
+                      <p className="text-[10px] text-muted-foreground">{new Date(e.created_at).toLocaleString("en-IN")}{e.actor_name ? ` · ${e.actor_name}` : ""}</p>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </Section>
+
             <Section title="Customer">
               <p className="text-sm font-semibold">{detail.retailer_name ?? "—"} {detail.jsko_id ? <span className="font-mono text-xs text-muted-foreground">· {detail.jsko_id}</span> : null}</p>
-              <p className="text-sm">{o.ship_name} · {o.ship_phone}</p>
+              <p className="text-sm">{o.ship_name} · {o.ship_phone}{o.contact_email ? ` · ${o.contact_email}` : ""}</p>
               <p className="text-xs text-muted-foreground">{[o.ship_line, o.ship_landmark, o.ship_city, o.ship_state, o.ship_pincode].filter(Boolean).join(", ")}</p>
             </Section>
 
@@ -965,6 +1052,147 @@ function OrderDrawer({ detail, loading, busy, onClose, onStatus, onInvoice }: {
         )}
       </motion.div>
     </motion.div>
+  );
+}
+
+// in-app invoice modal (visible, printable)
+function InvoiceModal({ detail, onClose }: { detail: OrderDetail; onClose: () => void }) {
+  const o = detail.order || {};
+  const items = detail.items ?? [];
+  const gstOf = (it: any) => Number(it.line_total || 0) * Number(it.gst_rate || 0) / 100;
+  return (
+    <motion.div className="fixed inset-0 z-[60] grid place-items-center bg-black/50 p-4" onClick={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+      <motion.div className="flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-elev" onClick={(e) => e.stopPropagation()}
+        initial={{ scale: 0.96, y: 16, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }} exit={{ scale: 0.96, y: 16, opacity: 0 }}>
+        <div className="flex items-center justify-between border-b border-border bg-card p-3">
+          <p className="text-sm font-bold">Tax Invoice · {o.order_no}</p>
+          <div className="flex items-center gap-2">
+            <button onClick={() => printInvoice(detail)} className="inline-flex items-center gap-1.5 rounded-lg bg-india-green px-3 h-8 text-xs font-bold text-white"><Printer className="h-3.5 w-3.5" /> Print / Save PDF</button>
+            <button onClick={onClose}><X className="h-5 w-5" /></button>
+          </div>
+        </div>
+        <div className="overflow-y-auto p-5 text-[#111]">
+          <div className="flex items-start justify-between border-b-2 border-india-green pb-3">
+            <div><p className="text-lg font-extrabold text-india-green">{SELLER.brand}</p><p className="text-[11px] text-muted-foreground">{SELLER.name}</p></div>
+            <div className="text-right"><p className="text-base font-extrabold">TAX INVOICE</p><p className="text-[11px] text-muted-foreground">{o.order_no}</p><p className="text-[11px] text-muted-foreground">{o.created_at ? new Date(o.created_at).toLocaleDateString("en-IN") : ""}</p></div>
+          </div>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-xl border border-border p-3 text-sm"><p className="mb-1 text-[10px] font-bold uppercase text-muted-foreground">Bill / Ship to</p><p className="font-semibold">{o.ship_name}</p><p>{o.ship_phone}</p><p className="text-xs text-muted-foreground">{[o.ship_line, o.ship_landmark, o.ship_city, o.ship_state, o.ship_pincode].filter(Boolean).join(", ")}</p></div>
+            <div className="rounded-xl border border-border p-3 text-sm"><p className="mb-1 text-[10px] font-bold uppercase text-muted-foreground">Order</p><p>Retailer: <b>{detail.retailer_name || "—"}</b></p><p>JSKO: {detail.jsko_id || "—"}</p><p>Payment: <b className="capitalize">{o.payment_status}</b></p></div>
+          </div>
+          <table className="mt-4 w-full border-collapse text-sm">
+            <thead><tr className="bg-muted/50 text-left text-[11px] uppercase text-muted-foreground"><th className="p-2">Item</th><th className="p-2 text-center">Qty</th><th className="p-2 text-right">Rate</th><th className="p-2 text-right">Taxable</th><th className="p-2 text-center">GST</th><th className="p-2 text-right">Amount</th></tr></thead>
+            <tbody>
+              {items.map((it: any) => (
+                <tr key={it.id} className="border-b border-border"><td className="p-2">{it.name}</td><td className="p-2 text-center">{it.qty}</td><td className="p-2 text-right">{inr(it.unit_price)}</td><td className="p-2 text-right">{inr(it.line_total)}</td><td className="p-2 text-center">{it.gst_rate}%</td><td className="p-2 text-right">{inr(Number(it.line_total) + gstOf(it))}</td></tr>
+              ))}
+            </tbody>
+          </table>
+          <div className="ml-auto mt-4 w-64 text-sm">
+            <div className="flex justify-between py-0.5"><span>Subtotal</span><span>{inr(o.subtotal)}</span></div>
+            <div className="flex justify-between py-0.5"><span>GST</span><span>{inr(o.gst_amount)}</span></div>
+            <div className="flex justify-between py-0.5"><span>Shipping</span><span>{inr(o.shipping_fee)}</span></div>
+            <div className="mt-1 flex justify-between border-t-2 border-india-green pt-2 text-base font-extrabold"><span>Grand Total</span><span>{inr(o.total)}</span></div>
+          </div>
+          <p className="mt-6 text-center text-[11px] text-muted-foreground">Computer-generated invoice from {SELLER.brand}. Thank you for your business.</p>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// delivery agents manager
+function AgentsModal({ onClose, onChanged }: { onClose: () => void; onChanged: () => void }) {
+  const [rows, setRows] = useState<AgentT[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [f, setF] = useState({ name: "", phone: "", area: "" });
+  async function load() { setLoading(true); const { data } = await supabase.from("estore_delivery_agents").select("*").order("name"); setRows((data as AgentT[]) ?? []); setLoading(false); }
+  useEffect(() => { load(); }, []);
+  const add = async () => {
+    if (!f.name.trim()) return toast.error("Enter agent name");
+    await ensureStaffSession();
+    const { error } = await supabase.from("estore_delivery_agents").insert({ name: f.name.trim(), phone: f.phone.trim() || null, area: f.area.trim() || null, active: true });
+    if (error) return toast.error(error.message);
+    setF({ name: "", phone: "", area: "" }); toast.success("Agent added"); load(); onChanged();
+  };
+  const toggle = async (a: AgentT) => { await ensureStaffSession(); await supabase.from("estore_delivery_agents").update({ active: !a.active }).eq("id", a.id); load(); onChanged(); };
+  const del = async (a: AgentT) => { if (!confirm(`Delete "${a.name}"?`)) return; await ensureStaffSession(); const { error } = await supabase.from("estore_delivery_agents").delete().eq("id", a.id); if (error) return toast.error(error.message); load(); onChanged(); };
+  return (
+    <motion.div className="fixed inset-0 z-[60] grid place-items-center bg-black/50 p-4" onClick={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+      <motion.div className="w-full max-w-md rounded-2xl bg-card p-5 shadow-elev" onClick={(e) => e.stopPropagation()} initial={{ scale: 0.96, y: 16, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }} exit={{ scale: 0.96, y: 16, opacity: 0 }}>
+        <div className="mb-3 flex items-center justify-between"><p className="flex items-center gap-1.5 text-sm font-bold"><Bike className="h-4 w-4 text-india-green" /> Delivery agents</p><button onClick={onClose}><X className="h-5 w-5" /></button></div>
+        <div className="grid grid-cols-3 gap-2">
+          <input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} placeholder="Name *" className="h-9 rounded-lg border border-border bg-background px-2 text-sm" />
+          <input value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} placeholder="Phone" className="h-9 rounded-lg border border-border bg-background px-2 text-sm" />
+          <input value={f.area} onChange={(e) => setF({ ...f, area: e.target.value })} placeholder="Area" className="h-9 rounded-lg border border-border bg-background px-2 text-sm" />
+        </div>
+        <Button size="sm" onClick={add} className="mt-2 w-full bg-india-green text-white"><Plus className="h-4 w-4" /> Add agent</Button>
+        <div className="mt-3 max-h-64 space-y-2 overflow-y-auto">
+          {loading ? <div className="py-6 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></div>
+            : rows.length === 0 ? <p className="py-6 text-center text-sm text-muted-foreground">No agents yet.</p>
+            : rows.map((a) => (
+              <div key={a.id} className={`flex items-center justify-between rounded-xl border border-border p-2 ${!a.active ? "opacity-60" : ""}`}>
+                <div><p className="text-sm font-semibold">{a.name}</p><p className="text-[11px] text-muted-foreground">{[a.phone, a.area].filter(Boolean).join(" · ") || "—"}</p></div>
+                <div className="flex items-center gap-1 text-muted-foreground">
+                  <button onClick={() => toggle(a)} className="rounded p-1 hover:bg-muted">{a.active ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}</button>
+                  <button onClick={() => del(a)} className="rounded p-1 text-rose-600 hover:bg-rose-50"><Trash2 className="h-3.5 w-3.5" /></button>
+                </div>
+              </div>
+            ))}
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// Invoices tab — searchable list of paid orders, opens the in-app invoice
+function Invoices() {
+  const [rows, setRows] = useState<OrderRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [q, setQ] = useState("");
+  const [invoice, setInvoice] = useState<OrderDetail | null>(null);
+  const [opening, setOpening] = useState<string | null>(null);
+  async function load() { setLoading(true); try { await ensureStaffSession(); const { data, error } = await (supabase as any).rpc("estore_admin_orders", { _limit: 2000 }); if (error) throw error; setRows(((data as OrderRow[]) ?? []).filter((r) => r.payment_status === "paid")); } catch (e: any) { toast.error("Could not load", { description: e.message }); } finally { setLoading(false); } }
+  useEffect(() => { load(); }, []);
+  const open = async (o: OrderRow) => {
+    setOpening(o.id);
+    try { await ensureStaffSession(); const { data, error } = await (supabase as any).rpc("estore_order_detail", { _order: o.id }); if (error) throw error; setInvoice(data as OrderDetail); }
+    catch (e: any) { toast.error("Could not open invoice", { description: e.message }); }
+    finally { setOpening(null); }
+  };
+  const filtered = rows.filter((r) => !q.trim() || `${r.order_no} ${r.retailer_name ?? ""} ${r.ship_name ?? ""} ${r.jsko_id ?? ""}`.toLowerCase().includes(q.trim().toLowerCase()));
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-sm text-muted-foreground">{filtered.length} invoice{filtered.length !== 1 ? "s" : ""} (paid orders)</p>
+        <div className="flex items-center gap-2">
+          <div className="relative"><Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Order, retailer…" className="h-8 w-52 rounded-lg border border-border bg-background pl-8 pr-2 text-xs outline-none" /></div>
+          <Button size="sm" variant="outline" onClick={load}><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /></Button>
+        </div>
+      </div>
+      <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-soft">
+        <table className="w-full text-sm">
+          <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
+            <tr><th className="px-3 py-2">Invoice</th><th className="px-3 py-2">Retailer</th><th className="px-3 py-2">Bill to</th><th className="px-3 py-2">Total</th><th className="px-3 py-2">Date</th><th className="px-3 py-2 text-right">Invoice</th></tr>
+          </thead>
+          <tbody>
+            {loading ? <tr><td colSpan={6} className="px-3 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr>
+              : filtered.length === 0 ? <tr><td colSpan={6} className="px-3 py-10 text-center text-muted-foreground">No paid orders yet.</td></tr>
+              : filtered.map((o) => (
+                <tr key={o.id} className="border-t border-border hover:bg-muted/30">
+                  <td className="px-3 py-2 font-semibold">{o.order_no}</td>
+                  <td className="px-3 py-2"><p className="text-sm">{o.retailer_name ?? "—"}</p><p className="text-[11px] font-mono text-muted-foreground">{o.jsko_id}</p></td>
+                  <td className="px-3 py-2 text-xs">{o.ship_name}<div className="text-muted-foreground">{o.ship_city} {o.ship_pincode}</div></td>
+                  <td className="px-3 py-2 font-bold">{inr(o.total)}</td>
+                  <td className="px-3 py-2 text-xs text-muted-foreground">{new Date(o.created_at).toLocaleDateString("en-IN")}</td>
+                  <td className="px-3 py-2 text-right"><button onClick={() => open(o)} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-8 text-xs font-semibold hover:bg-muted">{opening === o.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />} View</button></td>
+                </tr>
+              ))}
+          </tbody>
+        </table>
+      </div>
+      <AnimatePresence>{invoice && <InvoiceModal detail={invoice} onClose={() => setInvoice(null)} />}</AnimatePresence>
+    </div>
   );
 }
 function Section({ title, children }: { title: string; children: React.ReactNode }) {

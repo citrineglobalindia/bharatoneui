@@ -65,6 +65,9 @@ function EstorePage() {
   const [cart, setCart] = useState<CartLine[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [checkingOut, setCheckingOut] = useState(false);
+  const [trackId, setTrackId] = useState<string | null>(null);
+  const [trackEvents, setTrackEvents] = useState<{ status: string | null; note: string | null; created_at: string }[]>([]);
+  const [trackLoading, setTrackLoading] = useState(false);
   // order booking
   const [orderFor, setOrderFor] = useState<"retailer" | "customer">("retailer");
   const [myContact, setMyContact] = useState<any>(null);
@@ -188,6 +191,14 @@ function EstorePage() {
     const r = await payEstoreOrder({ orderId: o.id, email: au.user?.email });
     if (r.status === "paid") { toast.success("Payment successful"); load(); }
     else if (r.status !== "dismissed") toast.error("Payment failed", { description: r.message });
+  };
+
+  const track = async (o: Order) => {
+    if (trackId === o.id) { setTrackId(null); return; }
+    setTrackId(o.id); setTrackEvents([]); setTrackLoading(true);
+    try { const { data } = await (supabase as any).rpc("estore_order_events", { _order: o.id }); setTrackEvents((data as any[]) ?? []); }
+    catch { setTrackEvents([]); }
+    finally { setTrackLoading(false); }
   };
 
   return (
@@ -423,6 +434,30 @@ function EstorePage() {
                   )}
                   {o.tracking_no && <p className="mt-2 text-xs text-muted-foreground">Courier: <b>{o.courier}</b> · Tracking: <b>{o.tracking_no}</b></p>}
                   {o.commission_settled && o.retailer_margin_total > 0 && <p className="mt-1 text-xs font-semibold text-emerald-600">Margin {inr(o.retailer_margin_total)} credited to your wallet</p>}
+
+                  {o.status !== "pending_payment" && (
+                    <button onClick={() => track(o)} className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-india-green hover:underline">
+                      <Truck className="h-3.5 w-3.5" /> {trackId === o.id ? "Hide tracking" : "Track order"}
+                    </button>
+                  )}
+                  {trackId === o.id && (
+                    <div className="mt-2 rounded-xl border border-border bg-muted/20 p-3">
+                      {trackLoading ? <div className="py-2 text-center"><Loader2 className="mx-auto h-4 w-4 animate-spin text-muted-foreground" /></div>
+                        : trackEvents.length === 0 ? <p className="text-xs text-muted-foreground">No tracking updates yet.</p>
+                        : (
+                          <ol className="relative ml-1 space-y-3 border-l border-border pl-4">
+                            {trackEvents.map((e, i) => (
+                              <li key={i} className="relative">
+                                <span className={`absolute -left-[21px] top-0.5 h-3.5 w-3.5 rounded-full ${i === trackEvents.length - 1 ? "bg-india-green" : "bg-muted-foreground/40"}`} />
+                                <p className="text-sm font-semibold capitalize">{e.status ? e.status.replace(/_/g, " ") : e.note}</p>
+                                {e.status && e.note && <p className="text-[11px] text-muted-foreground">{e.note}</p>}
+                                <p className="text-[10px] text-muted-foreground">{new Date(e.created_at).toLocaleString("en-IN")}</p>
+                              </li>
+                            ))}
+                          </ol>
+                        )}
+                    </div>
+                  )}
                 </div>
               ))}
           </div>
