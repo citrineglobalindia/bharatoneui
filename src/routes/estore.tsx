@@ -531,54 +531,73 @@ function ProductDetail({ p, related, tagColor, inCart, cartCount, onClose, onAdd
 }) {
   const [img, setImg] = useState(0);
   const [qty, setQty] = useState(1);
+  const [zoom, setZoom] = useState(false);
   useEffect(() => { setImg(0); setQty(1); window.scrollTo?.({ top: 0 }); }, [p.id]);
   const price = priceOf(p);
   const off = p.mrp > price ? Math.round((1 - price / p.mrp) * 100) : 0;
+  const save = p.mrp > price ? p.mrp - price : 0;
   const out = p.stock_qty <= 0;
   const low = !out && p.stock_qty <= p.low_stock_at;
-  const maxQty = Math.max(1, p.stock_qty);
+  const maxQty = Math.max(1, Math.min(p.stock_qty, 10));
   const imgs = p.image_paths?.length ? p.image_paths : [];
+  const bullets = (p.description || "").split(/\r?\n|•/).map((s) => s.trim()).filter(Boolean);
+  const deliveryDate = new Date(Date.now() + 5 * 864e5).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-background">
       {/* top bar */}
       <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-card/95 px-4 py-3 backdrop-blur">
-        <button onClick={onClose} className="inline-flex items-center gap-1.5 text-sm font-semibold hover:text-india-green"><ArrowLeft className="h-4 w-4" /> Back to shop</button>
+        <button onClick={onClose} className="inline-flex items-center gap-1.5 text-sm font-semibold hover:text-india-green"><ArrowLeft className="h-4 w-4" /> Back to results</button>
         <button onClick={onOpenCart} className="relative inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-9 text-sm font-semibold hover:bg-muted">
           <ShoppingCart className="h-4 w-4" /> Cart
           {cartCount > 0 && <span className="absolute -right-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-saffron px-1 text-[11px] font-bold text-white">{cartCount}</span>}
         </button>
       </div>
 
-      <div className="mx-auto max-w-6xl px-4 py-5">
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* gallery */}
-          <div className="lg:sticky lg:top-20 lg:self-start">
-            <div className="relative aspect-square overflow-hidden rounded-2xl border border-border bg-muted/30">
-              {imgs[img]
-                ? <img src={imgUrl(imgs[img])} alt={p.name} className="h-full w-full object-contain" />
-                : <div className="grid h-full place-items-center text-muted-foreground"><Package className="h-16 w-16" /></div>}
-              {p.is_exclusive && <span className="absolute left-3 top-3 rounded-full bg-saffron px-2.5 py-1 text-[11px] font-bold text-white">BharatOne Exclusive</span>}
-              {off > 0 && <span className="absolute right-3 top-3 rounded-full bg-rose-600 px-2.5 py-1 text-[11px] font-bold text-white">{off}% OFF</span>}
-            </div>
-            {imgs.length > 1 && (
-              <div className="mt-3 flex gap-2 overflow-x-auto">
-                {imgs.map((ip, i) => (
-                  <button key={i} onClick={() => setImg(i)} className={`h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 ${i === img ? "border-india-green" : "border-border"}`}>
-                    <img src={imgUrl(ip)} className="h-full w-full object-cover" />
-                  </button>
-                ))}
+      <div className="mx-auto max-w-7xl px-4 py-5">
+        {p.brand && <p className="mb-2 text-xs text-muted-foreground">Brand: <span className="font-semibold text-india-green">{p.brand}</span></p>}
+        <div className="grid gap-6 lg:grid-cols-12">
+          {/* GALLERY */}
+          <div className="lg:col-span-5 lg:sticky lg:top-20 lg:self-start">
+            <div className="flex gap-3">
+              {imgs.length > 1 && (
+                <div className="hidden max-h-[460px] flex-col gap-2 overflow-y-auto sm:flex">
+                  {imgs.map((ip, i) => (
+                    <button key={i} onMouseEnter={() => setImg(i)} onClick={() => setImg(i)} className={`h-14 w-14 shrink-0 overflow-hidden rounded-md border-2 transition ${i === img ? "border-saffron ring-1 ring-saffron" : "border-border hover:border-india-green"}`}>
+                      <img src={imgUrl(ip)} className="h-full w-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              )}
+              <div className="relative flex-1">
+                <div onMouseEnter={() => setZoom(true)} onMouseLeave={() => setZoom(false)} className="relative aspect-square overflow-hidden rounded-2xl border border-border bg-white">
+                  {imgs[img]
+                    ? <img src={imgUrl(imgs[img])} alt={p.name} className={`h-full w-full object-contain transition-transform duration-200 ${zoom ? "scale-150" : "scale-100"}`} />
+                    : <div className="grid h-full place-items-center text-muted-foreground"><Package className="h-16 w-16" /></div>}
+                  {p.is_exclusive && <span className="absolute left-3 top-3 rounded-full bg-saffron px-2.5 py-1 text-[11px] font-bold text-white">BharatOne Exclusive</span>}
+                  {off > 0 && <span className="absolute left-3 bottom-3 rounded-md bg-rose-600 px-2 py-1 text-[11px] font-bold text-white">-{off}%</span>}
+                </div>
+                {imgs.length > 1 && (
+                  <div className="mt-3 flex gap-2 overflow-x-auto sm:hidden">
+                    {imgs.map((ip, i) => (
+                      <button key={i} onClick={() => setImg(i)} className={`h-14 w-14 shrink-0 overflow-hidden rounded-md border-2 ${i === img ? "border-saffron" : "border-border"}`}>
+                        <img src={imgUrl(ip)} className="h-full w-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <p className="mt-2 hidden text-center text-[11px] text-muted-foreground sm:block">Hover image to zoom</p>
               </div>
-            )}
+            </div>
           </div>
 
-          {/* info */}
-          <div>
-            {p.brand && <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">{p.brand}</p>}
-            <h1 className="mt-0.5 font-display text-xl font-extrabold leading-snug sm:text-2xl">{p.name}</h1>
-            <div className="mt-1 flex items-center gap-1 text-amber-500">
-              {[0, 1, 2, 3, 4].map((i) => <Star key={i} className="h-4 w-4 fill-current" />)}
-              <span className="ml-1 text-xs font-semibold text-muted-foreground">Retailer favourite</span>
+          {/* CENTER INFO */}
+          <div className="lg:col-span-4">
+            <h1 className="font-display text-xl font-extrabold leading-snug sm:text-2xl">{p.name}</h1>
+            <div className="mt-1 flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-0.5 text-amber-500">{[0, 1, 2, 3, 4].map((i) => <Star key={i} className="h-4 w-4 fill-current" />)}</div>
+              <span className="text-xs font-semibold text-india-green">Retailer favourite</span>
+              {p.sku && <span className="text-[11px] text-muted-foreground">· SKU {p.sku}</span>}
             </div>
             {(p.tags?.length ?? 0) > 0 && (
               <div className="mt-2 flex flex-wrap gap-1.5">
@@ -586,66 +605,36 @@ function ProductDetail({ p, related, tagColor, inCart, cartCount, onClose, onAdd
               </div>
             )}
 
-            <div className="mt-3 flex items-end gap-3">
+            <div className="my-3 h-px bg-border" />
+
+            <div className="flex items-end gap-2">
+              {off > 0 && <span className="text-2xl font-light text-rose-600">-{off}%</span>}
               <span className="text-3xl font-extrabold">{inr(price)}</span>
-              {p.mrp > price && <span className="pb-1 text-base text-muted-foreground line-through">{inr(p.mrp)}</span>}
-              {off > 0 && <span className="pb-1 text-sm font-bold text-emerald-600">{off}% off</span>}
             </div>
-            <p className="text-[11px] text-muted-foreground">Inclusive of {p.gst_rate || 0}% GST</p>
+            {p.mrp > price && <p className="text-xs text-muted-foreground">M.R.P.: <span className="line-through">{inr(p.mrp)}</span> · You save {inr(save)}</p>}
+            <p className="text-[11px] text-muted-foreground">Inclusive of all taxes ({p.gst_rate || 0}% GST)</p>
 
             {p.retailer_margin > 0 && (
-              <div className="mt-3 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-emerald-700">
-                <Tag className="h-5 w-5" />
-                <div><p className="text-sm font-bold">You earn {inr(p.retailer_margin)} per unit</p><p className="text-[11px]">Margin credited to your wallet on delivery</p></div>
+              <div className="mt-3 inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-emerald-700">
+                <Tag className="h-4 w-4" /><span className="text-sm font-bold">You earn {inr(p.retailer_margin)}/unit on delivery</span>
               </div>
             )}
 
-            {/* stock + qty */}
+            {bullets.length > 0 && (
+              <div className="mt-4">
+                <p className="mb-1.5 text-sm font-bold">About this item</p>
+                <ul className="space-y-1.5">
+                  {bullets.map((b, i) => (
+                    <li key={i} className="flex gap-2 text-sm leading-relaxed text-muted-foreground"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-india-green" /><span>{b}</span></li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             <div className="mt-4">
-              {out ? <p className="text-sm font-bold text-rose-600">Out of stock</p>
-                : <p className={`text-sm font-semibold ${low ? "text-amber-600" : "text-emerald-600"}`}>{low ? `Hurry — only ${p.stock_qty} left` : "In stock"}</p>}
-            </div>
-            {!out && (
-              <div className="mt-2 flex items-center gap-3">
-                <span className="text-sm font-semibold">Qty</span>
-                <div className="flex items-center rounded-lg border border-border">
-                  <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="grid h-10 w-10 place-items-center hover:bg-muted"><Minus className="h-4 w-4" /></button>
-                  <span className="w-10 text-center text-sm font-bold">{qty}</span>
-                  <button onClick={() => setQty((q) => Math.min(maxQty, q + 1))} className="grid h-10 w-10 place-items-center hover:bg-muted"><Plus className="h-4 w-4" /></button>
-                </div>
-              </div>
-            )}
-
-            {/* actions */}
-            <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-              <button disabled={out} onClick={() => onAdd(qty)} className="flex-1 rounded-xl border-2 border-india-green px-4 h-12 text-sm font-bold text-india-green hover:bg-india-green/5 disabled:opacity-40">
-                <ShoppingCart className="mr-1 inline h-4 w-4" /> {inCart > 0 ? `In cart (${inCart}) · Add more` : "Add to cart"}
-              </button>
-              <button disabled={out} onClick={() => onBuy(qty)} className="flex-1 rounded-xl bg-saffron-gradient px-4 h-12 text-sm font-bold text-white shadow-elev disabled:opacity-40">
-                <Zap className="mr-1 inline h-4 w-4" /> Buy now
-              </button>
-            </div>
-
-            {/* trust badges */}
-            <div className="mt-4 grid grid-cols-3 gap-2 text-center text-[11px]">
-              <div className="rounded-xl border border-border p-2"><ShieldCheck className="mx-auto h-5 w-5 text-india-green" /><p className="mt-1 font-semibold">Secure payment</p></div>
-              <div className="rounded-xl border border-border p-2"><Truck className="mx-auto h-5 w-5 text-india-green" /><p className="mt-1 font-semibold">Doorstep delivery</p></div>
-              <div className="rounded-xl border border-border p-2"><BadgeCheck className="mx-auto h-5 w-5 text-india-green" /><p className="mt-1 font-semibold">Genuine product</p></div>
-            </div>
-
-            {/* description */}
-            {p.description && (
-              <div className="mt-5">
-                <p className="mb-1 text-sm font-bold">Description</p>
-                <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{p.description}</p>
-              </div>
-            )}
-
-            {/* specs */}
-            <div className="mt-5">
-              <p className="mb-1 text-sm font-bold">Product details</p>
+              <p className="mb-1.5 text-sm font-bold">Product details</p>
               <div className="overflow-hidden rounded-xl border border-border text-sm">
-                {[["Brand", p.brand], ["SKU", p.sku], ["HSN code", p.hsn], ["GST", p.gst_rate ? `${p.gst_rate}%` : null], ["MRP", inr(p.mrp)]]
+                {[["Brand", p.brand], ["SKU", p.sku], ["HSN code", p.hsn], ["GST", p.gst_rate ? `${p.gst_rate}%` : null], ["M.R.P.", inr(p.mrp)]]
                   .filter(([, v]) => v)
                   .map(([k, v], i) => (
                     <div key={k as string} className={`flex justify-between px-3 py-2 ${i % 2 ? "bg-muted/30" : ""}`}>
@@ -655,22 +644,56 @@ function ProductDetail({ p, related, tagColor, inCart, cartCount, onClose, onAdd
               </div>
             </div>
           </div>
+
+          {/* BUY BOX */}
+          <div className="lg:col-span-3 lg:sticky lg:top-20 lg:self-start">
+            <div className="rounded-2xl border border-border bg-card p-4 shadow-soft">
+              <p className="text-2xl font-extrabold">{inr(price)}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">Inclusive of {p.gst_rate || 0}% GST</p>
+              <div className="mt-3 flex items-start gap-1.5 text-sm"><Truck className="mt-0.5 h-4 w-4 text-india-green" /><span>FREE delivery by <b>{deliveryDate}</b></span></div>
+              <p className={`mt-2 text-lg font-bold ${out ? "text-rose-600" : "text-emerald-600"}`}>{out ? "Out of stock" : "In stock"}</p>
+              {low && <p className="text-xs font-semibold text-amber-600">Only {p.stock_qty} left — order soon</p>}
+
+              {!out && (
+                <div className="mt-3 flex items-center gap-2 text-sm">
+                  <span className="font-semibold">Quantity:</span>
+                  <select value={qty} onChange={(e) => setQty(+e.target.value)} className="h-9 rounded-lg border border-border bg-background px-2 text-sm font-semibold outline-none">
+                    {Array.from({ length: maxQty }).map((_, i) => <option key={i} value={i + 1}>{i + 1}</option>)}
+                  </select>
+                </div>
+              )}
+
+              <button disabled={out} onClick={() => onAdd(qty)} className="mt-3 w-full rounded-full bg-[#FFD814] px-4 h-11 text-sm font-bold text-[#0F1111] transition hover:bg-[#F7CA00] disabled:opacity-40">
+                {inCart > 0 ? `In cart (${inCart}) · Add more` : "Add to Cart"}
+              </button>
+              <button disabled={out} onClick={() => onBuy(qty)} className="mt-2 w-full rounded-full bg-[#FFA41C] px-4 h-11 text-sm font-bold text-[#0F1111] transition hover:bg-[#FA8900] disabled:opacity-40">
+                Buy Now
+              </button>
+
+              <div className="mt-3 flex items-center gap-1.5 text-[11px] text-muted-foreground"><ShieldCheck className="h-3.5 w-3.5 text-india-green" /> Secure transaction via Razorpay</div>
+              <div className="mt-3 space-y-1 border-t border-border pt-3 text-[11px] text-muted-foreground">
+                <p className="flex justify-between"><span>Ships from</span><span className="font-semibold text-foreground">BharatOne</span></p>
+                <p className="flex justify-between"><span>Sold by</span><span className="font-semibold text-foreground">BharatOne E-Store</span></p>
+                <p className="flex items-center gap-1"><BadgeCheck className="h-3.5 w-3.5 text-india-green" /> Genuine product guarantee</p>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* related */}
         {related.length > 0 && (
-          <div className="mt-8">
-            <p className="mb-3 text-base font-bold">You may also like</p>
+          <div className="mt-8 rounded-2xl border border-border bg-card p-4 shadow-soft">
+            <p className="mb-3 text-base font-bold">Products related to this item</p>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
               {related.map((r) => {
                 const rp = priceOf(r); const roff = r.mrp > rp ? Math.round((1 - rp / r.mrp) * 100) : 0;
                 return (
-                  <button key={r.id} onClick={() => onOpen(r)} className="group overflow-hidden rounded-2xl border border-border bg-card text-left shadow-soft transition hover:-translate-y-0.5 hover:shadow-elev">
-                    <div className="relative aspect-square bg-muted/40">
-                      {r.image_paths?.[0] ? <img src={imgUrl(r.image_paths[0])} className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center text-muted-foreground"><Package className="h-8 w-8" /></div>}
+                  <button key={r.id} onClick={() => onOpen(r)} className="group overflow-hidden rounded-2xl border border-border bg-background text-left shadow-soft transition hover:-translate-y-0.5 hover:shadow-elev">
+                    <div className="relative aspect-square bg-white">
+                      {r.image_paths?.[0] ? <img src={imgUrl(r.image_paths[0])} className="h-full w-full object-contain" /> : <div className="grid h-full place-items-center text-muted-foreground"><Package className="h-8 w-8" /></div>}
                       {roff > 0 && <span className="absolute right-1.5 top-1.5 rounded-full bg-rose-600 px-1.5 py-0.5 text-[9px] font-bold text-white">{roff}%</span>}
                     </div>
-                    <div className="p-2"><p className="line-clamp-2 text-xs font-semibold">{r.name}</p><p className="text-sm font-extrabold">{inr(rp)}</p></div>
+                    <div className="p-2"><p className="line-clamp-2 text-xs font-semibold">{r.name}</p><div className="mt-0.5 flex items-center gap-0.5 text-amber-500">{[0,1,2,3,4].map((i)=><Star key={i} className="h-3 w-3 fill-current"/>)}</div><p className="mt-0.5 text-sm font-extrabold">{inr(rp)}</p></div>
                   </button>
                 );
               })}
