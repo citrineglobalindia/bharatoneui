@@ -43,6 +43,7 @@ import { Route as GetStartedRouteImport } from './routes/get-started'
 import { Route as GalleryRouteImport } from './routes/gallery'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as FeedbackRouteImport } from './routes/feedback'
+import { Route as EstoreRouteImport } from './routes/estore'
 import { Route as DroLoginRouteImport } from './routes/dro-login'
 import { Route as DistributorLoginRouteImport } from './routes/distributor-login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -339,6 +340,11 @@ const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
 const FeedbackRoute = FeedbackRouteImport.update({
   id: '/feedback',
   path: '/feedback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EstoreRoute = EstoreRouteImport.update({
+  id: '/estore',
+  path: '/estore',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DroLoginRoute = DroLoginRouteImport.update({
@@ -1007,6 +1013,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/distributor-login': typeof DistributorLoginRoute
   '/dro-login': typeof DroLoginRoute
+  '/estore': typeof EstoreRoute
   '/feedback': typeof FeedbackRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/gallery': typeof GalleryRoute
@@ -1170,6 +1177,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/distributor-login': typeof DistributorLoginRoute
   '/dro-login': typeof DroLoginRoute
+  '/estore': typeof EstoreRoute
   '/feedback': typeof FeedbackRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/gallery': typeof GalleryRoute
@@ -1332,6 +1340,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/distributor-login': typeof DistributorLoginRoute
   '/dro-login': typeof DroLoginRoute
+  '/estore': typeof EstoreRoute
   '/feedback': typeof FeedbackRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/gallery': typeof GalleryRoute
@@ -1497,6 +1506,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/distributor-login'
     | '/dro-login'
+    | '/estore'
     | '/feedback'
     | '/forgot-password'
     | '/gallery'
@@ -1660,6 +1670,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/distributor-login'
     | '/dro-login'
+    | '/estore'
     | '/feedback'
     | '/forgot-password'
     | '/gallery'
@@ -1821,6 +1832,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/distributor-login'
     | '/dro-login'
+    | '/estore'
     | '/feedback'
     | '/forgot-password'
     | '/gallery'
@@ -1985,6 +1997,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   DistributorLoginRoute: typeof DistributorLoginRoute
   DroLoginRoute: typeof DroLoginRoute
+  EstoreRoute: typeof EstoreRoute
   FeedbackRoute: typeof FeedbackRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   GalleryRoute: typeof GalleryRoute
@@ -2343,6 +2356,13 @@ declare module '@tanstack/react-router' {
       path: '/feedback'
       fullPath: '/feedback'
       preLoaderRoute: typeof FeedbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/estore': {
+      id: '/estore'
+      path: '/estore'
+      fullPath: '/estore'
+      preLoaderRoute: typeof EstoreRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dro-login': {
@@ -3388,6 +3408,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   DistributorLoginRoute: DistributorLoginRoute,
   DroLoginRoute: DroLoginRoute,
+  EstoreRoute: EstoreRoute,
   FeedbackRoute: FeedbackRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   GalleryRoute: GalleryRoute,

@@ -18,6 +18,47 @@ function loadCheckout(): Promise<boolean> {
 export type Purpose = "wallet_topup" | "registration_fee" | "service_payment";
 export type PayResult = { status: "received" | "paid" | "failed" | "not_configured" | "dismissed"; message?: string; balance?: number | null; amount?: number };
 
+// E-Store order payment. The order already exists (created via estore_place_order);
+// this creates the matching Razorpay order, opens Checkout, and verifies → confirms it.
+export async function payEstoreOrder(opts: {
+  orderId: string; name?: string; email?: string; contact?: string;
+}): Promise<PayResult> {
+  const { data: order, error } = await supabase.functions.invoke("estore-checkout", {
+    body: { action: "create", order_id: opts.orderId },
+  });
+  if (error) return { status: "failed", message: error.message };
+  const o = order as any;
+  if (o?.status === "not_configured") return { status: "not_configured", message: o.message };
+  if (o?.status !== "created") return { status: "failed", message: o?.message || "Could not start payment" };
+
+  const ok = await loadCheckout();
+  if (!ok) return { status: "failed", message: "Could not load Razorpay Checkout" };
+
+  return new Promise<PayResult>((resolve) => {
+    const rzp = new (window as any).Razorpay({
+      key: o.key_id, amount: o.amount * 100, currency: o.currency || "INR", order_id: o.razorpay_order_id,
+      name: "BharatOne E-Store", description: "Order " + o.order_no,
+      prefill: { name: opts.name, email: opts.email, contact: opts.contact },
+      theme: { color: "#1F7A3D" },
+      handler: async (resp: any) => {
+        const { data: v, error: vErr } = await supabase.functions.invoke("estore-checkout", {
+          body: {
+            action: "verify", order_id: opts.orderId,
+            razorpay_order_id: resp.razorpay_order_id,
+            razorpay_payment_id: resp.razorpay_payment_id,
+            razorpay_signature: resp.razorpay_signature,
+          },
+        });
+        if (vErr) { resolve({ status: "failed", message: vErr.message }); return; }
+        const st = (v as any)?.status;
+        resolve({ status: st === "paid" ? "paid" : "failed", message: (v as any)?.message });
+      },
+      modal: { ondismiss: () => resolve({ status: "dismissed" }) },
+    });
+    rzp.open();
+  });
+}
+
 export async function payWithRazorpay(opts: {
   amount: number; purpose: Purpose; refId?: string;
   name?: string; email?: string; contact?: string; description?: string;

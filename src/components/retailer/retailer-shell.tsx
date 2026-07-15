@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   LayoutDashboard,
   Banknote,
+  ShoppingBag,
   FileCheck2,
   CheckCircle2,
   ArrowLeftRight,
@@ -63,6 +64,7 @@ const NAV: NavSection[] = [
         { label: "Refund Requests", to: "/wallet/refunds" },
       ] },
       { label: "AEPS Banking", icon: <Banknote className="h-4 w-4" />, to: "/aeps" },
+      { label: "E-Store", icon: <ShoppingBag className="h-4 w-4" />, to: "/estore" },
       { label: "Transactions", icon: <ArrowLeftRight className="h-4 w-4" />, to: "/transactions" },
       { label: "Reports", icon: <BarChart3 className="h-4 w-4" />, to: "/reports" },
     ],
@@ -268,6 +270,7 @@ const SEARCH_DESTS: { label: string; to: string; kw: string }[] = [
   { label: "Mandatory Recoveries", to: "/wallet/mandatory-recoveries", kw: "recovery mandatory company" },
   { label: "Refund Requests", to: "/wallet/refunds", kw: "refund request money back" },
   { label: "AEPS Banking", to: "/aeps", kw: "aeps aadhaar cash withdrawal balance banking biometric" },
+  { label: "E-Store", to: "/estore", kw: "estore shop store products order buy cart razorpay" },
   { label: "Transactions", to: "/transactions", kw: "transactions history wallet" },
   { label: "Reports", to: "/reports", kw: "reports analytics commission volume" },
   { label: "Support Tickets", to: "/support", kw: "support help ticket" },

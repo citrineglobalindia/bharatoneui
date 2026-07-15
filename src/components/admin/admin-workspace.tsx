@@ -33,7 +33,7 @@ import {
   Network,
   type LucideIcon,
   ImageIcon, Megaphone, FolderTree, TrendingUp, Search as SearchIcon, BellRing, Bell, IdCard,
-  Server, LayoutGrid, Plus, List, ChevronRight, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+  Server, LayoutGrid, Plus, List, ChevronRight, PanelLeftClose, PanelLeftOpen, ShoppingBag } from "lucide-react";
 import {
   Area,
   AreaChart,
@@ -60,6 +60,7 @@ import { ApplicationLedger } from "@/components/admin/application-ledger";
 import { WalletAdmin } from "@/components/admin/wallet-admin";
 import { WithdrawalsAdmin } from "@/components/admin/withdrawals-admin";
 import { AepsAdmin } from "@/components/admin/aeps-admin";
+import { EstoreAdmin } from "@/components/admin/estore-admin";
 import { SupportAdmin } from "@/components/admin/support-admin";
 import { LiveChatAdmin } from "@/components/admin/live-chat-admin";
 import { ServiceApplicationsView } from "@/components/admin/service-applications-view";
@@ -167,6 +168,7 @@ const NAVIGATION: NavGroup[] = [
     label: "Service Catalog",
     items: [
       { label: "Service Catalog", icon: LayoutGrid },
+      { label: "E-Store", icon: ShoppingBag },
     ],
   },
   {
@@ -1140,6 +1142,8 @@ export function AdminWorkspace() {
               <AdminUsers />
             ) : active === "Service Catalog" ? (
               <CatalogManager />
+            ) : active === "E-Store" ? (
+              <EstoreAdmin />
             ) : active === "Applications" ? (
               <ServiceApplicationsView />
             ) : active === "Application Ledger" ? (
