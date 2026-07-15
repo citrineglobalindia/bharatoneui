@@ -180,6 +180,45 @@ async function ekoCall(path: string, body: Record<string, unknown> | null, opts:
 const ekoOk = (d: any) => !!d && (d.response_status_id === 0 || d.status === 0);
 const ekoMsg = (d: any) => String(d?.message ?? "Unexpected response from Eko");
 
+// Connection test: sign a request the way every real call is signed and hit an
+// auth-only Eko endpoint (the merchant's balance). We don't care about the business
+// result — we only care whether Eko ACCEPTED the developer_key + secret-key signature.
+async function ekoPing() {
+  if (!EKO_AUTH_KEY || !EKO_DEVELOPER_KEY || !EKO_INITIATOR_ID) {
+    return {
+      ok: false,
+      configured: false,
+      error: "Missing secrets. Set EKO_INITIATOR_ID, EKO_DEVELOPER_KEY and EKO_AUTH_KEY.",
+    };
+  }
+  const { headers } = await ekoAuth();
+  const url = `${EKO_BASE}/user/balance?initiator_id=${encodeURIComponent(EKO_INITIATOR_ID)}`;
+  const res = await fetch(url, { method: "GET", headers });
+  const text = await res.text();
+  let data: any = null;
+  try { data = JSON.parse(text); } catch { /* not JSON */ }
+
+  // A signature rejection comes back as HTTP 401/403 or an "invalid" message.
+  const authRejected = res.status === 401 || res.status === 403 ||
+    /invalid.*(developer|secret|signature|key)|unauthor/i.test(text);
+
+  if (authRejected) {
+    return { ok: false, env: EKO_ENV, http: res.status,
+      error: "Eko rejected the credentials — check EKO_DEVELOPER_KEY and EKO_AUTH_KEY.",
+      detail: (data?.message ?? text).toString().slice(0, 300) };
+  }
+  // Any structured JSON reply means the signature passed Eko's auth layer, even if
+  // the business call then complains (e.g. balance not available on this account).
+  return {
+    ok: !!data,
+    env: EKO_ENV,
+    http: res.status,
+    accepted: !!data,
+    message: data ? ekoMsg(data) : text.slice(0, 200),
+    response_status_id: data?.response_status_id ?? null,
+  };
+}
+
 // Never persist raw biometrics or the full Aadhaar.
 const scrub = (o: any) => {
   if (!o || typeof o !== "object") return o;
@@ -197,8 +236,31 @@ Deno.serve(async (req) => {
   if (!authHeader) return json({ error: "Unauthorized" }, 401);
 
   const svc = createClient(SUPABASE_URL, SERVICE_KEY);
-  const userClient = createClient(SUPABASE_URL, ANON_KEY, { global: { headers: { Authorization: authHeader } } });
 
+  let body: any;
+  try { body = await req.json(); } catch { return json({ error: "Invalid JSON body" }, 400); }
+  const action = String(body.action ?? "");
+
+  // Service-role diagnostic bypass: the connection test ("ping") and the read-only
+  // config probe may be called with the service-role key (never exposed to browsers),
+  // so keys can be verified without a logged-in retailer or a fingerprint device.
+  const isServiceRole = authHeader.replace(/^Bearer\s+/i, "").trim() === SERVICE_KEY;
+  if (isServiceRole && (action === "ping" || action === "config")) {
+    try {
+      if (action === "config") {
+        return json({
+          env: EKO_ENV, base_url: EKO_BASE,
+          keys_set: !!(EKO_DEVELOPER_KEY && EKO_AUTH_KEY && EKO_INITIATOR_ID),
+          initiator_id_set: !!EKO_INITIATOR_ID, developer_key_set: !!EKO_DEVELOPER_KEY, auth_key_set: !!EKO_AUTH_KEY,
+        });
+      }
+      return json(await ekoPing());
+    } catch (e) {
+      return json({ ok: false, error: String(e) }, 500);
+    }
+  }
+
+  const userClient = createClient(SUPABASE_URL, ANON_KEY, { global: { headers: { Authorization: authHeader } } });
   const { data: u } = await userClient.auth.getUser();
   const user = u?.user;
   if (!user) return json({ error: "Unauthorized" }, 401);
@@ -209,9 +271,11 @@ Deno.serve(async (req) => {
     return json({ error: "This account is not permitted to run AEPS transactions" }, 403);
   }
 
-  let body: any;
-  try { body = await req.json(); } catch { return json({ error: "Invalid JSON body" }, 400); }
-  const action = String(body.action ?? "");
+  // Admins can run the connection test from the AEPS admin screen.
+  if (action === "ping") {
+    if (!roleList.includes("admin")) return json({ error: "Only admins can run the connection test" }, 403);
+    try { return json(await ekoPing()); } catch (e) { return json({ ok: false, error: String(e) }, 500); }
+  }
 
   const { data: agent } = await svc.from("aeps_agents").select("*").eq("user_id", user.id).maybeSingle();
   const userCode: string = agent?.eko_user_code ?? "";
