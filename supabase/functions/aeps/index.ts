@@ -130,6 +130,19 @@ async function ekoGet(url: string) {
   const res = await fetch(url, { method: "GET", headers });
   return parseEko(res, url);
 }
+// Multipart (for the activation call, which uploads PAN/Aadhaar image files).
+// Do NOT set Content-Type — fetch adds the multipart boundary itself.
+async function ekoMultipart(url: string, method: "PUT" | "POST", fields: Record<string, unknown>, files: Record<string, { blob: Blob; name: string }>) {
+  const fd = new FormData();
+  for (const [k, v] of Object.entries(fields)) {
+    if (v === undefined || v === null) continue;
+    fd.set(k, typeof v === "object" ? JSON.stringify(v) : String(v));
+  }
+  for (const [k, f] of Object.entries(files)) if (f) fd.set(k, f.blob, f.name);
+  const headers = await ekoHeaders(null);
+  const res = await fetch(url, { method, headers, body: fd });
+  return parseEko(res, url);
+}
 async function parseEko(res: Response, url: string) {
   const text = await res.text();
   try { return JSON.parse(text); } catch { /* not JSON */ }
@@ -233,15 +246,34 @@ Deno.serve(async (req) => {
     // ----------------------------------------------------------- activate
     if (action === "activate") {
       if (!userCode) return json({ error: "Onboard the retailer first" }, 400);
-      const { modelname, devicenumber, aadhaar_front, aadhaar_back, pan_card, office_line, office_city, office_state, office_pincode } = body;
+      const { modelname, devicenumber, pan_path, aadhaar_front_path, aadhaar_back_path, office_line, office_city, office_state, office_pincode } = body;
       if (!modelname || !devicenumber) return json({ error: "Biometric device model name and serial number are required" }, 400);
-      const addr = { line: office_line ?? "NA", city: office_city ?? "NA", state: office_state ?? "NA", pincode: office_pincode ?? "000000" };
-      const data = await ekoForm(`${V3}/admin/network/agent/${encodeURIComponent(userCode)}/aeps-fingpay/activate`, "PUT", {
-        initiator_id: EKO_INITIATOR_ID, modelname, devicenumber,
-        office_address: addr, address_as_per_proof: addr,
-        pan_card, aadhar_front: aadhaar_front, aadhar_back: aadhaar_back,
-      });
+      if (!pan_path || !aadhaar_front_path || !aadhaar_back_path) return json({ error: "Upload the PAN card, Aadhaar front and Aadhaar back images" }, 400);
+      if (!office_pincode || !/^\d{6}$/.test(String(office_pincode))) return json({ error: "A valid 6-digit office pincode is required" }, 400);
+
+      // Pull the three uploaded documents from storage (service role).
+      const grab = async (path: string) => {
+        const { data: file, error } = await svc.storage.from("aeps-activation").download(path);
+        if (error || !file) throw new Error(`Could not read uploaded document: ${path}`);
+        const name = path.split("/").pop() || "doc";
+        return { blob: file, name };
+      };
+      let panF, frontF, backF;
+      try {
+        [panF, frontF, backF] = await Promise.all([grab(pan_path), grab(aadhaar_front_path), grab(aadhaar_back_path)]);
+      } catch (e) {
+        return json({ error: String(e) }, 400);
+      }
+
+      const addr = { line: office_line ?? "NA", city: office_city ?? "NA", state: office_state ?? "NA", pincode: String(office_pincode) };
+      const data = await ekoMultipart(
+        `${V3}/admin/network/agent/${encodeURIComponent(userCode)}/aeps-fingpay/activate`,
+        "PUT",
+        { initiator_id: EKO_INITIATOR_ID, modelname, devicenumber, office_address: addr, address_as_per_proof: addr },
+        { pan_card: panF, aadhar_front: frontF, aadhar_back: backF },
+      );
       if (!ekoOk(data)) { await setAgent({ last_error: ekoMsg(data) }); return json({ error: ekoMsg(data), raw: scrub(data) }, 400); }
+      // Eko puts the agent into PENDING (2-3 business days). Mark as submitted.
       await setAgent({ service_activated: true, last_error: null });
       return json({ ok: true, message: ekoMsg(data) });
     }

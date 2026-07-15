@@ -2,13 +2,13 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   Landmark, Fingerprint, Loader2, RefreshCw, IndianRupee, ShieldCheck,
-  AlertTriangle, CheckCircle2, Usb, Search, Receipt,
+  AlertTriangle, CheckCircle2, Usb, Search, Receipt, Upload,
 } from "lucide-react";
 import { RetailerShell } from "@/components/retailer/retailer-shell";
 import { PageHeader } from "@/components/retailer/page-header";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { discoverDeviceVerbose, captureFingerprint, getLatLong, type RdDevice } from "@/lib/rdservice";
+import { discoverDeviceVerbose, captureFingerprint, getLatLong, readDeviceInfo, type RdDevice } from "@/lib/rdservice";
 import { AEPS_BANKS } from "@/lib/aeps-banks";
 
 export const Route = createFileRoute("/aeps")({
@@ -77,6 +77,17 @@ function AepsPage() {
   const [otpRef, setOtpRef] = useState<string | null>(null);
   const [otpSent, setOtpSent] = useState(false);
   const [otpVerified, setOtpVerified] = useState(false);
+  // Activation step
+  const [acModel, setAcModel] = useState("");
+  const [acSerial, setAcSerial] = useState("");
+  const [acCity, setAcCity] = useState("");
+  const [acState, setAcState] = useState("");
+  const [acPincode, setAcPincode] = useState("");
+  const [acLine, setAcLine] = useState("");
+  const [panPath, setPanPath] = useState("");
+  const [frontPath, setFrontPath] = useState("");
+  const [backPath, setBackPath] = useState("");
+  const [uploading, setUploading] = useState<string | null>(null);
 
   const needsAmount = OPS.find((o) => o.key === op)?.needsAmount ?? false;
 
@@ -175,10 +186,62 @@ function AepsPage() {
     finally { setBusy(false); }
   };
 
+  // Detect the biometric device's model + serial from a single capture.
+  const detectDevice = async () => {
+    let d = device;
+    if (!d) {
+      setScanning(true);
+      const r = await discoverDeviceVerbose();
+      setScanning(false);
+      if (!r.device) return toast.error("No scanner found", { description: r.hint });
+      d = r.device; setDevice(d);
+    }
+    setScanning(true);
+    const r = await captureFingerprint(d);
+    setScanning(false);
+    if (!r.ok || !r.pidData) return toast.error("Capture failed", { description: r.error });
+    const info = readDeviceInfo(r.pidData);
+    if (info.model) setAcModel(info.model);
+    if (info.serial) setAcSerial(info.serial);
+    toast.success("Device details read", { description: `${info.model || "?"} · ${info.serial || "?"}` });
+  };
+
+  const uploadDoc = async (which: "pan" | "front" | "back", file: File) => {
+    // Eko: JPG/JPEG/PDF only, under 1 MB, no PNG.
+    const okType = /\.(jpe?g|pdf)$/i.test(file.name) && file.type !== "image/png";
+    if (!okType) return toast.error("Use a JPG or PDF file (not PNG)");
+    if (file.size > 1024 * 1024) return toast.error("File must be under 1 MB");
+    setUploading(which);
+    try {
+      const { data: au } = await supabase.auth.getUser();
+      const uid = au.user?.id;
+      const ext = file.name.split(".").pop();
+      const path = `${uid}/${which}_${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("aeps-activation").upload(path, file, { upsert: true, contentType: file.type });
+      if (error) throw error;
+      if (which === "pan") setPanPath(path);
+      else if (which === "front") setFrontPath(path);
+      else setBackPath(path);
+      toast.success(`${which === "pan" ? "PAN" : which === "front" ? "Aadhaar front" : "Aadhaar back"} uploaded`);
+    } catch (e: any) {
+      toast.error("Upload failed", { description: e.message });
+    } finally { setUploading(null); }
+  };
+
   const doActivate = async () => {
+    if (!acModel.trim() || !acSerial.trim()) return toast.error("Enter the biometric device model and serial number");
+    if (!/^\d{6}$/.test(acPincode)) return toast.error("Enter the 6-digit office pincode");
+    if (!panPath || !frontPath || !backPath) return toast.error("Upload PAN, Aadhaar front and Aadhaar back");
     setBusy(true);
-    try { await call("activate"); toast.success("AEPS service activated"); await load(); }
-    catch (e: any) { toast.error("Activation failed", { description: e.message }); }
+    try {
+      await call("activate", {
+        modelname: acModel.trim(), devicenumber: acSerial.trim(),
+        office_line: acLine.trim(), office_city: acCity.trim(), office_state: acState.trim(), office_pincode: acPincode,
+        pan_path: panPath, aadhaar_front_path: frontPath, aadhaar_back_path: backPath,
+      });
+      toast.success("Activation submitted", { description: "The bank will review and approve in 2–3 business days." });
+      await load();
+    } catch (e: any) { toast.error("Activation failed", { description: e.message }); }
     finally { setBusy(false); }
   };
 
@@ -320,13 +383,47 @@ function AepsPage() {
               </div>
             )}
 
-            {/* Step 2 — activate */}
+            {/* Step 2 — activate (device details + KYC document uploads) */}
             {status.onboarded && !status.service_activated && (
-              <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl bg-muted/40 p-4">
-                <p className="flex-1 text-xs font-semibold text-muted-foreground">Step 2 — Activate the AEPS (cash-out) service on your account.</p>
-                <button onClick={doActivate} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg bg-india-green px-4 h-9 text-xs font-semibold text-white disabled:opacity-50">
-                  {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5" />} Activate AEPS
-                </button>
+              <div className="mt-4 rounded-xl bg-muted/40 p-4">
+                <p className="mb-1 text-xs font-semibold text-muted-foreground">Step 2 — Activate the AEPS service</p>
+                <p className="mb-3 text-[11px] text-muted-foreground">The bank verifies these documents and approves within 2–3 business days before you can transact.</p>
+
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <div className="sm:col-span-2 flex flex-wrap items-end gap-2">
+                    <label className="flex-1"><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Biometric device model *</span>
+                      <input value={acModel} onChange={(e) => setAcModel(e.target.value)} placeholder="e.g. MFS100" className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm" /></label>
+                    <label className="flex-1"><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Device serial number *</span>
+                      <input value={acSerial} onChange={(e) => setAcSerial(e.target.value)} placeholder="Device serial" className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm" /></label>
+                    <button onClick={detectDevice} disabled={scanning} className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 h-9 text-xs font-semibold hover:bg-muted disabled:opacity-50">
+                      {scanning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Usb className="h-3.5 w-3.5" />} Detect from scanner
+                    </button>
+                  </div>
+                  <label><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Shop / office address</span>
+                    <input value={acLine} onChange={(e) => setAcLine(e.target.value)} placeholder="Address line" className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm" /></label>
+                  <div className="grid grid-cols-3 gap-2">
+                    <label><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">City</span><input value={acCity} onChange={(e) => setAcCity(e.target.value)} className="h-9 w-full rounded-lg border border-border bg-background px-2 text-sm" /></label>
+                    <label><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">State</span><input value={acState} onChange={(e) => setAcState(e.target.value)} className="h-9 w-full rounded-lg border border-border bg-background px-2 text-sm" /></label>
+                    <label><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Pincode *</span><input value={acPincode} onChange={(e) => setAcPincode(e.target.value.replace(/\D/g, ""))} maxLength={6} className="h-9 w-full rounded-lg border border-border bg-background px-2 text-sm" /></label>
+                  </div>
+                </div>
+
+                <p className="mb-2 mt-3 text-[11px] font-semibold text-muted-foreground">Documents — JPG or PDF, under 1 MB each (PNG not accepted)</p>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {([["pan", "PAN card", panPath], ["front", "Aadhaar front", frontPath], ["back", "Aadhaar back", backPath]] as const).map(([k, label, path]) => (
+                    <label key={k} className="flex cursor-pointer flex-col items-center gap-1 rounded-lg border border-dashed border-border bg-card px-3 py-3 text-center text-xs hover:bg-muted">
+                      {uploading === k ? <Loader2 className="h-4 w-4 animate-spin" /> : path ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <Upload className="h-4 w-4 text-muted-foreground" />}
+                      <span className={path ? "font-semibold text-emerald-700" : "font-medium"}>{path ? `${label} ✓` : label}</span>
+                      <input type="file" accept=".jpg,.jpeg,.pdf,image/jpeg,application/pdf" className="hidden" onChange={(e) => e.target.files?.[0] && uploadDoc(k, e.target.files[0])} />
+                    </label>
+                  ))}
+                </div>
+
+                <div className="mt-3 flex justify-end">
+                  <button onClick={doActivate} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg bg-india-green px-4 h-9 text-xs font-semibold text-white disabled:opacity-50">
+                    {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5" />} Submit for activation
+                  </button>
+                </div>
               </div>
             )}
 

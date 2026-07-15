@@ -178,6 +178,24 @@ export async function captureFingerprint(
   };
 }
 
+/** Pull the device model and serial number out of a captured PID block, for activation. */
+export function readDeviceInfo(pidXml: string): { model: string; serial: string; provider: string } {
+  try {
+    const doc = new DOMParser().parseFromString(pidXml, "text/xml");
+    const di = doc.getElementsByTagName("DeviceInfo")[0];
+    const model = di?.getAttribute("mi") || "";            // e.g. MFS100
+    const provider = di?.getAttribute("dpId") || "";        // e.g. MANTRA.MSIPL
+    let serial = "";
+    const params = di?.getElementsByTagName("Param") ?? [];
+    for (let i = 0; i < params.length; i++) {
+      if (params[i].getAttribute("name") === "srno") { serial = params[i].getAttribute("value") || ""; break; }
+    }
+    return { model, serial, provider };
+  } catch {
+    return { model: "", serial: "", provider: "" };
+  }
+}
+
 /** Browser geolocation — Eko requires the merchant's real lat,long for fraud checks. */
 export function getLatLong(): Promise<string> {
   return new Promise((resolve) => {
