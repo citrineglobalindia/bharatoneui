@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   ArrowLeft, User, Building2, Landmark, FileText, FileSearch, Banknote, ShieldCheck, MapPin,
-  CheckCircle2, XCircle, Maximize2, ExternalLink, X, Loader2, Phone, Mail, Copy, RefreshCw, Pencil, UserPlus, PauseCircle, Download,
+  CheckCircle2, XCircle, Maximize2, ExternalLink, X, Loader2, Phone, Mail, Copy, RefreshCw, Pencil, UserPlus, PauseCircle, Download, History,
 } from "lucide-react";
 import { downloadRegistrationPDF } from "@/lib/registration-pdf";
 import { BharatOneLogo } from "@/components/bharatone-logo";
@@ -110,6 +110,7 @@ function ReviewPage() {
   const DOC_KEYS: { key: string; label: string }[] = [{ key: "pan", label: "PAN Card" }, { key: "aadhaar", label: "Aadhaar Card" }, { key: "passport", label: "Passport Size Photo" }, { key: "selfie", label: "Selfie" }, { key: "shop", label: "Outside Shop Photo" }, { key: "shop_inside", label: "Inside Shop Photo" }, { key: "police", label: "Police Verification" }, { key: "video", label: "Video KYC" }];
   const [reqKeys, setReqKeys] = useState<Record<string, boolean>>({ pan: true, aadhaar: true });
   const [events, setEvents] = useState<any[]>([]);
+  const [docHistory, setDocHistory] = useState<any[]>([]);
   const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState<any>({});
   const [savingAll, setSavingAll] = useState(false);
@@ -150,9 +151,10 @@ function ReviewPage() {
     } finally { setLoading(false); }
   }
   const loadEvents = async () => { const { data } = await supabase.rpc("registration_events_list", { reg_id: id }); setEvents((data as any[]) ?? []); };
+  const loadHistory = async () => { const { data } = await supabase.rpc("retailer_doc_request_history", { reg_id: id }); setDocHistory((data as any[]) ?? []); };
   useEffect(() => {
     let on = true;
-    (async () => { await ensureStaffSession(); if (!on) return; load(); loadEvents(); })();
+    (async () => { await ensureStaffSession(); if (!on) return; load(); loadEvents(); loadHistory(); })();
     return () => { on = false; };
     /* eslint-disable-next-line */
   }, [id]);
@@ -227,7 +229,7 @@ function ReviewPage() {
         await supabase.functions.invoke("send-doc-request", { body: { email: res.email, name: res.name, link, docs: labels, note: reqMsg || "" } });
         toast.success("Re-upload link emailed to the retailer");
       } catch { toast.message("Saved. Email could not be sent — share the link manually.", { description: link }); }
-      setReqOpen(false); setReqMsg("Not approved"); await load(); await loadEvents();
+      setReqOpen(false); setReqMsg("Not approved"); await load(); await loadEvents(); await loadHistory();
     } finally { setBusy(false); }
   };
 
@@ -454,6 +456,44 @@ function ReviewPage() {
             </div>
           );
         })()}
+
+        {/* Document request history */}
+        {canDocReview && docHistory.length > 0 && (
+          <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
+            <p className="mb-3 flex items-center gap-2 text-sm font-bold">
+              <span className="grid h-6 w-6 place-items-center rounded-lg bg-blue-500/10 text-blue-600"><History className="h-4 w-4" /></span>
+              Document request history <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-bold text-muted-foreground">{docHistory.length}</span>
+            </p>
+            <ol className="space-y-3">
+              {docHistory.map((h, idx) => {
+                const labelOf = (k: string) => DOC_KEYS.find((d) => d.key === k)?.label ?? k;
+                const reup: string[] = Array.isArray(h.reuploaded_keys) ? h.reuploaded_keys : [];
+                const keys: string[] = Array.isArray(h.keys) ? h.keys : [];
+                const done = h.status === "completed";
+                return (
+                  <li key={h.id} className="rounded-xl border border-border p-3">
+                    <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-xs font-semibold">
+                        Request #{docHistory.length - idx} · <span className="text-muted-foreground">{new Date(h.requested_at).toLocaleString("en-IN")}</span>
+                      </p>
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${done ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+                        {done ? "Completed" : `${keys.filter((k) => !reup.includes(k)).length} of ${keys.length} pending`}
+                      </span>
+                    </div>
+                    <p className="mb-1.5 text-[11px] text-muted-foreground">By {h.requested_by_name || "—"}{h.requested_role ? ` (${h.requested_role})` : ""}{h.completed_at ? ` · completed ${new Date(h.completed_at).toLocaleDateString("en-IN")}` : ""}</p>
+                    {h.note && <p className="mb-1.5 rounded-lg bg-muted/40 px-2.5 py-1.5 text-xs"><span className="font-semibold">Note:</span> {h.note}</p>}
+                    <div className="flex flex-wrap gap-1.5">
+                      {keys.map((k) => {
+                        const ok = reup.includes(k);
+                        return <span key={k} className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${ok ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>{ok ? <CheckCircle2 className="h-3 w-3" /> : <span className="h-2 w-2 rounded-full border border-amber-500" />} {labelOf(k)}</span>;
+                      })}
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
+        )}
 
         {/* KYC documents */}
         <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
