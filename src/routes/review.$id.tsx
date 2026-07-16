@@ -231,6 +231,24 @@ function ReviewPage() {
     } finally { setBusy(false); }
   };
 
+  const resendCreds = async () => {
+    if (!confirm("Reset the retailer's password and email them fresh login credentials?")) return;
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.rpc("resend_retailer_credentials", { reg_id: id });
+      if (error) { toast.error("Could not resend", { description: error.message }); return; }
+      const c = data as { username: string; email: string; password: string };
+      setCreds(c);
+      try {
+        const origin = typeof window !== "undefined" ? window.location.origin : "";
+        const { error: mailErr } = await supabase.functions.invoke("send-credentials", { body: { email: c.email, name: fullName, username: c.username, password: c.password, loginUrl: origin + "/login" } });
+        if (mailErr) toast.error("Credentials reset, but email failed", { description: mailErr.message });
+        else toast.success("New login credentials emailed to retailer");
+      } catch (e) { toast.error("Credentials reset, but email failed", { description: e instanceof Error ? e.message : String(e) }); }
+      await loadEvents();
+    } finally { setBusy(false); }
+  };
+
   const act = async (fn: () => Promise<{ error: any; data?: unknown }>, msg: string, goBack = true) => {
     setBusy(true);
     try {
@@ -350,7 +368,12 @@ function ReviewPage() {
           const stageAcct = reg.status === "accountant_review" && canAccountant;
           const stageQc = reg.status === "qc_review" && canQc;
           if (!stageAcct && !stageQc) return (
-            <div className="rounded-2xl border border-border bg-card p-4 text-sm text-muted-foreground shadow-soft">{reg.status === "approved" ? "This application is approved." : reg.status === "rejected" ? "This application was rejected." : reg.status === "telecaller" ? "With Telecaller for follow-up." : "No action at your role for this stage."}</div>
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card p-4 text-sm text-muted-foreground shadow-soft">
+              <span>{reg.status === "approved" ? "This application is approved." : reg.status === "rejected" ? "This application was rejected." : reg.status === "telecaller" ? "With Telecaller for follow-up." : "No action at your role for this stage."}</span>
+              {reg.status === "approved" && (canQc || role === "admin") && (
+                <Button size="sm" variant="outline" disabled={busy} onClick={resendCreds}><Mail className="h-4 w-4" /> Resend login credentials</Button>
+              )}
+            </div>
           );
           return (
           <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
