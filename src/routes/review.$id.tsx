@@ -427,10 +427,18 @@ function ReviewPage() {
                   <span className="grid h-6 w-6 place-items-center rounded-lg bg-amber-200 text-amber-800"><FileText className="h-4 w-4" /></span>
                   Documents re-requested from retailer
                 </p>
-                <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${pending.length === 0 ? "bg-emerald-100 text-emerald-700" : "bg-amber-200 text-amber-800"}`}>
-                  {pending.length === 0 ? "All re-uploaded" : `${pending.length} of ${reqd.length} pending`}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${pending.length === 0 ? "bg-emerald-100 text-emerald-700" : "bg-amber-200 text-amber-800"}`}>
+                    {pending.length === 0 ? "All re-uploaded" : `${pending.length} of ${reqd.length} pending`}
+                  </span>
+                  {(canQc || canAccountant || role === "admin") && (
+                    <Button size="sm" variant="outline" disabled={busy} className="h-8 border-amber-300 bg-white/70 text-amber-900 hover:bg-white" onClick={() => setReqOpen(true)}>
+                      <RefreshCw className="h-3.5 w-3.5" /> Request again
+                    </Button>
+                  )}
+                </div>
               </div>
+              <p className="mb-2 text-[11px] text-amber-700">Requesting again sends the retailer a fresh upload link and replaces the current pending request (all requests are kept in history below).</p>
               {reqAt && <p className="mb-2 text-xs text-muted-foreground">Requested on {reqAt}{reg.reviewed_by ? "" : ""}.</p>}
               {reg.doc_request_note && (
                 <p className="mb-3 rounded-lg border border-amber-200 bg-white/70 px-3 py-2 text-sm text-amber-900">
