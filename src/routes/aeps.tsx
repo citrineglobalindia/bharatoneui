@@ -380,6 +380,8 @@ function AepsPage() {
                     <input type="date" value={obDob} max={new Date().toISOString().slice(0, 10)} onChange={(e) => setObDob(e.target.value)} className="h-9 flex-1 rounded-lg border border-border bg-background px-3 text-sm" />
                   </label>
                   <input value={obPincode} onChange={(e) => setObPincode(e.target.value.replace(/\D/g, ""))} maxLength={6} placeholder="Shop pincode *" className="h-9 rounded-lg border border-border bg-background px-3 text-sm" />
+                  <input value={obCity} onChange={(e) => setObCity(e.target.value)} placeholder="City *" className="h-9 rounded-lg border border-border bg-background px-3 text-sm" />
+                  <input value={obState} onChange={(e) => setObState(e.target.value)} placeholder="State *" className="h-9 rounded-lg border border-border bg-background px-3 text-sm" />
                 </div>
                 <button onClick={doOnboard} disabled={busy} className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-india-green px-4 h-9 text-xs font-semibold text-white disabled:opacity-50">
                   {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5" />} Register for AEPS
