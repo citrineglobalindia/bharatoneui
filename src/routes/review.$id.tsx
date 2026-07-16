@@ -108,7 +108,8 @@ function ReviewPage() {
     } finally { setOcrBusy(null); }
   };
   const DOC_KEYS: { key: string; label: string }[] = [{ key: "pan", label: "PAN Card" }, { key: "aadhaar", label: "Aadhaar Card" }, { key: "passport", label: "Passport Size Photo" }, { key: "selfie", label: "Selfie" }, { key: "shop", label: "Outside Shop Photo" }, { key: "shop_inside", label: "Inside Shop Photo" }, { key: "police", label: "Police Verification" }, { key: "video", label: "Video KYC" }];
-  const [reqKeys, setReqKeys] = useState<Record<string, boolean>>({ pan: true, aadhaar: true });
+  const [reqKeys, setReqKeys] = useState<Record<string, boolean>>({});
+  const openReqDialog = () => { setReqKeys({}); setReqMsg("Not approved"); setReqOpen(true); };
   const [events, setEvents] = useState<any[]>([]);
   const [docHistory, setDocHistory] = useState<any[]>([]);
   const [editMode, setEditMode] = useState(false);
@@ -213,7 +214,7 @@ function ReviewPage() {
       return;
     }
     if (a === "reject_kyc") { await act(() => supabase.rpc("verify_retailer_qc", { reg_id: id, verified: false, notes: remarks || "Rejected by QC" }), "Sent to Telecaller"); return; }
-    if (a === "request_docs") { setReqOpen(true); return; }
+    if (a === "request_docs") { openReqDialog(); return; }
   };
   const submitRequestDocs = async () => {
     const keys = DOC_KEYS.filter((d) => reqKeys[d.key]).map((d) => d.key);
@@ -386,7 +387,7 @@ function ReviewPage() {
               <Button disabled={busy} className="h-11 bg-gradient-to-r from-india-green to-emerald-600 text-white shadow-elev hover:brightness-105" onClick={() => submitQc(stageAcct ? "approve_payment" : "approve_kyc")}>{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} Verify &amp; Approve</Button>
               {stageAcct && <Button disabled={busy} className="h-11 bg-amber-500 text-white shadow-soft hover:bg-amber-600" onClick={() => { if (!remarks.trim()) { toast.error("Add remarks before holding"); return; } submitQc("hold_payment"); }}><PauseCircle className="h-4 w-4" /> Hold</Button>}
               <Button disabled={busy} className="h-11 bg-rose-600 text-white shadow-soft hover:bg-rose-700" onClick={() => { if (!remarks.trim()) { toast.error("Add remarks before rejecting"); return; } submitQc(stageAcct ? "reject_payment" : "reject_kyc"); }}><XCircle className="h-4 w-4" /> Reject</Button>
-              {(stageQc || stageAcct) && <Button variant="outline" disabled={busy} className="h-11" onClick={() => setReqOpen(true)}><RefreshCw className="h-4 w-4" /> Request Documents</Button>}
+              {(stageQc || stageAcct) && <Button variant="outline" disabled={busy} className="h-11" onClick={openReqDialog}><RefreshCw className="h-4 w-4" /> Request Documents</Button>}
             </div>
           </div>
           );
@@ -432,7 +433,7 @@ function ReviewPage() {
                     {pending.length === 0 ? "All re-uploaded" : `${pending.length} of ${reqd.length} pending`}
                   </span>
                   {(canQc || canAccountant || role === "admin") && (
-                    <Button size="sm" variant="outline" disabled={busy} className="h-8 border-amber-300 bg-white/70 text-amber-900 hover:bg-white" onClick={() => setReqOpen(true)}>
+                    <Button size="sm" variant="outline" disabled={busy} className="h-8 border-amber-300 bg-white/70 text-amber-900 hover:bg-white" onClick={openReqDialog}>
                       <RefreshCw className="h-3.5 w-3.5" /> Request again
                     </Button>
                   )}
