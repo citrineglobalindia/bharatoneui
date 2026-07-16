@@ -361,7 +361,7 @@ function ReviewPage() {
               <Button disabled={busy} className="h-11 bg-gradient-to-r from-india-green to-emerald-600 text-white shadow-elev hover:brightness-105" onClick={() => submitQc(stageAcct ? "approve_payment" : "approve_kyc")}>{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} Verify &amp; Approve</Button>
               {stageAcct && <Button disabled={busy} className="h-11 bg-amber-500 text-white shadow-soft hover:bg-amber-600" onClick={() => { if (!remarks.trim()) { toast.error("Add remarks before holding"); return; } submitQc("hold_payment"); }}><PauseCircle className="h-4 w-4" /> Hold</Button>}
               <Button disabled={busy} className="h-11 bg-rose-600 text-white shadow-soft hover:bg-rose-700" onClick={() => { if (!remarks.trim()) { toast.error("Add remarks before rejecting"); return; } submitQc(stageAcct ? "reject_payment" : "reject_kyc"); }}><XCircle className="h-4 w-4" /> Reject</Button>
-              {stageQc && <Button variant="outline" disabled={busy} className="h-11" onClick={() => setReqOpen(true)}><RefreshCw className="h-4 w-4" /> Request Documents</Button>}
+              {(stageQc || stageAcct) && <Button variant="outline" disabled={busy} className="h-11" onClick={() => setReqOpen(true)}><RefreshCw className="h-4 w-4" /> Request Documents</Button>}
             </div>
           </div>
           );
