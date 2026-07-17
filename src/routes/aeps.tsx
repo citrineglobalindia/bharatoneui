@@ -85,9 +85,11 @@ function AepsPage() {
   const [acModel, setAcModel] = useState("");
   const [acSerial, setAcSerial] = useState("");
   const [acCity, setAcCity] = useState("");
+  const [acDistrict, setAcDistrict] = useState("");
   const [acState, setAcState] = useState("");
   const [acPincode, setAcPincode] = useState("");
   const [acLine, setAcLine] = useState("");
+  const [acGstin, setAcGstin] = useState("");
   const [acAccount, setAcAccount] = useState("");
   const [acIfsc, setAcIfsc] = useState("");
   const [acAadhaar, setAcAadhaar] = useState("");
@@ -244,6 +246,7 @@ function AepsPage() {
     if (!acAccount.trim() || !/^[A-Z]{4}0[A-Z0-9]{6}$/i.test(acIfsc.trim())) return toast.error("Enter the settlement account number and a valid IFSC");
     if (!/^\d{12}$/.test(acAadhaar)) return toast.error("Enter your 12-digit Aadhaar number");
     if (!/^\d{6}$/.test(acPincode)) return toast.error("Enter the 6-digit office pincode");
+    if (acLine.trim().length < 10) return toast.error("Enter the full shop address (building/shop no., street, area, city) — a short name is rejected by the bank");
     if (!panPath || !frontPath || !backPath) return toast.error("Upload PAN, Aadhaar front and Aadhaar back (JPG/PDF, under 1 MB)");
     setBusy(true);
     let latlong = "";
@@ -253,7 +256,7 @@ function AepsPage() {
         modelname: acModel.trim(), devicenumber: acSerial.trim(),
         account: acAccount.trim(), ifsc: acIfsc.trim().toUpperCase(), aadhaar: acAadhaar,
         shop_type: acShopType.trim() || "4215", state_id: acStateId.trim(), latlong,
-        address_line: acLine.trim(), city: acCity.trim(), state: acState.trim(), pincode: acPincode,
+        address_line: acLine.trim(), city: acCity.trim(), district: acDistrict.trim() || acCity.trim(), state: acState.trim(), pincode: acPincode, gstin: acGstin.trim().toUpperCase(),
         pan_path: panPath, aadhaar_front_path: frontPath, aadhaar_back_path: backPath,
       });
       toast.success("Activation submitted", { description: "The bank will review and approve in 2–3 business days." });
@@ -434,15 +437,18 @@ function AepsPage() {
                       {scanning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Usb className="h-3.5 w-3.5" />} Detect from scanner
                     </button>
                   </div>
-                  <label><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Shop / office address</span>
-                    <input value={acLine} onChange={(e) => setAcLine(e.target.value)} placeholder="Address line" className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm" /></label>
-                  <div className="grid grid-cols-3 gap-2">
+                  <label><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Shop / office address *</span>
+                    <input value={acLine} onChange={(e) => setAcLine(e.target.value)} placeholder="e.g. 001, 10th B Cross, KR Puram, Hassan" className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm" />
+                    <span className="mt-0.5 block text-[10px] text-amber-600">Enter the full address — building/shop no., street, area and city. A short name like "KR Puram" alone is rejected by the bank.</span></label>
+                  <div className="grid grid-cols-2 gap-2">
                     <label><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">City</span><input value={acCity} onChange={(e) => setAcCity(e.target.value)} className="h-9 w-full rounded-lg border border-border bg-background px-2 text-sm" /></label>
+                    <label><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">District</span><input value={acDistrict} onChange={(e) => setAcDistrict(e.target.value)} placeholder="e.g. Hassan" className="h-9 w-full rounded-lg border border-border bg-background px-2 text-sm" /></label>
                     <label><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">State</span><input value={acState} onChange={(e) => setAcState(e.target.value)} className="h-9 w-full rounded-lg border border-border bg-background px-2 text-sm" /></label>
                     <label><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Pincode *</span><input value={acPincode} onChange={(e) => setAcPincode(e.target.value.replace(/\D/g, ""))} maxLength={6} className="h-9 w-full rounded-lg border border-border bg-background px-2 text-sm" /></label>
                   </div>
                   <label><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">State code (Eko)</span><input value={acStateId} onChange={(e) => setAcStateId(e.target.value.replace(/\D/g, ""))} placeholder="e.g. 23" className="h-9 w-full rounded-lg border border-border bg-background px-2 text-sm" /></label>
                   <label><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Shop type code</span><input value={acShopType} onChange={(e) => setAcShopType(e.target.value)} placeholder="e.g. 4215" className="h-9 w-full rounded-lg border border-border bg-background px-2 text-sm" /></label>
+                  <label><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">GSTIN (optional)</span><input value={acGstin} onChange={(e) => setAcGstin(e.target.value.toUpperCase())} maxLength={15} placeholder="15-digit GSTIN, if any" className="h-9 w-full rounded-lg border border-border bg-background px-2 text-sm" /></label>
                   <label className="sm:col-span-2"><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Your (agent) Aadhaar number *</span><input value={acAadhaar} onChange={(e) => setAcAadhaar(e.target.value.replace(/\D/g, ""))} maxLength={12} placeholder="12-digit Aadhaar" className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm" /></label>
                   <label><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Settlement account number *</span><input value={acAccount} onChange={(e) => setAcAccount(e.target.value.replace(/\D/g, ""))} placeholder="Bank account no." className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm" /></label>
                   <label><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Settlement IFSC *</span><input value={acIfsc} onChange={(e) => setAcIfsc(e.target.value.toUpperCase())} maxLength={11} placeholder="e.g. SBIN0001234" className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm" /></label>
