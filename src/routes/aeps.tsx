@@ -2,13 +2,13 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   Landmark, Fingerprint, Loader2, RefreshCw, IndianRupee, ShieldCheck,
-  AlertTriangle, CheckCircle2, Usb, Search, Receipt, Upload,
+  AlertTriangle, CheckCircle2, Usb, Search, Receipt, Upload, Wallet, MapPin, Download,
 } from "lucide-react";
 import { RetailerShell } from "@/components/retailer/retailer-shell";
 import { PageHeader } from "@/components/retailer/page-header";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { discoverDeviceVerbose, captureFingerprint, getLatLong, readDeviceInfo, type RdDevice } from "@/lib/rdservice";
+import { discoverDeviceVerbose, captureFingerprint, getLatLong, getLatLongStrict, readDeviceInfo, type RdDevice } from "@/lib/rdservice";
 import { AEPS_BANKS } from "@/lib/aeps-banks";
 
 export const Route = createFileRoute("/aeps")({
@@ -54,6 +54,8 @@ function AepsPage() {
   const [pid, setPid] = useState<string | null>(null);
   const [quality, setQuality] = useState<number | null>(null);
   const [deviceHint, setDeviceHint] = useState<string | null>(null);
+  const [authMode, setAuthMode] = useState<"finger" | "iris">("finger");
+  const [showDrivers, setShowDrivers] = useState(false);
 
   // form
   const [op, setOp] = useState<string>("cash_withdrawal");
@@ -182,10 +184,11 @@ function AepsPage() {
 
   // Daily biometric authentication — NPCI requires this once per day, per agent.
   const dailyAuth = async () => {
-    if (!pid) return toast.error("Scan the retailer's fingerprint first");
+    if (!pid) return toast.error("Scan your fingerprint first");
+    let latlong: string;
+    try { latlong = await getLatLongStrict(); } catch (e: any) { return toast.error("Location required", { description: e.message }); }
     setBusy(true);
     try {
-      const latlong = await getLatLong();
       await call("kyc_daily", { piddata: pid, latlong });
       toast.success("Daily authentication complete");
       setPid(null); setQuality(null);
@@ -306,8 +309,9 @@ function AepsPage() {
     if (!kycBank) return toast.error("Select your own bank first");
     if (!pid) return toast.error("Scan your fingerprint first");
     setBusy(true);
+    let latlong: string;
+    try { latlong = await getLatLongStrict(); } catch (e: any) { setBusy(false); return toast.error("Location required", { description: e.message }); }
     try {
-      const latlong = await getLatLong();
       await call("kyc_biometric", { piddata: pid, bank_code: kycBank, latlong });
       toast.success("Biometric eKYC complete");
       setPid(null); setQuality(null); setOtpSent(false); setOtpVerified(false); setOtp("");
@@ -324,9 +328,11 @@ function AepsPage() {
     if (needsAmount && !(Number(amount) > 0)) return toast.error("Enter a valid amount");
     if (!pid) return toast.error("Capture the customer's fingerprint");
 
-    setBusy(true); setResult(null);
+    setResult(null);
+    let latlong: string;
+    try { latlong = await getLatLongStrict(); } catch (e: any) { return toast.error("Location required", { description: e.message }); }
+    setBusy(true);
     try {
-      const latlong = await getLatLong();
       const r = await call("transact", {
         operation: op,
         aadhaar,
@@ -373,6 +379,23 @@ function AepsPage() {
   }, [kycBankQuery]);
 
   const blocked = status && !status.can_transact;
+  // Daily agent authentication is the ONLY thing left (setup otherwise complete) — show the mandatory gate.
+  const dailyPending = !!(status && status.onboarded && status.service_activated && status.ekyc_done && !status.daily_kyc_done);
+
+  // AEPS wallet / earnings summary, derived from this agent's transactions.
+  const wallet = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    let earned = 0, settled = 0, wdVolume = 0, todayCount = 0, txnCount = 0;
+    for (const t of txns) {
+      if (t.status !== "success") continue;
+      txnCount++;
+      earned += Number(t.commission || 0);
+      if (t.commission_settled) settled += Number(t.commission || 0);
+      if (t.operation === "cash_withdrawal" || t.operation === "aadhaar_pay") wdVolume += Number(t.amount || 0);
+      if ((t.created_at || "").slice(0, 10) === today) todayCount++;
+    }
+    return { earned, settled, pending: earned - settled, wdVolume, todayCount, txnCount };
+  }, [txns]);
 
   return (
     <RetailerShell>
@@ -396,7 +419,39 @@ function AepsPage() {
           </div>
         )}
 
-        {status?.keys_set && blocked && (
+        {/* Mandatory daily Agent Authentication gate — blocks all services until today's fingerprint auth is done. */}
+        {status?.keys_set && dailyPending && (
+          <div className="overflow-hidden rounded-2xl border-2 border-india-green/40 bg-card shadow-soft">
+            <div className="flex items-center gap-2 bg-india-green/10 px-5 py-3">
+              <ShieldCheck className="h-5 w-5 text-india-green" />
+              <div className="flex-1">
+                <p className="text-sm font-bold text-india-green">Agent Authentication required</p>
+                <p className="text-[11px] text-muted-foreground">NPCI rule: authenticate with your own fingerprint once today before you can serve customers.</p>
+              </div>
+            </div>
+            <div className="flex flex-col items-center gap-3 p-6">
+              <div className={`flex h-20 w-20 items-center justify-center rounded-full ${pid ? "bg-emerald-100" : "bg-muted"}`}>
+                {pid ? <CheckCircle2 className="h-9 w-9 text-emerald-600" /> : <Fingerprint className="h-9 w-9 text-muted-foreground" />}
+              </div>
+              <div className="inline-flex rounded-lg border border-border p-0.5">
+                <button onClick={() => setAuthMode("finger")} className={`rounded-md px-4 h-8 text-xs font-semibold ${authMode === "finger" ? "bg-india-green text-white" : "text-muted-foreground"}`}>Finger</button>
+                <button onClick={() => setAuthMode("iris")} className={`rounded-md px-4 h-8 text-xs font-semibold ${authMode === "iris" ? "bg-india-green text-white" : "text-muted-foreground"}`}>Iris</button>
+              </div>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <button onClick={scan} disabled={scanning} className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-4 h-10 text-sm font-semibold hover:bg-muted disabled:opacity-50">
+                  {scanning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Fingerprint className="h-4 w-4" />} {pid ? "Re-scan finger" : "Scan my finger"}
+                </button>
+                <button onClick={dailyAuth} disabled={!pid || busy} className="inline-flex items-center gap-1.5 rounded-lg bg-india-green px-5 h-10 text-sm font-bold text-white disabled:opacity-50">
+                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />} Agent Authentication
+                </button>
+              </div>
+              <p className="flex items-center gap-1 text-[11px] text-muted-foreground"><MapPin className="h-3 w-3" /> Your shop location is captured for every authentication (NPCI requirement).</p>
+              {status.last_error && <p className="text-xs text-rose-600">Banking partner said: {status.last_error}</p>}
+            </div>
+          </div>
+        )}
+
+        {status?.keys_set && blocked && !dailyPending && (
           <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
             <p className="mb-3 flex items-center gap-2 text-sm font-bold"><ShieldCheck className="h-4 w-4 text-india-green" /> One-time AEPS setup</p>
             <div className="space-y-2 text-sm">
@@ -560,6 +615,37 @@ function AepsPage() {
           </div>
         )}
 
+        {/* AEPS Wallet / earnings */}
+        {status?.onboarded && (
+          <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
+            <div className="mb-3 flex items-center justify-between">
+              <p className="flex items-center gap-2 text-sm font-bold"><Wallet className="h-4 w-4 text-india-green" /> AEPS Wallet & Earnings</p>
+              <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-bold ${status.daily_kyc_done ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+                {status.daily_kyc_done ? "Active today" : "Auth pending"}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="rounded-xl bg-emerald-50 p-3">
+                <p className="text-[11px] font-semibold text-emerald-700">Commission earned</p>
+                <p className="mt-0.5 text-lg font-extrabold text-emerald-800">{inr(wallet.earned)}</p>
+              </div>
+              <div className="rounded-xl bg-muted/50 p-3">
+                <p className="text-[11px] font-semibold text-muted-foreground">Settled to wallet</p>
+                <p className="mt-0.5 text-lg font-extrabold">{inr(wallet.settled)}</p>
+              </div>
+              <div className="rounded-xl bg-amber-50 p-3">
+                <p className="text-[11px] font-semibold text-amber-700">Pending settlement</p>
+                <p className="mt-0.5 text-lg font-extrabold text-amber-800">{inr(wallet.pending)}</p>
+              </div>
+              <div className="rounded-xl bg-muted/50 p-3">
+                <p className="text-[11px] font-semibold text-muted-foreground">Withdrawal volume</p>
+                <p className="mt-0.5 text-lg font-extrabold">{inr(wallet.wdVolume)}</p>
+              </div>
+            </div>
+            <p className="mt-2 text-[11px] text-muted-foreground">{wallet.txnCount} successful transactions · {wallet.todayCount} today. Commission settles to your BharatOne wallet.</p>
+          </div>
+        )}
+
         {/* Scanner */}
         <div className="rounded-2xl border border-border bg-card p-4 shadow-soft">
           <div className="flex flex-wrap items-center gap-3">
@@ -573,10 +659,36 @@ function AepsPage() {
                 <CheckCircle2 className="h-3 w-3" /> Captured{quality != null ? ` · quality ${quality}` : ""}
               </span>
             )}
+            <button onClick={() => setShowDrivers((v) => !v)} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-9 text-xs font-semibold hover:bg-muted">
+              <Download className="h-3.5 w-3.5" /> Drivers
+            </button>
             <button onClick={connect} disabled={scanning} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-9 text-xs font-semibold hover:bg-muted disabled:opacity-50">
               {scanning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />} Detect device
             </button>
           </div>
+
+          {showDrivers && (
+            <div className="mt-3 rounded-xl border border-border bg-muted/30 p-3 text-xs">
+              <p className="mb-2 font-semibold">Fingerprint device drivers (RD Service) — install for your scanner:</p>
+              <div className="grid gap-1.5 sm:grid-cols-2">
+                {[
+                  { n: "Mantra RD Service (MFS100 / L1)", u: "https://download.mantratec.com/" },
+                  { n: "Morpho / IDEMIA RD Service (MSO 1300)", u: "https://www.idemia.com/rd-service" },
+                  { n: "Startek RD Service (FM220)", u: "https://startek.co.in/rd-services/" },
+                  { n: "Precision / Evolute / Secugen RD Service", u: "https://www.uidai.gov.in/en/ecosystem/authentication-devices-documents/rd-services.html" },
+                ].map((d) => (
+                  <a key={d.n} href={d.u} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 h-9 font-semibold hover:bg-muted">
+                    <Download className="h-3.5 w-3.5 text-india-green" /> {d.n}
+                  </a>
+                ))}
+              </div>
+              <ol className="mt-2 list-decimal space-y-0.5 pl-4 text-muted-foreground">
+                <li>Install the <b>Windows-certified RD Service</b> and <b>Windows Support Tools</b> for your L1 device.</li>
+                <li>Plug in the scanner and make sure the RD Service is <b>running</b> with a valid (unexpired) licence.</li>
+                <li>Use <b>Chrome or Edge</b>, then click <b>Detect device</b> above.</li>
+              </ol>
+            </div>
+          )}
 
           {!device && deviceHint && (
             <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-900">

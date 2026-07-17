@@ -207,3 +207,18 @@ export function getLatLong(): Promise<string> {
     );
   });
 }
+
+// Strict variant — REJECTS when location is unavailable or denied.
+// NPCI mandates geo-coordinates on every AePS operation, so callers must not proceed without it.
+export function getLatLongStrict(): Promise<string> {
+  return new Promise((resolve, reject) => {
+    if (!("geolocation" in navigator)) return reject(new Error("This device/browser cannot share location, which AEPS requires."));
+    navigator.geolocation.getCurrentPosition(
+      (pos) => resolve(`${pos.coords.latitude.toFixed(6)},${pos.coords.longitude.toFixed(6)}`),
+      (err) => reject(new Error(err.code === err.PERMISSION_DENIED
+        ? "Location access is blocked. Allow location for this site and try again — AEPS requires your shop's location."
+        : "Could not get your location. Ensure location/GPS is on and try again.")),
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 },
+    );
+  });
+}
