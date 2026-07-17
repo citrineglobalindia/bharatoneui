@@ -70,6 +70,7 @@ function AepsPage() {
   // AEPS onboarding / eKYC wizard
   const [setupOpen, setSetupOpen] = useState(false);
   const [obFirst, setObFirst] = useState("");
+  const [obMiddle, setObMiddle] = useState("");
   const [obLast, setObLast] = useState("");
   const [obMobile, setObMobile] = useState("");
   const [obPan, setObPan] = useState("");
@@ -190,7 +191,7 @@ function AepsPage() {
     if (!obState.trim()) return toast.error("Enter your state");
     setBusy(true);
     try {
-      await call("onboard", { first_name: obFirst.trim(), last_name: obLast.trim(), mobile: obMobile, pan: obPan.trim().toUpperCase(), dob: obDob, pincode: obPincode, city: obCity.trim(), state: obState.trim() });
+      await call("onboard", { first_name: obFirst.trim(), middle_name: obMiddle.trim(), last_name: [obMiddle.trim(), obLast.trim()].filter(Boolean).join(" "), mobile: obMobile, pan: obPan.trim().toUpperCase(), dob: obDob, pincode: obPincode, city: obCity.trim(), state: obState.trim() });
       toast.success("Registered with the banking partner");
       await load();
     } catch (e: any) { toast.error("Registration failed", { description: e.message }); }
@@ -390,10 +391,12 @@ function AepsPage() {
             {/* Step 1 — onboard */}
             {!status.onboarded && (
               <div className="mt-4 rounded-xl bg-muted/40 p-4">
-                <p className="mb-2 text-xs font-semibold text-muted-foreground">Step 1 — Register yourself as an AEPS agent</p>
+                <p className="mb-1 text-xs font-semibold text-muted-foreground">Step 1 — Register yourself as an AEPS agent</p>
+                <p className="mb-2 text-[11px] text-amber-600">Enter your name, PAN and date of birth <b>exactly as on your Aadhaar card</b>. Include your middle name/initial — a partial name will fail the bank's Aadhaar match.</p>
                 <div className="grid gap-2 sm:grid-cols-2">
                   <input value={obFirst} onChange={(e) => setObFirst(e.target.value)} placeholder="First name *" className="h-9 rounded-lg border border-border bg-background px-3 text-sm" />
-                  <input value={obLast} onChange={(e) => setObLast(e.target.value)} placeholder="Last name" className="h-9 rounded-lg border border-border bg-background px-3 text-sm" />
+                  <input value={obMiddle} onChange={(e) => setObMiddle(e.target.value)} placeholder="Middle name" className="h-9 rounded-lg border border-border bg-background px-3 text-sm" />
+                  <input value={obLast} onChange={(e) => setObLast(e.target.value)} placeholder="Last name / surname" className="h-9 rounded-lg border border-border bg-background px-3 text-sm" />
                   <input value={obMobile} onChange={(e) => setObMobile(e.target.value.replace(/\D/g, ""))} maxLength={10} placeholder="Mobile number *" className="h-9 rounded-lg border border-border bg-background px-3 text-sm" />
                   <input value={obPan} onChange={(e) => setObPan(e.target.value.toUpperCase())} maxLength={10} placeholder="PAN *" className="h-9 rounded-lg border border-border bg-background px-3 text-sm" />
                   <label className="flex items-center gap-2 text-xs text-muted-foreground">Date of birth *
