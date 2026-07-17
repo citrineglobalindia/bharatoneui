@@ -289,6 +289,7 @@ function AepsPage() {
     try {
       const r = await call("kyc_send_otp");
       setOtpSent(true); setOtpRef(r.otp_ref_id ?? null);
+      setOtpVerified(false); setOtp(""); setPid(null); setQuality(null); // a fresh OTP must be re-verified before biometric
       toast.success("OTP sent to your registered mobile");
     } catch (e: any) { toast.error("Could not send OTP", { description: e.message }); }
     finally { setBusy(false); }
@@ -306,6 +307,7 @@ function AepsPage() {
   };
 
   const doBiometricKyc = async () => {
+    if (!otpVerified) return toast.error("Verify the OTP first", { description: "Send OTP → enter it → Verify, then scan your finger." });
     if (!kycBank) return toast.error("Select your own bank first");
     if (!pid) return toast.error("Scan your fingerprint first");
     setBusy(true);
