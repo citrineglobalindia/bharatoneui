@@ -55,6 +55,11 @@ function AepsPage() {
   const [deviceHint, setDeviceHint] = useState<string | null>(null);
   const [authMode, setAuthMode] = useState<"finger" | "iris">("finger");
   const [showDrivers, setShowDrivers] = useState(false);
+  const [walletSum, setWalletSum] = useState<{ earned: number; paid: number; pending: number; available: number } | null>(null);
+  const [payouts, setPayouts] = useState<any[]>([]);
+  const [payAmt, setPayAmt] = useState("");
+  const [payBusy, setPayBusy] = useState(false);
+  const [showPayout, setShowPayout] = useState(false);
 
   // form
   const [op, setOp] = useState<string>("cash_withdrawal");
@@ -124,12 +129,16 @@ function AepsPage() {
   async function load() {
     setLoading(true);
     try {
-      const [st, tx] = await Promise.all([
+      const [st, tx, ws, po] = await Promise.all([
         call("config").catch(() => null),
         (supabase as any).rpc("aeps_my_transactions", { _limit: 25 }),
+        (supabase as any).rpc("aeps_wallet_summary").catch(() => null),
+        (supabase as any).from("aeps_payouts").select("*").order("requested_at", { ascending: false }).limit(10),
       ]);
       setStatus(st);
       setTxns((tx.data as Txn[]) ?? []);
+      setWalletSum(ws?.data ?? null);
+      setPayouts((po?.data as any[]) ?? []);
     } finally { setLoading(false); }
   }
   useEffect(() => { load(); }, []);
@@ -360,6 +369,21 @@ function AepsPage() {
       }
       load();
     } finally { setBusy(false); }
+  };
+
+  const requestPayout = async () => {
+    const amt = Number(payAmt);
+    if (!(amt > 0)) return toast.error("Enter a valid amount to withdraw");
+    if (walletSum && amt > walletSum.available) return toast.error(`You can withdraw up to ${inr(walletSum.available)}`);
+    setPayBusy(true);
+    try {
+      const { data, error } = await (supabase as any).rpc("request_aeps_payout", { p_amount: amt });
+      if (error) throw error;
+      if (data?.ok === false) throw new Error(data?.message || "Request failed");
+      toast.success("Withdrawal requested", { description: "Your request has been sent to the team for payout to your bank." });
+      setPayAmt(""); setShowPayout(false); await load();
+    } catch (e: any) { toast.error("Could not request withdrawal", { description: e.message }); }
+    finally { setPayBusy(false); }
   };
 
   const recheck = async (t: Txn) => {
@@ -626,34 +650,64 @@ function AepsPage() {
           </div>
         )}
 
-        {/* AEPS Wallet / earnings */}
+        {/* AEPS Wallet / earnings + payout to bank */}
         {status?.onboarded && (
           <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
             <div className="mb-3 flex items-center justify-between">
-              <p className="flex items-center gap-2 text-sm font-bold"><Wallet className="h-4 w-4 text-india-green" /> AEPS Wallet & Earnings</p>
+              <p className="flex items-center gap-2 text-sm font-bold"><Wallet className="h-4 w-4 text-india-green" /> AEPS Commission Wallet</p>
               <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-bold ${status.daily_kyc_done ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
                 {status.daily_kyc_done ? "Active today" : "Auth pending"}
               </span>
             </div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <div className="rounded-xl bg-emerald-50 p-3">
-                <p className="text-[11px] font-semibold text-emerald-700">Commission earned</p>
-                <p className="mt-0.5 text-lg font-extrabold text-emerald-800">{inr(wallet.earned)}</p>
+
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <div className="flex-1 rounded-xl bg-india-green/10 p-4">
+                <p className="text-[11px] font-semibold text-india-green">Available to withdraw</p>
+                <p className="mt-0.5 text-2xl font-extrabold text-india-green">{inr(walletSum?.available ?? 0)}</p>
+                <p className="mt-0.5 text-[11px] text-muted-foreground">Earned {inr(walletSum?.earned ?? 0)} · Paid {inr(walletSum?.paid ?? 0)} · In process {inr(walletSum?.pending ?? 0)}</p>
               </div>
-              <div className="rounded-xl bg-muted/50 p-3">
-                <p className="text-[11px] font-semibold text-muted-foreground">Settled to wallet</p>
-                <p className="mt-0.5 text-lg font-extrabold">{inr(wallet.settled)}</p>
-              </div>
-              <div className="rounded-xl bg-amber-50 p-3">
-                <p className="text-[11px] font-semibold text-amber-700">Pending settlement</p>
-                <p className="mt-0.5 text-lg font-extrabold text-amber-800">{inr(wallet.pending)}</p>
-              </div>
-              <div className="rounded-xl bg-muted/50 p-3">
-                <p className="text-[11px] font-semibold text-muted-foreground">Withdrawal volume</p>
-                <p className="mt-0.5 text-lg font-extrabold">{inr(wallet.wdVolume)}</p>
+              <div className="grid flex-1 grid-cols-2 gap-2">
+                <div className="rounded-xl bg-muted/50 p-3"><p className="text-[11px] font-semibold text-muted-foreground">Withdrawal volume</p><p className="mt-0.5 text-base font-extrabold">{inr(wallet.wdVolume)}</p></div>
+                <div className="rounded-xl bg-muted/50 p-3"><p className="text-[11px] font-semibold text-muted-foreground">Transactions</p><p className="mt-0.5 text-base font-extrabold">{wallet.txnCount} <span className="text-[11px] font-medium text-muted-foreground">({wallet.todayCount} today)</span></p></div>
               </div>
             </div>
-            <p className="mt-2 text-[11px] text-muted-foreground">{wallet.txnCount} successful transactions · {wallet.todayCount} today. Commission settles to your BharatOne wallet.</p>
+
+            <div className="mt-3 flex items-center gap-2">
+              <button onClick={() => setShowPayout((v) => !v)} disabled={!(walletSum && walletSum.available > 0)}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-india-green px-4 h-9 text-xs font-bold text-white disabled:opacity-50">
+                <Landmark className="h-3.5 w-3.5" /> Withdraw to bank
+              </button>
+              <span className="text-[11px] text-muted-foreground">Transfers to your settlement account after team approval.</span>
+            </div>
+
+            {showPayout && (
+              <div className="mt-3 flex flex-wrap items-end gap-2 rounded-xl bg-muted/40 p-3">
+                <label className="flex-1 min-w-[160px]"><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Amount to withdraw (₹)</span>
+                  <input inputMode="numeric" value={payAmt} onChange={(e) => setPayAmt(e.target.value.replace(/\D/g, ""))} placeholder={`Max ${inr(walletSum?.available ?? 0)}`} className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm" />
+                </label>
+                <button onClick={() => setPayAmt(String(walletSum?.available ?? 0))} className="rounded-lg border border-border px-3 h-9 text-xs font-semibold hover:bg-muted">Max</button>
+                <button onClick={requestPayout} disabled={payBusy} className="inline-flex items-center gap-1.5 rounded-lg bg-india-green px-4 h-9 text-xs font-bold text-white disabled:opacity-50">
+                  {payBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />} Request payout
+                </button>
+              </div>
+            )}
+
+            {payouts.length > 0 && (
+              <div className="mt-3">
+                <p className="mb-1 text-[11px] font-semibold text-muted-foreground">Recent withdrawals</p>
+                <div className="divide-y divide-border rounded-xl border border-border">
+                  {payouts.map((p) => (
+                    <div key={p.id} className="flex items-center justify-between px-3 py-2 text-xs">
+                      <span>{new Date(p.requested_at).toLocaleDateString("en-IN")} · {inr(Number(p.amount))}{p.utr ? ` · UTR ${p.utr}` : ""}</span>
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${p.status === "paid" ? "bg-emerald-100 text-emerald-700" : p.status === "rejected" ? "bg-rose-100 text-rose-700" : "bg-amber-100 text-amber-700"}`}>
+                        {p.status === "requested" ? "In process" : p.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            <p className="mt-2 text-[11px] text-muted-foreground">Commission from every successful AEPS transaction is credited here. Withdrawals are paid to your registered settlement bank account.</p>
           </div>
         )}
 

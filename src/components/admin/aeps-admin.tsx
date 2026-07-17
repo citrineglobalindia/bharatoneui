@@ -43,22 +43,98 @@ const blank = (): Slab => ({
 });
 
 export function AepsAdmin() {
-  const [tab, setTab] = useState<"monitor" | "commission">("monitor");
+  const [tab, setTab] = useState<"monitor" | "commission" | "payouts">("monitor");
   return (
     <div className="space-y-5">
       <div>
         <h2 className="flex items-center gap-2 text-lg font-extrabold"><Landmark className="h-5 w-5 text-admin" /> AEPS Banking</h2>
-        <p className="text-sm text-muted-foreground">Set the commission retailers earn, and monitor every AEPS transaction.</p>
+        <p className="text-sm text-muted-foreground">Set the commission retailers earn, monitor transactions, and approve payout requests.</p>
       </div>
       <div className="flex gap-1.5">
-        {([["monitor", "Transaction Monitor"], ["commission", "Commission Setup"]] as const).map(([k, l]) => (
+        {([["monitor", "Transaction Monitor"], ["commission", "Commission Setup"], ["payouts", "Payout Requests"]] as const).map(([k, l]) => (
           <button key={k} onClick={() => setTab(k)}
             className={`rounded-full px-4 h-9 text-xs font-semibold transition ${tab === k ? "bg-india-green text-white" : "border border-border bg-card hover:bg-muted"}`}>
             {l}
           </button>
         ))}
       </div>
-      {tab === "monitor" ? <Monitor /> : <CommissionSetup />}
+      {tab === "monitor" ? <Monitor /> : tab === "commission" ? <CommissionSetup /> : <Payouts />}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------- payouts
+function Payouts() {
+  const [rows, setRows] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [filter, setFilter] = useState<"requested" | "paid" | "rejected" | "all">("requested");
+
+  async function load() {
+    setLoading(true);
+    try {
+      await ensureStaffSession();
+      const { data, error } = await (supabase as any).rpc("admin_list_aeps_payouts", { p_status: filter === "all" ? null : filter });
+      if (error) throw error;
+      setRows((data as any[]) ?? []);
+    } catch (e: any) { toast.error("Could not load payouts", { description: e.message }); }
+    finally { setLoading(false); }
+  }
+  useEffect(() => { load(); }, [filter]);
+
+  const act = async (id: string, action: "approve" | "reject") => {
+    let utr: string | null = null;
+    if (action === "approve") {
+      utr = window.prompt("Enter the bank payment reference / UTR for this payout:") || "";
+      if (!utr.trim()) return;
+    }
+    setBusy(id);
+    try {
+      const { data, error } = await (supabase as any).rpc("admin_process_aeps_payout", { p_id: id, p_action: action, p_utr: utr, p_remarks: null });
+      if (error) throw error;
+      toast.success(action === "approve" ? "Marked paid" : "Rejected");
+      await load();
+    } catch (e: any) { toast.error("Action failed", { description: e.message }); }
+    finally { setBusy(null); }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-1.5">
+        {(["requested", "paid", "rejected", "all"] as const).map((f) => (
+          <button key={f} onClick={() => setFilter(f)} className={`rounded-full px-3 h-8 text-xs font-semibold ${filter === f ? "bg-india-green text-white" : "border border-border bg-card hover:bg-muted"}`}>
+            {f === "requested" ? "Pending" : f[0].toUpperCase() + f.slice(1)}
+          </button>
+        ))}
+        <button onClick={load} className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-8 text-xs font-semibold hover:bg-muted"><RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} /> Refresh</button>
+      </div>
+      <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-soft">
+        <table className="w-full text-sm">
+          <thead className="bg-muted/50 text-left text-xs text-muted-foreground">
+            <tr><th className="p-3">Retailer</th><th className="p-3">Amount</th><th className="p-3">Bank account</th><th className="p-3">Requested</th><th className="p-3">Status</th><th className="p-3 text-right">Action</th></tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 && <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">{loading ? "Loading…" : "No payout requests."}</td></tr>}
+            {rows.map((r) => (
+              <tr key={r.id} className="border-t border-border">
+                <td className="p-3"><div className="font-semibold">{r.retailer_name || "—"}</div><div className="text-[11px] text-muted-foreground">{r.jsko_id} · {r.mobile}</div></td>
+                <td className="p-3 font-bold">{inr(Number(r.amount))}</td>
+                <td className="p-3 text-xs">{r.account_holder}<br />{r.bank_account} · {r.ifsc}</td>
+                <td className="p-3 text-xs">{new Date(r.requested_at).toLocaleString("en-IN")}</td>
+                <td className="p-3"><span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${r.status === "paid" ? "bg-emerald-100 text-emerald-700" : r.status === "rejected" ? "bg-rose-100 text-rose-700" : "bg-amber-100 text-amber-700"}`}>{r.status === "requested" ? "Pending" : r.status}</span>{r.utr ? <div className="mt-0.5 text-[10px] text-muted-foreground">UTR {r.utr}</div> : null}</td>
+                <td className="p-3 text-right">
+                  {r.status === "requested" ? (
+                    <div className="inline-flex gap-1.5">
+                      <button onClick={() => act(r.id, "approve")} disabled={busy === r.id} className="rounded-lg bg-india-green px-3 h-8 text-xs font-bold text-white disabled:opacity-50">{busy === r.id ? "…" : "Mark paid"}</button>
+                      <button onClick={() => act(r.id, "reject")} disabled={busy === r.id} className="rounded-lg border border-border px-3 h-8 text-xs font-semibold hover:bg-muted">Reject</button>
+                    </div>
+                  ) : <span className="text-xs text-muted-foreground">{r.processed_at ? new Date(r.processed_at).toLocaleDateString("en-IN") : ""}</span>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
