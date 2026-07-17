@@ -86,6 +86,11 @@ function AepsPage() {
   const [acState, setAcState] = useState("");
   const [acPincode, setAcPincode] = useState("");
   const [acLine, setAcLine] = useState("");
+  const [acAccount, setAcAccount] = useState("");
+  const [acIfsc, setAcIfsc] = useState("");
+  const [acAadhaar, setAcAadhaar] = useState("");
+  const [acShopType, setAcShopType] = useState("");
+  const [acStateId, setAcStateId] = useState("");
   const [panPath, setPanPath] = useState("");
   const [frontPath, setFrontPath] = useState("");
   const [backPath, setBackPath] = useState("");
@@ -233,14 +238,20 @@ function AepsPage() {
   };
 
   const doActivate = async () => {
-    if (!acModel.trim() || !acSerial.trim()) return toast.error("Enter the biometric device model and serial number");
+    if (!acModel.trim() || !acSerial.trim()) return toast.error("Select the device brand and enter the serial number");
+    if (!acAccount.trim() || !/^[A-Z]{4}0[A-Z0-9]{6}$/i.test(acIfsc.trim())) return toast.error("Enter the settlement account number and a valid IFSC");
+    if (!/^\d{12}$/.test(acAadhaar)) return toast.error("Enter your 12-digit Aadhaar number");
     if (!/^\d{6}$/.test(acPincode)) return toast.error("Enter the 6-digit office pincode");
-    if (!panPath || !frontPath || !backPath) return toast.error("Upload PAN, Aadhaar front and Aadhaar back");
+    if (!panPath || !frontPath || !backPath) return toast.error("Upload PAN, Aadhaar front and Aadhaar back (JPG/PDF, under 1 MB)");
     setBusy(true);
+    let latlong = "";
+    try { const pos = await new Promise<GeolocationPosition>((res, rej) => navigator.geolocation.getCurrentPosition(res, rej, { timeout: 8000 })); latlong = `${pos.coords.latitude.toFixed(6)},${pos.coords.longitude.toFixed(6)}`; } catch { /* optional */ }
     try {
       await call("activate", {
         modelname: acModel.trim(), devicenumber: acSerial.trim(),
-        office_line: acLine.trim(), office_city: acCity.trim(), office_state: acState.trim(), office_pincode: acPincode,
+        account: acAccount.trim(), ifsc: acIfsc.trim().toUpperCase(), aadhaar: acAadhaar,
+        shop_type: acShopType.trim() || "4215", state_id: acStateId.trim(), latlong,
+        address_line: acLine.trim(), city: acCity.trim(), state: acState.trim(), pincode: acPincode,
         pan_path: panPath, aadhaar_front_path: frontPath, aadhaar_back_path: backPath,
       });
       toast.success("Activation submitted", { description: "The bank will review and approve in 2–3 business days." });
@@ -397,8 +408,16 @@ function AepsPage() {
 
                 <div className="grid gap-2 sm:grid-cols-2">
                   <div className="sm:col-span-2 flex flex-wrap items-end gap-2">
-                    <label className="flex-1"><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Biometric device model *</span>
-                      <input value={acModel} onChange={(e) => setAcModel(e.target.value)} placeholder="e.g. MFS100" className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm" /></label>
+                    <label className="flex-1"><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Biometric device brand *</span>
+                      <select value={acModel} onChange={(e) => setAcModel(e.target.value)} className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm">
+                        <option value="">— select —</option>
+                        <option value="Mantra">Mantra</option>
+                        <option value="Morpho">Morpho</option>
+                        <option value="Startek">Startek</option>
+                        <option value="Evolute">Evolute</option>
+                        <option value="Precision">Precision</option>
+                        <option value="Secugen">Secugen</option>
+                      </select></label>
                     <label className="flex-1"><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Device serial number *</span>
                       <input value={acSerial} onChange={(e) => setAcSerial(e.target.value)} placeholder="Device serial" className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm" /></label>
                     <button onClick={detectDevice} disabled={scanning} className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 h-9 text-xs font-semibold hover:bg-muted disabled:opacity-50">
@@ -412,6 +431,11 @@ function AepsPage() {
                     <label><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">State</span><input value={acState} onChange={(e) => setAcState(e.target.value)} className="h-9 w-full rounded-lg border border-border bg-background px-2 text-sm" /></label>
                     <label><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Pincode *</span><input value={acPincode} onChange={(e) => setAcPincode(e.target.value.replace(/\D/g, ""))} maxLength={6} className="h-9 w-full rounded-lg border border-border bg-background px-2 text-sm" /></label>
                   </div>
+                  <label><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">State code (Eko)</span><input value={acStateId} onChange={(e) => setAcStateId(e.target.value.replace(/\D/g, ""))} placeholder="e.g. 23" className="h-9 w-full rounded-lg border border-border bg-background px-2 text-sm" /></label>
+                  <label><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Shop type code</span><input value={acShopType} onChange={(e) => setAcShopType(e.target.value)} placeholder="e.g. 4215" className="h-9 w-full rounded-lg border border-border bg-background px-2 text-sm" /></label>
+                  <label className="sm:col-span-2"><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Your (agent) Aadhaar number *</span><input value={acAadhaar} onChange={(e) => setAcAadhaar(e.target.value.replace(/\D/g, ""))} maxLength={12} placeholder="12-digit Aadhaar" className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm" /></label>
+                  <label><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Settlement account number *</span><input value={acAccount} onChange={(e) => setAcAccount(e.target.value.replace(/\D/g, ""))} placeholder="Bank account no." className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm" /></label>
+                  <label><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Settlement IFSC *</span><input value={acIfsc} onChange={(e) => setAcIfsc(e.target.value.toUpperCase())} maxLength={11} placeholder="e.g. SBIN0001234" className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm" /></label>
                 </div>
 
                 <p className="mb-2 mt-3 text-[11px] font-semibold text-muted-foreground">Documents — JPG or PDF, under 1 MB each (PNG not accepted)</p>
