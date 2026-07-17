@@ -95,6 +95,8 @@ function AepsPage() {
   const [acAadhaar, setAcAadhaar] = useState("");
   const [acShopType, setAcShopType] = useState("");
   const [acStateId, setAcStateId] = useState("");
+  const [statesList, setStatesList] = useState<{ value: number; label: string; stateCode: string }[]>([]);
+  const [mccList, setMccList] = useState<{ value: number; label: string }[]>([]);
   const [panPath, setPanPath] = useState("");
   const [frontPath, setFrontPath] = useState("");
   const [backPath, setBackPath] = useState("");
@@ -129,6 +131,18 @@ function AepsPage() {
     } finally { setLoading(false); }
   }
   useEffect(() => { load(); }, []);
+
+  // Eko lookup lists — state codes and shop-type (MCC) codes must come from the API, not be hard-coded.
+  useEffect(() => {
+    call("get_states").then((r) => setStatesList(r?.list ?? [])).catch(() => {});
+    call("get_mcc").then((r) => setMccList(r?.list ?? [])).catch(() => {});
+  }, [call]);
+  // Auto-select the Eko state code from the typed state name.
+  useEffect(() => {
+    if (!acState.trim() || !statesList.length) return;
+    const m = statesList.find((s) => s.label.toLowerCase() === acState.trim().toLowerCase());
+    if (m) setAcStateId(String(m.value));
+  }, [acState, statesList]);
 
   const connect = async () => {
     setScanning(true);
@@ -247,6 +261,8 @@ function AepsPage() {
     if (!/^\d{12}$/.test(acAadhaar)) return toast.error("Enter your 12-digit Aadhaar number");
     if (!/^\d{6}$/.test(acPincode)) return toast.error("Enter the 6-digit office pincode");
     if (acLine.trim().length < 10) return toast.error("Enter the full shop address (building/shop no., street, area, city) — a short name is rejected by the bank");
+    if (!acStateId) return toast.error("Select your state from the list");
+    if (!acShopType) return toast.error("Select your shop / business type");
     if (!panPath || !frontPath || !backPath) return toast.error("Upload PAN, Aadhaar front and Aadhaar back (JPG/PDF, under 1 MB)");
     setBusy(true);
     let latlong = "";
@@ -446,8 +462,16 @@ function AepsPage() {
                     <label><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">State</span><input value={acState} onChange={(e) => setAcState(e.target.value)} className="h-9 w-full rounded-lg border border-border bg-background px-2 text-sm" /></label>
                     <label><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Pincode *</span><input value={acPincode} onChange={(e) => setAcPincode(e.target.value.replace(/\D/g, ""))} maxLength={6} className="h-9 w-full rounded-lg border border-border bg-background px-2 text-sm" /></label>
                   </div>
-                  <label><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">State code (Eko)</span><input value={acStateId} onChange={(e) => setAcStateId(e.target.value.replace(/\D/g, ""))} placeholder="e.g. 23" className="h-9 w-full rounded-lg border border-border bg-background px-2 text-sm" /></label>
-                  <label><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Shop type code</span><input value={acShopType} onChange={(e) => setAcShopType(e.target.value)} placeholder="e.g. 4215" className="h-9 w-full rounded-lg border border-border bg-background px-2 text-sm" /></label>
+                  <label><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">State (Eko)</span>
+                    <select value={acStateId} onChange={(e) => setAcStateId(e.target.value)} className="h-9 w-full rounded-lg border border-border bg-background px-2 text-sm">
+                      <option value="">Select state</option>
+                      {statesList.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+                    </select></label>
+                  <label><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Shop / business type</span>
+                    <select value={acShopType} onChange={(e) => setAcShopType(e.target.value)} className="h-9 w-full rounded-lg border border-border bg-background px-2 text-sm">
+                      <option value="">Select shop type</option>
+                      {mccList.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+                    </select></label>
                   <label><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">GSTIN (optional)</span><input value={acGstin} onChange={(e) => setAcGstin(e.target.value.toUpperCase())} maxLength={15} placeholder="15-digit GSTIN, if any" className="h-9 w-full rounded-lg border border-border bg-background px-2 text-sm" /></label>
                   <label className="sm:col-span-2"><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Your (agent) Aadhaar number *</span><input value={acAadhaar} onChange={(e) => setAcAadhaar(e.target.value.replace(/\D/g, ""))} maxLength={12} placeholder="12-digit Aadhaar" className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm" /></label>
                   <label><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Settlement account number *</span><input value={acAccount} onChange={(e) => setAcAccount(e.target.value.replace(/\D/g, ""))} placeholder="Bank account no." className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm" /></label>
