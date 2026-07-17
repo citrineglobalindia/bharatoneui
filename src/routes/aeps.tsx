@@ -128,18 +128,24 @@ function AepsPage() {
 
   async function load() {
     setLoading(true);
+    // Status first (independent) so the setup/gate/wallet UI always renders even if the optional wallet calls fail.
     try {
-      const [st, tx, ws, po] = await Promise.all([
-        call("config").catch(() => null),
-        (supabase as any).rpc("aeps_my_transactions", { _limit: 25 }),
-        (supabase as any).rpc("aeps_wallet_summary").catch(() => null),
-        (supabase as any).from("aeps_payouts").select("*").order("requested_at", { ascending: false }).limit(10),
-      ]);
+      const st = await call("config").catch(() => null);
       setStatus(st);
-      setTxns((tx.data as Txn[]) ?? []);
-      setWalletSum(ws?.data ?? null);
+    } catch { /* ignore */ }
+    try {
+      const tx = await (supabase as any).rpc("aeps_my_transactions", { _limit: 25 });
+      setTxns((tx?.data as Txn[]) ?? []);
+    } catch { /* ignore */ }
+    try {
+      const ws = await (supabase as any).rpc("aeps_wallet_summary");
+      setWalletSum((ws?.data as any) ?? null);
+    } catch { /* wallet optional */ }
+    try {
+      const po = await (supabase as any).from("aeps_payouts").select("*").order("requested_at", { ascending: false }).limit(10);
       setPayouts((po?.data as any[]) ?? []);
-    } finally { setLoading(false); }
+    } catch { /* payouts optional */ }
+    setLoading(false);
   }
   useEffect(() => { load(); }, []);
 
