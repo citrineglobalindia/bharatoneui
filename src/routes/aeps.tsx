@@ -32,7 +32,6 @@ const OPS = [
   { key: "cash_withdrawal", label: "Cash Withdrawal", needsAmount: true },
   { key: "balance_enquiry", label: "Balance Enquiry", needsAmount: false },
   { key: "mini_statement", label: "Mini Statement", needsAmount: false },
-  { key: "aadhaar_pay", label: "Aadhaar Pay", needsAmount: true },
 ] as const;
 
 const inr = (n: number) => "₹" + Number(n || 0).toLocaleString("en-IN");
@@ -99,6 +98,7 @@ function AepsPage() {
   const [acStateId, setAcStateId] = useState("");
   const [statesList, setStatesList] = useState<{ value: number; label: string; stateCode: string }[]>([]);
   const [mccList, setMccList] = useState<{ value: number; label: string }[]>([]);
+  const [bankList, setBankList] = useState<{ value: string; label: string }[]>([]);
   const [panPath, setPanPath] = useState("");
   const [frontPath, setFrontPath] = useState("");
   const [backPath, setBackPath] = useState("");
@@ -138,6 +138,7 @@ function AepsPage() {
   useEffect(() => {
     call("get_states").then((r) => setStatesList(r?.list ?? [])).catch(() => {});
     call("get_mcc").then((r) => setMccList(r?.list ?? [])).catch(() => {});
+    call("get_banks").then((r) => setBankList(r?.list ?? [])).catch(() => {});
   }, [call]);
   // Auto-select the Eko state code from the typed state name.
   useEffect(() => {
@@ -350,10 +351,12 @@ function AepsPage() {
       setAmount(""); setPid(null); setQuality(null);
       load();
     } catch (e: any) {
-      if (String(e.message).includes("biometric authentication")) {
-        toast.error("Daily authentication needed", { description: "Scan your own fingerprint and press “Daily authentication”." });
+      const msg = String(e.message || "");
+      if (/2\s*fa|before initiating|biometric authentication|authenticat/i.test(msg)) {
+        toast.error("Daily authentication needed", { description: "Scan your own fingerprint to authenticate for today, then retry the transaction." });
+        setPid(null); setQuality(null);
       } else {
-        toast.error("Transaction failed", { description: e.message });
+        toast.error("Transaction failed", { description: msg });
       }
       load();
     } finally { setBusy(false); }
@@ -368,17 +371,23 @@ function AepsPage() {
     } catch (e: any) { toast.error("Could not check", { description: e.message }); }
   };
 
+  // Prefer Eko's live bank list (correct bank_code values); fall back to the static list until it loads.
+  const allBanks = useMemo(
+    () => (bankList.length ? bankList.map((b) => ({ code: b.value, name: b.label })) : AEPS_BANKS),
+    [bankList],
+  );
+
   const banks = useMemo(() => {
     const q = bankQuery.trim().toLowerCase();
-    const list = q ? AEPS_BANKS.filter((b) => b.name.toLowerCase().includes(q) || b.code.toLowerCase().includes(q)) : AEPS_BANKS;
+    const list = q ? allBanks.filter((b) => b.name.toLowerCase().includes(q) || b.code.toLowerCase().includes(q)) : allBanks;
     return list.slice(0, 80);
-  }, [bankQuery]);
+  }, [bankQuery, allBanks]);
 
   const kycBanks = useMemo(() => {
     const q = kycBankQuery.trim().toLowerCase();
-    const list = q ? AEPS_BANKS.filter((b) => b.name.toLowerCase().includes(q) || b.code.toLowerCase().includes(q)) : AEPS_BANKS;
+    const list = q ? allBanks.filter((b) => b.name.toLowerCase().includes(q) || b.code.toLowerCase().includes(q)) : allBanks;
     return list.slice(0, 80);
-  }, [kycBankQuery]);
+  }, [kycBankQuery, allBanks]);
 
   const blocked = status && !status.can_transact;
   // Daily agent authentication is the ONLY thing left (setup otherwise complete) — show the mandatory gate.
