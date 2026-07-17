@@ -61,6 +61,8 @@ function AepsPage() {
   const [mobile, setMobile] = useState("");
   const [bank, setBank] = useState("");
   const [bankQuery, setBankQuery] = useState("");
+  const [kycBank, setKycBank] = useState("");
+  const [kycBankQuery, setKycBankQuery] = useState("");
   const [amount, setAmount] = useState("");
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<any>(null);
@@ -282,11 +284,12 @@ function AepsPage() {
   };
 
   const doBiometricKyc = async () => {
+    if (!kycBank) return toast.error("Select your own bank first");
     if (!pid) return toast.error("Scan your fingerprint first");
     setBusy(true);
     try {
       const latlong = await getLatLong();
-      await call("kyc_biometric", { piddata: pid, latlong });
+      await call("kyc_biometric", { piddata: pid, bank_code: kycBank, latlong });
       toast.success("Biometric eKYC complete");
       setPid(null); setQuality(null); setOtpSent(false); setOtpVerified(false); setOtp("");
       await load();
@@ -343,6 +346,12 @@ function AepsPage() {
     const list = q ? AEPS_BANKS.filter((b) => b.name.toLowerCase().includes(q) || b.code.toLowerCase().includes(q)) : AEPS_BANKS;
     return list.slice(0, 80);
   }, [bankQuery]);
+
+  const kycBanks = useMemo(() => {
+    const q = kycBankQuery.trim().toLowerCase();
+    const list = q ? AEPS_BANKS.filter((b) => b.name.toLowerCase().includes(q) || b.code.toLowerCase().includes(q)) : AEPS_BANKS;
+    return list.slice(0, 80);
+  }, [kycBankQuery]);
 
   const blocked = status && !status.can_transact;
 
@@ -476,14 +485,26 @@ function AepsPage() {
                     )}
                   </div>
                 ) : (
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="flex-1 text-xs text-muted-foreground">OTP verified. Now place your finger on the scanner and capture.</p>
-                    <button onClick={scan} disabled={scanning} className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 h-9 text-xs font-semibold hover:bg-muted disabled:opacity-50">
-                      {scanning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Fingerprint className="h-3.5 w-3.5" />} {pid ? "Re-scan" : "Scan my finger"}
-                    </button>
-                    <button onClick={doBiometricKyc} disabled={!pid || busy} className="inline-flex items-center gap-1.5 rounded-lg bg-india-green px-3 h-9 text-xs font-semibold text-white disabled:opacity-50">
-                      {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5" />} Complete eKYC
-                    </button>
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground">OTP verified. Select the bank linked to your Aadhaar, then place your finger on the scanner and capture.</p>
+                    <div className="relative max-w-sm">
+                      <Search className="absolute left-2.5 top-3 h-4 w-4 text-muted-foreground" />
+                      <input value={kycBankQuery} onChange={(e) => setKycBankQuery(e.target.value)}
+                        placeholder="Search your bank…" className="mb-1 h-10 w-full rounded-lg border border-border bg-background pl-8 pr-3 text-sm outline-none" />
+                    </div>
+                    <select value={kycBank} onChange={(e) => setKycBank(e.target.value)}
+                      className="h-10 w-full max-w-sm rounded-lg border border-border bg-background px-3 text-sm outline-none">
+                      <option value="">Select your bank</option>
+                      {kycBanks.map((b) => <option key={b.code} value={b.code}>{b.name}</option>)}
+                    </select>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button onClick={scan} disabled={scanning} className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 h-9 text-xs font-semibold hover:bg-muted disabled:opacity-50">
+                        {scanning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Fingerprint className="h-3.5 w-3.5" />} {pid ? "Re-scan" : "Scan my finger"}
+                      </button>
+                      <button onClick={doBiometricKyc} disabled={!pid || !kycBank || busy} className="inline-flex items-center gap-1.5 rounded-lg bg-india-green px-3 h-9 text-xs font-semibold text-white disabled:opacity-50">
+                        {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5" />} Complete eKYC
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
