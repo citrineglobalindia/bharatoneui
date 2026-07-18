@@ -65,6 +65,10 @@ function BbpsPage() {
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState<any>(null);
   const [catError, setCatError] = useState<string | null>(null);
+  const [acc, setAcc] = useState("");            // utility_acc_no
+  const [custMobile, setCustMobile] = useState(""); // confirmation_mobile_no
+  const [fetchRaw, setFetchRaw] = useState<string | null>(null); // billfetchresponse echo
+  const [latlong, setLatlong] = useState("");
 
   const call = useCallback(async (action: string, extra: Record<string, unknown> = {}) => {
     const { data, error } = await supabase.functions.invoke("bbps", { body: { action, ...extra } });
@@ -96,17 +100,25 @@ function BbpsPage() {
     setLoading(false);
   }
   useEffect(() => { load(); }, []);
+  useEffect(() => {
+    if (!("geolocation" in navigator)) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => setLatlong(`${pos.coords.latitude.toFixed(6)},${pos.coords.longitude.toFixed(6)}`),
+      () => { /* Eko falls back to the shop location on the server */ },
+      { timeout: 8000, maximumAge: 300000 },
+    );
+  }, []);
 
   const pickCategory = async (c: Cat) => {
-    setCat(c); setOp(null); setOps([]); setParams([]); setValues({}); setBill(null); setAmount(""); setDone(null);
+    setCat(c); setOp(null); setOps([]); setParams([]); setValues({}); setBill(null); setAmount(""); setDone(null); setAcc(""); setCustMobile(""); setFetchRaw(null);
     try {
-      const r = await call("operators", { category_id: c.id });
+      const r = await call("operators", { category: c.name });
       setOps(r?.list ?? []);
     } catch (e: any) { toast.error("Could not load operators", { description: e.message }); }
   };
 
   const pickOperator = async (o: Op) => {
-    setOp(o); setParams([]); setValues({}); setBill(null); setAmount("");
+    setOp(o); setParams([]); setValues({}); setBill(null); setAmount(""); setFetchRaw(null);
     try {
       const r = await call("operator_params", { operator_code: o.code });
       setParams(r?.list ?? []);
@@ -116,11 +128,17 @@ function BbpsPage() {
   const missing = params.filter((p) => p.required && !(values[p.name] ?? "").trim());
 
   const fetchBill = async () => {
-    if (missing.length) return toast.error(`Enter ${missing[0].label}`);
+    if (!acc.trim()) return toast.error("Enter the account / consumer number");
+    if (!/^\d{10}$/.test(custMobile)) return toast.error("Enter the customer's 10-digit mobile number");
     setBusy(true);
     try {
-      const r = await call("fetch_bill", { operator_code: op?.code, params: values });
+      const r = await call("fetch_bill", {
+        operator_code: op?.code, utility_acc_no: acc.trim(),
+        confirmation_mobile_no: custMobile, latlong,
+        dob: values.dob, cycle_number: values.cycle_number,
+      });
       setBill(r.bill);
+      setFetchRaw(r.billfetchresponse ?? null);
       if (r.bill?.amount != null) setAmount(String(r.bill.amount));
       toast.success("Bill fetched");
     } catch (e: any) {
@@ -130,6 +148,8 @@ function BbpsPage() {
 
   const payBill = async () => {
     const amt = Number(amount);
+    if (!acc.trim()) return toast.error("Enter the account / consumer number");
+    if (!/^\d{10}$/.test(custMobile)) return toast.error("Enter the customer's 10-digit mobile number");
     if (!(amt > 0)) return toast.error("Enter a valid amount");
     const total = amt + Number(bill?.convenience_fee ?? 0);
     if (Number(status?.wallet_balance ?? 0) < total) {
@@ -142,9 +162,9 @@ function BbpsPage() {
       const r = await call("pay_bill", {
         category: cat?.name, operator_code: op?.code, operator_name: op?.name,
         amount: amt, convenience_fee: bill?.convenience_fee ?? 0,
-        account_number: Object.values(values)[0] ?? null,
+        utility_acc_no: acc.trim(), confirmation_mobile_no: custMobile, latlong,
         customer_name: bill?.customer_name ?? null, bill_number: bill?.bill_number ?? null,
-        params: values,
+        billfetchresponse: fetchRaw,
       });
       setDone(r);
       toast.success("Payment successful");
@@ -157,7 +177,7 @@ function BbpsPage() {
 
   const reset = () => {
     setCat(null); setOp(null); setOps([]); setParams([]); setValues({});
-    setBill(null); setAmount(""); setDone(null);
+    setBill(null); setAmount(""); setDone(null); setAcc(""); setCustMobile(""); setFetchRaw(null);
   };
 
   const filteredOps = ops.filter((o) => !opQuery.trim() || o.name.toLowerCase().includes(opQuery.toLowerCase()));
@@ -282,9 +302,26 @@ function BbpsPage() {
                   className="text-xs font-semibold text-muted-foreground hover:text-foreground">← Change operator</button>
                 <p className="text-base font-bold">{op.name}</p>
 
-                {params.length === 0 ? (
-                  <div className="grid h-16 place-items-center"><Loader2 className="h-5 w-5 animate-spin text-india-green" /></div>
-                ) : params.map((p) => (
+                <div>
+                  <label className="text-[11px] font-semibold text-muted-foreground">
+                    Account / consumer number<span className="text-rose-600"> *</span>
+                  </label>
+                  <input value={acc} onChange={(e) => setAcc(e.target.value)}
+                    placeholder="As printed on the bill"
+                    className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm" />
+                </div>
+                <div>
+                  <label className="text-[11px] font-semibold text-muted-foreground">
+                    Customer mobile<span className="text-rose-600"> *</span>
+                  </label>
+                  <input value={custMobile} onChange={(e) => setCustMobile(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                    inputMode="numeric" placeholder="10-digit mobile for the receipt"
+                    className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm" />
+                </div>
+
+                {params.length === 0 ? null : params
+                  .filter((p) => !["utility_acc_no", "confirmation_mobile_no", "sender_name", "amount"].includes(p.name))
+                  .map((p) => (
                   <div key={p.name}>
                     <label className="text-[11px] font-semibold text-muted-foreground">
                       {p.label}{p.required && <span className="text-rose-600"> *</span>}
