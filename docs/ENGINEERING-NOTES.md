@@ -146,15 +146,31 @@ failure). Launch with Mobile Prepaid, Electricity, DTH, Gas, Broadband; expand a
 biller's portal and click Paid or Refund. Never auto-refund a timeout — the biller may have been
 paid.
 
-**⚠ UNVERIFIED:** the BBPS URL paths in the edge function (`/billpayments/categories`,
-`/paybill`, etc.) and the activation `service_code: 45` were **inferred** from the endpoint list —
-the individual doc pages at eps.eko.in need JavaScript and could not be read. Response parsers
-accept several field-name variants. **Confirm the real paths against Eko's BBPS reference before
-go-live.** Until then the category grid returns empty (the UI says "No categories available yet",
-it does not crash).
+**Real endpoints — from Eko's OpenAPI spec `https://eps.eko.in/openapi.json`, not guessed.**
+Base differs from AePS: **`https://api.eko.in/ekoicici/v3`** (no `:25002` port);
+sandbox `https://staging.eko.in/ekoapi/v3`. Override with `EKO_BBPS_BASE_URL`.
 
-**Expect an activation gate:** BBPS likely needs `bbps-activate-service` per agent, as AePS did.
-Raise with Eko early or it blocks go-live at the very end.
+| Purpose | Method + path |
+|---|---|
+| Categories | `GET /customer/payment/bbps/categories` |
+| Operators | `GET /customer/payment/bbps/operators` (query `category`, `location`) |
+| Operator params | `GET /customer/payment/bbps/operator/{operator_id}/parameters` |
+| Fetch bill | `GET /customer/payment/bbps/bill` |
+| Pay bill | `POST /customer/payment/bbps` (JSON body) |
+| Operator by mobile | `GET /customer/payment/bbps/recharge/{customer_mobile}/operator` |
+
+Required fields on fetch **and** pay: `initiator_id`, `utility_acc_no`,
+`confirmation_mobile_no`, `sender_name`, `operator_id`, `source_ip`, `latlong`
+(+ `amount` and `client_ref_id` on pay). `billfetchresponse` from the fetch step
+should be echoed back on pay. **There is no `user_code` in BBPS** — unlike AePS.
+
+`source_ip` is taken server-side from `x-forwarded-for`; `latlong` comes from the browser with the
+agent's stored shop location as fallback. `sender_name` is the retailer's display name.
+
+**Lesson:** my first cut of this function invented plausible paths (`/billpayments/...`) and every
+one was wrong. The OpenAPI spec and the Postman collection at
+`https://eps.eko.in/agent/eps.postman_collection.json` are machine-readable — fetch those first
+instead of guessing from a docs index.
 
 ---
 
