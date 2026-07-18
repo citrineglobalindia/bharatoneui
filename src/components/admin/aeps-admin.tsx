@@ -43,7 +43,7 @@ const blank = (): Slab => ({
 });
 
 export function AepsAdmin() {
-  const [tab, setTab] = useState<"monitor" | "commission" | "payouts">("monitor");
+  const [tab, setTab] = useState<"monitor" | "commission" | "payouts" | "users">("monitor");
   return (
     <div className="space-y-5">
       <div>
@@ -51,14 +51,196 @@ export function AepsAdmin() {
         <p className="text-sm text-muted-foreground">Set the commission retailers earn, monitor transactions, and approve payout requests.</p>
       </div>
       <div className="flex gap-1.5">
-        {([["monitor", "Transaction Monitor"], ["commission", "Commission Setup"], ["payouts", "Payout Requests"]] as const).map(([k, l]) => (
+        {([["monitor", "Transaction Monitor"], ["users", "Users"], ["commission", "Commission Setup"], ["payouts", "Payout Requests"]] as const).map(([k, l]) => (
           <button key={k} onClick={() => setTab(k)}
             className={`rounded-full px-4 h-9 text-xs font-semibold transition ${tab === k ? "bg-india-green text-white" : "border border-border bg-card hover:bg-muted"}`}>
             {l}
           </button>
         ))}
       </div>
-      {tab === "monitor" ? <Monitor /> : tab === "commission" ? <CommissionSetup /> : <Payouts />}
+      {tab === "monitor" ? <Monitor /> : tab === "users" ? <AepsUsers /> : tab === "commission" ? <CommissionSetup /> : <Payouts />}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------- users
+
+type AepsUser = {
+  user_id: string; eko_user_code: string | null; jsko_id: string | null; application_id: string | null;
+  full_name: string | null; mobile: string | null; email: string | null; dob: string | null;
+  pan_number: string | null; aadhaar_number: string | null;
+  settlement_account: string | null; settlement_ifsc: string | null; bank_holder_name: string | null;
+  shop_name: string | null; shop_address: string | null;
+  onboarded: boolean | null; service_activated: boolean | null; ekyc_done: boolean | null;
+  daily_kyc_done: boolean | null; last_error: string | null; created_at: string | null;
+};
+
+const maskAadhaar = (v: string | null) => (v && v.length >= 4 ? "XXXX XXXX " + v.slice(-4) : v || "—");
+const maskPan = (v: string | null) => (v && v.length >= 4 ? v.slice(0, 2) + "XXXX" + v.slice(-2) : v || "—");
+const fmtDob = (v: string | null) => (v ? new Date(v).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—");
+
+function AepsUsers() {
+  const [rows, setRows] = useState<AepsUser[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [q, setQ] = useState("");
+  const [reveal, setReveal] = useState(false);
+  const [open, setOpen] = useState<AepsUser | null>(null);
+
+  async function load() {
+    setLoading(true);
+    await ensureStaffSession();
+    const { data, error } = await (supabase as any).rpc("admin_aeps_users");
+    if (error) toast.error(error.message);
+    setRows((data as AepsUser[]) ?? []);
+    setLoading(false);
+  }
+  useEffect(() => { load(); }, []);
+
+  const filtered = useMemo(() => {
+    const s = q.trim().toLowerCase();
+    if (!s) return rows;
+    return rows.filter((r) =>
+      [r.eko_user_code, r.jsko_id, r.application_id, r.full_name, r.mobile, r.email, r.pan_number, r.aadhaar_number, r.shop_name]
+        .some((f) => String(f ?? "").toLowerCase().includes(s)));
+  }, [rows, q]);
+
+  const live = rows.filter((r) => r.service_activated && r.ekyc_done).length;
+
+  const exportCsv = () => {
+    const head = ["AEPS Code", "JSKO ID", "Application", "Name", "Mobile", "Email", "DOB", "PAN", "Aadhaar", "Settlement A/C", "IFSC", "A/C Holder", "Shop", "Address", "Onboarded", "Activated", "eKYC", "Today 2FA"];
+    const body = filtered.map((r) => [
+      r.eko_user_code, r.jsko_id, r.application_id, r.full_name, r.mobile, r.email, r.dob,
+      r.pan_number, r.aadhaar_number, r.settlement_account, r.settlement_ifsc, r.bank_holder_name,
+      r.shop_name, r.shop_address,
+      r.onboarded ? "Yes" : "No", r.service_activated ? "Yes" : "No", r.ekyc_done ? "Yes" : "No", r.daily_kyc_done ? "Yes" : "No",
+    ]);
+    const csv = [head, ...body].map((r) => r.map((c) => `"${String(c ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    const a = document.createElement("a");
+    a.href = url; a.download = `aeps-users-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Stat icon={<Users className="h-4 w-4" />} label="AEPS Users" value={String(rows.length)} />
+        <Stat icon={<Landmark className="h-4 w-4" />} label="Fully Live" value={String(live)} sub="Activated + eKYC done" />
+        <Stat icon={<TrendingUp className="h-4 w-4" />} label="Authenticated Today" value={String(rows.filter((r) => r.daily_kyc_done).length)} sub="Daily 2FA complete" />
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative flex-1 min-w-[220px]">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by name, AEPS code, JSKO ID, mobile, PAN…"
+            className="h-9 w-full rounded-lg border border-border bg-card pl-9 pr-3 text-sm" />
+        </div>
+        <button onClick={() => setReveal((v) => !v)} className="rounded-lg border border-border px-3 h-9 text-xs font-semibold hover:bg-muted">
+          {reveal ? "Hide" : "Show"} PAN / Aadhaar
+        </button>
+        <button onClick={exportCsv} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-9 text-xs font-semibold hover:bg-muted">
+          <Download className="h-4 w-4" /> Export
+        </button>
+        <button onClick={load} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-9 text-xs font-semibold hover:bg-muted">
+          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh
+        </button>
+      </div>
+
+      <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-soft">
+        <table className="w-full text-sm">
+          <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
+            <tr>
+              <th className="px-3 py-2">AEPS Code</th>
+              <th className="px-3 py-2">Agent</th>
+              <th className="px-3 py-2">Contact</th>
+              <th className="px-3 py-2">KYC</th>
+              <th className="px-3 py-2">Settlement A/C</th>
+              <th className="px-3 py-2">Status</th>
+              <th className="px-3 py-2 text-right">Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr><td colSpan={7} className="px-3 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr>
+            ) : filtered.length === 0 ? (
+              <tr><td colSpan={7} className="px-3 py-10 text-center text-muted-foreground">No AEPS users yet.</td></tr>
+            ) : filtered.map((r) => (
+              <tr key={r.user_id} className="border-t border-border align-top">
+                <td className="px-3 py-2.5 font-mono text-xs font-semibold">{r.eko_user_code ?? "—"}</td>
+                <td className="px-3 py-2.5">
+                  <div className="font-semibold">{r.full_name ?? "—"}</div>
+                  <div className="text-[11px] text-muted-foreground">{r.jsko_id ?? "—"} · {r.application_id ?? "—"}</div>
+                </td>
+                <td className="px-3 py-2.5 text-xs">
+                  <div>{r.mobile ?? "—"}</div>
+                  <div className="text-muted-foreground">{r.email ?? "—"}</div>
+                </td>
+                <td className="px-3 py-2.5 text-xs">
+                  <div className="font-mono">{reveal ? (r.pan_number ?? "—") : maskPan(r.pan_number)}</div>
+                  <div className="font-mono text-muted-foreground">{reveal ? (r.aadhaar_number ?? "—") : maskAadhaar(r.aadhaar_number)}</div>
+                </td>
+                <td className="px-3 py-2.5 text-xs">
+                  <div className="font-mono">{r.settlement_account ?? "—"}</div>
+                  <div className="text-muted-foreground">{r.settlement_ifsc ?? "—"}</div>
+                </td>
+                <td className="px-3 py-2.5">
+                  <div className="flex flex-wrap gap-1">
+                    <Chip label="Onboard" value={r.onboarded ? "✓" : "✕"} good={!!r.onboarded} />
+                    <Chip label="Active" value={r.service_activated ? "✓" : "✕"} good={!!r.service_activated} />
+                    <Chip label="eKYC" value={r.ekyc_done ? "✓" : "✕"} good={!!r.ekyc_done} />
+                    <Chip label="2FA today" value={r.daily_kyc_done ? "✓" : "✕"} good={!!r.daily_kyc_done} />
+                  </div>
+                </td>
+                <td className="px-3 py-2.5 text-right">
+                  <button onClick={() => setOpen(r)} className="rounded-md border border-border px-2 py-1 text-xs font-semibold hover:bg-muted">View</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setOpen(null)}>
+          <div className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-card p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-4 flex items-start justify-between">
+              <div>
+                <h3 className="text-lg font-extrabold">{open.full_name ?? "AEPS User"}</h3>
+                <p className="text-xs text-muted-foreground">AEPS Agent Code {open.eko_user_code ?? "—"}</p>
+              </div>
+              <button onClick={() => setOpen(null)} className="rounded-md p-1 hover:bg-muted"><X className="h-4 w-4" /></button>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <L label="AEPS Agent Code"><span className="font-mono">{open.eko_user_code ?? "—"}</span></L>
+              <L label="JSKO ID / Application">{[open.jsko_id, open.application_id].filter(Boolean).join(" · ") || "—"}</L>
+              <L label="Name">{open.full_name ?? "—"}</L>
+              <L label="Mobile">{open.mobile ?? "—"}</L>
+              <L label="Email">{open.email ?? "—"}</L>
+              <L label="Date of Birth">{fmtDob(open.dob)}</L>
+              <L label="PAN"><span className="font-mono">{reveal ? (open.pan_number ?? "—") : maskPan(open.pan_number)}</span></L>
+              <L label="Aadhaar"><span className="font-mono">{reveal ? (open.aadhaar_number ?? "—") : maskAadhaar(open.aadhaar_number)}</span></L>
+              <L label="Settlement Account"><span className="font-mono">{open.settlement_account ?? "—"}</span></L>
+              <L label="IFSC"><span className="font-mono">{open.settlement_ifsc ?? "—"}</span></L>
+              <L label="Account Holder">{open.bank_holder_name ?? "—"}</L>
+              <L label="Shop Name">{open.shop_name ?? "—"}</L>
+              <div className="sm:col-span-2"><L label="Shop Address">{open.shop_address ?? "—"}</L></div>
+              <div className="sm:col-span-2">
+                <L label="AEPS Status">
+                  <div className="mt-1 flex flex-wrap gap-1.5">
+                    <Chip label="Onboarded" value={open.onboarded ? "Yes" : "No"} good={!!open.onboarded} />
+                    <Chip label="Service Activated" value={open.service_activated ? "Yes" : "No"} good={!!open.service_activated} />
+                    <Chip label="eKYC" value={open.ekyc_done ? "Done" : "Pending"} good={!!open.ekyc_done} />
+                    <Chip label="Agent Auth Today" value={open.daily_kyc_done ? "Done" : "Pending"} good={!!open.daily_kyc_done} />
+                  </div>
+                </L>
+              </div>
+              {open.last_error && (
+                <div className="sm:col-span-2"><L label="Last Error"><span className="text-rose-600">{open.last_error}</span></L></div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
