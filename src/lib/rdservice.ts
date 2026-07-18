@@ -132,17 +132,12 @@ export async function captureFingerprint(
   const timeout = opts.timeoutMs ?? 20000;
   const wadh = opts.wadh ?? AEPS_WADH;
 
-  // The AEPS wadh applies to NPCI customer transactions. Agent-side UIDAI auth
-  // (daily 2FA / eKYC) is a plain auth request, so pass wadh: "" to omit it —
-  // sending the AEPS wadh on those calls makes UIDAI reject the PID block.
-  const wadhAttr = wadh ? ` wadh="${wadh}"` : "";
-
   // format="0" => PID Data type="X" (XML), which is what Eko expects.
   const pidOptions =
     `<?xml version="1.0"?>` +
     `<PidOptions ver="1.0">` +
     `<Opts fCount="1" fType="${fType}" iCount="0" pCount="0" format="0" ` +
-    `pidVer="2.0" timeout="${timeout}" posh="UNKNOWN" env="P"${wadhAttr} />` +
+    `pidVer="2.0" timeout="${timeout}" posh="UNKNOWN" env="P" wadh="${wadh}" />` +
     `</PidOptions>`;
 
   let xml: string;
