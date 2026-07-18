@@ -75,6 +75,29 @@ type AepsUser = {
   daily_kyc_done: boolean | null; last_error: string | null; created_at: string | null;
 };
 
+/**
+ * Whether the banking partner (Eko) has fully verified this agent. Onboarding,
+ * service activation and eKYC must all be done before the retailer can transact;
+ * the daily Agent Authentication is a separate per-day step they do themselves.
+ */
+function ekoReadiness(r: AepsUser) {
+  const missing: string[] = [];
+  if (!r.onboarded) missing.push("onboarding");
+  if (!r.service_activated) missing.push("service activation");
+  if (!r.ekyc_done) missing.push("eKYC");
+  return {
+    verified: missing.length === 0,
+    missing,
+    label: missing.length === 0 ? "Verified by Eko" : "Pending with Eko",
+    detail:
+      missing.length === 0
+        ? r.daily_kyc_done
+          ? "Ready — authenticated today"
+          : "Ready — needs daily Agent Auth"
+        : `Waiting on ${missing.join(", ")}`,
+  };
+}
+
 const maskAadhaar = (v: string | null) => (v && v.length >= 4 ? "XXXX XXXX " + v.slice(-4) : v || "—");
 const maskPan = (v: string | null) => (v && v.length >= 4 ? v.slice(0, 2) + "XXXX" + v.slice(-2) : v || "—");
 const fmtDob = (v: string | null) => (v ? new Date(v).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—");
@@ -85,6 +108,7 @@ function AepsUsers() {
   const [q, setQ] = useState("");
   const [reveal, setReveal] = useState(false);
   const [open, setOpen] = useState<AepsUser | null>(null);
+  const [only, setOnly] = useState<"all" | "verified" | "pending">("all");
 
   async function load() {
     setLoading(true);
@@ -98,13 +122,16 @@ function AepsUsers() {
 
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
-    if (!s) return rows;
-    return rows.filter((r) =>
-      [r.eko_user_code, r.jsko_id, r.application_id, r.full_name, r.mobile, r.email, r.pan_number, r.aadhaar_number, r.shop_name]
-        .some((f) => String(f ?? "").toLowerCase().includes(s)));
-  }, [rows, q]);
+    return rows.filter((r) => {
+      const okSearch = !s || [r.eko_user_code, r.jsko_id, r.application_id, r.full_name, r.mobile, r.email, r.pan_number, r.aadhaar_number, r.shop_name]
+        .some((f) => String(f ?? "").toLowerCase().includes(s));
+      const v = ekoReadiness(r).verified;
+      const okOnly = only === "all" || (only === "verified" ? v : !v);
+      return okSearch && okOnly;
+    });
+  }, [rows, q, only]);
 
-  const live = rows.filter((r) => r.service_activated && r.ekyc_done).length;
+  const live = rows.filter((r) => ekoReadiness(r).verified).length;
 
   const exportCsv = () => {
     const head = ["AEPS Code", "JSKO ID", "Application", "Name", "Mobile", "Email", "DOB", "PAN", "Aadhaar", "Settlement A/C", "IFSC", "A/C Holder", "Shop", "Address", "Onboarded", "Activated", "eKYC", "Today 2FA"];
@@ -125,7 +152,7 @@ function AepsUsers() {
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-3">
         <Stat icon={<Users className="h-4 w-4" />} label="AEPS Users" value={String(rows.length)} />
-        <Stat icon={<Landmark className="h-4 w-4" />} label="Fully Live" value={String(live)} sub="Activated + eKYC done" />
+        <Stat icon={<Landmark className="h-4 w-4" />} label="Verified by Eko" value={String(live)} sub="Cleared to transact" />
         <Stat icon={<TrendingUp className="h-4 w-4" />} label="Authenticated Today" value={String(rows.filter((r) => r.daily_kyc_done).length)} sub="Daily 2FA complete" />
       </div>
 
@@ -135,6 +162,12 @@ function AepsUsers() {
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by name, AEPS code, JSKO ID, mobile, PAN…"
             className="h-9 w-full rounded-lg border border-border bg-card pl-9 pr-3 text-sm" />
         </div>
+        {([["all", "All"], ["verified", "Verified by Eko"], ["pending", "Pending"]] as const).map(([k, l]) => (
+          <button key={k} onClick={() => setOnly(k)}
+            className={`rounded-lg px-3 h-9 text-xs font-semibold transition ${only === k ? "bg-india-green text-white" : "border border-border bg-card hover:bg-muted"}`}>
+            {l}
+          </button>
+        ))}
         <button onClick={() => setReveal((v) => !v)} className="rounded-lg border border-border px-3 h-9 text-xs font-semibold hover:bg-muted">
           {reveal ? "Hide" : "Show"} PAN / Aadhaar
         </button>
@@ -155,7 +188,7 @@ function AepsUsers() {
               <th className="px-3 py-2">Contact</th>
               <th className="px-3 py-2">KYC</th>
               <th className="px-3 py-2">Settlement A/C</th>
-              <th className="px-3 py-2">Status</th>
+              <th className="px-3 py-2">Eko Verification</th>
               <th className="px-3 py-2 text-right">Details</th>
             </tr>
           </thead>
@@ -184,12 +217,25 @@ function AepsUsers() {
                   <div className="text-muted-foreground">{r.settlement_ifsc ?? "—"}</div>
                 </td>
                 <td className="px-3 py-2.5">
-                  <div className="flex flex-wrap gap-1">
-                    <Chip label="Onboard" value={r.onboarded ? "✓" : "✕"} good={!!r.onboarded} />
-                    <Chip label="Active" value={r.service_activated ? "✓" : "✕"} good={!!r.service_activated} />
-                    <Chip label="eKYC" value={r.ekyc_done ? "✓" : "✕"} good={!!r.ekyc_done} />
-                    <Chip label="2FA today" value={r.daily_kyc_done ? "✓" : "✕"} good={!!r.daily_kyc_done} />
-                  </div>
+                  {(() => {
+                    const k = ekoReadiness(r);
+                    return (
+                      <>
+                        <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                          k.verified ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-800"
+                        }`}>
+                          {k.verified ? "✓" : "⏳"} {k.label}
+                        </span>
+                        <div className="mt-1 text-[10px] text-muted-foreground">{k.detail}</div>
+                        <div className="mt-1.5 flex flex-wrap gap-1">
+                          <Chip label="Onboard" value={r.onboarded ? "✓" : "✕"} good={!!r.onboarded} />
+                          <Chip label="Active" value={r.service_activated ? "✓" : "✕"} good={!!r.service_activated} />
+                          <Chip label="eKYC" value={r.ekyc_done ? "✓" : "✕"} good={!!r.ekyc_done} />
+                          <Chip label="2FA today" value={r.daily_kyc_done ? "✓" : "✕"} good={!!r.daily_kyc_done} />
+                        </div>
+                      </>
+                    );
+                  })()}
                 </td>
                 <td className="px-3 py-2.5 text-right">
                   <button onClick={() => setOpen(r)} className="rounded-md border border-border px-2 py-1 text-xs font-semibold hover:bg-muted">View</button>
@@ -210,6 +256,24 @@ function AepsUsers() {
               </div>
               <button onClick={() => setOpen(null)} className="rounded-md p-1 hover:bg-muted"><X className="h-4 w-4" /></button>
             </div>
+
+            {(() => {
+              const k = ekoReadiness(open);
+              return (
+                <div className={`mb-4 rounded-xl border p-3 ${
+                  k.verified ? "border-emerald-200 bg-emerald-50" : "border-amber-200 bg-amber-50"
+                }`}>
+                  <p className={`text-sm font-bold ${k.verified ? "text-emerald-700" : "text-amber-800"}`}>
+                    {k.verified ? "✓ Verified by Eko — cleared to use AEPS" : "⏳ Pending verification with Eko"}
+                  </p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {k.verified
+                      ? k.detail + ". The retailer completes Agent Authentication once each day before transacting."
+                      : `Still waiting on ${k.missing.join(", ")}. The retailer cannot transact until these are complete.`}
+                  </p>
+                </div>
+              );
+            })()}
             <div className="grid gap-3 sm:grid-cols-2">
               <L label="AEPS Agent Code"><span className="font-mono">{open.eko_user_code ?? "—"}</span></L>
               <L label="JSKO ID / Application">{[open.jsko_id, open.application_id].filter(Boolean).join(" · ") || "—"}</L>
