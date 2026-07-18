@@ -4,6 +4,10 @@ import {
   GraduationCap, Tractor, ArrowRight, Building2, IdCard, Wallet,
 } from "lucide-react";
 
+// Shared with /citizen-services so "View Details" scrolls to the matching card.
+export const slugify = (s: string) =>
+  s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+
 const services = [
   { icon: Landmark, title: "E-Governance", desc: "Apply for essential government documents fast, transparent, and citizen-friendly." },
   { icon: FileText, title: "Nadakacheri Services", desc: "Caste, income & residential certificates processed by local experts." },
@@ -58,8 +62,11 @@ export function Services() {
                 </div>
                 <h3 className="font-display font-semibold text-sm sm:text-lg mb-1 sm:mb-1.5">{s.title}</h3>
                 <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
-                <a href="/citizen-services" className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-saffron opacity-0 group-hover:opacity-100 transition-opacity">
-                  Learn more <ArrowRight className="h-3.5 w-3.5" />
+                <a
+                  href={`/citizen-services#${slugify(s.title)}`}
+                  className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-saffron/40 px-3 py-1.5 text-xs sm:text-sm font-semibold text-saffron hover:bg-saffron hover:text-primary-foreground transition-colors"
+                >
+                  View Details <ArrowRight className="h-3.5 w-3.5" />
                 </a>
               </div>
             </motion.div>

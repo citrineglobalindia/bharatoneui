@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { PageShell } from "@/components/site/PageShell";
+import { slugify } from "@/components/site/Services";
 import { Button } from "@/components/ui/button";
 import {
   Landmark, FileText, CreditCard, Train, Receipt, Heart,
@@ -115,11 +116,12 @@ function ServicesPage() {
             {filtered.map((s, i) => (
               <motion.article
                 key={s.title}
+                id={slugify(s.title)}
                 initial={{ opacity: 0, y: 18 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-30px" }}
                 transition={{ delay: (i % 6) * 0.05 }}
-                className="group relative rounded-2xl border border-border bg-card p-6 hover:border-saffron/40 hover:shadow-elegant transition-all overflow-hidden"
+                className="group relative scroll-mt-32 rounded-2xl border border-border bg-card p-6 hover:border-saffron/40 hover:shadow-elegant transition-all overflow-hidden target:border-saffron target:shadow-elegant"
               >
                 <div className="absolute -top-16 -right-16 h-40 w-40 rounded-full bg-saffron/10 group-hover:bg-saffron/20 transition-colors" />
                 <div className="relative">

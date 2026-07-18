@@ -5,8 +5,11 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import heroImg from "@/assets/hero-citizens.jpg";
 
-// Admin-managed hero carousel. Falls back to the bundled default image when no
-// hero images have been uploaded. Auto-scrolls continuously through all images.
+// Number of images shown in the hero collage at once.
+const COLLAGE_TILES = 5;
+
+// Admin-managed hero collage. Falls back to the bundled default image when no
+// hero images have been uploaded. Admins add/manage these in Admin → Hero Images.
 function HeroCarousel() {
   const [slides, setSlides] = useState<{ src: string; caption: string }[]>([
     { src: heroImg, caption: "Indian citizens using BharatOne digital services on mobile" },
@@ -34,38 +37,36 @@ function HeroCarousel() {
     return () => { on = false; };
   }, []);
 
+  // When more images are uploaded than fit the collage, gently rotate them through.
   useEffect(() => {
-    if (slides.length <= 1) return;
-    const t = setInterval(() => setIdx((i) => (i + 1) % slides.length), 4000);
+    if (slides.length <= COLLAGE_TILES) return;
+    const t = setInterval(() => setIdx((i) => (i + 1) % slides.length), 5000);
     return () => clearInterval(t);
   }, [slides.length]);
 
+  // Build the visible collage window starting at idx (wraps around).
+  const tiles = Array.from({ length: Math.min(COLLAGE_TILES, slides.length) }, (_, i) => slides[(idx + i) % slides.length]);
+
   return (
-    <div className="relative overflow-hidden rounded-3xl border-4 border-card bg-gradient-to-br from-muted to-card shadow-elegant">
-      <AnimatePresence mode="popLayout">
-        <motion.img
-          key={idx}
-          src={slides[idx].src}
-          alt={slides[idx].caption}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.6, ease: "easeInOut" }}
-          className="block h-auto w-full object-contain"
-        />
-      </AnimatePresence>
-      {slides.length > 1 && (
-        <div className="absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 gap-1.5">
-          {slides.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setIdx(i)}
-              aria-label={`Go to slide ${i + 1}`}
-              className={`h-1.5 rounded-full transition-all ${i === idx ? "w-5 bg-white" : "w-1.5 bg-white/60 hover:bg-white/80"}`}
-            />
-          ))}
-        </div>
-      )}
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+      {tiles.map((s, i) => (
+        <motion.div
+          key={`${s.src}-${i}`}
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: i * 0.07 }}
+          className={`relative overflow-hidden rounded-2xl bg-muted shadow-soft ${
+            i === 2 ? "lg:col-span-2 col-span-2 sm:col-span-1" : ""
+          }`}
+        >
+          <img
+            src={s.src}
+            alt={s.caption}
+            loading="lazy"
+            className="h-40 w-full object-cover sm:h-52 lg:h-64"
+          />
+        </motion.div>
+      ))}
     </div>
   );
 }
@@ -90,8 +91,8 @@ export function Hero() {
         style={{ animationDelay: "2s" }}
       />
 
-      <div className="container mx-auto px-4 sm:px-6 grid lg:grid-cols-2 gap-12 items-center relative">
-        <div>
+      <div className="container mx-auto px-4 sm:px-6 relative">
+        <div className="text-center flex flex-col items-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

@@ -37,18 +37,20 @@ export function Schemes() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="max-w-2xl mx-auto text-center mb-14"
+          className="max-w-3xl mx-auto text-center mb-10"
         >
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-india-green/10 text-india-green text-xs font-semibold uppercase tracking-wider mb-4">
-            Welfare Schemes
-          </div>
           <h2 className="text-3xl sm:text-5xl font-bold">
-            Schemes that <span className="text-gradient-tricolor">Uplift India</span>
+            BharatOne Schemes for <span className="text-india-green">Indian</span>{" "}
+            <span className="text-saffron">Citizens</span>
           </h2>
-          <p className="text-muted-foreground mt-4 text-lg">
-            Welfare-driven programs designed to empower individuals and communities — from healthcare to education and beyond.
+          <div className="mx-auto mt-5 h-1 w-24 rounded-full bg-gradient-to-r from-saffron via-ashoka to-india-green" />
+          <p className="text-muted-foreground mt-5 text-lg">
+            Welfare schemes built to reach every Indian household — healthcare, education and community
+            development, delivered through your nearest BharatOne center.
           </p>
         </motion.div>
+
+        <h3 className="text-xl sm:text-2xl font-bold text-left mb-6">Popular Schemes</h3>
 
         <div className="grid md:grid-cols-3 gap-6">
           {schemes.map((s, i) => (
@@ -70,8 +72,84 @@ export function Schemes() {
                 </div>
                 <h3 className="font-display font-semibold text-xl mt-4">{s.title}</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed mt-2">{s.desc}</p>
-
+                <a
+                  href="/schemes"
+                  className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-india-green hover:gap-2 transition-all"
+                >
+                  Know More <ArrowRight className="h-4 w-4" />
+                </a>
               </div>
+            </motion.div>
+          ))}
+        </div>
+
+        <div className="mt-10 flex justify-center">
+          <Button
+            size="lg"
+            onClick={() => { window.location.href = "/schemes"; }}
+            className="cursor-pointer bg-gradient-saffron text-primary-foreground shadow-soft hover:shadow-glow transition-shadow group"
+          >
+            View All Schemes
+            <ArrowRight className="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform" />
+          </Button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/**
+ * CR-139 — Live Statistics. Real numbers pulled from the database via the
+ * public_live_stats() RPC (visitors, registered centers, distributors, active centers).
+ */
+export function LiveStats() {
+  const [s, setS] = useState<{ total_visitors: number; total_centers: number; total_distributors: number; active_centers: number } | null>(null);
+
+  useEffect(() => {
+    let on = true;
+    (async () => {
+      const { data } = await (supabase as any).rpc("public_live_stats");
+      const row = Array.isArray(data) ? data[0] : data;
+      if (on && row) setS(row);
+    })();
+    return () => { on = false; };
+  }, []);
+
+  const items = [
+    { label: "Total Website Visitors", value: s?.total_visitors ?? 0, accent: "text-saffron" },
+    { label: "Total JSKO Centers Registered", value: s?.total_centers ?? 0, accent: "text-india-green" },
+    { label: "Total Distributors Registered", value: s?.total_distributors ?? 0, accent: "text-ashoka" },
+    { label: "Total Active Centers", value: s?.active_centers ?? 0, accent: "text-saffron" },
+  ];
+
+  return (
+    <section className="py-16 sm:py-20 bg-background">
+      <div className="container mx-auto px-4 sm:px-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="text-center mb-10"
+        >
+          <h2 className="text-3xl sm:text-4xl font-bold">Live Statistics</h2>
+          <div className="mx-auto mt-4 h-1 w-24 rounded-full bg-gradient-to-r from-saffron via-ashoka to-india-green" />
+          <p className="text-muted-foreground mt-4">Real-time numbers from the BharatOne network.</p>
+        </motion.div>
+
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          {items.map((it, i) => (
+            <motion.div
+              key={it.label}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.1 }}
+              className="text-center p-6 rounded-2xl bg-card border border-border hover:shadow-soft hover:border-saffron/40 transition-all"
+            >
+              <div className={`text-4xl sm:text-5xl font-display font-bold ${it.accent}`}>
+                {it.value.toLocaleString("en-IN")}
+              </div>
+              <div className="mt-2 text-sm text-muted-foreground">{it.label}</div>
             </motion.div>
           ))}
         </div>
