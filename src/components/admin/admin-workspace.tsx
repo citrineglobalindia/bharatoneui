@@ -88,6 +88,7 @@ import { AwardsManager } from "@/components/admin/awards-manager";
 import { HeadlinesManager } from "@/components/admin/headlines-manager";
 import { TestimonialsManager } from "@/components/admin/testimonials-manager";
 import { FooterInspirationManager } from "@/components/admin/footer-inspiration-manager";
+import { SocialLinksManager } from "@/components/admin/social-links-manager";
 import { DistributorFormManager } from "@/components/admin/distributor-form-manager";
 import { NoticeBoardManager } from "@/components/admin/notice-board-manager";
 import { RetailerNoticeManager } from "@/components/admin/retailer-notice-manager";
@@ -1193,6 +1194,10 @@ export function AdminWorkspace() {
                 <div>
                   <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted-foreground">Footer "Inspired by" Photo</h3>
                   <FooterInspirationManager />
+                </div>
+                <div>
+                  <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted-foreground">Footer Social Media Links</h3>
+                  <SocialLinksManager />
                 </div>
                 <div>
                   <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted-foreground">Distributor Onboarding Form</h3>

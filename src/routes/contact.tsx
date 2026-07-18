@@ -138,6 +138,7 @@ function ContactPage() {
 
   return (
     <PageShell
+      centered
       eyebrow="Contact"
       title={
         <>

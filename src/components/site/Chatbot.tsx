@@ -86,7 +86,7 @@ export function Chatbot() {
         animate={{ scale: 1 }}
         transition={{ delay: 1.5, type: "spring" }}
         onClick={() => setOpen(true)}
-        className={`fixed z-40 h-14 w-14 rounded-full bg-gradient-to-br from-[var(--saffron)] to-[var(--india-green)] text-white shadow-glow flex items-center justify-center hover:scale-110 transition-transform bottom-[max(1.25rem,env(safe-area-inset-bottom))] right-5 ${open ? "opacity-0 pointer-events-none" : ""}`}
+        className={`fixed z-[70] h-14 w-14 rounded-full bg-gradient-to-br from-[var(--saffron)] to-[var(--india-green)] text-white shadow-glow flex items-center justify-center hover:scale-110 transition-transform bottom-[max(1.25rem,env(safe-area-inset-bottom))] right-5 ${open ? "opacity-0 pointer-events-none" : ""}`}
         aria-label="Open chat"
       >
         <span className="absolute inset-0 rounded-full bg-[var(--saffron)] animate-ping opacity-30" />
@@ -103,16 +103,16 @@ export function Chatbot() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setOpen(false)}
-              className="fixed inset-0 z-40 bg-foreground/40 backdrop-blur-sm sm:hidden"
+              className="fixed inset-0 z-[70] bg-foreground/40 backdrop-blur-sm sm:hidden"
             />
             <motion.div
               initial={{ opacity: 0, y: 30, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 30, scale: 0.95 }}
               transition={{ duration: 0.25 }}
-              className="fixed z-50 bg-card border border-border flex flex-col overflow-hidden shadow-elegant
+              className="fixed z-[71] bg-card border border-border flex flex-col overflow-hidden shadow-elegant
                 inset-x-0 bottom-0 top-16 rounded-t-3xl
-                sm:inset-auto sm:top-auto sm:bottom-5 sm:right-5 sm:w-[400px] sm:h-[600px] sm:max-h-[calc(100vh-2.5rem)] sm:rounded-2xl"
+                sm:inset-auto sm:top-auto sm:bottom-5 sm:right-5 sm:w-[380px] sm:h-[min(560px,calc(100vh-6rem))] sm:rounded-2xl"
             >
               {/* Header */}
               <div className="bg-gradient-to-br from-[var(--saffron)] to-[var(--india-green)] text-white px-4 py-3 flex items-center justify-between shrink-0">

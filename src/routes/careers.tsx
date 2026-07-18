@@ -265,6 +265,7 @@ function CareersPage() {
 
   return (
     <PageShell
+      centered
       eyebrow="Careers"
       title={
         <>

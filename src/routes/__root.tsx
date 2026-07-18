@@ -168,6 +168,12 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+/** Public marketing pages — these render their own <Chatbot /> bubble. */
+const PUBLIC_PATHS = new Set([
+  "/", "/about", "/careers", "/citizen-services", "/contact",
+  "/gallery", "/privacy", "/schemes", "/terms",
+]);
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   // Re-key on pathname so each navigation cross-fades. Single-page workspaces
@@ -175,12 +181,17 @@ function RootComponent() {
   // pathname is stable and they stay mounted.
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
+  // CR-150 — the public marketing pages carry their own Chatbot bubble. Rendering
+  // the portal Live Chat widget there too stacked two buttons in the same corner
+  // and blocked page content, so it is limited to the signed-in portal pages.
+  const isPublicPage = PUBLIC_PATHS.has(pathname.replace(/\/+$/, "") || "/");
+
   return (
     <QueryClientProvider client={queryClient}>
       <div key={pathname} className="animate-in fade-in duration-200">
         <Outlet />
       </div>
-      <LiveChatWidget />
+      {!isPublicPage && <LiveChatWidget />}
       <Toaster richColors position="top-right" />
     </QueryClientProvider>
   );

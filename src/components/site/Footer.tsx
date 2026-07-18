@@ -49,6 +49,15 @@ const LinkedinIcon = ({ className }: IconProps) => (
   </svg>
 );
 
+/** Platforms offered in the footer; URLs come from the social_links table. */
+export const SOCIALS = [
+  { key: "facebook", label: "Facebook", Icon: FacebookIcon },
+  { key: "instagram", label: "Instagram", Icon: InstagramIcon },
+  { key: "twitter", label: "Twitter / X", Icon: TwitterIcon },
+  { key: "youtube", label: "YouTube", Icon: YoutubeIcon },
+  { key: "linkedin", label: "LinkedIn", Icon: LinkedinIcon },
+] as const;
+
 /* -------------------------------------------------------------------------- */
 /* Animation variants                                                         */
 /* -------------------------------------------------------------------------- */
@@ -274,6 +283,25 @@ export function Footer() {
   const prefersReducedMotion = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end end"] });
 
+  // CR-149 — social links are managed in Admin → Website Gallery → Social Links.
+  const [socials, setSocials] = useState<Record<string, string | undefined>>({});
+  useEffect(() => {
+    let on = true;
+    (async () => {
+      const { data } = await (supabase as any)
+        .from("social_links")
+        .select("platform, url, is_active")
+        .eq("is_active", true);
+      if (!on || !data) return;
+      const map: Record<string, string> = {};
+      for (const r of data as { platform: string; url: string | null }[]) {
+        if (r.url && r.url.trim()) map[r.platform] = r.url.trim();
+      }
+      setSocials(map);
+    })();
+    return () => { on = false; };
+  }, []);
+
   // Admin-managed "inspired by" photo + tagline shown below the address.
   const [inspiration, setInspiration] = useState<{ url: string; tagline: string } | null>(null);
   useEffect(() => {
@@ -351,11 +379,9 @@ export function Footer() {
             Live across 1,000+ centers in India
           </motion.div>
           <motion.div variants={containerVariants} className="flex flex-wrap gap-2.5 pt-1">
-            <SocialIcon href="https://www.facebook.com/" label="Facebook" Icon={FacebookIcon} />
-            <SocialIcon href="https://www.instagram.com/" label="Instagram" Icon={InstagramIcon} />
-            <SocialIcon href="https://x.com/" label="Twitter / X" Icon={TwitterIcon} />
-            <SocialIcon href="https://www.youtube.com/" label="YouTube" Icon={YoutubeIcon} />
-            <SocialIcon href="https://www.linkedin.com/" label="LinkedIn" Icon={LinkedinIcon} />
+            {SOCIALS.filter((s) => socials[s.key]).map((s) => (
+              <SocialIcon key={s.key} href={socials[s.key]!} label={s.label} Icon={s.Icon} />
+            ))}
           </motion.div>
         </motion.div>
 
