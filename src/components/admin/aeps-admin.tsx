@@ -50,6 +50,8 @@ export function AepsAdmin() {
         <h2 className="flex items-center gap-2 text-lg font-extrabold"><Landmark className="h-5 w-5 text-admin" /> AEPS Banking</h2>
         <p className="text-sm text-muted-foreground">Set the commission retailers earn, monitor transactions, and approve payout requests.</p>
       </div>
+      <EkoBalance />
+
       <div className="flex gap-1.5">
         {([["monitor", "Transaction Monitor"], ["users", "Users"], ["commission", "Commission Setup"], ["payouts", "Payout Requests"]] as const).map(([k, l]) => (
           <button key={k} onClick={() => setTab(k)}
@@ -59,6 +61,74 @@ export function AepsAdmin() {
         ))}
       </div>
       {tab === "monitor" ? <Monitor /> : tab === "users" ? <AepsUsers /> : tab === "commission" ? <CommissionSetup /> : <Payouts />}
+    </div>
+  );
+}
+
+// ------------------------------------------------------- Eko E-value balance
+
+/**
+ * The float BharatOne holds with Eko. Every AePS cash withdrawal is funded from
+ * this balance, so when it hits zero all retailers stop being able to transact.
+ */
+function EkoBalance() {
+  const [state, setState] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("aeps", { body: { action: "eko_balance" } });
+      if (error) throw error;
+      setState(data);
+    } catch (e: any) {
+      setState({ ok: false, error: e?.message || "Could not reach Eko" });
+    }
+    setLoading(false);
+  };
+  useEffect(() => { load(); }, []);
+
+  const bal = state?.ok ? state.balance : null;
+  const low = bal != null && bal < 5000;
+
+  return (
+    <div className={`rounded-2xl border p-4 shadow-soft ${
+      state?.ok === false ? "border-amber-200 bg-amber-50" : low ? "border-rose-200 bg-rose-50" : "border-border bg-card"
+    }`}>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+            <Wallet className="h-4 w-4" /> Eko E-value Balance
+          </p>
+          {loading ? (
+            <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> Checking with Eko…
+            </p>
+          ) : state?.ok ? (
+            <>
+              <p className={`mt-1 text-3xl font-extrabold ${low ? "text-rose-700" : "text-india-green"}`}>
+                {bal != null ? inr(bal) : "—"}
+              </p>
+              <p className="mt-0.5 text-[11px] text-muted-foreground">
+                Funds every AePS cash withdrawal. Checked {new Date(state.checked_at).toLocaleTimeString("en-IN")}.
+                {low && " Top up in the Eko portal — retailers cannot withdraw once this runs out."}
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="mt-1 text-sm font-semibold text-amber-800">Balance unavailable</p>
+              <p className="mt-0.5 max-w-xl text-[11px] text-muted-foreground">
+                {state?.error || "Eko did not return a balance."} Ask Eko to confirm the balance-enquiry
+                endpoint for our account, then check the Eko portal directly meanwhile.
+              </p>
+            </>
+          )}
+        </div>
+        <button onClick={load} disabled={loading}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 h-9 text-xs font-semibold hover:bg-muted disabled:opacity-50">
+          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh
+        </button>
+      </div>
     </div>
   );
 }
