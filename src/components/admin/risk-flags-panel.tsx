@@ -7,7 +7,7 @@ import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 
 type Flag = {
   id: string; registration_id: string; rule: string; severity: string; detail: string | null; status: string; created_at: string;
-  retailer_registrations: { application_id: string; first_name: string | null; surname: string | null; status: string } | null;
+  retailer_registrations: { application_id: string; first_name: string | null; middle_name: string | null; surname: string | null; status: string } | null;
 };
 
 const ruleMeta: Record<string, { label: string; icon: any }> = {
@@ -29,7 +29,7 @@ export function RiskFlagsPanel() {
     await ensureStaffSession();
     const { data } = await (supabase as any)
       .from("risk_flags")
-      .select("*, retailer_registrations(application_id, first_name, surname, status)")
+      .select("*, retailer_registrations(application_id, first_name, middle_name, surname, status)")
       .order("severity", { ascending: true })
       .order("created_at", { ascending: false })
       .limit(300);
@@ -81,7 +81,7 @@ export function RiskFlagsPanel() {
             ) : filtered.map((r) => {
               const meta = ruleMeta[r.rule] ?? { label: r.rule, icon: AlertTriangle };
               const reg = r.retailer_registrations;
-              const name = reg ? [reg.first_name, reg.surname].filter(Boolean).join(" ") : "—";
+              const name = reg ? [reg.first_name, reg.middle_name, reg.surname].filter(Boolean).join(" ") : "—";
               return (
                 <tr key={r.id} className="border-t border-border align-top">
                   <td className="px-3 py-2.5"><span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${sevTone[r.severity]}`}>{r.severity}</span></td>

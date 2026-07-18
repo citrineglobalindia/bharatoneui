@@ -1010,7 +1010,7 @@ export function RegistrationsReview() {
                     <div className="grid grid-cols-2 gap-x-6 gap-y-3 px-5 py-4 sm:grid-cols-3">
                       <DField label="Receipt no." value={`QC-${String(detail.application_id || detail.id).slice(0, 10).toUpperCase()}`} />
                       <DField label="Application ID" value={detail.application_id} />
-                      <DField label="Applicant" value={[detail.first_name, detail.surname].filter(Boolean).join(" ") || "—"} />
+                      <DField label="Applicant" value={[detail.first_name, detail.middle_name, detail.surname].filter(Boolean).join(" ") || "—"} />
                       <DField label="Shop / Business" value={detail.shop_name} />
                       <DField label="Verified by (QC)" value={qcVerifier || "QC Officer"} />
                       <DField label="Verified on" value={detail.qc_verified_at ? new Date(detail.qc_verified_at).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) : "—"} />

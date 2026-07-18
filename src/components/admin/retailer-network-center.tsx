@@ -75,7 +75,7 @@ export function RetailerNetworkCenter() {
         await ensureStaffSession();
         const [u, regsRes] = await Promise.all([
           supabase.rpc("admin_list_users"),
-          supabase.from("retailer_registrations").select("application_id, first_name, surname, shop_name, mobile, email, status, payment_amount"),
+          supabase.from("retailer_registrations").select("application_id, first_name, middle_name, surname, shop_name, mobile, email, status, payment_amount"),
         ]);
         const regs = (regsRes.data as any[]) ?? [];
         const byEmail: Record<string, any> = {};
@@ -85,7 +85,7 @@ export function RetailerNetworkCenter() {
           const reg = byEmail[String(x.email).toLowerCase()];
           return {
             id: reg?.application_id ?? x.employee_code ?? (x.email ?? "RET"),
-            name: x.display_name || [reg?.first_name, reg?.surname].filter(Boolean).join(" ") || x.email || "Retailer",
+            name: x.display_name || [reg?.first_name, reg?.middle_name, reg?.surname].filter(Boolean).join(" ") || x.email || "Retailer",
             shop: reg?.shop_name ?? "-", phone: reg?.mobile ?? "-", district: "-", taluk: "-",
             kyc: reg ? (reg.status === "approved" ? "Verified" : reg.status === "rejected" ? "Rejected" : "Pending") : "Verified",
             wallet: 0, txnToday: 0, revenue: Number(reg?.payment_amount ?? 0),
