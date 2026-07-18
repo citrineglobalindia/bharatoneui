@@ -130,12 +130,28 @@ Same auth scheme as AePS.
 **Decisions:** bills are funded from the **retailer wallet** (debit before pay, auto-refund on
 failure). Launch with Mobile Prepaid, Electricity, DTH, Gas, Broadband; expand after.
 
-**Done:** `bbps_transactions`, `bbps_commission_slabs`, `bbps_my_transactions()` RPC (migration
-`bbps_core`).
+**Built (18 Jul 2026):**
+- Migrations `bbps_core`, `bbps_wallet_and_commission`, `bbps_admin_rpcs`.
+- Tables `bbps_transactions`, `bbps_commission_slabs`.
+- RPCs: `bbps_my_transactions`, `bbps_debit_wallet`, `bbps_refund_wallet`,
+  `settle_bbps_commission`, `admin_list_bbps`, `admin_resolve_bbps`, `is_bbps_staff`.
+  The three money-moving ones are **revoked from `authenticated`** — service role only.
+- Edge function **`bbps`** (separate from `aeps`, deliberately — smaller blast radius).
+  Actions: config, activate, categories, operators, operator_params, fetch_bill, pay_bill, status.
+- Retailer screen `src/routes/bbps.tsx` (replaced the old mock-data version).
+- Admin panel `src/components/admin/bbps-admin.tsx`, nav item **Finance → Bill Payments**.
 
-**To do:** edge function wrapping the nine endpoints; retailer screen (category grid → operator →
-dynamic form from `bbps-get-operator-parameters` → fetch bill → confirm → pay → receipt); admin
-monitoring + commission setup.
+**Money flow — important:** wallet is debited *before* calling Eko. Failure → automatic refund.
+**Timeout → money stays held**, row goes to `pending_reconciliation`, and an admin must check the
+biller's portal and click Paid or Refund. Never auto-refund a timeout — the biller may have been
+paid.
+
+**⚠ UNVERIFIED:** the BBPS URL paths in the edge function (`/billpayments/categories`,
+`/paybill`, etc.) and the activation `service_code: 45` were **inferred** from the endpoint list —
+the individual doc pages at eps.eko.in need JavaScript and could not be read. Response parsers
+accept several field-name variants. **Confirm the real paths against Eko's BBPS reference before
+go-live.** Until then the category grid returns empty (the UI says "No categories available yet",
+it does not crash).
 
 **Expect an activation gate:** BBPS likely needs `bbps-activate-service` per agent, as AePS did.
 Raise with Eko early or it blocks go-live at the very end.
