@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import {
   Landmark, FileText, CreditCard, Train, Receipt, Heart,
   GraduationCap, Tractor, Building2, IdCard, Wallet,
-  ArrowRight, CheckCircle2, Search,
+  ArrowRight, CheckCircle2, Search, LayoutGrid, ChevronDown,
 } from "lucide-react";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
@@ -58,15 +58,24 @@ const services = [
 function ServicesPage() {
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("all");
+  const [sort, setSort] = useState<"popular" | "az" | "za">("popular");
 
-  const filtered = services.filter((s) => {
-    const matchCat = cat === "all" || s.cat === cat;
-    const matchQ = !q || s.title.toLowerCase().includes(q.toLowerCase()) || s.desc.toLowerCase().includes(q.toLowerCase());
-    return matchCat && matchQ;
-  });
+  // CR-144 — category filter (dropdown + chips) combined with a sort control.
+  const filtered = services
+    .filter((s) => {
+      const matchCat = cat === "all" || s.cat === cat;
+      const matchQ = !q || s.title.toLowerCase().includes(q.toLowerCase()) || s.desc.toLowerCase().includes(q.toLowerCase());
+      return matchCat && matchQ;
+    })
+    .sort((a, b) => {
+      if (sort === "az") return a.title.localeCompare(b.title);
+      if (sort === "za") return b.title.localeCompare(a.title);
+      return 0; // "Popular" keeps the curated order
+    });
 
   return (
     <PageShell
+      centered
       eyebrow="Our Services"
       title={
         <>
@@ -89,6 +98,22 @@ function ServicesPage() {
               aria-label="Search services"
             />
           </div>
+          <div className="relative shrink-0">
+            <LayoutGrid className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <select
+              value={cat}
+              onChange={(e) => setCat(e.target.value)}
+              aria-label="Filter by category"
+              className="h-11 appearance-none rounded-lg border border-border bg-background pl-9 pr-9 text-sm font-medium"
+            >
+              <option value="all">All Categories</option>
+              {categories.filter((c) => c.key !== "all").map((c) => (
+                <option key={c.key} value={c.key}>{c.label}</option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          </div>
+
           <div className="flex gap-2 overflow-x-auto -mx-1 px-1">
             {categories.map((c) => (
               <button
@@ -103,6 +128,23 @@ function ServicesPage() {
                 {c.label}
               </button>
             ))}
+          </div>
+
+          <div className="flex shrink-0 items-center gap-2 sm:ml-auto">
+            <span className="text-sm text-muted-foreground">Sort by:</span>
+            <div className="relative">
+              <select
+                value={sort}
+                onChange={(e) => setSort(e.target.value as typeof sort)}
+                aria-label="Sort services"
+                className="h-11 appearance-none rounded-lg border border-border bg-background pl-3 pr-9 text-sm font-medium"
+              >
+                <option value="popular">Popular</option>
+                <option value="az">Name: A – Z</option>
+                <option value="za">Name: Z – A</option>
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            </div>
           </div>
         </div>
       </section>

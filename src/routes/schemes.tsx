@@ -2,9 +2,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { PageShell } from "@/components/site/PageShell";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
 import {
   Heart, GraduationCap, Users, Tractor, Briefcase, Home as HomeIcon,
-  ArrowRight, Sparkles,
+  ArrowRight, Sparkles, Search, LayoutGrid, ChevronDown,
 } from "lucide-react";
 
 export const Route = createFileRoute("/schemes")({
@@ -36,6 +37,7 @@ const featured = [
     desc: "Affordable, quality healthcare when you need it most. Exclusive discounts at trusted medical partners and lifesaving access for your entire family.",
     accent: "from-[var(--saffron)] to-[var(--saffron-glow)]",
     benefits: ["Cashless network", "Family coverage", "OPD discounts"],
+    cat: "Health",
   },
   {
     icon: GraduationCap,
@@ -44,6 +46,7 @@ const featured = [
     desc: "Scholarship applications, school enrollment support and educational assistance for students from underserved communities.",
     accent: "from-[var(--india-green)] to-[var(--india-green-glow)]",
     benefits: ["NSP scholarships", "Fee assistance", "Admission help"],
+    cat: "Education",
   },
   {
     icon: Users,
@@ -52,18 +55,42 @@ const featured = [
     desc: "Cooperative society development programs that empower communities and enable local economic growth across India.",
     accent: "from-[var(--ashoka)] to-primary",
     benefits: ["Group savings", "Micro-credit", "Skill training"],
+    cat: "Community",
   },
 ];
 
 const more = [
-  { icon: Tractor, title: "PM-Kisan & Agri", desc: "Direct benefit transfers, crop insurance and farmer welfare." },
-  { icon: HomeIcon, title: "PM Awas Yojana", desc: "Affordable housing assistance for eligible families." },
-  { icon: Briefcase, title: "Skill India", desc: "Skilling and employment programs for youth across Bharat." },
+  { icon: Tractor, title: "PM-Kisan & Agri", desc: "Direct benefit transfers, crop insurance and farmer welfare.", cat: "Agriculture", tag: "Active" },
+  { icon: HomeIcon, title: "PM Awas Yojana", desc: "Affordable housing assistance for eligible families.", cat: "Housing", tag: "Active" },
+  { icon: Briefcase, title: "Skill India", desc: "Skilling and employment programs for youth across Bharat.", cat: "Employment", tag: "Upcoming" },
 ];
 
+const SCHEME_CATEGORIES = ["Health", "Education", "Community", "Agriculture", "Housing", "Employment"];
+const SCHEME_STATUSES = ["Featured", "Active", "Upcoming"];
+
 function SchemesPage() {
+  // CR-146 — search + category + status filters.
+  const [q, setQ] = useState("");
+  const [cat, setCat] = useState("all");
+  const [status, setStatus] = useState("all");
+
+  const match = (s: { title: string; desc: string; cat: string; tag: string }) => {
+    const needle = q.trim().toLowerCase();
+    const matchQ =
+      !needle ||
+      s.title.toLowerCase().includes(needle) ||
+      s.desc.toLowerCase().includes(needle) ||
+      s.cat.toLowerCase().includes(needle);
+    return matchQ && (cat === "all" || s.cat === cat) && (status === "all" || s.tag === status);
+  };
+
+  const featuredShown = featured.filter(match);
+  const moreShown = more.filter(match);
+  const nothing = featuredShown.length === 0 && moreShown.length === 0;
+
   return (
     <PageShell
+      centered
       eyebrow="Welfare Schemes"
       title={
         <>
@@ -74,10 +101,64 @@ function SchemesPage() {
       crumbs={[{ label: "Schemes" }]}
       accent="green"
     >
+      {/* CR-146 — search & filter bar */}
+      <section className="border-b border-border bg-card/40">
+        <div className="container mx-auto px-4 sm:px-6 py-4">
+          <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-3 shadow-soft sm:flex-row sm:items-center">
+            <div className="relative flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Search schemes by name, category, or keyword…"
+                aria-label="Search schemes"
+                className="h-11 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm"
+              />
+            </div>
+            <div className="relative">
+              <LayoutGrid className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <select
+                value={cat}
+                onChange={(e) => setCat(e.target.value)}
+                aria-label="Filter by category"
+                className="h-11 w-full appearance-none rounded-lg border border-border bg-background pl-9 pr-9 text-sm font-medium sm:w-auto"
+              >
+                <option value="all">All Categories</option>
+                {SCHEME_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            </div>
+            <div className="relative">
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                aria-label="Filter by status"
+                className="h-11 w-full appearance-none rounded-lg border border-border bg-background pl-3 pr-9 text-sm font-medium sm:w-auto"
+              >
+                <option value="all">All Status</option>
+                {SCHEME_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            </div>
+            {(q || cat !== "all" || status !== "all") && (
+              <button
+                onClick={() => { setQ(""); setCat("all"); setStatus("all"); }}
+                className="h-11 rounded-lg border border-border px-4 text-sm font-semibold hover:bg-muted"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        </div>
+      </section>
+
       {/* Featured */}
       <section className="container mx-auto px-4 sm:px-6 py-16 sm:py-20">
+        {nothing && (
+          <p className="py-10 text-center text-muted-foreground">No schemes match your search.</p>
+        )}
         <div className="grid md:grid-cols-3 gap-6">
-          {featured.map((s, i) => (
+          {featuredShown.map((s, i) => (
             <motion.article
               key={s.title}
               initial={{ opacity: 0, y: 24 }}
@@ -114,14 +195,14 @@ function SchemesPage() {
       </section>
 
       {/* More schemes */}
-      <section className="bg-muted/40 border-y border-border">
+      <section className={`bg-muted/40 border-y border-border ${moreShown.length === 0 ? "hidden" : ""}`}>
         <div className="container mx-auto px-4 sm:px-6 py-16 sm:py-20">
           <div className="max-w-2xl mx-auto text-center mb-12">
             <h2 className="font-display text-3xl sm:text-4xl font-bold">More schemes we facilitate</h2>
             <p className="text-muted-foreground mt-3">Central & state welfare programs accessible at every BharatOne center.</p>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {more.map((m, i) => (
+            {moreShown.map((m, i) => (
               <motion.div
                 key={m.title}
                 initial={{ opacity: 0, y: 20 }}
