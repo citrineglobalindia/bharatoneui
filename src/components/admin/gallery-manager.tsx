@@ -3,7 +3,10 @@ import { Loader2, Upload, Trash2, ImageIcon, Eye, EyeOff, Video, ArrowUp, ArrowD
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
-type Row = { id: string; image_path: string; caption: string | null; sort_order: number; is_active: boolean; media_type: string };
+type Row = { id: string; image_path: string; caption: string | null; sort_order: number; is_active: boolean; media_type: string; category: string | null };
+
+// Categories offered in the public Gallery filter (CR-143).
+const CATEGORIES = ["Events", "Service Centers", "Awards", "Community", "Farmer Support", "Health Camps"];
 
 const publicUrl = (path: string) =>
   supabase.storage.from("gallery").getPublicUrl(path).data.publicUrl;
@@ -13,6 +16,7 @@ export function GalleryManager() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [caption, setCaption] = useState("");
+  const [category, setCategory] = useState(CATEGORIES[0]);
   const fileRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLInputElement>(null);
 
@@ -39,8 +43,8 @@ export function GalleryManager() {
       if (upErr) { toast.error("Upload failed", { description: upErr.message }); return; }
       const { error: insErr } = await supabase.from("gallery_images").insert({
         image_path: path, caption: caption.trim() || null, sort_order: rows.length,
-        media_type: isVideo ? "video" : "image",
-      });
+        media_type: isVideo ? "video" : "image", category,
+      } as never);
       if (insErr) { toast.error("Save failed", { description: insErr.message }); return; }
       toast.success(isVideo ? "Video added to gallery" : "Image added to gallery");
       setCaption("");
@@ -76,11 +80,18 @@ export function GalleryManager() {
     <div className="space-y-6">
       <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
         <p className="mb-3 flex items-center gap-2 text-sm font-bold"><ImageIcon className="h-4 w-4 text-india-green" /> Add gallery image or video</p>
-        <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end">
+        <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto_auto] sm:items-end">
           <div>
             <label className="text-[11px] font-semibold text-muted-foreground">Caption (optional)</label>
             <input value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="e.g. Service Center Inauguration"
               className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm" />
+          </div>
+          <div>
+            <label className="text-[11px] font-semibold text-muted-foreground">Category</label>
+            <select value={category} onChange={(e) => setCategory(e.target.value)}
+              className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm">
+              {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
           </div>
           <label className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-india-green px-4 h-10 text-sm font-semibold text-white hover:bg-india-green/90 disabled:opacity-60">
             {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} Upload image
@@ -116,6 +127,19 @@ export function GalleryManager() {
                 </div>
                 <div className="p-2">
                   <p className="truncate text-xs font-medium">{r.caption || "—"}</p>
+                  <select
+                    value={r.category ?? ""}
+                    onChange={async (e) => {
+                      const v = e.target.value;
+                      setRows((rs) => rs.map((x) => (x.id === r.id ? { ...x, category: v } : x)));
+                      const { error } = await supabase.from("gallery_images").update({ category: v } as never).eq("id", r.id);
+                      if (error) toast.error(error.message); else toast.success("Category updated");
+                    }}
+                    className="mt-1.5 h-8 w-full rounded-md border border-border bg-background px-2 text-[11px]"
+                  >
+                    <option value="">Uncategorised</option>
+                    {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
                   <div className="mt-2 flex flex-wrap items-center gap-1.5">
                     <button onClick={() => move(r, -1)} disabled={i === 0} className="rounded-md border border-border px-1.5 py-1 hover:bg-muted disabled:opacity-40" aria-label="Move left"><ArrowUp className="h-3 w-3 -rotate-90" /></button>
                     <button onClick={() => move(r, 1)} disabled={i === rows.length - 1} className="rounded-md border border-border px-1.5 py-1 hover:bg-muted disabled:opacity-40" aria-label="Move right"><ArrowDown className="h-3 w-3 -rotate-90" /></button>

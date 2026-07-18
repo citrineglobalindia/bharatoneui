@@ -7,15 +7,17 @@ import { Button } from "@/components/ui/button";
 import { Counter } from "@/components/site/Counter";
 import {
   Target,
-  Compass,
-  HeartHandshake,
+  Eye,
   Award,
   Users,
   MapPin,
   Sparkles,
-  ArrowRight,
-  ShieldCheck,
-  Rocket,
+  ExternalLink,
+  Landmark,
+  Headphones,
+  Zap,
+  Wallet,
+  Globe,
 } from "lucide-react";
 
 export const Route = createFileRoute("/about")({
@@ -38,11 +40,50 @@ export const Route = createFileRoute("/about")({
   }),
 });
 
-const values = [
-  { icon: Target, title: "Citizen First", desc: "Every service, process and decision begins with the citizen we serve." },
-  { icon: ShieldCheck, title: "Trust & Integrity", desc: "Government-approved, transparent and secure from end to end." },
-  { icon: HeartHandshake, title: "Inclusive Access", desc: "Bridging the digital divide for rural and urban India alike." },
-  { icon: Rocket, title: "Built to Scale", desc: "Engineered to bring 100+ essential services to a billion Indians." },
+// CR-142 — "Why Choose BharatOne?" reasons.
+const reasons = [
+  {
+    icon: Landmark,
+    title: "Govt Approved Services",
+    tone: "text-india-green",
+    chip: "bg-india-green",
+    desc: "We are an officially recognized provider of essential government services including Aadhaar updates, PAN applications, certificates, and welfare schemes.",
+  },
+  {
+    icon: Headphones,
+    title: "Local & 24/7 Support",
+    tone: "text-saffron",
+    chip: "bg-saffron",
+    desc: "Our local service agents are available to guide you in person, while our support helpline is open 24/7 for any queries or technical help.",
+  },
+  {
+    icon: Zap,
+    title: "Fast Processing",
+    tone: "text-purple-600",
+    chip: "bg-purple-600",
+    desc: "With streamlined digital operations and direct integration with government portals, we ensure quick application and processing of your requests.",
+  },
+  {
+    icon: Wallet,
+    title: "Affordable Fees",
+    tone: "text-blue-600",
+    chip: "bg-blue-500",
+    desc: "We believe in fair pricing. Our service charges are minimal, transparent, and designed to be accessible for all income groups.",
+  },
+  {
+    icon: Globe,
+    title: "Digital Rural Reach",
+    tone: "text-rose-600",
+    chip: "bg-rose-600",
+    desc: "We are committed to bridging the digital divide by offering doorstep digital services even in the most remote villages through local partners.",
+  },
+  {
+    icon: Users,
+    title: "Trusted by Thousands",
+    tone: "text-emerald-600",
+    chip: "bg-emerald-500",
+    desc: "Thousands of satisfied users trust BharatOne for secure, fast, and reliable service delivery every day.",
+  },
 ];
 
 const milestones = [
@@ -71,14 +112,24 @@ const stagger: Variants = {
 function AboutPage() {
   return (
     <PageShell
-      eyebrow="About Us"
+      eyebrow="About BharatOne"
+      centered
+      divider
       title={
         <>
-          Building the bridge to{" "}
-          <span className="text-gradient-tricolor">essential services</span> for every citizen.
+          Serving Indian Citizens with{" "}
+          <span className="text-saffron">Accessible</span>,{" "}
+          <span className="text-india-green">Essential Services</span>
         </>
       }
-      subtitle="BharatOne is on a mission to bring government, banking, welfare and everyday services within walking distance of every Indian household."
+      subtitle="At BharatOne Services and Affiliates Pvt. Ltd., we believe in empowering Indian citizens by simplifying access to essential government, banking, and financial services. Through technology, transparency, and a strong partner network, we are committed to helping every citizen take control of their everyday needs — efficiently, securely, and with confidence."
+      actions={
+        <Button asChild size="lg" className="bg-saffron text-white hover:bg-saffron/90">
+          <Link to="/citizen-services">
+            Explore Services <ExternalLink className="ml-1.5 h-4 w-4" />
+          </Link>
+        </Button>
+      }
       crumbs={[{ label: "About" }]}
     >
       {/* Story + stats */}
@@ -90,16 +141,21 @@ function AboutPage() {
           viewport={{ once: true, amount: 0.25 }}
         >
           <motion.h2 variants={fadeUp} className="font-display text-2xl sm:text-4xl font-bold leading-tight">
-            Our story is the story of <span className="text-saffron">Bharat</span>.
+            About <span className="text-saffron">BharatOne</span> — Serving Indian Citizens
           </motion.h2>
+          <motion.p variants={fadeUp} className="mt-4 text-lg font-semibold italic text-india-green">
+            &ldquo;Empowering Every Indian with Easy, Reliable Access to Essential Services&rdquo;
+          </motion.p>
           <motion.p variants={fadeUp} className="text-muted-foreground mt-5 leading-relaxed">
-            For millions of Indians, accessing a simple government document still means lost wages,
-            long queues and confusing paperwork. BharatOne was started to fix that — by training
-            entrepreneurs in every neighbourhood to deliver 100+ services with empathy and trust.
+            BharatOne Services and Affiliates Pvt. Ltd. is committed to creating an accessible
+            ecosystem where individuals across India can effortlessly access a variety of essential
+            services.
           </motion.p>
           <motion.p variants={fadeUp} className="text-muted-foreground mt-4 leading-relaxed">
-            Today, our network of 1,000+ centers serves citizens across 28 states with everything
-            from Aadhaar updates and AEPS banking to insurance and welfare schemes.
+            We aim to bridge the gap between the government, banks, and the people by offering a wide
+            range of services through our network of registered service centers. Whether it&rsquo;s
+            applying for a loan, accessing e-government services, or seeking support at an RTO center,
+            we are here to serve every Indian citizen with ease and transparency.
           </motion.p>
           <motion.div variants={fadeUp} className="mt-8 flex flex-wrap gap-3">
             <Button asChild className="bg-gradient-to-r from-[var(--saffron)] to-[var(--india-green)] text-white">
@@ -143,26 +199,52 @@ function AboutPage() {
 
       {/* Mission / Vision */}
       <section className="bg-muted/40 border-y border-border">
-        <div className="container mx-auto px-4 sm:px-6 py-16 sm:py-20 grid md:grid-cols-2 gap-6">
-          {[
-            { icon: Target, label: "Our Mission", text: "Deliver essential services to every Indian citizen with dignity, transparency and speed." },
-            { icon: Compass, label: "Our Vision", text: "A Bharat where access to government, finance and welfare is never more than a 10-minute walk away." },
-          ].map((m, i) => (
-            <motion.div
-              key={m.label}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.55, delay: i * 0.1 }}
-              className="rounded-3xl bg-card border border-border p-8 shadow-soft hover:shadow-elegant transition-shadow"
-            >
-              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-[var(--saffron)] to-[var(--india-green)] text-white flex items-center justify-center mb-4">
-                <m.icon className="h-6 w-6" />
-              </div>
-              <div className="text-xs uppercase tracking-widest text-muted-foreground">{m.label}</div>
-              <p className="mt-2 text-lg leading-relaxed">{m.text}</p>
-            </motion.div>
-          ))}
+        <div className="container mx-auto px-4 sm:px-6 py-16 sm:py-20">
+          <motion.h2
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center font-display text-3xl sm:text-4xl font-bold mb-10"
+          >
+            Our <span className="text-india-green">Mission</span> &amp;{" "}
+            <span className="text-saffron">Vision</span>
+          </motion.h2>
+          <div className="grid md:grid-cols-2 gap-6">
+            {[
+              {
+                icon: Target,
+                label: "Mission",
+                bar: "bg-saffron",
+                chip: "bg-saffron",
+                text: "Our mission is to democratize digital services and bring government schemes, financial access, and identity services to every corner of India through an efficient, transparent, and reliable platform.",
+              },
+              {
+                icon: Eye,
+                label: "Vision",
+                bar: "bg-india-green",
+                chip: "bg-india-green",
+                text: "Our vision is to be India's most trusted and accessible platform for citizen-centric services by revolutionizing the delivery of governance and welfare schemes through technology and human touch.",
+              },
+            ].map((m, i) => (
+              <motion.div
+                key={m.label}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.55, delay: i * 0.1 }}
+                className="overflow-hidden rounded-2xl bg-card border border-border shadow-soft hover:shadow-elegant transition-shadow"
+              >
+                <div className={`h-1.5 w-full ${m.bar}`} />
+                <div className="p-8 text-center">
+                  <div className={`mx-auto h-14 w-14 rounded-full ${m.chip} text-white flex items-center justify-center`}>
+                    <m.icon className="h-7 w-7" />
+                  </div>
+                  <h3 className="mt-4 font-display text-xl font-bold">{m.label}</h3>
+                  <p className="mt-3 text-sm text-muted-foreground leading-relaxed">{m.text}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -174,9 +256,11 @@ function AboutPage() {
           viewport={{ once: true }}
           className="max-w-2xl mx-auto text-center mb-12"
         >
-          <h2 className="font-display text-3xl sm:text-4xl font-bold">What we stand for</h2>
+          <h2 className="font-display text-3xl sm:text-4xl font-bold">
+            Why Choose <span className="text-india-green">BharatOne</span>?
+          </h2>
           <p className="text-muted-foreground mt-3">
-            Four values that guide every center, conversation and service we deliver.
+            Your trusted partner for all government and public services across India
           </p>
         </motion.div>
         <motion.div
@@ -184,21 +268,21 @@ function AboutPage() {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.2 }}
-          className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4"
+          className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5"
         >
-          {values.map((v) => (
+          {reasons.map((v) => (
             <motion.div
               key={v.title}
               variants={fadeUp}
               whileHover={{ y: -6 }}
               transition={{ type: "spring", stiffness: 280, damping: 22 }}
-              className="rounded-2xl border border-border bg-card p-6 hover:border-saffron/40 hover:shadow-elegant transition-all"
+              className="rounded-2xl border border-border bg-card p-6 text-center hover:border-saffron/40 hover:shadow-elegant transition-all"
             >
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[var(--saffron)]/15 to-[var(--india-green)]/15 flex items-center justify-center">
-                <v.icon className="h-5 w-5 text-saffron" />
+              <div className={`mx-auto h-12 w-12 rounded-full ${v.chip} text-white flex items-center justify-center`}>
+                <v.icon className="h-6 w-6" />
               </div>
-              <h3 className="font-display font-semibold text-lg mt-4">{v.title}</h3>
-              <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">{v.desc}</p>
+              <h3 className={`font-display font-semibold text-lg mt-4 ${v.tone}`}>{v.title}</h3>
+              <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{v.desc}</p>
             </motion.div>
           ))}
         </motion.div>

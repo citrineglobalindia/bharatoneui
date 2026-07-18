@@ -16,6 +16,9 @@ export function PageShell({
   crumbs,
   children,
   accent = "saffron",
+  centered = false,
+  divider = false,
+  actions,
 }: {
   eyebrow?: string;
   title: ReactNode;
@@ -23,6 +26,12 @@ export function PageShell({
   crumbs?: Crumb[];
   children: ReactNode;
   accent?: "saffron" | "green" | "ashoka";
+  /** Centre the banner content (CR-140 About, CR-145 Services). */
+  centered?: boolean;
+  /** Show the tricolour divider rule under the heading. */
+  divider?: boolean;
+  /** Optional call-to-action rendered under the subtitle. */
+  actions?: ReactNode;
 }) {
   const accentMap = {
     saffron: "from-[var(--saffron)]/20 via-transparent to-transparent",
@@ -45,7 +54,7 @@ export function PageShell({
               backgroundSize: "22px 22px",
             }}
           />
-          <div className="container mx-auto px-4 sm:px-6 py-14 sm:py-20 relative">
+          <div className={`container mx-auto px-4 sm:px-6 py-14 sm:py-20 relative ${centered ? "flex flex-col items-center text-center" : ""}`}>
             {crumbs && (
               <nav aria-label="Breadcrumb" className="mb-5">
                 <ol className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
@@ -83,6 +92,16 @@ export function PageShell({
             >
               {title}
             </motion.h1>
+            {divider && (
+              <div
+                aria-hidden
+                className={`mt-5 flex items-center gap-2 ${centered ? "justify-center" : ""}`}
+              >
+                <span className="h-1 w-14 rounded-full bg-saffron" />
+                <span className="h-1.5 w-1.5 rounded-full bg-ashoka" />
+                <span className="h-1 w-14 rounded-full bg-india-green" />
+              </div>
+            )}
             {subtitle && (
               <motion.p
                 initial={{ opacity: 0, y: 14 }}
@@ -92,6 +111,16 @@ export function PageShell({
               >
                 {subtitle}
               </motion.p>
+            )}
+            {actions && (
+              <motion.div
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.18 }}
+                className={`mt-8 flex flex-wrap gap-3 ${centered ? "justify-center" : ""}`}
+              >
+                {actions}
+              </motion.div>
             )}
           </div>
         </section>
