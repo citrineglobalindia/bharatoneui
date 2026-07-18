@@ -208,7 +208,7 @@ function BbpsPage() {
           <p className="text-xs text-muted-foreground">Bills are debited from this balance. Failed payments are refunded automatically.</p>
         </div>
 
-        {!status?.keys_set && !loading && (
+        {status && !status.keys_set && !loading && (
           <div className="flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
             Bill payments are not configured yet. Contact the BharatOne team.
