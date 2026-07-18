@@ -499,7 +499,7 @@ function AepsPage() {
           </div>
         )}
 
-        {status?.keys_set && blocked && !dailyPending && (
+        {status?.keys_set && ((blocked && !dailyPending) || redoKyc) && (
           <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
             <p className="mb-3 flex items-center gap-2 text-sm font-bold"><ShieldCheck className="h-4 w-4 text-india-green" /> One-time AEPS setup</p>
             <div className="space-y-2 text-sm">
