@@ -64,6 +64,7 @@ function BbpsPage() {
   const [amount, setAmount] = useState("");
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState<any>(null);
+  const [catError, setCatError] = useState<string | null>(null);
 
   const call = useCallback(async (action: string, extra: Record<string, unknown> = {}) => {
     const { data, error } = await supabase.functions.invoke("bbps", { body: { action, ...extra } });
@@ -83,7 +84,11 @@ function BbpsPage() {
   async function load() {
     setLoading(true);
     try { setStatus(await call("config")); } catch { /* ignore */ }
-    try { const c = await call("categories"); setCats(c?.list ?? []); } catch { /* ignore */ }
+    try {
+      const c = await call("categories");
+      setCats(c?.list ?? []);
+      setCatError((c?.list ?? []).length === 0 ? (c?.message ?? "The banking partner returned no categories.") : null);
+    } catch (e: any) { setCats([]); setCatError(e?.message ?? "Could not reach the banking partner."); }
     try {
       const t = await (supabase as any).rpc("bbps_my_transactions", { _limit: 25 });
       setTxns((t?.data as Txn[]) ?? []);
@@ -216,7 +221,14 @@ function BbpsPage() {
             {loading ? (
               <div className="grid h-24 place-items-center"><Loader2 className="h-5 w-5 animate-spin text-india-green" /></div>
             ) : cats.length === 0 ? (
-              <p className="py-8 text-center text-sm text-muted-foreground">No categories available yet.</p>
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                <p className="font-semibold">Bill payment services aren't available yet.</p>
+                <p className="mt-1 text-xs">
+                  The banking partner has not enabled Bharat Connect (BBPS) for this account yet.
+                  Once it is activated these services will appear here automatically.
+                </p>
+                {catError && <p className="mt-2 font-mono text-[11px] opacity-80">Partner said: {catError}</p>}
+              </div>
             ) : (
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
                 {cats.map((c) => {
