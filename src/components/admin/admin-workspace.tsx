@@ -60,6 +60,7 @@ import { ApplicationLedger } from "@/components/admin/application-ledger";
 import { WalletAdmin } from "@/components/admin/wallet-admin";
 import { WithdrawalsAdmin } from "@/components/admin/withdrawals-admin";
 import { AepsAdmin } from "@/components/admin/aeps-admin";
+import { BbpsAdmin } from "@/components/admin/bbps-admin";
 import { EstoreAdmin } from "@/components/admin/estore-admin";
 import { SupportAdmin } from "@/components/admin/support-admin";
 import { LiveChatAdmin } from "@/components/admin/live-chat-admin";
@@ -162,6 +163,7 @@ const NAVIGATION: NavGroup[] = [
       { label: "Razorpay Payments", icon: WalletCards },
       { label: "Withdrawals", icon: WalletCards },
       { label: "AEPS Banking", icon: Landmark },
+      { label: "Bill Payments", icon: Landmark },
       { label: "Risk & Fraud", icon: ShieldCheck, badge: "8" },
     ],
   },
@@ -1153,6 +1155,8 @@ export function AdminWorkspace() {
               <WalletAdmin allowMainRecharge />
             ) : active === "AEPS Banking" ? (
               <AepsAdmin />
+            ) : active === "Bill Payments" ? (
+              <BbpsAdmin />
             ) : active === "Withdrawals" ? (
               <WithdrawalsAdmin allowWindowConfig />
             ) : active === "Accountant Operations" ? (
