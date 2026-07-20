@@ -337,8 +337,11 @@ function AepsPage() {
 
   const doSendOtp = async () => {
     setBusy(true);
+    // Eko's Send OTP spec requires the agent's live GPS coordinates.
+    let latlong = "";
+    try { latlong = await getLatLongStrict(); } catch (e: any) { setBusy(false); return toast.error("Location required", { description: e.message }); }
     try {
-      const r = await call("kyc_send_otp");
+      const r = await call("kyc_send_otp", { latlong });
       setOtpSent(true); setOtpRef(r.otp_ref_id ?? null);
       setOtpVerified(false); setOtp(""); setPid(null); setQuality(null); // a fresh OTP must be re-verified before biometric
       toast.success("OTP sent to your registered mobile");

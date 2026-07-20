@@ -24,6 +24,10 @@ const IS_PROD = EKO_ENV === "production" || EKO_ENV === "prod";
 const HOST = IS_PROD ? "https://api.eko.in:25002" : "https://staging.eko.in:25004";
 const V1 = `${HOST}/ekoapi/v1`;
 const V3 = `${HOST}/ekoapi/v3`;
+// v3 KYC endpoints live under a different base on production (ekoicici, not ekoapi).
+// Same convention as the aeps-2fa function; override with EKO_BASE_URL if Eko moves it.
+const RAW_BASE = (Deno.env.get("EKO_BASE_URL") ?? "").trim().replace(/\/+$/, "");
+const KYC_V3 = `${RAW_BASE || (IS_PROD ? "https://api.eko.in:25002/ekoicici" : "https://staging.eko.in:25004/ekoapi")}/v3`;
 const EKO_INITIATOR_ID = Deno.env.get("EKO_INITIATOR_ID") ?? "";
 const EKO_DEVELOPER_KEY = Deno.env.get("EKO_DEVELOPER_KEY") ?? "";
 const EKO_AUTH_KEY = Deno.env.get("EKO_AUTH_KEY") ?? "";
@@ -123,6 +127,18 @@ async function ekoForm(url: string, method: "PUT" | "POST", fields: Record<strin
   }
   const headers = await ekoHeaders("application/x-www-form-urlencoded", hashPayload);
   const res = await fetch(url, { method, headers, body: form.toString() });
+  return parseEko(res, url);
+}
+// JSON body — Eko's v3 aeps-fingpay KYC endpoints take application/json
+// (confirmed working in aeps-2fa; the form-encoded variant is for the v1 API).
+async function ekoJson(url: string, method: "PUT" | "POST", fields: Record<string, unknown>) {
+  const body: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(fields)) {
+    if (v === undefined || v === null) continue;
+    body[k] = v;
+  }
+  const headers = await ekoHeaders("application/json");
+  const res = await fetch(url, { method, headers, body: JSON.stringify(body) });
   return parseEko(res, url);
 }
 async function ekoGet(url: string) {
@@ -293,52 +309,96 @@ Deno.serve(async (req) => {
     }
 
     // --------------------------------------- one-time eKYC + daily auth
+    // Per Eko's EPS spec (aeps-send-otp-kyc → aeps-verify-otp-kyc → aeps-biometric-ekyc):
+    // every step needs the agent's encrypted Aadhaar, mobile (customer_id) and latlong,
+    // and the otp_ref_id + reference_tid returned by each step must be carried into the
+    // next one. We persist them on aeps_agents (kyc_otp_ref / kyc_ref_tid) between calls.
+    // Endpoints are /user/collection/aeps-fingpay/kyc/* with application/json bodies.
+    const agentAadhaar = String(body.aadhaar ?? (agent as any)?.agent_aadhaar ?? "").replace(/\D/g, "");
+    const agentMobile = String(body.customer_id ?? (agent as any)?.mobile ?? "").replace(/\D/g, "").slice(-10);
+    const agentLatlong = String(body.latlong ?? (agent as any)?.latlong ?? "");
+
     if (action === "kyc_send_otp") {
       if (!userCode) return json({ error: "Onboard the retailer first" }, 400);
-      // Eko's spec marks aadhar, customer_id and latlong REQUIRED on Send OTP. We were
-      // sending only initiator_id + user_code, so the eKYC session was being opened
-      // without binding to the agent's Aadhaar — which is a strong candidate for why
-      // Daily KYC later reports "Please complete bank eKYC" / "Invalid Biometric data".
-      // (20 Jul 2026)
-      const otpAadhaar = String(body.aadhaar ?? (agent as any)?.agent_aadhaar ?? "").replace(/\D/g, "");
-      const otpMobile = String(body.customer_id ?? (agent as any)?.mobile ?? "").replace(/\D/g, "").slice(-10);
-      const otpLatlong = String(body.latlong ?? (agent as any)?.latlong ?? "");
-      if (otpAadhaar.length !== 12) return json({ error: "The agent's 12-digit Aadhaar number is required to start eKYC" }, 400);
-      if (otpMobile.length !== 10) return json({ error: "The agent's 10-digit registered mobile number is required to start eKYC" }, 400);
-      if (!otpLatlong) return json({ error: "Location is required to start eKYC" }, 400);
-      const data = await ekoForm(`${V3}/user/aeps-fingpay/kyc/otp`, "POST", {
+      if (agentAadhaar.length !== 12) return json({ error: "The agent's 12-digit Aadhaar number is required to start eKYC" }, 400);
+      if (agentMobile.length !== 10) return json({ error: "The agent's 10-digit registered mobile number is required to start eKYC" }, 400);
+      if (!agentLatlong) return json({ error: "Location is required to start eKYC" }, 400);
+      const data = await ekoJson(`${KYC_V3}/user/collection/aeps-fingpay/kyc/otp`, "POST", {
         initiator_id: EKO_INITIATOR_ID,
         user_code: userCode,
-        aadhar: rsaEncryptPkcs1(otpAadhaar, EKO_RSA_PUB),
-        customer_id: otpMobile,
-        latlong: otpLatlong,
+        aadhar: rsaEncryptPkcs1(agentAadhaar, EKO_RSA_PUB),
+        customer_id: agentMobile,
+        latlong: agentLatlong,
       });
       if (!ekoOk(data)) return json({ error: ekoMsg(data), raw: scrub(data) }, 400);
-      return json({ ok: true, message: ekoMsg(data), otp_ref_id: data?.data?.otp_ref_id ?? null });
+      const otpRef = data?.data?.otp_ref_id ?? null;
+      const refTid = data?.data?.reference_tid ?? null;
+      await setAgent({ agent_aadhaar: agentAadhaar, latlong: agentLatlong, kyc_otp_ref: otpRef, kyc_ref_tid: refTid, last_error: null });
+      return json({ ok: true, message: ekoMsg(data), otp_ref_id: otpRef, reference_tid: refTid });
     }
 
     if (action === "kyc_verify_otp") {
-      const { otp, otp_ref_id } = body;
+      const { otp } = body;
       if (!otp) return json({ error: "Enter the OTP" }, 400);
-      const data = await ekoForm(`${V3}/user/aeps-fingpay/kyc/otp/verify`, "PUT", {
-        initiator_id: EKO_INITIATOR_ID, user_code: userCode, otp: String(otp), otp_ref_id,
+      const otpRef = String(body.otp_ref_id ?? (agent as any)?.kyc_otp_ref ?? "");
+      const refTid = String(body.reference_tid ?? (agent as any)?.kyc_ref_tid ?? "");
+      if (!otpRef || !refTid) return json({ error: "No eKYC session found — send the OTP again first" }, 400);
+      if (agentAadhaar.length !== 12 || agentMobile.length !== 10) return json({ error: "Send the OTP again first" }, 400);
+      const data = await ekoJson(`${KYC_V3}/user/collection/aeps-fingpay/kyc/otp/verify`, "PUT", {
+        initiator_id: EKO_INITIATOR_ID, user_code: userCode,
+        customer_id: agentMobile,
+        aadhar: rsaEncryptPkcs1(agentAadhaar, EKO_RSA_PUB),
+        otp: String(otp), otp_ref_id: otpRef, reference_tid: refTid,
+        latlong: agentLatlong,
       });
       if (!ekoOk(data)) return json({ error: ekoMsg(data), raw: scrub(data) }, 400);
+      // Verify returns a NEW otp_ref_id + reference_tid that the biometric step must use.
+      const newOtpRef = data?.data?.otp_ref_id ?? otpRef;
+      const newRefTid = data?.data?.reference_tid ?? refTid;
+      await setAgent({ kyc_otp_ref: newOtpRef, kyc_ref_tid: newRefTid, last_error: null });
       return json({ ok: true, message: ekoMsg(data) });
     }
 
-    if (action === "kyc_biometric" || action === "kyc_daily") {
-      const { piddata, aadhaar, latlong } = body;
+    if (action === "kyc_biometric") {
+      const { piddata } = body;
       if (!piddata) return json({ error: "Capture the fingerprint first" }, 400);
-      const daily = action === "kyc_daily";
-      const data = await ekoForm(`${V3}/user/aeps-fingpay/kyc/${daily ? "daily" : "biometric"}`, "PUT", {
-        initiator_id: EKO_INITIATOR_ID, user_code: userCode, piddata,
-        aadhar: aadhaar ? rsaEncryptPkcs1(String(aadhaar), EKO_RSA_PUB) : undefined,
-        latlong: latlong ?? "", source_ip: sourceIp,
+      const bankCode = String(body.bank_code ?? (agent as any)?.agent_bank_code ?? "");
+      if (!bankCode) return json({ error: "Select the agent's own bank first" }, 400);
+      const otpRef = String((agent as any)?.kyc_otp_ref ?? "");
+      const refTid = String((agent as any)?.kyc_ref_tid ?? "");
+      if (!otpRef || !refTid) return json({ error: "Complete the OTP steps first (Send OTP → Verify)" }, 400);
+      if (agentAadhaar.length !== 12 || agentMobile.length !== 10) return json({ error: "The agent's Aadhaar and mobile are required — restart from Send OTP" }, 400);
+      const data = await ekoJson(`${KYC_V3}/user/collection/aeps-fingpay/kyc/biometric`, "PUT", {
+        initiator_id: EKO_INITIATOR_ID, user_code: userCode,
+        aadhar: rsaEncryptPkcs1(agentAadhaar, EKO_RSA_PUB),
+        customer_id: agentMobile,
+        latlong: agentLatlong,
+        piddata,
+        bank_code: bankCode,
+        otp_ref_id: otpRef, reference_tid: refTid,
       });
       if (!ekoOk(data)) { await setAgent({ last_error: ekoMsg(data) }); return json({ error: ekoMsg(data), raw: scrub(data) }, 400); }
       const now = new Date().toISOString();
-      await setAgent(daily ? { last_daily_kyc_at: now, last_error: null } : { ekyc_done: true, ekyc_done_at: now, last_daily_kyc_at: now, last_error: null });
+      await setAgent({ ekyc_done: true, ekyc_done_at: now, last_daily_kyc_at: now, agent_bank_code: bankCode, last_error: null });
+      return json({ ok: true, message: ekoMsg(data) });
+    }
+
+    if (action === "kyc_daily") {
+      const { piddata } = body;
+      if (!piddata) return json({ error: "Capture the fingerprint first" }, 400);
+      const bankCode = String(body.bank_code ?? (agent as any)?.agent_bank_code ?? "");
+      if (!bankCode) return json({ error: "Select the agent's own bank first" }, 400);
+      if (agentAadhaar.length !== 12 || agentMobile.length !== 10) return json({ error: "The agent's Aadhaar and mobile are missing — contact support" }, 400);
+      const data = await ekoJson(`${KYC_V3}/user/collection/aeps-fingpay/kyc/biometric/daily`, "PUT", {
+        initiator_id: EKO_INITIATOR_ID, user_code: userCode,
+        aadhar: rsaEncryptPkcs1(agentAadhaar, EKO_RSA_PUB),
+        customer_id: agentMobile,
+        latlong: agentLatlong,
+        piddata,
+        bank_code: bankCode,
+      });
+      if (!ekoOk(data)) { await setAgent({ last_error: ekoMsg(data) }); return json({ error: ekoMsg(data), raw: scrub(data) }, 400); }
+      await setAgent({ last_daily_kyc_at: new Date().toISOString(), agent_bank_code: bankCode, last_error: null });
       return json({ ok: true, message: ekoMsg(data) });
     }
 
