@@ -95,6 +95,7 @@ import { Route as QcDocumentSearchRouteImport } from './routes/qc.document-searc
 import { Route as QcDashboardRouteImport } from './routes/qc.dashboard'
 import { Route as QcChangePasswordRouteImport } from './routes/qc.change-password'
 import { Route as QcApprovedRouteImport } from './routes/qc.approved'
+import { Route as ProjectApprovalTokenRouteImport } from './routes/project-approval.$token'
 import { Route as HrTrainingRouteImport } from './routes/hr.training'
 import { Route as HrSupportRouteImport } from './routes/hr.support'
 import { Route as HrSettingsRouteImport } from './routes/hr.settings'
@@ -601,6 +602,11 @@ const QcChangePasswordRoute = QcChangePasswordRouteImport.update({
 const QcApprovedRoute = QcApprovedRouteImport.update({
   id: '/qc/approved',
   path: '/qc/approved',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProjectApprovalTokenRoute = ProjectApprovalTokenRouteImport.update({
+  id: '/project-approval/$token',
+  path: '/project-approval/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HrTrainingRoute = HrTrainingRouteImport.update({
@@ -1117,6 +1123,7 @@ export interface FileRoutesByFullPath {
   '/hr/settings': typeof HrSettingsRoute
   '/hr/support': typeof HrSupportRoute
   '/hr/training': typeof HrTrainingRoute
+  '/project-approval/$token': typeof ProjectApprovalTokenRoute
   '/qc/approved': typeof QcApprovedRoute
   '/qc/change-password': typeof QcChangePasswordRoute
   '/qc/dashboard': typeof QcDashboardRoute
@@ -1279,6 +1286,7 @@ export interface FileRoutesByTo {
   '/hr/settings': typeof HrSettingsRoute
   '/hr/support': typeof HrSupportRoute
   '/hr/training': typeof HrTrainingRoute
+  '/project-approval/$token': typeof ProjectApprovalTokenRoute
   '/qc/approved': typeof QcApprovedRoute
   '/qc/change-password': typeof QcChangePasswordRoute
   '/qc/dashboard': typeof QcDashboardRoute
@@ -1444,6 +1452,7 @@ export interface FileRoutesById {
   '/hr/settings': typeof HrSettingsRoute
   '/hr/support': typeof HrSupportRoute
   '/hr/training': typeof HrTrainingRoute
+  '/project-approval/$token': typeof ProjectApprovalTokenRoute
   '/qc/approved': typeof QcApprovedRoute
   '/qc/change-password': typeof QcChangePasswordRoute
   '/qc/dashboard': typeof QcDashboardRoute
@@ -1610,6 +1619,7 @@ export interface FileRouteTypes {
     | '/hr/settings'
     | '/hr/support'
     | '/hr/training'
+    | '/project-approval/$token'
     | '/qc/approved'
     | '/qc/change-password'
     | '/qc/dashboard'
@@ -1772,6 +1782,7 @@ export interface FileRouteTypes {
     | '/hr/settings'
     | '/hr/support'
     | '/hr/training'
+    | '/project-approval/$token'
     | '/qc/approved'
     | '/qc/change-password'
     | '/qc/dashboard'
@@ -1936,6 +1947,7 @@ export interface FileRouteTypes {
     | '/hr/settings'
     | '/hr/support'
     | '/hr/training'
+    | '/project-approval/$token'
     | '/qc/approved'
     | '/qc/change-password'
     | '/qc/dashboard'
@@ -2089,6 +2101,7 @@ export interface RootRouteChildren {
   HrSettingsRoute: typeof HrSettingsRoute
   HrSupportRoute: typeof HrSupportRoute
   HrTrainingRoute: typeof HrTrainingRoute
+  ProjectApprovalTokenRoute: typeof ProjectApprovalTokenRoute
   QcApprovedRoute: typeof QcApprovedRoute
   QcChangePasswordRoute: typeof QcChangePasswordRoute
   QcDashboardRoute: typeof QcDashboardRoute
@@ -2720,6 +2733,13 @@ declare module '@tanstack/react-router' {
       path: '/qc/approved'
       fullPath: '/qc/approved'
       preLoaderRoute: typeof QcApprovedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/project-approval/$token': {
+      id: '/project-approval/$token'
+      path: '/project-approval/$token'
+      fullPath: '/project-approval/$token'
+      preLoaderRoute: typeof ProjectApprovalTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/hr/training': {
@@ -3501,6 +3521,7 @@ const rootRouteChildren: RootRouteChildren = {
   HrSettingsRoute: HrSettingsRoute,
   HrSupportRoute: HrSupportRoute,
   HrTrainingRoute: HrTrainingRoute,
+  ProjectApprovalTokenRoute: ProjectApprovalTokenRoute,
   QcApprovedRoute: QcApprovedRoute,
   QcChangePasswordRoute: QcChangePasswordRoute,
   QcDashboardRoute: QcDashboardRoute,

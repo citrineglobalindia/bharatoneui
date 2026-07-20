@@ -130,14 +130,18 @@ export async function captureFingerprint(
 ): Promise<CaptureResult> {
   const fType = opts.fType ?? 2;
   const timeout = opts.timeoutMs ?? 20000;
+  // Eko's docs make the wadh conditional: "If you generate the PID block yourself".
+  // With a vendor RD service the device generates and signs it, so forcing a wadh in
+  // changes what gets signed. Pass wadh: "" to omit the attribute entirely.
   const wadh = opts.wadh ?? AEPS_WADH;
+  const wadhAttr = wadh ? ` wadh="${wadh}"` : "";
 
   // format="0" => PID Data type="X" (XML), which is what Eko expects.
   const pidOptions =
     `<?xml version="1.0"?>` +
     `<PidOptions ver="1.0">` +
     `<Opts fCount="1" fType="${fType}" iCount="0" pCount="0" format="0" ` +
-    `pidVer="2.0" timeout="${timeout}" posh="UNKNOWN" env="P" wadh="${wadh}" />` +
+    `pidVer="2.0" timeout="${timeout}" posh="UNKNOWN" env="P"${wadhAttr} />` +
     `</PidOptions>`;
 
   let xml: string;
