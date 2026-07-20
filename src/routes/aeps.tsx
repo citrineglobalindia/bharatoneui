@@ -208,8 +208,26 @@ function AepsPage() {
     try { latlong = await getLatLongStrict(); } catch (e: any) { return toast.error("Location required", { description: e.message }); }
     setBusy(true);
     try {
-      await call("kyc_daily", { piddata: pid, latlong });
-      toast.success("Daily authentication complete");
+      // Dedicated 2FA function: sends client_ref_id (Eko's request) and a JSON body.
+      const { data, error } = await supabase.functions.invoke("aeps-2fa", {
+        body: { piddata: pid, latlong },
+      });
+      let res: any = data;
+      if (error) { try { res = await (error as any)?.context?.json?.(); } catch { res = null; } }
+      if (!res?.ok) {
+        // Show the reference Eko asked for, and keep it on screen until dismissed
+        // so it can be copied into a support email.
+        const ref = res?.client_ref_id ?? "—";
+        toast.error(`Authentication rejected — quote ref ${ref} to Eko`, {
+          description: `${res?.error ?? "Daily authentication failed"}${res?.reason ? " — " + res.reason : ""}`,
+          duration: Infinity,
+          action: res?.for_eko
+            ? { label: "Copy for Eko", onClick: () => { navigator.clipboard?.writeText(res.for_eko); toast.success("Copied"); } }
+            : undefined,
+        });
+        throw new Error(String(res?.error ?? "Daily authentication failed"));
+      }
+      toast.success("Daily authentication complete", { description: `Ref ${res.client_ref_id}` });
       setPid(null); setQuality(null);
       load();
     } catch (e: any) {
