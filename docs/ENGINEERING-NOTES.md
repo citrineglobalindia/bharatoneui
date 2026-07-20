@@ -194,3 +194,34 @@ instead of guessing from a docs index.
 PAN and Aadhaar are handled only for the specific onboarding that requires them. The admin Users
 tab masks both by default behind an explicit reveal toggle. Never put keys or full Aadhaar numbers
 into chat, documents shared externally, or this file — Supabase secrets only.
+
+---
+
+## 7. Storage — URGENT finding (18 Jul 2026)
+
+Supabase free tier exceeded: **4.56 GB used of 1 GB**. Grace period ends **21 Jul 2026**, after
+which requests return HTTP 402 and the portal stops working.
+
+The **database is only 46 MB (9%)** — this is entirely a file-storage problem.
+
+| Bucket | Files | Size |
+|---|---|---|
+| **retailer-kyc** | 2,049 | **4,533 MB** |
+| gallery | 16 | 32 MB |
+| service-logos | 82 | 15 MB |
+| everything else | ~95 | < 20 MB |
+
+`retailer-kyc` averages **2.2 MB per file** (largest 50 MB) — raw phone-camera photos of PAN,
+Aadhaar and shop fronts uploaded at full resolution. A legible KYC photo needs ~150–250 KB, so the
+same 2,049 files would be ~400 MB compressed, back inside the free tier.
+
+**Fix, in order:**
+1. Upgrade to Pro ($25/mo, 100 GB) to remove the deadline — do not compress under outage pressure.
+2. Compress client-side before upload: resize to ~1600px, JPEG quality 80. Stops the bleeding.
+3. One-off batch job to re-compress the existing 2,049 files.
+
+Cloudflare R2 (~$0.015/GB, no egress fees) is only worth it at much larger scale — at 400 MB
+compressed you are inside Supabase's free allowance anyway.
+
+**Lesson:** no size limit or compression was ever applied to KYC uploads. Any new upload path
+should cap file size and compress images before they reach Storage.
