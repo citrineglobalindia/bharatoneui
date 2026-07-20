@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   Landmark, Loader2, RefreshCw, Plus, Trash2, Save, Download, Search,
-  Percent, IndianRupee, TrendingUp, Users, X,
+  Percent, IndianRupee, TrendingUp, Users, X, Wallet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
