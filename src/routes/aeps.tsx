@@ -485,10 +485,7 @@ function AepsPage() {
                 <button onClick={scan} disabled={scanning} className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-4 h-10 text-sm font-semibold hover:bg-muted disabled:opacity-50">
                   {scanning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Fingerprint className="h-4 w-4" />} {pid ? "Re-scan finger" : "Scan my finger"}
                 </button>
-                <button onClick={() => { setRedoKyc(true); setSetupOpen(true); setPid(null); toast.info("Re-run the full eKYC below — OTP, then fingerprint. It counts as today's authentication."); }}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-4 h-10 text-sm font-semibold hover:bg-muted">
-                  Authentication failing? Re-run full eKYC
-                </button>
+                
                 <button onClick={dailyAuth} disabled={!pid || busy} className="inline-flex items-center gap-1.5 rounded-lg bg-india-green px-5 h-10 text-sm font-bold text-white disabled:opacity-50">
                   {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />} Agent Authentication
                 </button>
