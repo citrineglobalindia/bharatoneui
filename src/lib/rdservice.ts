@@ -25,6 +25,8 @@ export type CaptureResult = {
   quality?: number;      // qScore 0-100
   errCode?: string;
   error?: string;
+  pidOptions?: string;   // exact <PidOptions> XML handed to the RD service
+  deviceInfo?: Record<string, string>; // dpId/rdsId/rdsVer/mi/mc-present, for partner support
 };
 
 // UIDAI RD services bind somewhere in 11100-11120; vendors differ, and a second
@@ -179,6 +181,13 @@ export async function captureFingerprint(
     ok: true,
     pidData: xml,
     quality: Number(resp.getAttribute("qScore") ?? 0),
+    pidOptions,
+    deviceInfo: (() => {
+      const di = doc.getElementsByTagName("DeviceInfo")[0];
+      const out: Record<string, string> = {};
+      if (di) for (const a of Array.from(di.attributes)) out[a.name] = a.value;
+      return out;
+    })(),
   };
 }
 
