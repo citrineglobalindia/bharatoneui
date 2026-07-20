@@ -216,6 +216,19 @@ function AepsPage() {
       let res: any = data;
       if (error) { try { res = await (error as any)?.context?.json?.(); } catch { res = null; } }
       if (!res?.ok) {
+        // 1714 "complete bank eKYC" — the agent's one-time eKYC needs to be (re)done.
+        // Route them straight into the eKYC re-run flow instead of a dead-end error.
+        if (res?.needs_ekyc) {
+          setPid(null); setQuality(null);
+          setOtpSent(false); setOtpVerified(false); setOtp("");
+          setRedoKyc(true);
+          toast.warning("Bank eKYC required first", {
+            description: "Complete the one-time Biometric eKYC (Send OTP → Verify → scan finger), then run today's authentication again.",
+            duration: 12000,
+          });
+          setTimeout(() => document.getElementById("aeps-ekyc")?.scrollIntoView({ behavior: "smooth", block: "center" }), 100);
+          return;
+        }
         // Show the reference Eko asked for, and keep it on screen until dismissed
         // so it can be copied into a support email.
         const ref = res?.client_ref_id ?? "—";
@@ -618,7 +631,7 @@ function AepsPage() {
 
             {/* Step 3 — one-time eKYC (OTP then fingerprint) */}
             {status.onboarded && status.service_activated && (!status.ekyc_done || redoKyc) && (
-              <div className="mt-4 rounded-xl bg-muted/40 p-4">
+              <div id="aeps-ekyc" className="mt-4 rounded-xl bg-muted/40 p-4">
                 <p className="mb-2 text-xs font-semibold text-muted-foreground">Step 3 — One-time biometric eKYC</p>
                 {!otpVerified ? (
                   <div className="flex flex-wrap items-center gap-2">
