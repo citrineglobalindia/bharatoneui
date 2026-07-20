@@ -225,3 +225,47 @@ compressed you are inside Supabase's free allowance anyway.
 
 **Lesson:** no size limit or compression was ever applied to KYC uploads. Any new upload path
 should cap file size and compress images before they reach Storage.
+
+---
+
+## 8. AePS daily KYC (1714) — TWO STAGED FIXES, not yet deployed (20 Jul 2026)
+
+Both come from Eko's **live** docs (https://eps.eko.in/docs/aeps-daily-auth) and a direct request
+from Eko support. Neither is a guess. Deploy these together, then retest agent 38520005.
+
+### Fix 1 — send `client_ref_id` (Eko explicitly asked for this)
+Eko support: *"We need client_ref_id (unique transaction reference of your system). This will help
+identify the request being made with what payload."*
+
+We currently send **no** client_ref_id on `kyc_daily`, so Eko cannot locate our calls in their logs
+— which is why every support round trip has stalled. Add a unique id per call, store it on
+`aeps_agents` (or a new `aeps_kyc_log` table) so it can be quoted to Eko afterwards:
+
+```ts
+const clientRefId = `BHOKYC${Date.now()}${Math.floor(Math.random()*900+100)}`;
+// include client_ref_id: clientRefId in the daily KYC payload, and persist it
+```
+
+### Fix 2 — send the body as JSON, not form-encoded
+Eko's live Daily KYC reference specifies `content-type: application/json` and shows a JSON example
+body. The older AePS Partner API **PDF** showed `--data-urlencode` (form), which is what the current
+code follows via `ekoForm`. Their docs list *"Invalid biometric data — check the wadh value in the
+PID block"* as a 1714 cause; a form-encoded body parsed as JSON would mangle the PID XML and present
+exactly that way.
+
+Change in `supabase/functions/aeps/index.ts`, action `kyc_daily`:
+`ekoForm(...)` → **`ekoJson(...)`** (same URL, same fields).
+A patched copy is staged at `outputs/aeps_index.ts` with this change already applied.
+
+### Documented 1714 causes (from their live docs — worth knowing)
+1. KYC failed — no reason returned
+2. **Invalid biometric data — check the `wadh` value in the PID block**
+3. Bank eKYC pending — re-run Send OTP → Verify OTP → Biometric
+
+Our `data.reason` is "Transaction Not Completed" (not the bank-eKYC message), and eKYC is confirmed
+complete by their own 461 response — so **cause 2 is the live candidate**.
+
+### Deploy note
+The AePS edge function must be uploaded in full; a partial/placeholder upload took it down for
+~2 minutes on 18 Jul. Deploy the complete file, then verify with one daily-auth attempt and read the
+`aeps` response in DevTools.
