@@ -58,6 +58,9 @@ async function ekoHeaders(contentType: string | null, hashPayload?: string) {
   const ts = String(Date.now());
   const h: Record<string, string> = {
     "developer_key": EKO_DEVELOPER_KEY,
+    // The /collection KYC endpoints reject requests without this alias
+    // (402 "Authentication parameters missing"); aeps-2fa sends both too.
+    "x-developer-key": EKO_DEVELOPER_KEY,
     "secret-key": await hmacB64(encodedKey, ts),
     "secret-key-timestamp": ts,
   };
