@@ -295,7 +295,24 @@ Deno.serve(async (req) => {
     // --------------------------------------- one-time eKYC + daily auth
     if (action === "kyc_send_otp") {
       if (!userCode) return json({ error: "Onboard the retailer first" }, 400);
-      const data = await ekoForm(`${V3}/user/aeps-fingpay/kyc/otp`, "POST", { initiator_id: EKO_INITIATOR_ID, user_code: userCode });
+      // Eko's spec marks aadhar, customer_id and latlong REQUIRED on Send OTP. We were
+      // sending only initiator_id + user_code, so the eKYC session was being opened
+      // without binding to the agent's Aadhaar — which is a strong candidate for why
+      // Daily KYC later reports "Please complete bank eKYC" / "Invalid Biometric data".
+      // (20 Jul 2026)
+      const otpAadhaar = String(body.aadhaar ?? (agent as any)?.agent_aadhaar ?? "").replace(/\D/g, "");
+      const otpMobile = String(body.customer_id ?? (agent as any)?.mobile ?? "").replace(/\D/g, "").slice(-10);
+      const otpLatlong = String(body.latlong ?? (agent as any)?.latlong ?? "");
+      if (otpAadhaar.length !== 12) return json({ error: "The agent's 12-digit Aadhaar number is required to start eKYC" }, 400);
+      if (otpMobile.length !== 10) return json({ error: "The agent's 10-digit registered mobile number is required to start eKYC" }, 400);
+      if (!otpLatlong) return json({ error: "Location is required to start eKYC" }, 400);
+      const data = await ekoForm(`${V3}/user/aeps-fingpay/kyc/otp`, "POST", {
+        initiator_id: EKO_INITIATOR_ID,
+        user_code: userCode,
+        aadhar: rsaEncryptPkcs1(otpAadhaar, EKO_RSA_PUB),
+        customer_id: otpMobile,
+        latlong: otpLatlong,
+      });
       if (!ekoOk(data)) return json({ error: ekoMsg(data), raw: scrub(data) }, 400);
       return json({ ok: true, message: ekoMsg(data), otp_ref_id: data?.data?.otp_ref_id ?? null });
     }
