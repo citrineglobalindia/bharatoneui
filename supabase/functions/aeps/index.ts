@@ -257,6 +257,24 @@ Deno.serve(async (req) => {
       });
     }
 
+    // ------------------------------------------------- Eko e-value balance
+    // Admin dashboard widget: the float BharatOne holds with Eko, which funds
+    // every AePS cash withdrawal. EPS "Get Wallet Balance" (get-wallet-balance).
+    if (action === "eko_balance") {
+      if (!roleList.some((r) => ["admin", "accountant", "operator"].includes(r))) {
+        return json({ ok: false, error: "Not permitted" }, 403);
+      }
+      const qs = new URLSearchParams({
+        initiator_id: EKO_INITIATOR_ID,
+        customer_id_type: "mobile_number",
+        customer_id: EKO_INITIATOR_ID,
+      });
+      const data = await ekoGet(`${KYC_V3}/user/account/balance?${qs}`);
+      if (!ekoOk(data)) return json({ ok: false, error: ekoMsg(data), raw: scrub(data) });
+      const bal = Number(data?.data?.balance);
+      return json({ ok: true, balance: Number.isFinite(bal) ? bal : null, currency: data?.data?.currency ?? "INR", checked_at: new Date().toISOString() });
+    }
+
     // ----------------------------------------------------------- onboard
     if (action === "onboard") {
       const { mobile, first_name, last_name, email, pan, dob, address, city, state, pincode, shop_name } = body;
