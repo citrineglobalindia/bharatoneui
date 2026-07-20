@@ -208,25 +208,10 @@ function AepsPage() {
     try { latlong = await getLatLongStrict(); } catch (e: any) { return toast.error("Location required", { description: e.message }); }
     setBusy(true);
     try {
-      // Daily KYC takes a FRESH capture with no wadh forced into the PID options.
-      // Eko's docs only require the wadh "if you generate the PID block yourself";
-      // the RD service generates and signs its own, and forcing one in was producing
-      // "Authentication Failed. Invalid Biometric data." First-time eKYC is untouched
-      // and still captures with the wadh, because that path already works.
-      let dailyPid = pid;
-      if (device) {
-        toast.info("Place your finger again for daily authentication");
-        const fresh = await captureFingerprint(device, { wadh: "" });
-        if (!fresh.ok || !fresh.pidData) {
-          setBusy(false);
-          return toast.error("Capture failed", { description: fresh.error });
-        }
-        dailyPid = fresh.pidData;
-        setPid(fresh.pidData);
-        setQuality(fresh.quality ?? null);
-      }
+      // PID options are byte-identical to Eko's own "All Device Data.html" reference
+      // capture page, wadh included. Confirmed 20 Jul 2026 — do not "fix" this again.
       const { data, error } = await supabase.functions.invoke("aeps-2fa", {
-        body: { piddata: dailyPid, latlong },
+        body: { piddata: pid, latlong },
       });
       let res: any = data;
       if (error) { try { res = await (error as any)?.context?.json?.(); } catch { res = null; } }
