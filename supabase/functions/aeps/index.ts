@@ -326,18 +326,28 @@ Deno.serve(async (req) => {
       if (agentAadhaar.length !== 12) return json({ error: "The agent's 12-digit Aadhaar number is required to start eKYC" }, 400);
       if (agentMobile.length !== 10) return json({ error: "The agent's 10-digit registered mobile number is required to start eKYC" }, 400);
       if (!agentLatlong) return json({ error: "Location is required to start eKYC" }, 400);
-      const data = await ekoJson(`${KYC_V3}/user/collection/aeps-fingpay/kyc/otp`, "POST", {
+      const otpPayload = {
         initiator_id: EKO_INITIATOR_ID,
         user_code: userCode,
         aadhar: rsaEncryptPkcs1(agentAadhaar, EKO_RSA_PUB),
         customer_id: agentMobile,
         latlong: agentLatlong,
-      });
+      };
+      let route = "collection";
+      let data = await ekoJson(`${KYC_V3}/user/collection/aeps-fingpay/kyc/otp`, "POST", otpPayload);
+      // 21 Jul 2026: the documented /collection route started answering
+      // "PAN is blocked" for every agent, while the legacy route was still
+      // delivering OTPs the day before. Fall back to the legacy route so we
+      // can tell a real Fingpay block apart from route-specific behaviour.
+      if (!ekoOk(data)) {
+        const legacy = await ekoForm(`${V3}/user/aeps-fingpay/kyc/otp`, "POST", otpPayload);
+        if (ekoOk(legacy)) { route = "legacy"; data = legacy; }
+      }
       if (!ekoOk(data)) return json({ error: ekoMsg(data), raw: scrub(data) }, 400);
       const otpRef = data?.data?.otp_ref_id ?? null;
       const refTid = data?.data?.reference_tid ?? null;
       await setAgent({ agent_aadhaar: agentAadhaar, latlong: agentLatlong, kyc_otp_ref: otpRef, kyc_ref_tid: refTid, last_error: null });
-      return json({ ok: true, message: ekoMsg(data), otp_ref_id: otpRef, reference_tid: refTid });
+      return json({ ok: true, message: ekoMsg(data), otp_ref_id: otpRef, reference_tid: refTid, route });
     }
 
     if (action === "kyc_verify_otp") {
