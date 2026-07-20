@@ -1,18 +1,4 @@
-
-              {authFail && (
-                <div className="mx-auto mt-4 max-w-2xl rounded-xl border border-rose-200 bg-rose-50 p-3 text-left">
-                  <p className="text-xs font-bold text-rose-800">Banking partner rejected this authentication</p>
-                  <p className="mt-1 text-[11px] text-rose-700">
-                    Send this exact text to Eko support — it is everything they need to trace the failure.
-                  </p>
-                  <pre className="mt-2 max-h-48 overflow-auto rounded-lg bg-white p-2 text-[10px] leading-snug text-rose-900">{authFail}</pre>
-                  <button
-                    onClick={() => { navigator.clipboard?.writeText(authFail); toast.success("Copied — paste it into your email to Eko"); }}
-                    className="mt-2 rounded-lg border border-rose-300 bg-white px-3 h-8 text-xs font-semibold text-rose-700 hover:bg-rose-100">
-                    Copy for Eko support
-                  </button>
-                </div>
-              )}import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   Landmark, Fingerprint, Loader2, RefreshCw, IndianRupee, ShieldCheck,
@@ -77,7 +63,6 @@ function AepsPage() {
   // Fallback when the daily 2FA endpoint keeps failing: re-run the full eKYC
   // (OTP + biometric), which Eko also accepts as that day's authentication.
   const [redoKyc, setRedoKyc] = useState(false);
-  const [authFail, setAuthFail] = useState<string | null>(null);
 
   // form
   const [op, setOp] = useState<string>("cash_withdrawal");
@@ -222,23 +207,8 @@ function AepsPage() {
     let latlong: string;
     try { latlong = await getLatLongStrict(); } catch (e: any) { return toast.error("Location required", { description: e.message }); }
     setBusy(true);
-    setAuthFail(null);
     try {
-      // Call the gateway directly so the partner's full reply is visible on screen,
-      // not just a toast — this is what Eko support needs to diagnose a failure.
-      const { data, error } = await supabase.functions.invoke("aeps", {
-        body: { action: "kyc_daily", piddata: pid, latlong },
-      });
-      const body: any = data ?? (error ? await (error as any)?.context?.json?.().catch(() => null) : null);
-      if (error || body?.error) {
-        setAuthFail(JSON.stringify({
-          when: new Date().toISOString(),
-          user_code: status?.user_code ?? null,
-          endpoint: "PUT /v3/user/collection/aeps-fingpay/kyc/biometric/daily",
-          response: body ?? { error: String(error) },
-        }, null, 2));
-        throw new Error(String(body?.error ?? "Daily authentication failed"));
-      }
+      await call("kyc_daily", { piddata: pid, latlong });
       toast.success("Daily authentication complete");
       setPid(null); setQuality(null);
       load();
