@@ -55,10 +55,12 @@ export function ProfileMenu() {
           <div className="px-4 py-3 border-b border-border flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-india-green text-white font-bold flex items-center justify-center">{me.initials}</div>
             <div className="min-w-0">
-              <p className="text-sm font-bold truncate">{me.name}</p>
-              <p className="text-[11px] text-muted-foreground truncate">{me.email}</p>
-              {me.phone && <p className="text-[11px] text-muted-foreground truncate">{/^\d{10}$/.test(me.phone) ? `+91 ${me.phone}` : me.phone}</p>}
-              {me.jskoId && <span className="inline-block mt-0.5 text-[10px] font-semibold bg-india-green text-white px-1.5 py-0.5 rounded">JSKO ID: {me.jskoId}</span>}
+              <p className="text-sm font-bold truncate">{me.name?.trim() || "Nill"}</p>
+              <p className="text-[11px] text-muted-foreground truncate">{me.email?.trim() || "Nill"}</p>
+              <p className="text-[11px] text-muted-foreground truncate">
+                {me.phone?.trim() ? (/^\d{10}$/.test(me.phone) ? `+91 ${me.phone}` : me.phone) : "Nill"}
+              </p>
+              <span className="inline-block mt-0.5 text-[10px] font-semibold bg-india-green text-white px-1.5 py-0.5 rounded">JSKO ID: {me.jskoId?.trim() || "Nill"}</span>
             </div>
           </div>
 
