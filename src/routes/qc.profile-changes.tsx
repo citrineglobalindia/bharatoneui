@@ -79,7 +79,11 @@ function Page() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border text-left text-[11px] uppercase tracking-wide text-muted-foreground">
-                <th className="px-4 py-3">Retailer</th>
+                <th className="px-4 py-3">Retailer Name</th>
+                <th className="px-4 py-3">JSKO ID</th>
+                <th className="px-4 py-3">Application ID</th>
+                <th className="px-4 py-3">Email</th>
+                <th className="px-4 py-3">Mobile</th>
                 <th className="px-4 py-3">Field</th>
                 <th className="px-4 py-3">Current</th>
                 <th className="px-4 py-3">Requested</th>
@@ -89,22 +93,20 @@ function Page() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={6} className="px-4 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr>
+                <tr><td colSpan={10} className="px-4 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr>
               ) : rows.length === 0 ? (
-                <tr><td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">No {tab} requests.</td></tr>
+                <tr><td colSpan={10} className="px-4 py-10 text-center text-muted-foreground">No {tab} requests.</td></tr>
               ) : rows.map((r) => (
-                <tr key={r.id} className="border-b border-border/60 last:border-0">
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <span className="inline-flex items-center gap-2">
-                      <span className="font-semibold">{r.requester_name || r.requester_email || "—"}</span>
-                      <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${r.jsko_id ? "bg-india-green text-white" : "bg-muted text-muted-foreground"}`}>
-                        JSKO ID: {r.jsko_id?.trim() || "Nill"}
-                      </span>
-                      <span className="max-w-[260px] truncate text-[11px] text-muted-foreground" title={[r.application_id, r.requester_email, r.requester_phone].filter(Boolean).join(" · ")}>
-                        {[r.application_id, r.requester_email, r.requester_phone].filter(Boolean).join(" · ")}
-                      </span>
+                <tr key={r.id} className="border-b border-border/60 last:border-0 whitespace-nowrap">
+                  <td className="px-4 py-3 font-semibold">{r.requester_name || "—"}</td>
+                  <td className="px-4 py-3">
+                    <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${r.jsko_id ? "bg-india-green text-white" : "bg-muted text-muted-foreground"}`}>
+                      {r.jsko_id?.trim() || "Nill"}
                     </span>
                   </td>
+                  <td className="px-4 py-3 font-mono text-xs">{r.application_id || "—"}</td>
+                  <td className="px-4 py-3 text-xs">{r.requester_email || "—"}</td>
+                  <td className="px-4 py-3 font-mono text-xs">{r.requester_phone || "—"}</td>
                   <td className="px-4 py-3">{fieldChip(r.field)}</td>
                   <td className="px-4 py-3 font-mono text-xs">{r.old_value || <span className="text-muted-foreground">Nill</span>}</td>
                   <td className="px-4 py-3 font-mono text-xs font-bold">{r.new_value}</td>
