@@ -178,7 +178,10 @@ function AepsPage() {
     toast.success("Scanner connected", { description: r.device.info || `Port ${r.device.port}` });
   };
 
-  const scan = async () => {
+  // purpose matters for UIDAI auth: agent eKYC / daily-KYC captures must carry
+  // Eko's eKYC wadh, but customer TRANSACTION captures must be wadh-free — a
+  // wadh-stamped PID fails NPCI auth with "biometric details mismatch".
+  const scan = async (purpose: "agent" | "customer" = "agent") => {
     let d = device;
     if (!d) {
       setScanning(true);
@@ -193,7 +196,7 @@ function AepsPage() {
     }
     setScanning(true);
     setPid(null); setQuality(null);
-    const r = await captureFingerprint(d);
+    const r = await captureFingerprint(d, purpose === "customer" ? { wadh: "" } : {});
     setScanning(false);
     if (!r.ok || !r.pidData) return toast.error("Capture failed", { description: r.error });
     setPid(r.pidData);
@@ -521,7 +524,7 @@ function AepsPage() {
                 <button onClick={() => setAuthMode("iris")} className={`rounded-md px-4 h-8 text-xs font-semibold ${authMode === "iris" ? "bg-india-green text-white" : "text-muted-foreground"}`}>Iris</button>
               </div>
               <div className="flex flex-wrap items-center justify-center gap-2">
-                <button onClick={scan} disabled={scanning} className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-4 h-10 text-sm font-semibold hover:bg-muted disabled:opacity-50">
+                <button onClick={() => scan("agent")} disabled={scanning} className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-4 h-10 text-sm font-semibold hover:bg-muted disabled:opacity-50">
                   {scanning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Fingerprint className="h-4 w-4" />} {pid ? "Re-scan finger" : "Scan my finger"}
                 </button>
                 
@@ -668,7 +671,7 @@ function AepsPage() {
                       {kycBanks.map((b) => <option key={b.code} value={b.code}>{b.name}</option>)}
                     </select>
                     <div className="flex flex-wrap items-center gap-2">
-                      <button onClick={scan} disabled={scanning} className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 h-9 text-xs font-semibold hover:bg-muted disabled:opacity-50">
+                      <button onClick={() => scan("agent")} disabled={scanning} className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 h-9 text-xs font-semibold hover:bg-muted disabled:opacity-50">
                         {scanning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Fingerprint className="h-3.5 w-3.5" />} {pid ? "Re-scan" : "Scan my finger"}
                       </button>
                       <button onClick={doBiometricKyc} disabled={!pid || !kycBank || busy} className="inline-flex items-center gap-1.5 rounded-lg bg-india-green px-3 h-9 text-xs font-semibold text-white disabled:opacity-50">
@@ -686,7 +689,7 @@ function AepsPage() {
                 <p className="text-xs text-muted-foreground flex-1">
                   Step 4 — NPCI requires you to authenticate with your own fingerprint once each day before serving customers.
                 </p>
-                <button onClick={scan} disabled={scanning} className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 h-9 text-xs font-semibold hover:bg-muted disabled:opacity-50">
+                <button onClick={() => scan("agent")} disabled={scanning} className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 h-9 text-xs font-semibold hover:bg-muted disabled:opacity-50">
                   {scanning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Fingerprint className="h-3.5 w-3.5" />} Scan my finger
                 </button>
                 <button onClick={dailyAuth} disabled={!pid || busy} className="inline-flex items-center gap-1.5 rounded-lg bg-india-green px-3 h-9 text-xs font-semibold text-white disabled:opacity-50">
@@ -863,7 +866,7 @@ function AepsPage() {
           </div>
 
           <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
-            <button type="button" onClick={scan} disabled={scanning}
+            <button type="button" onClick={() => scan("customer")} disabled={scanning}
               className="inline-flex items-center gap-1.5 rounded-lg border border-border px-4 h-10 text-sm font-semibold hover:bg-muted disabled:opacity-50">
               {scanning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Fingerprint className="h-4 w-4" />}
               {pid ? "Re-scan customer's finger" : "Scan customer's finger"}
