@@ -86,6 +86,7 @@ import { Route as QcSupportRouteImport } from './routes/qc.support'
 import { Route as QcSettingsRouteImport } from './routes/qc.settings'
 import { Route as QcReviewersRouteImport } from './routes/qc.reviewers'
 import { Route as QcReportsRouteImport } from './routes/qc.reports'
+import { Route as QcProfileChangesRouteImport } from './routes/qc.profile-changes'
 import { Route as QcProfileRouteImport } from './routes/qc.profile'
 import { Route as QcKycQueueRouteImport } from './routes/qc.kyc-queue'
 import { Route as QcJskoRouteImport } from './routes/qc.jsko'
@@ -557,6 +558,11 @@ const QcReviewersRoute = QcReviewersRouteImport.update({
 const QcReportsRoute = QcReportsRouteImport.update({
   id: '/qc/reports',
   path: '/qc/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QcProfileChangesRoute = QcProfileChangesRouteImport.update({
+  id: '/qc/profile-changes',
+  path: '/qc/profile-changes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const QcProfileRoute = QcProfileRouteImport.update({
@@ -1133,6 +1139,7 @@ export interface FileRoutesByFullPath {
   '/qc/jsko': typeof QcJskoRoute
   '/qc/kyc-queue': typeof QcKycQueueRoute
   '/qc/profile': typeof QcProfileRoute
+  '/qc/profile-changes': typeof QcProfileChangesRoute
   '/qc/reports': typeof QcReportsRoute
   '/qc/reviewers': typeof QcReviewersRoute
   '/qc/settings': typeof QcSettingsRoute
@@ -1296,6 +1303,7 @@ export interface FileRoutesByTo {
   '/qc/jsko': typeof QcJskoRoute
   '/qc/kyc-queue': typeof QcKycQueueRoute
   '/qc/profile': typeof QcProfileRoute
+  '/qc/profile-changes': typeof QcProfileChangesRoute
   '/qc/reports': typeof QcReportsRoute
   '/qc/reviewers': typeof QcReviewersRoute
   '/qc/settings': typeof QcSettingsRoute
@@ -1462,6 +1470,7 @@ export interface FileRoutesById {
   '/qc/jsko': typeof QcJskoRoute
   '/qc/kyc-queue': typeof QcKycQueueRoute
   '/qc/profile': typeof QcProfileRoute
+  '/qc/profile-changes': typeof QcProfileChangesRoute
   '/qc/reports': typeof QcReportsRoute
   '/qc/reviewers': typeof QcReviewersRoute
   '/qc/settings': typeof QcSettingsRoute
@@ -1629,6 +1638,7 @@ export interface FileRouteTypes {
     | '/qc/jsko'
     | '/qc/kyc-queue'
     | '/qc/profile'
+    | '/qc/profile-changes'
     | '/qc/reports'
     | '/qc/reviewers'
     | '/qc/settings'
@@ -1792,6 +1802,7 @@ export interface FileRouteTypes {
     | '/qc/jsko'
     | '/qc/kyc-queue'
     | '/qc/profile'
+    | '/qc/profile-changes'
     | '/qc/reports'
     | '/qc/reviewers'
     | '/qc/settings'
@@ -1957,6 +1968,7 @@ export interface FileRouteTypes {
     | '/qc/jsko'
     | '/qc/kyc-queue'
     | '/qc/profile'
+    | '/qc/profile-changes'
     | '/qc/reports'
     | '/qc/reviewers'
     | '/qc/settings'
@@ -2111,6 +2123,7 @@ export interface RootRouteChildren {
   QcJskoRoute: typeof QcJskoRoute
   QcKycQueueRoute: typeof QcKycQueueRoute
   QcProfileRoute: typeof QcProfileRoute
+  QcProfileChangesRoute: typeof QcProfileChangesRoute
   QcReportsRoute: typeof QcReportsRoute
   QcReviewersRoute: typeof QcReviewersRoute
   QcSettingsRoute: typeof QcSettingsRoute
@@ -2670,6 +2683,13 @@ declare module '@tanstack/react-router' {
       path: '/qc/reports'
       fullPath: '/qc/reports'
       preLoaderRoute: typeof QcReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/qc/profile-changes': {
+      id: '/qc/profile-changes'
+      path: '/qc/profile-changes'
+      fullPath: '/qc/profile-changes'
+      preLoaderRoute: typeof QcProfileChangesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/qc/profile': {
@@ -3531,6 +3551,7 @@ const rootRouteChildren: RootRouteChildren = {
   QcJskoRoute: QcJskoRoute,
   QcKycQueueRoute: QcKycQueueRoute,
   QcProfileRoute: QcProfileRoute,
+  QcProfileChangesRoute: QcProfileChangesRoute,
   QcReportsRoute: QcReportsRoute,
   QcReviewersRoute: QcReviewersRoute,
   QcSettingsRoute: QcSettingsRoute,

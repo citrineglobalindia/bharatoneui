@@ -42,7 +42,7 @@ export function useCurrentUser(): CurrentUser {
       const roles = ((r as any[]) ?? []).map((x) => x.role as string);
       const role = roles.find((x) => x !== "employee") || roles[0] || "";
       const name = (p as any)?.display_name || u.user.email?.split("@")[0] || "User";
-      const phone = (p as any)?.phone || (u.user.phone ?? "") || "";
+      let phone = (p as any)?.phone || (u.user.phone ?? "") || "";
       // JSKO ID for the logged-in retailer. After approval the assigned login ID
       // lives in `username` (mirrored to auth employee_code). The `jsko_id`
       // column can hold pre-approval or seed/placeholder values (e.g. "DEMO"),
@@ -50,8 +50,11 @@ export function useCurrentUser(): CurrentUser {
       let jskoId = "";
       try {
         const { data: reg } = await supabase.from("retailer_registrations")
-          .select("username, jsko_id, application_id").eq("auth_user_id", u.user.id)
+          .select("username, jsko_id, application_id, mobile").eq("auth_user_id", u.user.id)
           .order("created_at", { ascending: false }).limit(1).maybeSingle();
+        // The mobile entered at registration is the number of record until the
+        // profile has one of its own — don't show "Nill" when we do know it.
+        if (!phone) phone = ((reg as any)?.mobile ?? "").trim();
         const uname = ((reg as any)?.username ?? "").trim();
         const jid = ((reg as any)?.jsko_id ?? "").trim();
         const realJid = jid && jid.toUpperCase() !== "DEMO" ? jid : "";

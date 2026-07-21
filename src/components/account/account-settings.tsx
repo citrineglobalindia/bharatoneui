@@ -5,7 +5,7 @@ import { Lock, Loader2, Save, LogOut, Bell, Mail, ShieldCheck, Zap, Eye, EyeOff,
 import { Button } from "@/components/ui/button";
 import { isPasswordValid } from "@/components/register/password-field";
 import { supabase } from "@/integrations/supabase/client";
-import { useCurrentUser, notifyCurrentUserChanged } from "@/lib/use-current-user";
+import { useCurrentUser } from "@/lib/use-current-user";
 
 type Method = "quick" | "email";
 
@@ -23,11 +23,22 @@ export function AccountSettings() {
   const [showPw, setShowPw] = useState(false);
   const [prefs, setPrefs] = useState(() => { try { return JSON.parse(localStorage.getItem("bharatone:notif-prefs") || '{"inapp":true,"email":true}'); } catch { return { inapp: true, email: true }; } });
 
-  // --- profile (mobile number + JSKO ID) ---
-  const [phone, setPhone] = useState("");
-  const [savingPhone, setSavingPhone] = useState(false);
+  // --- profile: QC-approved change requests for phone + email, and JSKO ID ---
+  type ChangeReq = { id: string; field: string; new_value: string; status: string };
+  const [newPhone, setNewPhone] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [pending, setPending] = useState<Record<string, ChangeReq>>({});
+  const [requesting, setRequesting] = useState<string | null>(null);
   const [jskoRequested, setJskoRequested] = useState(false);
   const [requestingJsko, setRequestingJsko] = useState(false);
+
+  const loadPending = async () => {
+    const { data } = await supabase.from("profile_change_requests" as any)
+      .select("id, field, new_value, status").eq("status", "pending");
+    const map: Record<string, ChangeReq> = {};
+    for (const r of (data as any[]) ?? []) map[r.field] = r;
+    setPending(map);
+  };
 
   useEffect(() => { (async () => {
     const { data } = await supabase.auth.getUser();
@@ -36,24 +47,27 @@ export function AccountSettings() {
     if (!u) return;
     setUid(u.id);
     try { setJskoRequested(localStorage.getItem(`bharatone:jsko-requested:${u.id}`) === "1"); } catch {}
-    const { data: p } = await supabase.from("profiles").select("phone").eq("id", u.id).maybeSingle();
-    setPhone(String((p as any)?.phone ?? "").replace(/\D/g, "").slice(-10));
+    await loadPending();
   })(); }, []);
 
-  const savePhone = async () => {
-    const digits = phone.replace(/\D/g, "");
-    if (!/^[6-9]\d{9}$/.test(digits)) { toast.error("Enter a valid 10-digit mobile number"); return; }
-    setSavingPhone(true);
+  const REASONS: Record<string, string> = {
+    bad_phone: "Enter a valid 10-digit mobile number",
+    bad_email: "Enter a valid email address",
+    email_taken: "That email is already used by another account",
+    unchanged: "That is already your current value",
+    already_pending: "You already have a pending request for this — wait for QC to review it",
+  };
+  const requestChange = async (field: "phone" | "email", value: string) => {
+    if (!value.trim()) { toast.error(field === "phone" ? "Enter the new mobile number" : "Enter the new email address"); return; }
+    setRequesting(field);
     try {
-      // Cast: the generated DB types predate the profiles.phone column (verified live).
-      const { error } = await (supabase as any).from("profiles").update({ phone: digits }).eq("id", uid);
-      if (error) { toast.error("Could not save the mobile number", { description: error.message }); return; }
-      // Sync the cached auth blob and broadcast so every mounted useCurrentUser
-      // (sidebar, profile dropdown) re-renders with the new number immediately.
-      try { const a = JSON.parse(localStorage.getItem("bharatone:auth") || "{}"); localStorage.setItem("bharatone:auth", JSON.stringify({ ...a, phone: digits })); } catch {}
-      notifyCurrentUserChanged();
-      toast.success("Mobile number updated");
-    } finally { setSavingPhone(false); }
+      const { data, error } = await (supabase as any).rpc("submit_profile_change_request", { _field: field, _new_value: value.trim() });
+      if (error) { toast.error("Could not submit the request", { description: error.message }); return; }
+      if (!(data as any)?.ok) { toast.error(REASONS[(data as any)?.reason] ?? "Could not submit the request"); return; }
+      toast.success("Change request sent for QC approval", { description: "The new value will appear once QC approves it." });
+      if (field === "phone") setNewPhone(""); else setNewEmail("");
+      await loadPending();
+    } finally { setRequesting(null); }
   };
 
   const isRetailer = /retailer/i.test(me.role);
@@ -130,22 +144,49 @@ export function AccountSettings() {
   return (
     <div className="space-y-5">
       <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
-        <p className="mb-4 flex items-center gap-2 text-sm font-bold"><User className="h-4 w-4 text-india-green" /> Profile</p>
+        <p className="mb-1 flex items-center gap-2 text-sm font-bold"><User className="h-4 w-4 text-india-green" /> Profile</p>
+        <p className="mb-4 text-[11px] text-muted-foreground">Changes to your mobile number and email are applied only after the QC team approves them.</p>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className="text-xs font-semibold text-muted-foreground">Mobile number</label>
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <input inputMode="numeric" maxLength={10} value={phone}
-                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                  placeholder="10-digit mobile number" className={input + " pl-9"} />
+            <p className="text-sm font-bold">{me.phone?.trim() ? (/^\d{10}$/.test(me.phone) ? `+91 ${me.phone}` : me.phone) : "Nill"}</p>
+            {pending.phone ? (
+              <p className="mt-1 inline-flex items-center gap-1.5 rounded-lg bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-800">
+                <Loader2 className="h-3 w-3 animate-spin" /> Change to {pending.phone.new_value} pending QC approval
+              </p>
+            ) : (
+              <div className="mt-2 flex gap-2">
+                <div className="relative flex-1">
+                  <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <input inputMode="numeric" maxLength={10} value={newPhone}
+                    onChange={(e) => setNewPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                    placeholder="New 10-digit mobile number" className={input + " pl-9"} />
+                </div>
+                <Button onClick={() => requestChange("phone", newPhone)} disabled={requesting === "phone" || !uid} variant="outline" className="h-11">
+                  {requesting === "phone" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Request change
+                </Button>
               </div>
-              <Button onClick={savePhone} disabled={savingPhone || !uid} className="h-11 bg-india-green text-white">
-                {savingPhone ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save
-              </Button>
-            </div>
-            <p className="mt-1 text-[11px] text-muted-foreground">Shown on your profile and used for AEPS and service updates.</p>
+            )}
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-muted-foreground">Email</label>
+            <p className="text-sm font-bold truncate">{email || "Nill"}</p>
+            {pending.email ? (
+              <p className="mt-1 inline-flex items-center gap-1.5 rounded-lg bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-800">
+                <Loader2 className="h-3 w-3 animate-spin" /> Change to {pending.email.new_value} pending QC approval
+              </p>
+            ) : (
+              <div className="mt-2 flex gap-2">
+                <div className="relative flex-1">
+                  <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)}
+                    placeholder="New email address" className={input + " pl-9"} />
+                </div>
+                <Button onClick={() => requestChange("email", newEmail)} disabled={requesting === "email" || !uid} variant="outline" className="h-11">
+                  {requesting === "email" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Request change
+                </Button>
+              </div>
+            )}
           </div>
           {isRetailer && (
             <div>
