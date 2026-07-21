@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ServiceApplicationWorkspace } from "@/components/telecaller/service-application-workspace";
+import { usePortalGuard, PortalAuthGate } from "@/lib/portal-guard";
 
 export const Route = createFileRoute("/telecaller")({
   head: () => ({
@@ -10,5 +11,11 @@ export const Route = createFileRoute("/telecaller")({
       { property: "og:description", content: "A dedicated workspace for lead assignment, call outcomes, reminders and performance." },
     ],
   }),
-  component: ServiceApplicationWorkspace,
+  component: GuardedTelecaller,
 });
+
+function GuardedTelecaller() {
+  const ready = usePortalGuard("/telecaller-login", ["telecaller", "admin"]);
+  if (!ready) return <PortalAuthGate />;
+  return <ServiceApplicationWorkspace />;
+}

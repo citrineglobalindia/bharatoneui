@@ -1,4 +1,5 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { usePortalGuard, PortalAuthGate } from "@/lib/portal-guard";
 import { useState } from "react";
 import {
   Bell, BriefcaseBusiness, CalendarCheck, ChartNoAxesCombined, ChevronDown,
@@ -70,8 +71,10 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 }
 
 export function HrShell({ children }: { children: React.ReactNode }) {
+  const __ready = usePortalGuard("/hr-login", ["hr_staff", "manager", "admin"]);
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+  if (!__ready) return <PortalAuthGate />;
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       <aside className="hidden h-screen w-72 shrink-0 lg:block"><Sidebar /></aside>

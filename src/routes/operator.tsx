@@ -10,11 +10,18 @@ import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 import { BharatOneLogo } from "@/components/bharatone-logo";
 import { ApplicationThread } from "@/components/application-thread";
 import { useCurrentUser } from "@/lib/use-current-user";
+import { usePortalGuard, PortalAuthGate } from "@/lib/portal-guard";
 
 export const Route = createFileRoute("/operator")({
   head: () => ({ meta: [{ title: "Operator — BharatOne" }] }),
-  component: OperatorPortal,
+  component: GuardedOperator,
 });
+
+function GuardedOperator() {
+  const ready = usePortalGuard("/login", ["operator", "admin"]);
+  if (!ready) return <PortalAuthGate />;
+  return <OperatorPortal />;
+}
 
 type App = {
   id: string; application_no: string; category_name: string; service_name: string;

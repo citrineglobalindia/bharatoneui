@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 import { useCurrentUser } from "@/lib/use-current-user";
+import { usePortalGuard, PortalAuthGate } from "@/lib/portal-guard";
 import {
   IdCard,
   Receipt,
@@ -177,6 +178,9 @@ function relTime(iso: string): string {
 }
 
 export function QcShell({ children }: { children: React.ReactNode }) {
+  // Gate the whole QC portal: only a signed-in user with the qc (or admin) role
+  // may see these pages. Anonymous visitors are redirected to /qc-login.
+  const ready = usePortalGuard("/qc-login", ["qc", "admin"]);
   const me = useCurrentUser();
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -228,6 +232,9 @@ export function QcShell({ children }: { children: React.ReactNode }) {
     try { await supabase.from("notifications").update({ read: true }).eq("read", false); } catch { /* ignore */ }
   };
   const onNotifClick = (n: any) => { markNotifRead(n.id); if (n.link && String(n.link).startsWith("/qc")) navigate({ to: n.link as any }); };
+
+  // All hooks are declared above; only now is it safe to gate rendering.
+  if (!ready) return <PortalAuthGate />;
 
   return (
     <div className="h-screen overflow-hidden bg-slate-50 flex">

@@ -1,4 +1,5 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { usePortalGuard, PortalAuthGate } from "@/lib/portal-guard";
 import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
@@ -178,6 +179,7 @@ function SidebarBody({ cfg, pathname, onNavigate }: { cfg: RegionalConfig; pathn
 }
 
 export function RegionalShell({ cfg, children }: { cfg: RegionalConfig; children: React.ReactNode }) {
+  const __ready = usePortalGuard(cfg.loginPath, ["dro", "tro", "admin"]);
   const me = useCurrentUser();
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -194,6 +196,8 @@ export function RegionalShell({ cfg, children }: { cfg: RegionalConfig; children
 
   const timeStr = now.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
   const dateStr = now.toLocaleDateString("en-IN", { weekday: "short", day: "2-digit", month: "short" });
+
+  if (!__ready) return <PortalAuthGate />;
 
   return (
     <div className="h-screen overflow-hidden bg-slate-50 flex">

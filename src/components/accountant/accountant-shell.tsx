@@ -1,4 +1,5 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { usePortalGuard, PortalAuthGate } from "@/lib/portal-guard";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
@@ -195,6 +196,7 @@ function relTime(iso: string): string {
 }
 
 export function AccountantShell({ children }: { children: React.ReactNode }) {
+  const __ready = usePortalGuard("/accountant-login", ["accountant", "admin"]);
   const me = useCurrentUser();
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -258,6 +260,8 @@ export function AccountantShell({ children }: { children: React.ReactNode }) {
     try { await supabase.from("notifications").update({ read: true }).eq("read", false); } catch { /* ignore */ }
   };
   const onNotifClick = (n: any) => { markNotifRead(n.id); if (n.link && String(n.link).startsWith("/accountant")) navigate({ to: n.link as any }); };
+
+  if (!__ready) return <PortalAuthGate />;
 
   return (
     <div className="h-screen overflow-hidden bg-slate-50 flex">

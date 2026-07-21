@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { usePortalGuard, PortalAuthGate } from "@/lib/portal-guard";
 import { useNavigate } from "@tanstack/react-router";
 import {
   Activity,
@@ -517,6 +518,7 @@ const HEADERLESS_SECTIONS = new Set([
 ]);
 
 export function AdminWorkspace() {
+  const __ready = usePortalGuard("/admin-login", ["admin"]);
   const [active, setActive] = useState("Executive Overview");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [deskCollapsed, setDeskCollapsed] = useState(false);
@@ -660,6 +662,8 @@ export function AdminWorkspace() {
     );
     toast.success("Executive report downloaded");
   };
+
+  if (!__ready) return <PortalAuthGate />;
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">

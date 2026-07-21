@@ -1,4 +1,5 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { usePortalGuard, PortalAuthGate } from "@/lib/portal-guard";
 import { useEffect, useRef, useState } from "react";
 import {
   LayoutDashboard,
@@ -205,8 +206,11 @@ function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: 
 }
 
 export function RetailerShell({ children }: { children: React.ReactNode }) {
+  const __ready = usePortalGuard("/login", ["retailer", "operator", "admin"]);
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+
+  if (!__ready) return <PortalAuthGate />;
 
   return (
     <div className="h-screen overflow-hidden bg-muted/30 flex">
