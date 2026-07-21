@@ -375,7 +375,7 @@ export function QcShell({ children }: { children: React.ReactNode }) {
                   </div>
                   <div className="hidden md:block leading-tight text-left">
                     <p className="text-[11px] font-bold text-slate-900">{me.name}</p>
-                    <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Lvl 2 · On shift</p>
+                    <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">{me.role || "Reviewer"}</p>
                   </div>
                   <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
                 </button>
@@ -384,23 +384,17 @@ export function QcShell({ children }: { children: React.ReactNode }) {
                 <div className="px-2 py-2.5 flex items-center gap-2.5 border-b mb-1">
                   <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 text-white flex items-center justify-center font-extrabold">{me.initials}</div>
                   <div className="min-w-0">
-                    <p className="text-sm font-bold truncate">QC Reviewer</p>
-                    <p className="text-[11px] text-muted-foreground truncate">qc.admin · 9845224260</p>
-                    <span className="inline-block mt-0.5 text-[9px] font-bold bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded uppercase tracking-wider">Level 2 Reviewer</span>
+                    <p className="text-sm font-bold truncate">{me.name}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">{[me.email, me.phone].filter(Boolean).join(" · ") || "—"}</p>
+                    {me.role && (
+                      <span className="inline-block mt-0.5 text-[9px] font-bold bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded uppercase tracking-wider">{me.role}</span>
+                    )}
                   </div>
                 </div>
                 <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">Account</DropdownMenuLabel>
                 <DropdownMenuItem onClick={() => navigate({ to: "/qc/profile" })}><UserCircle2 className="h-4 w-4" /> My profile</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate({ to: "/qc/change-password" })}><KeyRound className="h-4 w-4" /> Change password</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate({ to: "/qc/settings" })}><Settings className="h-4 w-4" /> Portal settings</DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">Session</DropdownMenuLabel>
-                <div className="px-2 py-1.5 text-[11px] text-muted-foreground flex items-center justify-between">
-                  <span>Shift started</span><span className="font-mono font-bold text-slate-900">09:00</span>
-                </div>
-                <div className="px-2 pb-2 text-[11px] text-muted-foreground flex items-center justify-between">
-                  <span>Reviewed today</span><span className="font-bold text-emerald-700">47 cases</span>
-                </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   className="text-rose-600 focus:text-rose-700"
