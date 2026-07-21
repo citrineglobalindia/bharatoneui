@@ -366,36 +366,6 @@ function DashboardPage() {
           </div>
         </section>
 
-        {/* Recent applications */}
-        <section>
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Recent Applications</p>
-            <Link to="/applications" className="text-xs font-semibold text-india-green hover:underline inline-flex items-center gap-1">
-              View all <ArrowUpRight className="h-3 w-3" />
-            </Link>
-          </div>
-          {loading ? (
-            <div className="rounded-xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">Loading…</div>
-          ) : recent.length === 0 ? (
-            <div className="rounded-xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">No applications yet. Start with “+ New Request”.</div>
-          ) : (
-            <DataTable columns={txnColumns} rows={recent} />
-          )}
-        </section>
-
-        {/* Applications link */}
-        <Link to="/applications" className="w-full flex items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 hover:bg-muted/40 transition">
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-lg bg-saffron/10 text-saffron flex items-center justify-center">
-              <ClipboardList className="h-4 w-4" />
-            </div>
-            <div className="text-left">
-              <p className="text-sm font-bold">My Applications</p>
-              <p className="text-xs text-muted-foreground">GST, PAN, Business registration status</p>
-            </div>
-          </div>
-          <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
-        </Link>
       </div>
     </RetailerShell>
   );
