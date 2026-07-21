@@ -6,6 +6,7 @@ import {
 import { RetailerShell } from "@/components/retailer/retailer-shell";
 import { PageHeader } from "@/components/retailer/page-header";
 import { StatCard } from "@/components/retailer/stat-card";
+import { QcDocRequestsCard } from "@/components/retailer/qc-doc-requests-card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -127,6 +128,7 @@ function KycDocsPage() {
     <RetailerShell>
       <div className="space-y-5">
         <PageHeader icon={<FileCheck2 className="h-5 w-5" />} title="KYC Documents" subtitle="The documents you submitted during registration and their verification status." />
+        <QcDocRequestsCard />
 
         {loading ? (
           <div className="grid place-items-center rounded-2xl border border-border bg-card p-12 text-sm text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin" /></div>

@@ -93,6 +93,7 @@ import { Route as QcJskoRouteImport } from './routes/qc.jsko'
 import { Route as QcFlaggedRouteImport } from './routes/qc.flagged'
 import { Route as QcFeedbackRouteImport } from './routes/qc.feedback'
 import { Route as QcDocumentSearchRouteImport } from './routes/qc.document-search'
+import { Route as QcDocRequestsRouteImport } from './routes/qc.doc-requests'
 import { Route as QcDashboardRouteImport } from './routes/qc.dashboard'
 import { Route as QcChangePasswordRouteImport } from './routes/qc.change-password'
 import { Route as QcApprovedRouteImport } from './routes/qc.approved'
@@ -593,6 +594,11 @@ const QcFeedbackRoute = QcFeedbackRouteImport.update({
 const QcDocumentSearchRoute = QcDocumentSearchRouteImport.update({
   id: '/qc/document-search',
   path: '/qc/document-search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QcDocRequestsRoute = QcDocRequestsRouteImport.update({
+  id: '/qc/doc-requests',
+  path: '/qc/doc-requests',
   getParentRoute: () => rootRouteImport,
 } as any)
 const QcDashboardRoute = QcDashboardRouteImport.update({
@@ -1133,6 +1139,7 @@ export interface FileRoutesByFullPath {
   '/qc/approved': typeof QcApprovedRoute
   '/qc/change-password': typeof QcChangePasswordRoute
   '/qc/dashboard': typeof QcDashboardRoute
+  '/qc/doc-requests': typeof QcDocRequestsRoute
   '/qc/document-search': typeof QcDocumentSearchRoute
   '/qc/feedback': typeof QcFeedbackRoute
   '/qc/flagged': typeof QcFlaggedRoute
@@ -1297,6 +1304,7 @@ export interface FileRoutesByTo {
   '/qc/approved': typeof QcApprovedRoute
   '/qc/change-password': typeof QcChangePasswordRoute
   '/qc/dashboard': typeof QcDashboardRoute
+  '/qc/doc-requests': typeof QcDocRequestsRoute
   '/qc/document-search': typeof QcDocumentSearchRoute
   '/qc/feedback': typeof QcFeedbackRoute
   '/qc/flagged': typeof QcFlaggedRoute
@@ -1464,6 +1472,7 @@ export interface FileRoutesById {
   '/qc/approved': typeof QcApprovedRoute
   '/qc/change-password': typeof QcChangePasswordRoute
   '/qc/dashboard': typeof QcDashboardRoute
+  '/qc/doc-requests': typeof QcDocRequestsRoute
   '/qc/document-search': typeof QcDocumentSearchRoute
   '/qc/feedback': typeof QcFeedbackRoute
   '/qc/flagged': typeof QcFlaggedRoute
@@ -1632,6 +1641,7 @@ export interface FileRouteTypes {
     | '/qc/approved'
     | '/qc/change-password'
     | '/qc/dashboard'
+    | '/qc/doc-requests'
     | '/qc/document-search'
     | '/qc/feedback'
     | '/qc/flagged'
@@ -1796,6 +1806,7 @@ export interface FileRouteTypes {
     | '/qc/approved'
     | '/qc/change-password'
     | '/qc/dashboard'
+    | '/qc/doc-requests'
     | '/qc/document-search'
     | '/qc/feedback'
     | '/qc/flagged'
@@ -1962,6 +1973,7 @@ export interface FileRouteTypes {
     | '/qc/approved'
     | '/qc/change-password'
     | '/qc/dashboard'
+    | '/qc/doc-requests'
     | '/qc/document-search'
     | '/qc/feedback'
     | '/qc/flagged'
@@ -2117,6 +2129,7 @@ export interface RootRouteChildren {
   QcApprovedRoute: typeof QcApprovedRoute
   QcChangePasswordRoute: typeof QcChangePasswordRoute
   QcDashboardRoute: typeof QcDashboardRoute
+  QcDocRequestsRoute: typeof QcDocRequestsRoute
   QcDocumentSearchRoute: typeof QcDocumentSearchRoute
   QcFeedbackRoute: typeof QcFeedbackRoute
   QcFlaggedRoute: typeof QcFlaggedRoute
@@ -2732,6 +2745,13 @@ declare module '@tanstack/react-router' {
       path: '/qc/document-search'
       fullPath: '/qc/document-search'
       preLoaderRoute: typeof QcDocumentSearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/qc/doc-requests': {
+      id: '/qc/doc-requests'
+      path: '/qc/doc-requests'
+      fullPath: '/qc/doc-requests'
+      preLoaderRoute: typeof QcDocRequestsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/qc/dashboard': {
@@ -3545,6 +3565,7 @@ const rootRouteChildren: RootRouteChildren = {
   QcApprovedRoute: QcApprovedRoute,
   QcChangePasswordRoute: QcChangePasswordRoute,
   QcDashboardRoute: QcDashboardRoute,
+  QcDocRequestsRoute: QcDocRequestsRoute,
   QcDocumentSearchRoute: QcDocumentSearchRoute,
   QcFeedbackRoute: QcFeedbackRoute,
   QcFlaggedRoute: QcFlaggedRoute,
