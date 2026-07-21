@@ -94,11 +94,15 @@ function Page() {
                 <tr><td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">No {tab} requests.</td></tr>
               ) : rows.map((r) => (
                 <tr key={r.id} className="border-b border-border/60 last:border-0">
-                  <td className="px-4 py-3">
-                    <p className="font-semibold">{r.requester_name || r.requester_email || "—"}</p>
-                    <p className="text-[11px] text-muted-foreground">{[r.application_id, r.requester_email, r.requester_phone].filter(Boolean).join(" · ")}</p>
-                    <span className={`mt-1 inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold ${r.jsko_id ? "bg-india-green text-white" : "bg-muted text-muted-foreground"}`}>
-                      JSKO ID: {r.jsko_id?.trim() || "Nill"}
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span className="inline-flex items-center gap-2">
+                      <span className="font-semibold">{r.requester_name || r.requester_email || "—"}</span>
+                      <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${r.jsko_id ? "bg-india-green text-white" : "bg-muted text-muted-foreground"}`}>
+                        JSKO ID: {r.jsko_id?.trim() || "Nill"}
+                      </span>
+                      <span className="max-w-[260px] truncate text-[11px] text-muted-foreground" title={[r.application_id, r.requester_email, r.requester_phone].filter(Boolean).join(" · ")}>
+                        {[r.application_id, r.requester_email, r.requester_phone].filter(Boolean).join(" · ")}
+                      </span>
                     </span>
                   </td>
                   <td className="px-4 py-3">{fieldChip(r.field)}</td>
