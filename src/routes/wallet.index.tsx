@@ -136,103 +136,138 @@ function WalletPage() {
         <PageHeader icon={<Wallet className="h-5 w-5" />} title="Wallet" subtitle="Add funds, track balance and view all wallet transactions"
           actions={<button onClick={load} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-10 text-sm font-semibold hover:bg-muted"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh</button>} />
 
-        <div className="grid gap-4 lg:grid-cols-3">
-          <div className="rounded-2xl bg-saffron-gradient p-5 text-white shadow-elev lg:col-span-1">
-            <p className="text-xs font-semibold uppercase tracking-wide opacity-90">Available Balance</p>
-            <p className="mt-1 font-display text-3xl font-extrabold">{loading ? "…" : inr(balance)}</p>
-            {pendingTotal > 0 && <p className="mt-2 inline-flex items-center gap-1 rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-semibold"><Clock3 className="h-3 w-3" /> {inr(pendingTotal)} pending verification</p>}
+        {/* Balance — slim full-width strip, no dead vertical space */}
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-saffron-gradient px-6 py-5 text-white shadow-elev">
+          <div className="flex items-center gap-4">
+            <div className="grid h-12 w-12 place-items-center rounded-xl bg-white/20"><Wallet className="h-6 w-6" /></div>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wider opacity-90">Available Balance</p>
+              <p className="font-display text-3xl font-extrabold leading-tight">{loading ? "…" : inr(balance)}</p>
+            </div>
           </div>
-          <SectionCard title="Add Funds" className="lg:col-span-2">
-            <div className="space-y-4">
-              {/* Steps 1 & 2 — amount and mode side by side */}
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <p className="mb-1.5 text-xs font-bold uppercase tracking-wide text-muted-foreground">Step 1 · Amount</p>
-                  <div className="relative">
-                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">₹</span>
-                    <Input type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="500" className="pl-7 font-semibold" />
-                  </div>
-                </div>
-                <div>
-                  <p className="mb-1.5 text-xs font-bold uppercase tracking-wide text-muted-foreground">Step 2 · Payment mode</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button type="button" onClick={() => setPayMode("qr")}
-                      className={`flex h-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border text-sm font-semibold transition ${payMode === "qr" ? "border-india-green bg-india-green text-white shadow-soft" : "border-border bg-background text-muted-foreground hover:text-foreground"}`}>
-                      <QrCode className="h-4 w-4 shrink-0" /> QR / Bank
-                    </button>
-                    <button type="button" onClick={() => setPayMode("razorpay")}
-                      className={`flex h-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border text-sm font-semibold transition ${payMode === "razorpay" ? "border-india-green bg-india-green text-white shadow-soft" : "border-border bg-background text-muted-foreground hover:text-foreground"}`}>
-                      <CreditCard className="h-4 w-4 shrink-0" /> Razorpay
-                    </button>
-                  </div>
+          {pendingTotal > 0 && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5 text-xs font-semibold"><Clock3 className="h-3.5 w-3.5" /> {inr(pendingTotal)} pending verification</span>
+          )}
+        </div>
+
+        {/* Add Funds — full width, three-column stepper */}
+        <SectionCard title="Add Funds">
+          <div className="grid items-stretch gap-4 lg:grid-cols-3">
+            {/* Column 1 — amount + mode */}
+            <div className="flex flex-col gap-5 rounded-xl border border-border bg-muted/20 p-4">
+              <div>
+                <p className="flex items-center gap-2 text-sm font-bold"><span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-india-green text-[11px] font-bold text-white">1</span> Enter amount</p>
+                <div className="relative mt-2">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-base font-bold text-muted-foreground">₹</span>
+                  <Input type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="500" className="h-12 pl-8 text-lg font-bold" />
                 </div>
               </div>
-
-              {payMode === null ? (
-                <p className="rounded-xl border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
-                  Enter the amount and choose a payment mode above to continue.
-                </p>
-              ) : payMode === "qr" ? (
-                <form onSubmit={submit}>
-                  {/* Steps 3 & 4 side by side — the card grows sideways, not down. */}
-                  <div className="grid gap-4 lg:grid-cols-2">
-                    <div className="rounded-xl border border-india-green/30 bg-india-green/5 p-4">
-                      <p className="mb-3 text-xs font-bold uppercase tracking-wide text-india-green">Step 3 · Scan &amp; pay{amount ? ` ₹${Number(amount).toLocaleString("en-IN")}` : ""}</p>
-                      <div className="flex flex-col items-center gap-3">
-                        {qrUrl ? (
-                          <img src={qrUrl} alt="Payment QR — scan with any UPI app" className="h-48 w-48 rounded-xl border border-border bg-white object-contain shadow-soft" />
-                        ) : (
-                          <div className="grid h-48 w-48 place-items-center rounded-xl border border-dashed border-border bg-card p-2 text-center text-[11px] text-muted-foreground">No QR published yet — pay to the company account</div>
-                        )}
-                        <p className="text-center text-[11px] text-muted-foreground">
-                          Scan with any UPI app (GPay, PhonePe, Paytm…), pay <b className="text-foreground">exactly the Step-1 amount</b> and keep a screenshot of the payment.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col rounded-xl border border-border p-4">
-                      <p className="mb-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">Step 4 · Payment details</p>
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <Field label="Date of transaction *"><Input type="date" value={txnDate} max={new Date().toISOString().slice(0,10)} onChange={(e) => setTxnDate(e.target.value)} /></Field>
-                        <Field label="Method *"><Select value={method} onChange={(e) => setMethod(e.target.value)}><option>UPI</option><option>Bank Transfer</option><option>Cash Deposit</option><option>NEFT/IMPS</option></Select></Field>
-                        <div className="sm:col-span-2"><Field label="Transaction ID / UTR"><Input value={reference} onChange={(e) => setReference(e.target.value)} placeholder="e.g. 415522903211" /></Field></div>
-                        <div className="sm:col-span-2"><Field label="Transaction receipt *">
-                          <div className="flex items-center gap-2">
-                            <label className="inline-flex h-10 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-3 text-sm font-semibold hover:bg-muted">
-                              {uploadingRcpt ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                              <span className="truncate">{receiptName || (receiptPath ? "Replace receipt" : "Upload receipt")}</span>
-                              <input type="file" accept="*/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadReceipt(e.target.files[0])} />
-                            </label>
-                            {receiptPath && <CheckCircle2 className="h-5 w-5 shrink-0 text-india-green" />}
-                          </div>
-                        </Field></div>
-                      </div>
-                      <div className="mt-auto pt-4">
-                        <PrimaryButton type="submit" disabled={submitting || uploadingRcpt} className="w-full">
-                          {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Request Top-up
-                        </PrimaryButton>
-                        <p className="mt-2 text-center text-[11px] text-muted-foreground">Credited after accountant verification.</p>
-                      </div>
-                    </div>
-                  </div>
-                </form>
-              ) : (
-                <div className="rounded-xl border border-india-green/30 bg-india-green/5 p-4">
-                  <p className="mb-3 text-xs font-bold uppercase tracking-wide text-india-green">Step 3 · Pay securely via Razorpay</p>
-                  <ul className="space-y-2 text-xs text-muted-foreground">
-                    <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-india-green" /> Pay {amount ? <b className="text-foreground">₹{Number(amount).toLocaleString("en-IN")}</b> : "the amount"} by UPI, card or netbanking — no forms to fill.</li>
-                    <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-india-green" /> The payment shows in your transaction history immediately.</li>
-                    <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-india-green" /> After accountant verification, your wallet is credited with the <b className="text-foreground">amount received after Razorpay's gateway charges</b>.</li>
-                  </ul>
-                  <button type="button" onClick={payNow} disabled={paying}
-                    className="mt-4 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-india-green px-4 text-sm font-bold text-white hover:bg-india-green/90 disabled:opacity-50 sm:w-auto">
-                    {paying ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />} Pay ₹{amount ? Number(amount).toLocaleString("en-IN") : "—"} with Razorpay
+              <div>
+                <p className="flex items-center gap-2 text-sm font-bold"><span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-india-green text-[11px] font-bold text-white">2</span> Choose payment mode</p>
+                <div className="mt-2 space-y-2">
+                  <button type="button" onClick={() => setPayMode("qr")}
+                    className={`flex w-full items-center gap-3 rounded-xl border p-3 text-left transition ${payMode === "qr" ? "border-india-green bg-india-green/5 ring-2 ring-india-green/20" : "border-border bg-card hover:border-india-green/40"}`}>
+                    <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg ${payMode === "qr" ? "bg-india-green text-white" : "bg-muted text-muted-foreground"}`}><QrCode className="h-5 w-5" /></span>
+                    <span className="min-w-0">
+                      <span className="block text-sm font-bold">QR / Bank Transfer</span>
+                      <span className="block text-[11px] text-muted-foreground">Scan the company QR, then submit payment proof</span>
+                    </span>
+                    {payMode === "qr" && <CheckCircle2 className="ml-auto h-5 w-5 shrink-0 text-india-green" />}
+                  </button>
+                  <button type="button" onClick={() => setPayMode("razorpay")}
+                    className={`flex w-full items-center gap-3 rounded-xl border p-3 text-left transition ${payMode === "razorpay" ? "border-india-green bg-india-green/5 ring-2 ring-india-green/20" : "border-border bg-card hover:border-india-green/40"}`}>
+                    <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg ${payMode === "razorpay" ? "bg-india-green text-white" : "bg-muted text-muted-foreground"}`}><CreditCard className="h-5 w-5" /></span>
+                    <span className="min-w-0">
+                      <span className="block text-sm font-bold">Pay Online — Razorpay</span>
+                      <span className="block text-[11px] text-muted-foreground">Instant UPI, card or netbanking — no proof needed</span>
+                    </span>
+                    {payMode === "razorpay" && <CheckCircle2 className="ml-auto h-5 w-5 shrink-0 text-india-green" />}
                   </button>
                 </div>
-              )}
+              </div>
             </div>
-          </SectionCard>
-        </div>
+
+            {payMode === null ? (
+              <div className="grid place-items-center rounded-xl border-2 border-dashed border-border p-8 text-center lg:col-span-2">
+                <div>
+                  <QrCode className="mx-auto h-10 w-10 text-muted-foreground/40" />
+                  <p className="mt-3 text-sm font-semibold text-muted-foreground">Choose how you want to pay</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Enter the amount and pick a payment mode on the left to continue.</p>
+                </div>
+              </div>
+            ) : payMode === "qr" ? (
+              <form onSubmit={submit} className="contents">
+                {/* Column 2 — scan & pay */}
+                <div className="flex flex-col items-center rounded-xl border border-india-green/30 bg-india-green/5 p-4">
+                  <p className="mb-3 flex items-center gap-2 self-start text-sm font-bold"><span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-india-green text-[11px] font-bold text-white">3</span> Scan &amp; pay{amount ? ` ₹${Number(amount).toLocaleString("en-IN")}` : ""}</p>
+                  {qrUrl ? (
+                    <img src={qrUrl} alt="Payment QR — scan with any UPI app" className="w-full max-w-[240px] flex-1 rounded-xl border border-border bg-white object-contain p-1 shadow-soft" />
+                  ) : (
+                    <div className="grid w-full max-w-[240px] flex-1 place-items-center rounded-xl border border-dashed border-border bg-card p-4 text-center text-[11px] text-muted-foreground">No QR published yet — pay to the company account</div>
+                  )}
+                  <p className="mt-3 text-center text-[11px] text-muted-foreground">
+                    Scan with any UPI app · pay <b className="text-foreground">exactly the Step-1 amount</b> · keep the payment screenshot.
+                  </p>
+                </div>
+
+                {/* Column 3 — payment details */}
+                <div className="flex flex-col rounded-xl border border-border p-4">
+                  <p className="mb-3 flex items-center gap-2 text-sm font-bold"><span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-india-green text-[11px] font-bold text-white">4</span> Payment details</p>
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <Field label="Date *"><Input type="date" value={txnDate} max={new Date().toISOString().slice(0,10)} onChange={(e) => setTxnDate(e.target.value)} /></Field>
+                      <Field label="Method *"><Select value={method} onChange={(e) => setMethod(e.target.value)}><option>UPI</option><option>Bank Transfer</option><option>Cash Deposit</option><option>NEFT/IMPS</option></Select></Field>
+                    </div>
+                    <Field label="Transaction ID / UTR"><Input value={reference} onChange={(e) => setReference(e.target.value)} placeholder="e.g. 415522903211" /></Field>
+                    <Field label="Transaction receipt *">
+                      <div className="flex items-center gap-2">
+                        <label className="inline-flex h-10 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-3 text-sm font-semibold hover:bg-muted">
+                          {uploadingRcpt ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                          <span className="truncate">{receiptName || (receiptPath ? "Replace receipt" : "Upload receipt")}</span>
+                          <input type="file" accept="*/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadReceipt(e.target.files[0])} />
+                        </label>
+                        {receiptPath && <CheckCircle2 className="h-5 w-5 shrink-0 text-india-green" />}
+                      </div>
+                    </Field>
+                  </div>
+                  <div className="mt-auto pt-4">
+                    <PrimaryButton type="submit" disabled={submitting || uploadingRcpt} className="w-full">
+                      {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Request Top-up
+                    </PrimaryButton>
+                    <p className="mt-2 text-center text-[11px] text-muted-foreground">Credited after accountant verification.</p>
+                  </div>
+                </div>
+              </form>
+            ) : (
+              <div className="flex flex-col rounded-xl border border-india-green/30 bg-india-green/5 p-5 lg:col-span-2">
+                <p className="flex items-center gap-2 text-sm font-bold"><span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-india-green text-[11px] font-bold text-white">3</span> Pay securely via Razorpay</p>
+                <div className="my-4 grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-xl border border-border bg-card p-3 text-center">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">You pay</p>
+                    <p className="mt-1 text-xl font-extrabold">{amount ? `₹${Number(amount).toLocaleString("en-IN")}` : "—"}</p>
+                    <p className="mt-0.5 text-[11px] text-muted-foreground">UPI · card · netbanking</p>
+                  </div>
+                  <div className="rounded-xl border border-border bg-card p-3 text-center">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Then</p>
+                    <p className="mt-1 text-xl font-extrabold"><Clock3 className="mx-auto h-6 w-6 text-india-green" /></p>
+                    <p className="mt-0.5 text-[11px] text-muted-foreground">Shows in history · accountant verifies</p>
+                  </div>
+                  <div className="rounded-xl border border-border bg-card p-3 text-center">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Wallet gets</p>
+                    <p className="mt-1 text-xl font-extrabold text-india-green">Net amount</p>
+                    <p className="mt-0.5 text-[11px] text-muted-foreground">After Razorpay gateway charges</p>
+                  </div>
+                </div>
+                <div className="mt-auto">
+                  <button type="button" onClick={payNow} disabled={paying}
+                    className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-india-green px-6 text-sm font-bold text-white shadow-soft hover:bg-india-green/90 disabled:opacity-50">
+                    {paying ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />} Pay {amount ? `₹${Number(amount).toLocaleString("en-IN")}` : ""} with Razorpay
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </SectionCard>
 
         <SectionCard title="Withdraw Funds">
           {win && (
