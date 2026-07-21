@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { Wallet, Plus, Loader2, ArrowDownToLine, ArrowUpFromLine, Clock3, RefreshCw, Send, Upload, CalendarDays, Lock } from "lucide-react";
+import { Wallet, Plus, Loader2, ArrowDownToLine, ArrowUpFromLine, Clock3, RefreshCw, Send, Upload, CalendarDays, Lock, QrCode, CreditCard, CheckCircle2 } from "lucide-react";
 import { RetailerShell } from "@/components/retailer/retailer-shell";
 import { PageHeader } from "@/components/retailer/page-header";
 import { SectionCard, Field, Input, Select, PrimaryButton } from "@/components/retailer/section-card";
@@ -141,65 +141,92 @@ function WalletPage() {
             {pendingTotal > 0 && <p className="mt-2 inline-flex items-center gap-1 rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-semibold"><Clock3 className="h-3 w-3" /> {inr(pendingTotal)} pending verification</p>}
           </div>
           <SectionCard title="Add Funds" className="lg:col-span-2">
-            {/* Step 1: amount. Step 2: payment mode. Step 3: mode-specific flow. */}
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Field label="1. Amount (₹) *"><Input type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="500" /></Field>
-              <Field label="2. Select payment mode *">
-                <div className="grid grid-cols-2 gap-2">
-                  <button type="button" onClick={() => setPayMode("qr")}
-                    className={`h-10 rounded-lg border px-3 text-sm font-semibold transition ${payMode === "qr" ? "border-india-green bg-india-green/10 text-india-green" : "border-border bg-background text-muted-foreground hover:text-foreground"}`}>
-                    QR / Bank Transfer
-                  </button>
-                  <button type="button" onClick={() => setPayMode("razorpay")}
-                    className={`h-10 rounded-lg border px-3 text-sm font-semibold transition ${payMode === "razorpay" ? "border-india-green bg-india-green/10 text-india-green" : "border-border bg-background text-muted-foreground hover:text-foreground"}`}>
-                    Pay Online (Razorpay)
-                  </button>
-                </div>
-              </Field>
-            </div>
-
-            {payMode === "qr" ? (
-              <form onSubmit={submit} className="mt-3">
-                {qrUrl ? (
-                  <div className="mb-3 flex flex-wrap items-center gap-4 rounded-xl border border-india-green/30 bg-india-green/5 p-3">
-                    <img src={qrUrl} alt="Payment QR — scan with any UPI app" className="h-36 w-36 rounded-lg border border-border bg-white object-contain" />
-                    <div className="min-w-[200px] flex-1 text-sm">
-                      <p className="font-bold">3. Scan &amp; Pay</p>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        Scan this QR with any UPI app and pay <b>{amount ? `₹${Number(amount).toLocaleString("en-IN")}` : "the amount"}</b>. Then fill in the payment details below and press <b>Request Top-up</b>.
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <p className="mb-3 rounded-lg border border-dashed border-border p-3 text-xs text-muted-foreground">Pay by bank transfer / UPI to the company account, then fill in the details below. (The admin has not published a payment QR yet.)</p>
-                )}
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <Field label="Date of Transaction *"><Input type="date" value={txnDate} max={new Date().toISOString().slice(0,10)} onChange={(e) => setTxnDate(e.target.value)} /></Field>
-                  <Field label="Method *"><Select value={method} onChange={(e) => setMethod(e.target.value)}><option>UPI</option><option>Bank Transfer</option><option>Cash Deposit</option><option>NEFT/IMPS</option></Select></Field>
-                  <Field label="Transaction ID / UTR"><Input value={reference} onChange={(e) => setReference(e.target.value)} placeholder="Txn ref" /></Field>
-                  <div className="sm:col-span-2"><Field label="Transaction Receipt *">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-card px-3 h-10 text-sm font-semibold hover:bg-muted">{uploadingRcpt ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} {receiptPath ? "Replace receipt" : "Upload receipt"}<input type="file" accept="*/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadReceipt(e.target.files[0])} /></label>
-                      {receiptName && <span className="truncate max-w-[180px] text-xs font-medium text-india-green">{receiptName}</span>}
-                    </div>
-                  </Field></div>
-                  <div className="flex items-end justify-end">
-                    <PrimaryButton type="submit" disabled={submitting || uploadingRcpt}>{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Request Top-up</PrimaryButton>
+            <div className="space-y-4">
+              {/* Steps 1 & 2 — amount and mode side by side */}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <p className="mb-1.5 text-xs font-bold uppercase tracking-wide text-muted-foreground">Step 1 · Amount</p>
+                  <div className="relative">
+                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">₹</span>
+                    <Input type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="500" className="pl-7 font-semibold" />
                   </div>
                 </div>
-                <p className="mt-2 text-xs text-muted-foreground">The accountant verifies your payment against the receipt and transaction ID, then credits your wallet. You'll be notified once it's recharged.</p>
-              </form>
-            ) : (
-              <div className="mt-3 rounded-xl border border-border bg-muted/30 p-4">
-                <p className="text-sm font-bold">3. Pay securely via Razorpay</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  You'll pay {amount ? <b>₹{Number(amount).toLocaleString("en-IN")}</b> : "the amount"} through Razorpay (UPI, card or netbanking).
-                  The payment appears in your transaction history immediately, and after accountant verification your wallet is credited with the
-                  <b> amount received after Razorpay's gateway charges are deducted</b>.
-                </p>
-                <button type="button" onClick={payNow} disabled={paying} className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-india-green px-4 h-10 text-sm font-semibold text-white hover:bg-india-green/90 disabled:opacity-50">{paying ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wallet className="h-4 w-4" />} Pay online (Razorpay)</button>
+                <div>
+                  <p className="mb-1.5 text-xs font-bold uppercase tracking-wide text-muted-foreground">Step 2 · Payment mode</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button type="button" onClick={() => setPayMode("qr")}
+                      className={`flex h-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border text-sm font-semibold transition ${payMode === "qr" ? "border-india-green bg-india-green text-white shadow-soft" : "border-border bg-background text-muted-foreground hover:text-foreground"}`}>
+                      <QrCode className="h-4 w-4 shrink-0" /> QR / Bank
+                    </button>
+                    <button type="button" onClick={() => setPayMode("razorpay")}
+                      className={`flex h-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border text-sm font-semibold transition ${payMode === "razorpay" ? "border-india-green bg-india-green text-white shadow-soft" : "border-border bg-background text-muted-foreground hover:text-foreground"}`}>
+                      <CreditCard className="h-4 w-4 shrink-0" /> Razorpay
+                    </button>
+                  </div>
+                </div>
               </div>
-            )}
+
+              {payMode === "qr" ? (
+                <form onSubmit={submit} className="space-y-4">
+                  {/* Step 3 — scan & pay */}
+                  <div className="rounded-xl border border-india-green/30 bg-india-green/5 p-4">
+                    <p className="mb-3 text-xs font-bold uppercase tracking-wide text-india-green">Step 3 · Scan &amp; pay{amount ? ` ₹${Number(amount).toLocaleString("en-IN")}` : ""}</p>
+                    <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
+                      {qrUrl ? (
+                        <img src={qrUrl} alt="Payment QR — scan with any UPI app" className="h-44 w-44 shrink-0 rounded-xl border border-border bg-white object-contain shadow-soft" />
+                      ) : (
+                        <div className="grid h-44 w-44 shrink-0 place-items-center rounded-xl border border-dashed border-border bg-card text-center text-[11px] text-muted-foreground">No QR published yet — pay to the company account</div>
+                      )}
+                      <ul className="space-y-2 text-xs text-muted-foreground">
+                        <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-india-green" /> Open any UPI app (GPay, PhonePe, Paytm…) and scan the QR.</li>
+                        <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-india-green" /> Pay exactly the amount you entered in Step 1.</li>
+                        <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-india-green" /> Take a screenshot of the successful payment.</li>
+                        <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-india-green" /> Fill in Step 4 below and press <b className="text-foreground">Request Top-up</b>.</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  {/* Step 4 — payment details */}
+                  <div className="rounded-xl border border-border p-4">
+                    <p className="mb-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">Step 4 · Payment details</p>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <Field label="Date of transaction *"><Input type="date" value={txnDate} max={new Date().toISOString().slice(0,10)} onChange={(e) => setTxnDate(e.target.value)} /></Field>
+                      <Field label="Method *"><Select value={method} onChange={(e) => setMethod(e.target.value)}><option>UPI</option><option>Bank Transfer</option><option>Cash Deposit</option><option>NEFT/IMPS</option></Select></Field>
+                      <Field label="Transaction ID / UTR"><Input value={reference} onChange={(e) => setReference(e.target.value)} placeholder="e.g. 415522903211" /></Field>
+                      <Field label="Transaction receipt *">
+                        <div className="flex items-center gap-2">
+                          <label className="inline-flex h-10 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-3 text-sm font-semibold hover:bg-muted">
+                            {uploadingRcpt ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                            <span className="truncate">{receiptName || (receiptPath ? "Replace receipt" : "Upload receipt")}</span>
+                            <input type="file" accept="*/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadReceipt(e.target.files[0])} />
+                          </label>
+                          {receiptPath && <CheckCircle2 className="h-5 w-5 shrink-0 text-india-green" />}
+                        </div>
+                      </Field>
+                    </div>
+                    <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <p className="text-[11px] text-muted-foreground">The accountant verifies the payment against your receipt and transaction ID, then credits your wallet.</p>
+                      <PrimaryButton type="submit" disabled={submitting || uploadingRcpt} className="shrink-0">
+                        {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Request Top-up
+                      </PrimaryButton>
+                    </div>
+                  </div>
+                </form>
+              ) : (
+                <div className="rounded-xl border border-india-green/30 bg-india-green/5 p-4">
+                  <p className="mb-3 text-xs font-bold uppercase tracking-wide text-india-green">Step 3 · Pay securely via Razorpay</p>
+                  <ul className="space-y-2 text-xs text-muted-foreground">
+                    <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-india-green" /> Pay {amount ? <b className="text-foreground">₹{Number(amount).toLocaleString("en-IN")}</b> : "the amount"} by UPI, card or netbanking — no forms to fill.</li>
+                    <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-india-green" /> The payment shows in your transaction history immediately.</li>
+                    <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-india-green" /> After accountant verification, your wallet is credited with the <b className="text-foreground">amount received after Razorpay's gateway charges</b>.</li>
+                  </ul>
+                  <button type="button" onClick={payNow} disabled={paying}
+                    className="mt-4 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-india-green px-4 text-sm font-bold text-white hover:bg-india-green/90 disabled:opacity-50 sm:w-auto">
+                    {paying ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />} Pay ₹{amount ? Number(amount).toLocaleString("en-IN") : "—"} with Razorpay
+                  </button>
+                </div>
+              )}
+            </div>
           </SectionCard>
         </div>
 
