@@ -5,7 +5,7 @@ import { Lock, Loader2, Save, LogOut, Bell, Mail, ShieldCheck, Zap, Eye, EyeOff,
 import { Button } from "@/components/ui/button";
 import { isPasswordValid } from "@/components/register/password-field";
 import { supabase } from "@/integrations/supabase/client";
-import { useCurrentUser } from "@/lib/use-current-user";
+import { useCurrentUser, notifyCurrentUserChanged } from "@/lib/use-current-user";
 
 type Method = "quick" | "email";
 
@@ -48,9 +48,11 @@ export function AccountSettings() {
       // Cast: the generated DB types predate the profiles.phone column (verified live).
       const { error } = await (supabase as any).from("profiles").update({ phone: digits }).eq("id", uid);
       if (error) { toast.error("Could not save the mobile number", { description: error.message }); return; }
-      // The sidebar reads bharatone:auth first — sync it so the change shows immediately.
+      // Sync the cached auth blob and broadcast so every mounted useCurrentUser
+      // (sidebar, profile dropdown) re-renders with the new number immediately.
       try { const a = JSON.parse(localStorage.getItem("bharatone:auth") || "{}"); localStorage.setItem("bharatone:auth", JSON.stringify({ ...a, phone: digits })); } catch {}
-      toast.success("Mobile number updated", { description: "It may take one refresh to appear everywhere." });
+      notifyCurrentUserChanged();
+      toast.success("Mobile number updated");
     } finally { setSavingPhone(false); }
   };
 

@@ -13,6 +13,17 @@ function initialsOf(s: string) {
   return (s || "U").trim().split(/\s+/).map((w) => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase() || "U";
 }
 
+/**
+ * Broadcast that the signed-in user's profile changed, so every mounted
+ * `useCurrentUser` (sidebar, profile dropdown, ...) refetches. Call this after
+ * any write to `profiles` for the current user — the hook otherwise loads once
+ * on mount and would keep showing the stale value until a full reload.
+ */
+export const CURRENT_USER_CHANGED = "bharatone:current-user-changed";
+export function notifyCurrentUserChanged() {
+  try { window.dispatchEvent(new Event(CURRENT_USER_CHANGED)); } catch { /* SSR / no window */ }
+}
+
 export function useCurrentUser(): CurrentUser {
   const [info, setInfo] = useState<{ name: string; email: string; phone: string; role: string; jskoId: string }>(() => {
     try { const a = JSON.parse(localStorage.getItem("bharatone:auth") || "{}"); return { name: a.name || "", email: a.email || "", phone: a.phone || "", role: a.role || "", jskoId: a.jskoId || "" }; }
@@ -20,7 +31,7 @@ export function useCurrentUser(): CurrentUser {
   });
   useEffect(() => {
     let on = true;
-    (async () => {
+    const load = async () => {
       await ensureStaffSession();
       const { data: u } = await supabase.auth.getUser();
       if (!u?.user || !on) return;
@@ -56,8 +67,11 @@ export function useCurrentUser(): CurrentUser {
         const a = JSON.parse(localStorage.getItem("bharatone:auth") || "{}");
         localStorage.setItem("bharatone:auth", JSON.stringify({ ...a, name, email: u.user.email, phone, role: role || a.role, jskoId }));
       } catch {}
-    })();
-    return () => { on = false; };
+    };
+    void load();
+    const onChanged = () => { void load(); };
+    window.addEventListener(CURRENT_USER_CHANGED, onChanged);
+    return () => { on = false; window.removeEventListener(CURRENT_USER_CHANGED, onChanged); };
   }, []);
   return { name: info.name || "User", email: info.email, phone: info.phone, role: ROLE_LABEL[info.role] || info.role || "", jskoId: info.jskoId || "", initials: initialsOf(info.name || info.email) };
 }
