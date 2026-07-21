@@ -178,10 +178,12 @@ function AepsPage() {
     toast.success("Scanner connected", { description: r.device.info || `Port ${r.device.port}` });
   };
 
-  // purpose matters for UIDAI auth: agent eKYC / daily-KYC captures must carry
-  // Eko's eKYC wadh, but customer TRANSACTION captures must be wadh-free — a
-  // wadh-stamped PID fails NPCI auth with "biometric details mismatch".
-  const scan = async (purpose: "agent" | "customer" = "agent") => {
+  // purpose matters for UIDAI auth: the one-time eKYC capture must carry Eko's
+  // eKYC wadh ("agent" — proven: eKYC succeeds with it), but customer
+  // TRANSACTION captures are wadh-free, and DAILY KYC also authenticates
+  // wadh-free — a wadh-stamped daily PID fails with "Invalid Biometric data"
+  // even right after a successful eKYC (verified 21 Jul 2026, agent 38520007).
+  const scan = async (purpose: "agent" | "customer" | "daily" = "agent") => {
     let d = device;
     if (!d) {
       setScanning(true);
@@ -196,7 +198,7 @@ function AepsPage() {
     }
     setScanning(true);
     setPid(null); setQuality(null);
-    const r = await captureFingerprint(d, purpose === "customer" ? { wadh: "" } : {});
+    const r = await captureFingerprint(d, purpose === "customer" || purpose === "daily" ? { wadh: "" } : {});
     setScanning(false);
     if (!r.ok || !r.pidData) return toast.error("Capture failed", { description: r.error });
     setPid(r.pidData);
@@ -211,8 +213,9 @@ function AepsPage() {
     try { latlong = await getLatLongStrict(); } catch (e: any) { return toast.error("Location required", { description: e.message }); }
     setBusy(true);
     try {
-      // PID options are byte-identical to Eko's own "All Device Data.html" reference
-      // capture page, wadh included. Confirmed 20 Jul 2026 — do not "fix" this again.
+      // Daily KYC uses a wadh-FREE capture (scan("daily")): with the eKYC wadh
+      // stamped in, Fingpay rejects it as "Invalid Biometric data" even right
+      // after a successful eKYC. Only the one-time eKYC capture carries wadh.
       const { data, error } = await supabase.functions.invoke("aeps-2fa", {
         body: { piddata: pid, latlong },
       });
@@ -524,7 +527,7 @@ function AepsPage() {
                 <button onClick={() => setAuthMode("iris")} className={`rounded-md px-4 h-8 text-xs font-semibold ${authMode === "iris" ? "bg-india-green text-white" : "text-muted-foreground"}`}>Iris</button>
               </div>
               <div className="flex flex-wrap items-center justify-center gap-2">
-                <button onClick={() => scan("agent")} disabled={scanning} className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-4 h-10 text-sm font-semibold hover:bg-muted disabled:opacity-50">
+                <button onClick={() => scan("daily")} disabled={scanning} className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-4 h-10 text-sm font-semibold hover:bg-muted disabled:opacity-50">
                   {scanning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Fingerprint className="h-4 w-4" />} {pid ? "Re-scan finger" : "Scan my finger"}
                 </button>
                 
@@ -689,7 +692,7 @@ function AepsPage() {
                 <p className="text-xs text-muted-foreground flex-1">
                   Step 4 — NPCI requires you to authenticate with your own fingerprint once each day before serving customers.
                 </p>
-                <button onClick={() => scan("agent")} disabled={scanning} className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 h-9 text-xs font-semibold hover:bg-muted disabled:opacity-50">
+                <button onClick={() => scan("daily")} disabled={scanning} className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 h-9 text-xs font-semibold hover:bg-muted disabled:opacity-50">
                   {scanning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Fingerprint className="h-3.5 w-3.5" />} Scan my finger
                 </button>
                 <button onClick={dailyAuth} disabled={!pid || busy} className="inline-flex items-center gap-1.5 rounded-lg bg-india-green px-3 h-9 text-xs font-semibold text-white disabled:opacity-50">
