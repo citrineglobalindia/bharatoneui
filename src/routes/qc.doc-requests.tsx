@@ -14,12 +14,13 @@ export const Route = createFileRoute("/qc/doc-requests")({
 });
 
 type Req = {
-  id: string; user_id: string; doc_label: string; note: string | null; status: string;
-  file_path: string | null; uploaded_at: string | null; remarks: string | null; created_at: string;
+  id: string; user_id: string; doc_key: string | null; doc_label: string; note: string | null; status: string;
+  file_path: string | null; old_path: string | null; uploaded_at: string | null; remarks: string | null; created_at: string;
   requester_name: string | null; requester_email: string | null; requester_phone: string | null;
   application_id: string | null; jsko_id: string | null;
 };
 type Retailer = { user_id: string; full_name: string; application_id: string; jsko_id: string | null; email: string; mobile: string; reg_status: string };
+type RetailerDoc = { doc_key: string; doc_label: string; path: string | null };
 
 const DOC_OPTIONS = ["PAN Card", "Aadhaar Front", "Aadhaar Back", "Shop Photo", "Selfie", "Police Verification", "Bank Passbook / Cancelled Cheque", "GST Certificate", "Other"];
 
@@ -34,10 +35,29 @@ function Page() {
   const [hits, setHits] = useState<Retailer[]>([]);
   const [searching, setSearching] = useState(false);
   const [picked, setPicked] = useState<Retailer | null>(null);
+  const [pickedDocs, setPickedDocs] = useState<RetailerDoc[]>([]);
+  const [docKey, setDocKey] = useState<string | null>(null);
   const [docLabel, setDocLabel] = useState(DOC_OPTIONS[0]);
   const [customLabel, setCustomLabel] = useState("");
   const [note, setNote] = useState("");
   const [sending, setSending] = useState(false);
+
+  // Load the picked retailer's current documents for per-document requests.
+  useEffect(() => {
+    setPickedDocs([]); setDocKey(null);
+    if (!picked) return;
+    (async () => {
+      const { data } = await (supabase as any).rpc("qc_retailer_docs", { _user_id: picked.user_id });
+      setPickedDocs((data as RetailerDoc[]) ?? []);
+    })();
+  }, [picked?.user_id]);
+
+  const viewPath = async (path: string | null) => {
+    if (!path) return;
+    const { data } = await supabase.storage.from("retailer-kyc").createSignedUrl(path, 3600);
+    if (data?.signedUrl) window.open(data.signedUrl, "_blank");
+    else toast.error("Could not open the file");
+  };
 
   const load = async () => {
     setLoading(true);
@@ -71,15 +91,16 @@ function Page() {
 
   const sendRequest = async () => {
     if (!picked) return toast.error("Search and select a retailer first");
-    const label = docLabel === "Other" ? customLabel.trim() : docLabel;
+    const keyed = pickedDocs.find((d) => d.doc_key === docKey);
+    const label = keyed ? keyed.doc_label : docLabel === "Other" ? customLabel.trim() : docLabel;
     if (!label) return toast.error("Enter the document name");
     setSending(true);
     try {
-      const { data, error } = await (supabase as any).rpc("qc_request_kyc_doc", { _user_id: picked.user_id, _doc_label: label, _note: note.trim() || null });
+      const { data, error } = await (supabase as any).rpc("qc_request_kyc_doc", { _user_id: picked.user_id, _doc_label: label, _note: note.trim() || null, _doc_key: docKey });
       if (error) return toast.error("Could not send the request", { description: error.message });
       if (!(data as any)?.ok) return toast.error("Could not send the request");
       toast.success(`Request sent to ${picked.full_name || picked.application_id}`, { description: "They have been notified to upload it under KYC Docs." });
-      setPicked(null); setQ(""); setNote(""); setCustomLabel(""); setDocLabel(DOC_OPTIONS[0]);
+      setPicked(null); setQ(""); setNote(""); setCustomLabel(""); setDocLabel(DOC_OPTIONS[0]); setDocKey(null);
       await load();
     } finally { setSending(false); }
   };
@@ -168,13 +189,22 @@ function Page() {
             </div>
             <div>
               <label className="text-xs font-semibold text-muted-foreground">Document</label>
-              <select value={docLabel} onChange={(e) => setDocLabel(e.target.value)}
-                className="h-11 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-india-green/30">
-                {DOC_OPTIONS.map((d) => <option key={d} value={d}>{d}</option>)}
-              </select>
-              {docLabel === "Other" && (
-                <input value={customLabel} onChange={(e) => setCustomLabel(e.target.value)} placeholder="Document name"
-                  className="mt-2 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-india-green/30" />
+              {docKey ? (
+                <div className="flex h-11 items-center justify-between rounded-lg border border-india-green/40 bg-india-green/5 px-3 text-sm">
+                  <span className="font-semibold">{pickedDocs.find((d) => d.doc_key === docKey)?.doc_label}</span>
+                  <button className="text-xs font-semibold text-rose-600" onClick={() => setDocKey(null)}>change</button>
+                </div>
+              ) : (
+                <>
+                  <select value={docLabel} onChange={(e) => setDocLabel(e.target.value)}
+                    className="h-11 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-india-green/30">
+                    {DOC_OPTIONS.map((d) => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                  {docLabel === "Other" && (
+                    <input value={customLabel} onChange={(e) => setCustomLabel(e.target.value)} placeholder="Document name"
+                      className="mt-2 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-india-green/30" />
+                  )}
+                </>
               )}
             </div>
             <div>
@@ -183,6 +213,22 @@ function Page() {
                 className="h-11 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-india-green/30" />
             </div>
           </div>
+          {picked && pickedDocs.length > 0 && (
+            <div className="mt-4 rounded-xl border border-border bg-muted/30 p-3">
+              <p className="mb-2 text-xs font-bold text-muted-foreground">Documents on file for {picked.full_name || picked.application_id} — pick one to request a re-upload:</p>
+              <div className="flex flex-wrap gap-2">
+                {pickedDocs.map((d) => (
+                  <div key={d.doc_key} className={`flex items-center gap-1.5 rounded-lg border px-2 py-1.5 text-xs ${docKey === d.doc_key ? "border-india-green bg-india-green/10" : "border-border bg-card"}`}>
+                    <span className="font-semibold">{d.doc_label}</span>
+                    {d.path
+                      ? <button className="text-sky-600 hover:underline" onClick={() => viewPath(d.path)}>view</button>
+                      : <span className="text-muted-foreground">none</span>}
+                    <button className="rounded bg-india-green px-1.5 py-0.5 font-semibold text-white" onClick={() => setDocKey(d.doc_key)}>request</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           <Button onClick={sendRequest} disabled={sending} className="mt-3 bg-india-green text-white">
             {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Send request
           </Button>
@@ -227,7 +273,16 @@ function Page() {
                   <td className="px-4 py-3 text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString("en-IN")}</td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2">
-                      {r.file_path && <Button size="sm" variant="outline" className="h-8" onClick={() => viewFile(r)}><Eye className="h-3.5 w-3.5" /> View</Button>}
+                      {r.old_path && r.status !== "verified" && (
+                        <Button size="sm" variant="outline" className="h-8" onClick={() => viewPath(r.old_path)}>
+                          <Eye className="h-3.5 w-3.5" /> Old doc
+                        </Button>
+                      )}
+                      {r.file_path && (
+                        <Button size="sm" variant="outline" className="h-8 border-sky-300 text-sky-700" onClick={() => viewFile(r)}>
+                          <Eye className="h-3.5 w-3.5" /> {r.old_path && r.status !== "verified" ? "New doc" : "View"}
+                        </Button>
+                      )}
                       {r.status === "uploaded" && (
                         <>
                           <Button size="sm" onClick={() => review(r, true)} disabled={acting === r.id} className="h-8 bg-india-green text-white">
