@@ -43,6 +43,7 @@ export function StatusBadge({ status }: { status: string }) {
     "In Review": "bg-amber-100 text-amber-800 border-amber-200",
     "In Progress": "bg-amber-100 text-amber-800 border-amber-200",
     "On Process": "bg-amber-100 text-amber-800 border-amber-200",
+    New: "bg-saffron/10 text-saffron border-saffron/30",
     Processing: "bg-amber-100 text-amber-800 border-amber-200",
     "Waiting for Approval": "bg-sky-100 text-sky-700 border-sky-200",
     "On Delay": "bg-orange-100 text-orange-700 border-orange-200",
