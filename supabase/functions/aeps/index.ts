@@ -409,8 +409,11 @@ Deno.serve(async (req) => {
         otp_ref_id: otpRef, reference_tid: refTid,
       });
       if (!ekoOk(data)) { await setAgent({ last_error: ekoMsg(data) }); return json({ error: ekoMsg(data), raw: scrub(data) }, 400); }
+      // Fingpay does NOT count eKYC as the day's 2FA — transactions right after
+      // eKYC fail with "Please do 2fa before initiating transaction". Leave
+      // last_daily_kyc_at untouched so the UI walks the agent through Daily KYC.
       const now = new Date().toISOString();
-      await setAgent({ ekyc_done: true, ekyc_done_at: now, last_daily_kyc_at: now, agent_bank_code: bankCode, last_error: null });
+      await setAgent({ ekyc_done: true, ekyc_done_at: now, agent_bank_code: bankCode, last_error: null });
       return json({ ok: true, message: ekoMsg(data) });
     }
 
