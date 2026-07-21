@@ -24,6 +24,7 @@ type DocDef = { key: string; pathKey: string; label: string; description: string
 const DOC_DEFS: DocDef[] = [
   { key: "aadhaar", pathKey: "aadhaar_doc_path", label: "Aadhaar Card", description: "Identity proof", icon: IdCard },
   { key: "pan", pathKey: "pan_doc_path", label: "PAN Card", description: "Permanent Account Number", icon: IdCard },
+  { key: "passport_photo", pathKey: "passport_photo_path", label: "Passport Size Photo", description: "Recent passport-size photograph", icon: Camera },
   { key: "selfie", pathKey: "selfie_path", label: "Live Selfie", description: "Face match & liveness", icon: Camera },
   { key: "video", pathKey: "video_kyc_path", label: "Video KYC", description: "Declaration video", icon: Video },
   { key: "shop", pathKey: "shop_photo_path", label: "Shop / Premises Photo", description: "Geo-tagged shop front", icon: Building2 },
