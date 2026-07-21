@@ -121,8 +121,17 @@ Deno.serve(async (req) => {
   // (it is not a documented parameter for this endpoint).
   const clientRefId = `BHOKYC${Date.now()}${Math.floor(Math.random() * 900 + 100)}`;
   const userCode = String((agent as any).eko_user_code);
-  const aMobile = (agent as any).mobile || "";
+  // Normalize to the SAME 10-digit form the eKYC step bound this agent with (the
+  // main `aeps` fn uses .replace(/\D/g,'').slice(-10)). If daily 2FA sends a
+  // differently-shaped mobile, Fingpay can't match it to the eKYC and rejects the
+  // day's auth as if eKYC were never done.
+  const aMobile = String((agent as any).mobile ?? "").replace(/\D/g, "").slice(-10);
   const aLatlong = latlong || (agent as any).latlong || "";
+  // Guard the agent's Aadhaar: encrypting "null"/"undefined" here produces a valid
+  // ciphertext that Fingpay silently fails to decrypt (empty-reason KYC Fail).
+  const aAadhaar = String((agent as any).agent_aadhaar ?? "").replace(/\D/g, "");
+  if (aAadhaar.length !== 12) return json({ error: "The agent's Aadhaar is missing — re-run activation/eKYC before daily authentication." }, 400);
+  if (aMobile.length !== 10) return json({ error: "The agent's registered mobile is missing or invalid — contact support." }, 400);
   const pidInfo = inspectPid(String(piddata));
 
   try {
@@ -140,7 +149,7 @@ Deno.serve(async (req) => {
     const payload = {
       initiator_id: EKO_INITIATOR_ID,
       user_code: userCode,
-      aadhar: rsaEncryptPkcs1(String((agent as any).agent_aadhaar), EKO_RSA_PUB),
+      aadhar: rsaEncryptPkcs1(aAadhaar, EKO_RSA_PUB),
       customer_id: aMobile,
       latlong: aLatlong,
       piddata,
@@ -162,7 +171,7 @@ Deno.serve(async (req) => {
       request_meta: {
         latlong: aLatlong, bank_code: bc, customer_id: aMobile,
         content_type: "application/json", body_fields: Object.keys(payload),
-        pid: pidInfo,
+        pid: pidInfo, rsa_key_env: IS_PROD ? "prod" : "staging",
       },
     });
 

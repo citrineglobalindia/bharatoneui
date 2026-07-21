@@ -206,7 +206,18 @@ function AepsPage() {
     if (!r.ok || !r.pidData) return toast.error("Capture failed", { description: r.error });
     setPid(r.pidData);
     setQuality(r.quality ?? null);
-    toast.success(`Fingerprint captured (quality ${r.quality ?? "?"})`);
+    // Low-quality captures are the #1 cause of Fingpay "Biometric data did not
+    // match" / "Invalid Biometric data" rejections. Warn (don't block — some
+    // devices under-report qScore) so the operator can re-scan before spending
+    // an auth attempt.
+    if (typeof r.quality === "number" && r.quality < 60) {
+      toast.warning(`Low fingerprint quality (${r.quality}/100)`, {
+        description: "Clean the sensor and the finger, press firmly and flat, then scan again for a stronger capture before submitting.",
+        duration: 8000,
+      });
+    } else {
+      toast.success(`Fingerprint captured (quality ${r.quality ?? "?"})`);
+    }
   };
 
   // Daily biometric authentication — NPCI requires this once per day, per agent.
