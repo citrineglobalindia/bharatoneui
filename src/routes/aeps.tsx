@@ -71,6 +71,9 @@ function AepsPage() {
   const [bank, setBank] = useState("");
   const [bankQuery, setBankQuery] = useState("");
   const [kycBank, setKycBank] = useState("");
+  // Optional Aadhaar override for eKYC — used to correct a wrongly-entered
+  // Aadhaar; kyc_send_otp persists it as the new Aadhaar on file.
+  const [kycAadhaar, setKycAadhaar] = useState("");
   const [kycBankQuery, setKycBankQuery] = useState("");
   const [amount, setAmount] = useState("");
   const [busy, setBusy] = useState(false);
@@ -342,12 +345,13 @@ function AepsPage() {
   };
 
   const doSendOtp = async () => {
+    if (kycAadhaar && kycAadhaar.length !== 12) return toast.error("Aadhaar must be 12 digits (or leave it blank to use the one on file)");
     setBusy(true);
     // Eko's Send OTP spec requires the agent's live GPS coordinates.
     let latlong = "";
     try { latlong = await getLatLongStrict(); } catch (e: any) { setBusy(false); return toast.error("Location required", { description: e.message }); }
     try {
-      const r = await call("kyc_send_otp", { latlong });
+      const r = await call("kyc_send_otp", { latlong, ...(kycAadhaar ? { aadhaar: kycAadhaar } : {}) });
       setOtpSent(true); setOtpRef(r.otp_ref_id ?? null);
       setOtpVerified(false); setOtp(""); setPid(null); setQuality(null); // a fresh OTP must be re-verified before biometric
       toast.success("OTP sent to your registered mobile");
@@ -648,6 +652,12 @@ function AepsPage() {
                 <p className="mb-2 text-xs font-semibold text-muted-foreground">Step 3 — One-time biometric eKYC</p>
                 {!otpVerified ? (
                   <div className="flex flex-wrap items-center gap-2">
+                    {/* Correcting a wrongly-entered Aadhaar: type the right one here
+                        before Send OTP — it replaces the Aadhaar on file for eKYC. */}
+                    <input inputMode="numeric" maxLength={12} value={kycAadhaar}
+                      onChange={(e) => setKycAadhaar(e.target.value.replace(/\D/g, "").slice(0, 12))}
+                      placeholder="Aadhaar number (leave blank to use the one on file)"
+                      className="h-9 w-72 rounded-lg border border-border bg-background px-3 text-xs outline-none focus-visible:ring-2 focus-visible:ring-india-green/30" />
                     <button onClick={doSendOtp} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 h-9 text-xs font-semibold hover:bg-muted disabled:opacity-50">
                       {busy && !otpSent ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null} {otpSent ? "Resend OTP" : "Send OTP to my mobile"}
                     </button>
