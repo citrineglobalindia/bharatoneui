@@ -22,8 +22,11 @@ const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const EKO_ENV = (Deno.env.get("EKO_ENV") ?? "staging").toLowerCase();
 const IS_PROD = EKO_ENV === "production" || EKO_ENV === "prod";
 const HOST = IS_PROD ? "https://api.eko.in:25002" : "https://staging.eko.in:25004";
-const V1 = `${HOST}/ekoapi/v1`;
-const V3 = `${HOST}/ekoapi/v3`;
+// Production paths live under /ekoicici, staging under /ekoapi — a wrong root
+// gets the gateway's 404 "No Mapping Rule matched".
+const PATH_ROOT = IS_PROD ? "ekoicici" : "ekoapi";
+const V1 = `${HOST}/${PATH_ROOT}/v1`;
+const V3 = `${HOST}/${PATH_ROOT}/v3`;
 // v3 KYC endpoints live under a different base on production (ekoicici, not ekoapi).
 // Same convention as the aeps-2fa function; override with EKO_BASE_URL if Eko moves it.
 const RAW_BASE = (Deno.env.get("EKO_BASE_URL") ?? "").trim().replace(/\/+$/, "");
@@ -212,11 +215,11 @@ Deno.serve(async (req) => {
     try {
       const p = body.payload ?? {};
       const uc = String(p.mobile ?? EKO_INITIATOR_ID);
-      const data = await ekoForm(`${V1}/user/onboard`, "PUT", {
-        initiator_id: EKO_INITIATOR_ID, user_code: uc, pan_number: p.pan, mobile: uc,
+      const data = await ekoJson(`${KYC_V3}/user/network/eps-agent`, "POST", {
+        initiator_id: EKO_INITIATOR_ID, pan_number: p.pan, mobile: uc,
         first_name: p.first_name, last_name: p.last_name ?? "", email: p.email, dob: p.dob,
         shop_name: p.shop_name ?? p.first_name,
-        residence_address: { line: p.line ?? "NA", city: p.city ?? "NA", state: p.state ?? "NA", pincode: p.pincode ?? "000000" },
+        residence_address: [p.line ?? "NA", p.city ?? "NA", p.state ?? "NA", String(p.pincode ?? "000000")],
       });
       return json({ eko_ok: ekoOk(data), message: ekoMsg(data), raw: data });
     } catch (e) { return json({ error: String(e) }, 500); }
@@ -275,6 +278,25 @@ Deno.serve(async (req) => {
       return json({ ok: true, balance: Number.isFinite(bal) ? bal : null, currency: data?.data?.currency ?? "INR", checked_at: new Date().toISOString() });
     }
 
+    // ---------------------------------------------- activation lookup lists
+    // States (state_id for the address objects), shop types (MCC for shop_type)
+    // and the AePS bank list — always fetched live from Eko, never hard-coded.
+    if (action === "get_states" || action === "get_mcc" || action === "get_banks") {
+      const path = action === "get_states" ? "/user/collection/aeps-fingpay/get-states"
+        : action === "get_mcc" ? "/user/collection/aeps-fingpay/get-Mcc-Category"
+        : "/tools/reference/banks";
+      const d = await ekoGet(`${KYC_V3}${path}?initiator_id=${encodeURIComponent(EKO_INITIATOR_ID)}`);
+      const raw = d?.param_attributes?.list_elements ?? d?.data?.param_attributes?.list_elements ?? d?.data ?? [];
+      const list = Array.isArray(raw)
+        ? raw.map((b: any) => ({
+            value: b.value ?? b.bank_code ?? b.code ?? b.id,
+            label: b.label ?? b.name ?? b.bank_name ?? String(b.value ?? ""),
+            ...(b.stateCode ? { stateCode: b.stateCode } : {}),
+          }))
+        : [];
+      return json({ ok: ekoOk(d), list, message: ekoMsg(d) });
+    }
+
     // ----------------------------------------------------------- onboard
     if (action === "onboard") {
       const { mobile, first_name, last_name, email, pan, dob, address, city, state, pincode, shop_name } = body;
@@ -283,10 +305,12 @@ Deno.serve(async (req) => {
       const em = email ?? user.email ?? "";
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return json({ error: "A valid email address is required" }, 400);
       const uc = String(mobile);
-      const data = await ekoForm(`${V1}/user/onboard`, "PUT", {
-        initiator_id: EKO_INITIATOR_ID, user_code: uc, pan_number: pan, mobile: uc, first_name,
+      // EPS onboard-user: POST /user/network/eps-agent (JSON), residence_address
+      // is an ARRAY of strings. The old /v1/user/onboard route 404s on production.
+      const data = await ekoJson(`${KYC_V3}/user/network/eps-agent`, "POST", {
+        initiator_id: EKO_INITIATOR_ID, pan_number: pan, mobile: uc, first_name,
         last_name: last_name ?? "", email: em, dob, shop_name: shop_name ?? first_name,
-        residence_address: { line: address ?? "NA", city: city ?? "NA", state: state ?? "NA", pincode: pincode ?? "000000" },
+        residence_address: [address ?? "NA", city ?? "NA", state ?? "NA", String(pincode ?? "000000")],
       });
       if (!ekoOk(data)) { await setAgent({ last_error: ekoMsg(data), raw: scrub(data) }); return json({ error: ekoMsg(data), raw: scrub(data) }, 400); }
       const code = data?.data?.user_code ?? data?.data?.usercode ?? uc;
@@ -297,10 +321,21 @@ Deno.serve(async (req) => {
     // ----------------------------------------------------------- activate
     if (action === "activate") {
       if (!userCode) return json({ error: "Onboard the retailer first" }, 400);
-      const { modelname, devicenumber, pan_path, aadhaar_front_path, aadhaar_back_path, office_line, office_city, office_state, office_pincode } = body;
+      // Accept both the current UI's field names and the older office_* aliases.
+      const { modelname, devicenumber, pan_path, aadhaar_front_path, aadhaar_back_path,
+              address_line, city, state, pincode, state_id, shop_type, aadhaar, latlong, account, ifsc,
+              office_line, office_city, office_state, office_pincode } = body;
+      const vLine = address_line ?? office_line;
+      const vCity = city ?? office_city;
+      const vState = state ?? office_state;
+      const vPin = String(pincode ?? office_pincode ?? "");
+      const vAadhaar = String(aadhaar ?? "").replace(/\D/g, "");
       if (!modelname || !devicenumber) return json({ error: "Biometric device model name and serial number are required" }, 400);
       if (!pan_path || !aadhaar_front_path || !aadhaar_back_path) return json({ error: "Upload the PAN card, Aadhaar front and Aadhaar back images" }, 400);
-      if (!office_pincode || !/^\d{6}$/.test(String(office_pincode))) return json({ error: "A valid 6-digit office pincode is required" }, 400);
+      if (!/^\d{6}$/.test(vPin)) return json({ error: "A valid 6-digit pincode is required" }, 400);
+      if (vAadhaar.length !== 12) return json({ error: "The agent's 12-digit Aadhaar number is required" }, 400);
+      if (!state_id) return json({ error: "Select the state from the list" }, 400);
+      if (!shop_type) return json({ error: "Select the shop / business type" }, 400);
 
       // Pull the three uploaded documents from storage (service role).
       const grab = async (path: string) => {
@@ -316,16 +351,27 @@ Deno.serve(async (req) => {
         return json({ error: String(e) }, 400);
       }
 
-      const addr = { line: office_line ?? "NA", city: office_city ?? "NA", state: office_state ?? "NA", pincode: String(office_pincode) };
+      // Spec (aeps-activate-fingpay): shop_type, latlong and the plain 12-digit
+      // aadhar are required, and both address objects must carry state_id.
+      const addr = { line: vLine ?? "NA", city: vCity ?? "NA", state: vState ?? "NA", state_id: Number(state_id), pincode: vPin };
       const data = await ekoMultipart(
         `${V3}/admin/network/agent/${encodeURIComponent(userCode)}/aeps-fingpay/activate`,
         "PUT",
-        { initiator_id: EKO_INITIATOR_ID, modelname, devicenumber, office_address: addr, address_as_per_proof: addr },
+        {
+          initiator_id: EKO_INITIATOR_ID, modelname, devicenumber,
+          shop_type: Number(shop_type), aadhar: vAadhaar, latlong: latlong ?? "",
+          office_address: addr, address_as_per_proof: addr,
+        },
         { pan_card: panF, aadhar_front: frontF, aadhar_back: backF },
       );
       if (!ekoOk(data)) { await setAgent({ last_error: ekoMsg(data) }); return json({ error: ekoMsg(data), raw: scrub(data) }, 400); }
-      // Eko puts the agent into PENDING (2-3 business days). Mark as submitted.
-      await setAgent({ service_activated: true, last_error: null });
+      // Eko puts the agent into PENDING (2-3 business days). Mark as submitted,
+      // and persist the details later steps reuse (eKYC needs aadhaar + latlong).
+      await setAgent({
+        service_activated: true, last_error: null,
+        agent_aadhaar: vAadhaar, latlong: latlong ?? null,
+        settlement_account: account ?? null, settlement_ifsc: ifsc ?? null,
+      });
       return json({ ok: true, message: ekoMsg(data) });
     }
 
