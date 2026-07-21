@@ -219,7 +219,8 @@ Deno.serve(async (req) => {
         initiator_id: EKO_INITIATOR_ID, pan_number: p.pan, mobile: uc,
         first_name: p.first_name, last_name: p.last_name ?? "", email: p.email, dob: p.dob,
         shop_name: p.shop_name ?? p.first_name,
-        residence_address: [p.line ?? "NA", p.city ?? "NA", p.state ?? "NA", String(p.pincode ?? "000000")],
+        // Object format — probed 21 Jul 2026 (array is rejected with 1287).
+        residence_address: p.residence_address ?? { line: p.line ?? "NA", city: p.city ?? "NA", state: p.state ?? "NA", pincode: String(p.pincode ?? "000000") },
       });
       return json({ eko_ok: ekoOk(data), message: ekoMsg(data), raw: data });
     } catch (e) { return json({ error: String(e) }, 500); }
@@ -305,12 +306,15 @@ Deno.serve(async (req) => {
       const em = email ?? user.email ?? "";
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return json({ error: "A valid email address is required" }, 400);
       const uc = String(mobile);
-      // EPS onboard-user: POST /user/network/eps-agent (JSON), residence_address
-      // is an ARRAY of strings. The old /v1/user/onboard route 404s on production.
+      // EPS onboard-user: POST /user/network/eps-agent (JSON). Despite the docs
+      // showing an array, Eko's production API requires residence_address as an
+      // OBJECT — probed 21 Jul 2026: array => 1287 "Address not in required
+      // format", object => passes address validation. The old /v1/user/onboard
+      // route 404s on production.
       const data = await ekoJson(`${KYC_V3}/user/network/eps-agent`, "POST", {
         initiator_id: EKO_INITIATOR_ID, pan_number: pan, mobile: uc, first_name,
         last_name: last_name ?? "", email: em, dob, shop_name: shop_name ?? first_name,
-        residence_address: [address ?? "NA", city ?? "NA", state ?? "NA", String(pincode ?? "000000")],
+        residence_address: { line: address ?? "NA", city: city ?? "NA", state: state ?? "NA", pincode: String(pincode ?? "000000") },
       });
       if (!ekoOk(data)) { await setAgent({ last_error: ekoMsg(data), raw: scrub(data) }); return json({ error: ekoMsg(data), raw: scrub(data) }, 400); }
       const code = data?.data?.user_code ?? data?.data?.usercode ?? uc;
