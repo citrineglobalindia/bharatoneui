@@ -449,9 +449,16 @@ Deno.serve(async (req) => {
       if (!agent?.ekyc_done || !dailyKycDoneToday) {
         return json({ error: "DAILY_KYC_REQUIRED", message: "Complete today's biometric authentication before transacting." }, 428);
       }
+      // EPS spec: each operation has its own endpoint with customer_id in the
+      // path and a JSON body (the old generic /customer/collection/aeps-fingpay
+      // URL 404s with "No Mapping Rule matched"). Aadhaar Pay has no aeps-fingpay
+      // endpoint in the spec, so it is not offered via this route.
+      const TXN_PATH: Record<number, string> = { 2: "cash-withdrawl", 3: "balance-enquiry", 4: "mini-statement" };
+      const txnPath = TXN_PATH[st];
+      if (!txnPath) return json({ error: "This operation is not available yet" }, 400);
+
       const clientRefId = `BHO${Date.now()}${Math.floor(Math.random() * 900 + 100)}`;
       const encAadhaar = rsaEncryptPkcs1(String(aadhaar), EKO_RSA_PUB);
-      const amountStr = String(moves ? amt : 0);
       const { data: txn, error: insErr } = await svc.from("aeps_transactions").insert({
         agent_id: user.id, operation, service_type: st, client_ref_id: clientRefId,
         aadhaar_last4: String(aadhaar).slice(-4), bank_code, customer_mobile: String(customer_mobile),
@@ -462,12 +469,15 @@ Deno.serve(async (req) => {
       let result: any = null;
       let transportError: string | null = null;
       try {
-        // request_hash = timestamp + encrypted_aadhaar + amount + user_code
-        result = await ekoForm(`${V3}/customer/collection/aeps-fingpay`, "POST", {
-          initiator_id: EKO_INITIATOR_ID, user_code: userCode, service_type: String(st), customer_id: String(customer_mobile),
-          bank_code, amount: amountStr, client_ref_id: clientRefId, pipe: "0", notify_customer: body.notify_customer ? "1" : "0",
-          aadhar: encAadhaar, piddata, latlong: latlong ?? "", source_ip: sourceIp, reference_id,
-        }, encAadhaar + amountStr + userCode);
+        result = await ekoJson(
+          `${KYC_V3}/customer/collection/aeps-fingpay/${txnPath}/${encodeURIComponent(String(customer_mobile))}`,
+          "POST",
+          {
+            initiator_id: EKO_INITIATOR_ID, user_code: userCode, client_ref_id: clientRefId,
+            bank_code, aadhar: encAadhaar, latlong: latlong ?? "", piddata,
+            amount: moves ? amt : undefined,
+          },
+        );
       } catch (e) { transportError = String(e); }
 
       if (transportError) {
@@ -476,14 +486,19 @@ Deno.serve(async (req) => {
       }
       const ok = ekoOk(result);
       const d = result?.data ?? {};
+      // tx_status: 0=Success, 1=Fail, 2=Awaited — treat awaited as pending.
+      const txStat = String(d.tx_status ?? result?.tx_status ?? "");
+      const finalStatus = !ok ? "failed" : txStat === "2" ? "pending_reconciliation" : "success";
+      const custBalance = d.customer_balance ?? d.balance_amount ?? d.balance ?? null;
+      const statement = d.mini_statement_list ?? d.transactions ?? d.statement ?? null;
       await svc.from("aeps_transactions").update({
-        status: ok ? "success" : "failed", rrn: d.bank_ref_num ?? d.rrn ?? null, tid: d.tid ?? null, provider_ref: d.tid ?? null,
-        balance: d.balance_amount != null ? Number(d.balance_amount) : null, mini_statement: d.transactions ?? d.statement ?? null,
+        status: finalStatus, rrn: d.bank_ref_num ?? d.rrn ?? null, tid: d.tid ?? null, provider_ref: d.tid ?? null,
+        balance: custBalance != null && custBalance !== "" ? Number(custBalance) : null, mini_statement: statement,
         message: ekoMsg(result), response: scrub(result), updated_at: new Date().toISOString(),
       }).eq("id", txn.id);
-      if (ok && moves) { const { error: cErr } = await svc.rpc("settle_aeps_commission", { p_txn_id: txn.id }); if (cErr) console.error("commission:", cErr.message); }
-      if (!ok) return json({ ok: false, error: ekoMsg(result), client_ref_id: clientRefId }, 400);
-      return json({ ok: true, client_ref_id: clientRefId, message: ekoMsg(result), rrn: d.bank_ref_num ?? d.rrn ?? null, tid: d.tid ?? null, balance: d.balance_amount ?? null, statement: d.transactions ?? d.statement ?? null, amount: amt });
+      if (finalStatus === "success" && moves) { const { error: cErr } = await svc.rpc("settle_aeps_commission", { p_txn_id: txn.id }); if (cErr) console.error("commission:", cErr.message); }
+      if (!ok) return json({ ok: false, error: ekoMsg(result), reason: d.reason ?? d.comment ?? undefined, client_ref_id: clientRefId }, 400);
+      return json({ ok: true, client_ref_id: clientRefId, status: finalStatus, message: ekoMsg(result), rrn: d.bank_ref_num ?? d.rrn ?? null, tid: d.tid ?? null, balance: custBalance, statement, amount: amt });
     }
 
     // ----------------------------------------------------------- inquire
