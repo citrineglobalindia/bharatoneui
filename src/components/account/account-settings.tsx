@@ -1,16 +1,19 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
-import { Lock, Loader2, Save, LogOut, Bell, Mail, ShieldCheck, Zap, Eye, EyeOff } from "lucide-react";
+import { Lock, Loader2, Save, LogOut, Bell, Mail, ShieldCheck, Zap, Eye, EyeOff, User, Phone, IdCard, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { isPasswordValid } from "@/components/register/password-field";
 import { supabase } from "@/integrations/supabase/client";
+import { useCurrentUser } from "@/lib/use-current-user";
 
 type Method = "quick" | "email";
 
 export function AccountSettings() {
   const navigate = useNavigate();
+  const me = useCurrentUser();
   const [email, setEmail] = useState<string>("");
+  const [uid, setUid] = useState<string>("");
   const [method, setMethod] = useState<Method>("email");
   const [pwd, setPwd] = useState(""); const [confirm, setConfirm] = useState("");
   const [code, setCode] = useState(""); const [codeSent, setCodeSent] = useState(false);
@@ -20,7 +23,54 @@ export function AccountSettings() {
   const [showPw, setShowPw] = useState(false);
   const [prefs, setPrefs] = useState(() => { try { return JSON.parse(localStorage.getItem("bharatone:notif-prefs") || '{"inapp":true,"email":true}'); } catch { return { inapp: true, email: true }; } });
 
-  useEffect(() => { (async () => { const { data } = await supabase.auth.getUser(); setEmail(data?.user?.email || ""); })(); }, []);
+  // --- profile (mobile number + JSKO ID) ---
+  const [phone, setPhone] = useState("");
+  const [savingPhone, setSavingPhone] = useState(false);
+  const [jskoRequested, setJskoRequested] = useState(false);
+  const [requestingJsko, setRequestingJsko] = useState(false);
+
+  useEffect(() => { (async () => {
+    const { data } = await supabase.auth.getUser();
+    const u = data?.user;
+    setEmail(u?.email || "");
+    if (!u) return;
+    setUid(u.id);
+    try { setJskoRequested(localStorage.getItem(`bharatone:jsko-requested:${u.id}`) === "1"); } catch {}
+    const { data: p } = await supabase.from("profiles").select("phone").eq("id", u.id).maybeSingle();
+    setPhone(String((p as any)?.phone ?? "").replace(/\D/g, "").slice(-10));
+  })(); }, []);
+
+  const savePhone = async () => {
+    const digits = phone.replace(/\D/g, "");
+    if (!/^[6-9]\d{9}$/.test(digits)) { toast.error("Enter a valid 10-digit mobile number"); return; }
+    setSavingPhone(true);
+    try {
+      // Cast: the generated DB types predate the profiles.phone column (verified live).
+      const { error } = await (supabase as any).from("profiles").update({ phone: digits }).eq("id", uid);
+      if (error) { toast.error("Could not save the mobile number", { description: error.message }); return; }
+      // The sidebar reads bharatone:auth first — sync it so the change shows immediately.
+      try { const a = JSON.parse(localStorage.getItem("bharatone:auth") || "{}"); localStorage.setItem("bharatone:auth", JSON.stringify({ ...a, phone: digits })); } catch {}
+      toast.success("Mobile number updated", { description: "It may take one refresh to appear everywhere." });
+    } finally { setSavingPhone(false); }
+  };
+
+  const isRetailer = /retailer/i.test(me.role);
+  const hasJsko = !!me.jskoId?.trim();
+  const requestJsko = async () => {
+    setRequestingJsko(true);
+    try {
+      const who = [me.name, email, phone ? `+91 ${phone}` : ""].filter(Boolean).join(" · ");
+      const { error } = await supabase.rpc("notify_roles", {
+        _roles: ["admin"], _type: "jsko_request", _title: "JSKO ID requested",
+        _body: `Retailer ${who} has requested a JSKO ID to be generated for their account.`,
+        _link: "/admin", _entity_type: "retailer", _entity_id: uid,
+      } as any);
+      if (error) { toast.error("Could not send the request", { description: error.message }); return; }
+      setJskoRequested(true);
+      try { localStorage.setItem(`bharatone:jsko-requested:${uid}`, "1"); } catch {}
+      toast.success("Request sent to the admin team", { description: "You will be notified once your JSKO ID is generated." });
+    } finally { setRequestingJsko(false); }
+  };
 
   const savePrefs = (p: any) => { setPrefs(p); try { localStorage.setItem("bharatone:notif-prefs", JSON.stringify(p)); } catch {} toast.success("Preferences saved"); };
 
@@ -77,6 +127,47 @@ export function AccountSettings() {
 
   return (
     <div className="space-y-5">
+      <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
+        <p className="mb-4 flex items-center gap-2 text-sm font-bold"><User className="h-4 w-4 text-india-green" /> Profile</p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="text-xs font-semibold text-muted-foreground">Mobile number</label>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input inputMode="numeric" maxLength={10} value={phone}
+                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                  placeholder="10-digit mobile number" className={input + " pl-9"} />
+              </div>
+              <Button onClick={savePhone} disabled={savingPhone || !uid} className="h-11 bg-india-green text-white">
+                {savingPhone ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save
+              </Button>
+            </div>
+            <p className="mt-1 text-[11px] text-muted-foreground">Shown on your profile and used for AEPS and service updates.</p>
+          </div>
+          {isRetailer && (
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground">JSKO ID</label>
+              <div className="flex h-11 items-center gap-2">
+                <span className={`inline-flex items-center gap-1.5 rounded-lg px-3 h-9 text-sm font-bold ${hasJsko ? "bg-india-green/10 text-india-green" : "bg-muted text-muted-foreground"}`}>
+                  <IdCard className="h-4 w-4" /> {me.jskoId?.trim() || "Nill"}
+                </span>
+                {!hasJsko && (
+                  jskoRequested ? (
+                    <span className="text-xs font-semibold text-amber-700">Request sent — waiting for the admin team</span>
+                  ) : (
+                    <Button onClick={requestJsko} disabled={requestingJsko || !uid} variant="outline" className="h-9">
+                      {requestingJsko ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Request JSKO ID
+                    </Button>
+                  )
+                )}
+              </div>
+              {!hasJsko && !jskoRequested && <p className="mt-1 text-[11px] text-muted-foreground">No JSKO ID yet — ask the admin team to generate one for you.</p>}
+            </div>
+          )}
+        </div>
+      </div>
+
       <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <p className="flex items-center gap-2 text-sm font-bold"><Lock className="h-4 w-4 text-india-green" /> Change password</p>
