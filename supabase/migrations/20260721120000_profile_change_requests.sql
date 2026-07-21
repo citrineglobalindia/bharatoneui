@@ -57,16 +57,22 @@ begin
   return jsonb_build_object('ok', true, 'id', v_id);
 end $$;
 
+-- (updated same day: JSKO ID added to the listing — username after approval,
+-- else a real jsko_id, DEMO placeholder excluded)
 create or replace function public.qc_list_profile_change_requests(_status text default 'pending')
-returns table (id uuid, user_id uuid, field text, old_value text, new_value text, status text, remarks text, created_at timestamptz, requester_name text, requester_email text, requester_phone text, application_id text)
+returns table (id uuid, user_id uuid, field text, old_value text, new_value text, status text, remarks text, created_at timestamptz, requester_name text, requester_email text, requester_phone text, application_id text, jsko_id text)
 language sql security definer set search_path = public as $$
   select r.id, r.user_id, r.field, r.old_value, r.new_value, r.status, r.remarks, r.created_at,
-         p.display_name, u.email, p.phone, reg.application_id
+         p.display_name, u.email, p.phone, reg.application_id,
+         coalesce(
+           nullif(btrim(reg.username), ''),
+           case when upper(btrim(coalesce(reg.jsko_id,''))) not in ('', 'DEMO') then btrim(reg.jsko_id) end
+         ) as jsko_id
   from public.profile_change_requests r
   left join public.profiles p on p.id = r.user_id
   left join auth.users u on u.id = r.user_id
   left join lateral (
-    select rr.application_id from public.retailer_registrations rr
+    select rr.application_id, rr.username, rr.jsko_id from public.retailer_registrations rr
     where rr.auth_user_id = r.user_id order by rr.created_at desc limit 1
   ) reg on true
   where (_status is null or r.status = _status)
