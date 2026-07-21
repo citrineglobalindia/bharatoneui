@@ -563,7 +563,14 @@ Deno.serve(async (req) => {
         message: ekoMsg(result), response: scrub(result), updated_at: new Date().toISOString(),
       }).eq("id", txn.id);
       if (finalStatus === "success" && moves) { const { error: cErr } = await svc.rpc("settle_aeps_commission", { p_txn_id: txn.id }); if (cErr) console.error("commission:", cErr.message); }
-      if (!ok) return json({ ok: false, error: ekoMsg(result), reason: d.reason ?? d.comment ?? undefined, client_ref_id: clientRefId }, 400);
+      if (!ok) {
+        // Eko puts the human-readable cause in `comment` and often leaves
+        // `reason` as an EMPTY STRING (not null) — so `??` keeps the blank.
+        // Use `||` so the real message ("AePS disabled by bank", "Invalid IIN",
+        // "Frozen account"...) actually surfaces to the operator.
+        const detail = String(d.reason || d.comment || "").trim();
+        return json({ ok: false, error: detail ? `${ekoMsg(result)}: ${detail}` : ekoMsg(result), reason: detail || undefined, comment: d.comment ?? undefined, client_ref_id: clientRefId }, 400);
+      }
       return json({ ok: true, client_ref_id: clientRefId, status: finalStatus, message: ekoMsg(result), rrn: d.bank_ref_num ?? d.rrn ?? null, tid: d.tid ?? null, balance: custBalance, statement, amount: amt });
     }
 

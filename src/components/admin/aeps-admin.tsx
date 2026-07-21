@@ -615,12 +615,16 @@ function CommissionSetup() {
   const [testAmt, setTestAmt] = useState("500");
   const [testOp, setTestOp] = useState("cash_withdrawal");
   const [quote, setQuote] = useState<any>(null);
+  const [twofaCharge, setTwofaCharge] = useState("");
+  const [chargeSaving, setChargeSaving] = useState(false);
 
   async function load() {
     setLoading(true);
     const { data } = await supabase.from("aeps_commission_slabs").select("*")
       .order("operation").order("min_amount");
     setSlabs((data as Slab[]) ?? []);
+    const { data: cs } = await supabase.from("app_settings").select("value").eq("key", "aeps_daily_2fa_charge").maybeSingle();
+    setTwofaCharge(String((cs as any)?.value ?? "0"));
     setLoading(false);
   }
   useEffect(() => { load(); }, []);
@@ -666,6 +670,20 @@ function CommissionSetup() {
     setQuote((data as any[])?.[0] ?? null);
   };
 
+  const saveCharge = async () => {
+    const v = Number(twofaCharge);
+    if (!(v >= 0)) return toast.error("Enter a valid charge (0 or more)");
+    setChargeSaving(true);
+    try {
+      await ensureStaffSession();
+      const { error } = await (supabase as any).rpc("set_app_setting", { p_key: "aeps_daily_2fa_charge", p_value: String(v) });
+      if (error) throw error;
+      toast.success(v > 0 ? `Daily 2FA charge set to ₹${v}` : "Daily 2FA charge disabled (₹0)");
+    } catch (e: any) {
+      toast.error("Could not save charge", { description: e.message });
+    } finally { setChargeSaving(false); }
+  };
+
   const companyShare = 100 - Number(form.retailer_share || 0) - Number(form.distributor_share || 0);
 
   return (
@@ -674,6 +692,27 @@ function CommissionSetup() {
         Commission is earned by the retailer on every successful <b>cash withdrawal</b> and <b>Aadhaar Pay</b>, and is credited to
         their wallet the moment the transaction succeeds. The distributor for that retailer's district earns an override, and
         BharatOne keeps the remainder. Balance enquiry and mini statement normally earn nothing.
+      </div>
+
+      {/* Daily 2FA charge */}
+      <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
+        <p className="mb-1 text-sm font-bold">Daily 2FA charge</p>
+        <p className="mb-3 text-[11px] text-muted-foreground">
+          Deducted from the agent's wallet each time they complete their daily biometric authentication, and credited to the
+          company account. Set to <b>0</b> to disable. Agents whose wallet balance is below the charge are blocked from daily
+          authentication until they top up.
+        </p>
+        <div className="flex items-end gap-3">
+          <L label="Charge per day (₹)">
+            <div className="relative">
+              <IndianRupee className="absolute left-2.5 top-3 h-4 w-4 text-muted-foreground" />
+              <input type="number" step="0.01" min="0" value={twofaCharge} onChange={(e) => setTwofaCharge(e.target.value)} className="h-10 w-40 rounded-lg border border-border bg-background pl-8 pr-3 text-sm" />
+            </div>
+          </L>
+          <button onClick={saveCharge} disabled={chargeSaving} className="inline-flex items-center gap-1.5 rounded-lg bg-india-green px-4 h-10 text-sm font-semibold text-white disabled:opacity-50">
+            {chargeSaving ? "Saving…" : "Save charge"}
+          </button>
+        </div>
       </div>
 
       {/* Form */}

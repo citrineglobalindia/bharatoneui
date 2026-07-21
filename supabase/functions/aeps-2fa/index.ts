@@ -136,6 +136,19 @@ Deno.serve(async (req) => {
 
   try {
     if (!EKO_AUTH_KEY || !EKO_DEVELOPER_KEY || !EKO_INITIATOR_ID) return json({ error: "AEPS is not configured." }, 503);
+
+    // Daily-2FA charge (admin-set via app_settings; 0 = disabled). Pre-check the
+    // agent can pay BEFORE we spend an Eko 2FA that we couldn't then bill for.
+    const { data: chgRow } = await svc.from("app_settings").select("value").eq("key", "aeps_daily_2fa_charge").maybeSingle();
+    const twofaCharge = Number(chgRow?.value ?? 0) || 0;
+    if (twofaCharge > 0) {
+      const { data: w } = await svc.from("wallets").select("balance").eq("user_id", user.id).maybeSingle();
+      const bal = Number(w?.balance ?? 0);
+      if (bal < twofaCharge) {
+        return json({ error: `Insufficient wallet balance. Daily authentication costs ₹${twofaCharge}, but your balance is ₹${bal.toFixed(2)}. Please top up and try again.`, needs_topup: true, charge: twofaCharge, balance: bal }, 402);
+      }
+    }
+
     const ts = String(Date.now());
     const headers: Record<string, string> = {
       "developer_key": EKO_DEVELOPER_KEY,
@@ -164,7 +177,7 @@ Deno.serve(async (req) => {
 
     const ok = data?.response_status_id === 0 || data?.status === 0 || data?.response_type_id === 1713;
 
-    await svc.from("aeps_kyc_attempts").insert({
+    const { data: attempt } = await svc.from("aeps_kyc_attempts").insert({
       agent_id: user.id, user_code: userCode, client_ref_id: clientRefId,
       http_status: res.status, ok,
       response: data,
@@ -173,11 +186,20 @@ Deno.serve(async (req) => {
         content_type: "application/json", body_fields: Object.keys(payload),
         pid: pidInfo, rsa_key_env: IS_PROD ? "prod" : "staging",
       },
-    });
+    }).select("id").single();
 
     if (ok) {
       await svc.from("aeps_agents").update({ last_daily_kyc_at: new Date().toISOString(), agent_bank_code: bc, last_error: null, updated_at: new Date().toISOString() }).eq("user_id", user.id);
-      return json({ ok: true, client_ref_id: clientRefId, message: String(data?.message ?? "KYC success") });
+      // Bill the daily-2FA charge (no-op when unset). The pre-check above ensured
+      // funds, so this should not fail; if it races, log it and still report
+      // success — the 2FA itself already went through at NPCI.
+      let charge_result: any = null;
+      if (twofaCharge > 0) {
+        const { data: cRes, error: cErr } = await svc.rpc("settle_aeps_2fa_charge", { p_agent: user.id, p_ref: attempt?.id ?? null });
+        if (cErr) { console.error("2fa charge:", cErr.message); charge_result = { charged: false, error: cErr.message }; }
+        else charge_result = cRes;
+      }
+      return json({ ok: true, client_ref_id: clientRefId, message: String(data?.message ?? "KYC success"), charge: charge_result });
     }
 
     const reason = String(data?.data?.reason ?? "");
