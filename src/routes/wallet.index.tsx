@@ -59,6 +59,13 @@ function WalletPage() {
   }
   useEffect(() => { load(); }, []);
 
+  // Payment QR managed by the admin (System Settings). Empty = no QR shown.
+  const [qrUrl, setQrUrl] = useState<string>("");
+  useEffect(() => { (async () => {
+    const { data } = await supabase.from("app_settings").select("value").eq("key", "wallet_qr_url").maybeSingle();
+    setQrUrl(((data as any)?.value ?? "").trim());
+  })(); }, []);
+
   const uploadReceipt = async (file: File) => {
     if (file.size > 50 * 1024 * 1024) { toast.error("File too large", { description: "Maximum size is 50 MB." }); return; }
     setUploadingRcpt(true);
@@ -133,6 +140,18 @@ function WalletPage() {
             {pendingTotal > 0 && <p className="mt-2 inline-flex items-center gap-1 rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-semibold"><Clock3 className="h-3 w-3" /> {inr(pendingTotal)} pending verification</p>}
           </div>
           <SectionCard title="Add Funds" className="lg:col-span-2">
+            {qrUrl && (
+              <div className="mb-3 flex flex-wrap items-center gap-4 rounded-xl border border-india-green/30 bg-india-green/5 p-3">
+                <img src={qrUrl} alt="Payment QR — scan with any UPI app" className="h-36 w-36 rounded-lg border border-border bg-white object-contain" />
+                <div className="min-w-[200px] flex-1 text-sm">
+                  <p className="font-bold">Scan &amp; Pay</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Scan this QR with any UPI app and pay the amount you want to add. Then enter the <b>amount, date, method and transaction ID</b> below,
+                    upload the <b>payment receipt</b> and press <b>Request Top-up</b>. The accountant verifies the payment and credits your wallet.
+                  </p>
+                </div>
+              </div>
+            )}
             <form onSubmit={submit} className="grid gap-3 sm:grid-cols-3">
               <Field label="Amount (₹) *"><Input type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="500" /></Field>
               <Field label="Date of Transaction *"><Input type="date" value={txnDate} max={new Date().toISOString().slice(0,10)} onChange={(e) => setTxnDate(e.target.value)} /></Field>
