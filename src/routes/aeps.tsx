@@ -327,9 +327,11 @@ function AepsPage() {
     if (!acStateId) return toast.error("Select your state from the list");
     if (!acShopType) return toast.error("Select your shop / business type");
     if (!panPath || !frontPath || !backPath) return toast.error("Upload PAN, Aadhaar front and Aadhaar back (JPG/PDF, under 1 MB)");
-    setBusy(true);
+    // Eko's activation spec requires the agent's GPS coordinates — an empty
+    // latlong makes their server fail with HTTP 500.
     let latlong = "";
-    try { const pos = await new Promise<GeolocationPosition>((res, rej) => navigator.geolocation.getCurrentPosition(res, rej, { timeout: 8000 })); latlong = `${pos.coords.latitude.toFixed(6)},${pos.coords.longitude.toFixed(6)}`; } catch { /* optional */ }
+    try { latlong = await getLatLongStrict(); } catch (e: any) { return toast.error("Location required", { description: "Allow location access in the browser, then submit again." }); }
+    setBusy(true);
     try {
       await call("activate", {
         modelname: acModel.trim(), devicenumber: acSerial.trim(),

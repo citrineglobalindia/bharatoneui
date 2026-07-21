@@ -340,6 +340,8 @@ Deno.serve(async (req) => {
       if (vAadhaar.length !== 12) return json({ error: "The agent's 12-digit Aadhaar number is required" }, 400);
       if (!state_id) return json({ error: "Select the state from the list" }, 400);
       if (!shop_type) return json({ error: "Select the shop / business type" }, 400);
+      // Spec-required; an empty latlong triggers HTTP 500 on Eko's side.
+      if (!latlong || !String(latlong).includes(",")) return json({ error: "Location is required — allow location access in the browser and submit again" }, 400);
 
       // Pull the three uploaded documents from storage (service role).
       const grab = async (path: string) => {
