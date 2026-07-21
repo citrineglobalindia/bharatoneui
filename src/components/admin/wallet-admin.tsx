@@ -5,11 +5,22 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 
-type Topup = { id: string; user_id: string; amount: number; method: string | null; reference: string | null; note: string | null; status: string; created_at: string; txn_date: string | null; receipt_path: string | null };
+type Topup = {
+  id: string; user_id: string; amount: number; method: string | null; reference: string | null; note: string | null;
+  status: string; created_at: string; txn_date: string | null; receipt_path: string | null;
+  source: "manual" | "razorpay"; fee?: number | null; net_amount?: number | null;
+};
 type RUser = { id: string; name: string; email: string };
 type Account = { user_id: string; jsko_id: string | null; name: string; balance: number };
 const inr = (n: number) => "₹" + Number(n || 0).toLocaleString("en-IN");
-const tone: Record<string, string> = { pending: "bg-amber-100 text-amber-700", verified: "bg-emerald-100 text-emerald-700", rejected: "bg-rose-100 text-rose-700" };
+const tone: Record<string, string> = {
+  pending: "bg-amber-100 text-amber-700", verified: "bg-emerald-100 text-emerald-700", rejected: "bg-rose-100 text-rose-700",
+  paid: "bg-amber-100 text-amber-700", credited: "bg-emerald-100 text-emerald-700", failed: "bg-rose-100 text-rose-700",
+};
+const statusText: Record<string, string> = { paid: "received", credited: "approved", verified: "approved" };
+// pending = awaiting accountant action; approved = credited; rejected = declined/failed.
+const bucketOf = (t: Topup): "pending" | "approved" | "rejected" =>
+  t.status === "pending" || t.status === "paid" ? "pending" : t.status === "verified" || t.status === "credited" ? "approved" : "rejected";
 
 // allowMainRecharge: only the admin portal may add funds to the main company account.
 export function WalletAdmin({ allowMainRecharge = false }: { allowMainRecharge?: boolean } = {}) {
@@ -22,27 +33,47 @@ export function WalletAdmin({ allowMainRecharge = false }: { allowMainRecharge?:
   const [rcAmt, setRcAmt] = useState(""); const [rcBusy, setRcBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
-  const [tab, setTab] = useState<"pending" | "all">("pending");
+  const [tab, setTab] = useState<"pending" | "approved" | "rejected" | "all">("pending");
   const [tuUser, setTuUser] = useState(""); const [tuAmt, setTuAmt] = useState(""); const [tuNote, setTuNote] = useState(""); const [tuBusy, setTuBusy] = useState(false);
 
   async function load() {
     setLoading(true);
     try {
       await ensureStaffSession();
-      const [t, acc, w, cb] = await Promise.all([
+      const [t, rz, acc, w, cb] = await Promise.all([
         supabase.from("wallet_topups").select("*").order("created_at", { ascending: false }),
+        (supabase as any).from("razorpay_payments")
+          .select("id,user_id,amount,fee,net_amount,status,payment_id,wallet_recharge_id,created_at")
+          .eq("purpose", "wallet_topup").in("status", ["paid", "credited", "failed"])
+          .order("created_at", { ascending: false }).limit(300),
         (supabase as any).rpc("wallet_topup_accounts"),
         supabase.from("wallets").select("user_id,balance"),
         supabase.rpc("company_balance"),
       ]);
       setMainBal(Number((cb.data as any) ?? 0));
-      setRows((t.data as Topup[]) ?? []);
+      // Merge manual top-up requests with online (Razorpay) wallet payments so
+      // the accountant sees every recharge request in one list.
+      const manual: Topup[] = ((t.data as any[]) ?? []).map((r) => ({ ...r, source: "manual" as const }));
+      const online: Topup[] = ((rz.data as any[]) ?? []).map((r) => ({
+        id: r.id, user_id: r.user_id, amount: Number(r.amount), method: "Razorpay (online)",
+        reference: r.payment_id ?? null, note: r.wallet_recharge_id ?? null, status: r.status,
+        created_at: r.created_at, txn_date: r.created_at, receipt_path: null,
+        source: "razorpay" as const, fee: r.fee, net_amount: r.net_amount,
+      }));
+      const merged = [...manual, ...online].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      setRows(merged);
       setBalances((w.data as any[]) ?? []);
       // Retailer accounts (JSKO IDs) available for direct top-up — accountant/admin-safe RPC.
       const list = (acc.data as Account[]) ?? [];
       setAccounts(list);
       const map: Record<string, RUser> = {}; const rets: RUser[] = [];
       list.forEach((a) => { const label = a.jsko_id ? `${a.jsko_id} · ${a.name}` : a.name; const ru = { id: a.user_id, name: label, email: "" }; map[a.user_id] = ru; rets.push(ru); });
+      // Resolve names for payers missing from the accounts list (e.g. no wallet yet).
+      const missing = Array.from(new Set(merged.map((r) => r.user_id).filter((id) => id && !map[id])));
+      if (missing.length > 0) {
+        const { data: extra } = await (supabase as any).rpc("staff_user_names", { _ids: missing });
+        for (const u of (extra as any[]) ?? []) if (!map[u.id]) map[u.id] = { id: u.id, name: u.name || "Retailer", email: "" };
+      }
       setUsers(map); setRetailers(rets);
     } finally { setLoading(false); }
   }
@@ -54,6 +85,15 @@ export function WalletAdmin({ allowMainRecharge = false }: { allowMainRecharge?:
   };
   const act = async (t: Topup, approve: boolean) => {
     setBusy(t.id);
+    if (t.source === "razorpay") {
+      // Online payment: credit the NET amount (gross - Razorpay fee).
+      const { data, error } = await (supabase as any).rpc("accountant_confirm_razorpay", { p_payment: t.id });
+      setBusy(null);
+      if (error) return toast.error("Failed", { description: error.message });
+      const credited = (data as any)?.credited;
+      toast.success("Wallet recharged", { description: credited != null ? `${inr(Number(credited))} credited (net of gateway fee).` : "Credited." });
+      return load();
+    }
     const { error } = await supabase.rpc("verify_wallet_topup", { p_id: t.id, p_approve: approve });
     setBusy(null);
     if (error) return toast.error("Failed", { description: error.message });
@@ -80,9 +120,15 @@ export function WalletAdmin({ allowMainRecharge = false }: { allowMainRecharge?:
     toast.success("Main account recharged"); setRcAmt(""); load();
   };
 
-  const pendingTotal = useMemo(() => rows.filter((r) => r.status === "pending").reduce((a, r) => a + Number(r.amount), 0), [rows]);
+  const pendingTotal = useMemo(() => rows.filter((r) => bucketOf(r) === "pending").reduce((a, r) => a + Number(r.amount), 0), [rows]);
   const floatTotal = useMemo(() => balances.reduce((a, b) => a + Number(b.balance), 0), [balances]);
-  const filtered = useMemo(() => tab === "pending" ? rows.filter((r) => r.status === "pending") : rows, [rows, tab]);
+  const filtered = useMemo(() => tab === "all" ? rows : rows.filter((r) => bucketOf(r) === tab), [rows, tab]);
+  const counts = useMemo(() => ({
+    pending: rows.filter((r) => bucketOf(r) === "pending").length,
+    approved: rows.filter((r) => bucketOf(r) === "approved").length,
+    rejected: rows.filter((r) => bucketOf(r) === "rejected").length,
+    all: rows.length,
+  }), [rows]);
 
   return (
     <div className="space-y-5">
@@ -103,7 +149,7 @@ export function WalletAdmin({ allowMainRecharge = false }: { allowMainRecharge?:
           )}
           <p className="mt-1 text-[10px] text-muted-foreground">{allowMainRecharge ? "Approvals & top-ups deduct from this." : "Approvals & top-ups deduct from this. Only an admin can add funds."}</p>
         </div>
-        <div className="rounded-2xl border border-border bg-card p-4 shadow-soft"><p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Retailer wallet float</p><p className="text-2xl font-extrabold">{inr(floatTotal)}</p><p className="text-xs text-muted-foreground">{balances.length} wallet(s) · {rows.filter((r) => r.status === "pending").length} pending ({inr(pendingTotal)})</p></div>
+        <div className="rounded-2xl border border-border bg-card p-4 shadow-soft"><p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Retailer wallet float</p><p className="text-2xl font-extrabold">{inr(floatTotal)}</p><p className="text-xs text-muted-foreground">{balances.length} wallet(s) · {rows.filter((r) => bucketOf(r) === "pending").length} pending ({inr(pendingTotal)})</p></div>
         <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
           <p className="mb-2 flex items-center gap-2 text-sm font-bold"><Plus className="h-4 w-4 text-india-green" /> Direct top-up</p>
           <form onSubmit={directTopup} className="space-y-2">
@@ -113,7 +159,7 @@ export function WalletAdmin({ allowMainRecharge = false }: { allowMainRecharge?:
         </div>
       </div>
 
-      <div className="flex gap-1.5">{(["pending", "all"] as const).map((k) => <button key={k} onClick={() => setTab(k)} className={`rounded-full px-3 h-8 text-xs font-semibold capitalize transition ${tab === k ? "bg-india-green text-white" : "border border-border bg-card hover:bg-muted"}`}>{k === "pending" ? "Pending" : "All requests"}</button>)}</div>
+      <div className="flex flex-wrap gap-1.5">{(["pending", "approved", "rejected", "all"] as const).map((k) => <button key={k} onClick={() => setTab(k)} className={`rounded-full px-3 h-8 text-xs font-semibold capitalize transition ${tab === k ? "bg-india-green text-white" : "border border-border bg-card hover:bg-muted"}`}>{k === "all" ? "All" : k} ({counts[k]})</button>)}</div>
 
       <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-soft">
         <table className="w-full text-sm">
@@ -124,15 +170,18 @@ export function WalletAdmin({ allowMainRecharge = false }: { allowMainRecharge?:
               : filtered.map((t) => (<tr key={t.id} className="border-t border-border">
                 <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">{new Date(t.created_at).toLocaleString("en-IN")}</td>
                 <td className="px-3 py-2">{users[t.user_id]?.name ?? "—"}<div className="text-[11px] text-muted-foreground">{users[t.user_id]?.email}</div></td>
-                <td className="px-3 py-2 font-semibold">{inr(t.amount)}</td>
+                <td className="px-3 py-2">
+                  <p className="font-semibold">{inr(t.amount)}</p>
+                  {t.source === "razorpay" && t.fee != null && <p className="text-[10px] text-muted-foreground">net {inr(t.net_amount ?? t.amount)} · fee {inr(t.fee)}</p>}
+                </td>
                 <td className="px-3 py-2 text-xs">{t.txn_date ? new Date(t.txn_date).toLocaleDateString("en-IN") : "—"}</td>
-                <td className="px-3 py-2">{t.method ?? "—"}{t.reference ? <div className="text-[11px] text-muted-foreground">{t.reference}</div> : null}</td>
+                <td className="px-3 py-2">{t.method ?? "—"}{t.reference ? <div className="max-w-[160px] truncate font-mono text-[11px] text-muted-foreground" title={t.reference}>{t.reference}</div> : null}</td>
                 <td className="px-3 py-2">{t.receipt_path ? <button onClick={() => viewReceipt(t.receipt_path!)} className="inline-flex items-center gap-1 text-xs font-semibold text-india-green hover:underline"><Download className="h-3.5 w-3.5" /> View</button> : <span className="text-xs text-muted-foreground">—</span>}</td>
-                <td className="px-3 py-2"><span className={`rounded-full px-2 py-0.5 text-[11px] font-bold capitalize ${tone[t.status]}`}>{t.status}</span></td>
+                <td className="px-3 py-2"><span className={`rounded-full px-2 py-0.5 text-[11px] font-bold capitalize ${tone[t.status] ?? "bg-muted"}`}>{statusText[t.status] ?? t.status}</span>{t.source === "razorpay" && t.note ? <div className="font-mono text-[10px] font-semibold text-india-green">{t.note}</div> : null}</td>
                 <td className="px-3 py-2 text-right whitespace-nowrap">
-                  {t.status === "pending" ? <>
-                    <Button size="sm" disabled={busy === t.id} onClick={() => act(t, true)} className="mr-2 bg-india-green text-white hover:bg-india-green/90">{busy === t.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />} Verify</Button>
-                    <Button size="sm" variant="outline" disabled={busy === t.id} onClick={() => act(t, false)} className="text-rose-600"><XCircle className="h-3.5 w-3.5" /> Reject</Button>
+                  {bucketOf(t) === "pending" ? <>
+                    <Button size="sm" disabled={busy === t.id} onClick={() => act(t, true)} className="mr-2 bg-india-green text-white hover:bg-india-green/90">{busy === t.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />} {t.source === "razorpay" ? `Credit ${inr(t.net_amount ?? t.amount)}` : "Verify"}</Button>
+                    {t.source === "manual" && <Button size="sm" variant="outline" disabled={busy === t.id} onClick={() => act(t, false)} className="text-rose-600"><XCircle className="h-3.5 w-3.5" /> Reject</Button>}
                   </> : <span className="text-xs text-muted-foreground">—</span>}
                 </td>
               </tr>))}
