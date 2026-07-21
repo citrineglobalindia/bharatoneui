@@ -61,6 +61,7 @@ function WalletPage() {
 
   // Payment QR managed by the admin (System Settings). Empty = no QR shown.
   const [qrUrl, setQrUrl] = useState<string>("");
+  const [payMode, setPayMode] = useState<"qr" | "razorpay">("qr");
   useEffect(() => { (async () => {
     const { data } = await supabase.from("app_settings").select("value").eq("key", "wallet_qr_url").maybeSingle();
     setQrUrl(((data as any)?.value ?? "").trim());
@@ -140,35 +141,65 @@ function WalletPage() {
             {pendingTotal > 0 && <p className="mt-2 inline-flex items-center gap-1 rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-semibold"><Clock3 className="h-3 w-3" /> {inr(pendingTotal)} pending verification</p>}
           </div>
           <SectionCard title="Add Funds" className="lg:col-span-2">
-            {qrUrl && (
-              <div className="mb-3 flex flex-wrap items-center gap-4 rounded-xl border border-india-green/30 bg-india-green/5 p-3">
-                <img src={qrUrl} alt="Payment QR — scan with any UPI app" className="h-36 w-36 rounded-lg border border-border bg-white object-contain" />
-                <div className="min-w-[200px] flex-1 text-sm">
-                  <p className="font-bold">Scan &amp; Pay</p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    Scan this QR with any UPI app and pay the amount you want to add. Then enter the <b>amount, date, method and transaction ID</b> below,
-                    upload the <b>payment receipt</b> and press <b>Request Top-up</b>. The accountant verifies the payment and credits your wallet.
-                  </p>
+            {/* Step 1: amount. Step 2: payment mode. Step 3: mode-specific flow. */}
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="1. Amount (₹) *"><Input type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="500" /></Field>
+              <Field label="2. Select payment mode *">
+                <div className="grid grid-cols-2 gap-2">
+                  <button type="button" onClick={() => setPayMode("qr")}
+                    className={`h-10 rounded-lg border px-3 text-sm font-semibold transition ${payMode === "qr" ? "border-india-green bg-india-green/10 text-india-green" : "border-border bg-background text-muted-foreground hover:text-foreground"}`}>
+                    QR / Bank Transfer
+                  </button>
+                  <button type="button" onClick={() => setPayMode("razorpay")}
+                    className={`h-10 rounded-lg border px-3 text-sm font-semibold transition ${payMode === "razorpay" ? "border-india-green bg-india-green/10 text-india-green" : "border-border bg-background text-muted-foreground hover:text-foreground"}`}>
+                    Pay Online (Razorpay)
+                  </button>
                 </div>
+              </Field>
+            </div>
+
+            {payMode === "qr" ? (
+              <form onSubmit={submit} className="mt-3">
+                {qrUrl ? (
+                  <div className="mb-3 flex flex-wrap items-center gap-4 rounded-xl border border-india-green/30 bg-india-green/5 p-3">
+                    <img src={qrUrl} alt="Payment QR — scan with any UPI app" className="h-36 w-36 rounded-lg border border-border bg-white object-contain" />
+                    <div className="min-w-[200px] flex-1 text-sm">
+                      <p className="font-bold">3. Scan &amp; Pay</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        Scan this QR with any UPI app and pay <b>{amount ? `₹${Number(amount).toLocaleString("en-IN")}` : "the amount"}</b>. Then fill in the payment details below and press <b>Request Top-up</b>.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="mb-3 rounded-lg border border-dashed border-border p-3 text-xs text-muted-foreground">Pay by bank transfer / UPI to the company account, then fill in the details below. (The admin has not published a payment QR yet.)</p>
+                )}
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <Field label="Date of Transaction *"><Input type="date" value={txnDate} max={new Date().toISOString().slice(0,10)} onChange={(e) => setTxnDate(e.target.value)} /></Field>
+                  <Field label="Method *"><Select value={method} onChange={(e) => setMethod(e.target.value)}><option>UPI</option><option>Bank Transfer</option><option>Cash Deposit</option><option>NEFT/IMPS</option></Select></Field>
+                  <Field label="Transaction ID / UTR"><Input value={reference} onChange={(e) => setReference(e.target.value)} placeholder="Txn ref" /></Field>
+                  <div className="sm:col-span-2"><Field label="Transaction Receipt *">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-card px-3 h-10 text-sm font-semibold hover:bg-muted">{uploadingRcpt ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} {receiptPath ? "Replace receipt" : "Upload receipt"}<input type="file" accept="*/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadReceipt(e.target.files[0])} /></label>
+                      {receiptName && <span className="truncate max-w-[180px] text-xs font-medium text-india-green">{receiptName}</span>}
+                    </div>
+                  </Field></div>
+                  <div className="flex items-end justify-end">
+                    <PrimaryButton type="submit" disabled={submitting || uploadingRcpt}>{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Request Top-up</PrimaryButton>
+                  </div>
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">The accountant verifies your payment against the receipt and transaction ID, then credits your wallet. You'll be notified once it's recharged.</p>
+              </form>
+            ) : (
+              <div className="mt-3 rounded-xl border border-border bg-muted/30 p-4">
+                <p className="text-sm font-bold">3. Pay securely via Razorpay</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  You'll pay {amount ? <b>₹{Number(amount).toLocaleString("en-IN")}</b> : "the amount"} through Razorpay (UPI, card or netbanking).
+                  The payment appears in your transaction history immediately, and after accountant verification your wallet is credited with the
+                  <b> amount received after Razorpay's gateway charges are deducted</b>.
+                </p>
+                <button type="button" onClick={payNow} disabled={paying} className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-india-green px-4 h-10 text-sm font-semibold text-white hover:bg-india-green/90 disabled:opacity-50">{paying ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wallet className="h-4 w-4" />} Pay online (Razorpay)</button>
               </div>
             )}
-            <form onSubmit={submit} className="grid gap-3 sm:grid-cols-3">
-              <Field label="Amount (₹) *"><Input type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="500" /></Field>
-              <Field label="Date of Transaction *"><Input type="date" value={txnDate} max={new Date().toISOString().slice(0,10)} onChange={(e) => setTxnDate(e.target.value)} /></Field>
-              <Field label="Method *"><Select value={method} onChange={(e) => setMethod(e.target.value)}><option>UPI</option><option>Bank Transfer</option><option>Cash Deposit</option><option>NEFT/IMPS</option></Select></Field>
-              <Field label="Reference / UTR"><Input value={reference} onChange={(e) => setReference(e.target.value)} placeholder="Txn ref (optional)" /></Field>
-              <div className="sm:col-span-2"><Field label="Transaction Receipt *">
-                <div className="flex flex-wrap items-center gap-2">
-                  <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-card px-3 h-10 text-sm font-semibold hover:bg-muted">{uploadingRcpt ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} {receiptPath ? "Replace receipt" : "Upload receipt"}<input type="file" accept="*/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadReceipt(e.target.files[0])} /></label>
-                  {receiptName && <span className="truncate max-w-[180px] text-xs font-medium text-india-green">{receiptName}</span>}
-                </div>
-              </Field></div>
-              <div className="sm:col-span-3 flex flex-wrap items-center justify-end gap-2">
-                <button type="button" onClick={payNow} disabled={paying} className="inline-flex items-center gap-1.5 rounded-lg bg-india-green px-4 h-10 text-sm font-semibold text-white hover:bg-india-green/90 disabled:opacity-50">{paying ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wallet className="h-4 w-4" />} Pay online (Razorpay)</button>
-                <PrimaryButton type="submit" disabled={submitting || uploadingRcpt}>{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Request Top-up</PrimaryButton>
-              </div>
-            </form>
-            <p className="mt-1 text-xs text-muted-foreground">Both <b>Pay online (Razorpay)</b> and the manual <b>Request Top-up</b> are credited to your wallet <b>after the accountant verifies the payment</b>. You'll be notified once your wallet is recharged.</p>
           </SectionCard>
         </div>
 

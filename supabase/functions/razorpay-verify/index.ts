@@ -13,6 +13,7 @@ const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: 
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const KEY_ID = Deno.env.get("RAZORPAY_KEY_ID") ?? "";
 const KEY_SECRET = Deno.env.get("RAZORPAY_KEY_SECRET") ?? "";
 
 async function hmac(secret: string, message: string): Promise<string> {
@@ -49,8 +50,28 @@ Deno.serve(async (req) => {
     return json({ status: "failed", message: "Signature verification failed" }, 400);
   }
 
+  // Fetch the payment entity so we know Razorpay's fee (paise, GST included).
+  // The wallet is credited only with the NET amount received — the gateway
+  // commission is never passed into the wallet balance.
+  let fee: number | null = null;
+  let net: number | null = null;
+  try {
+    if (KEY_ID) {
+      const resp = await fetch(`https://api.razorpay.com/v1/payments/${paymentId}`, {
+        headers: { Authorization: "Basic " + btoa(`${KEY_ID}:${KEY_SECRET}`) },
+      });
+      if (resp.ok) {
+        const pay = await resp.json();
+        if (typeof pay?.fee === "number" && pay.fee >= 0) {
+          fee = Math.round(pay.fee) / 100;
+          net = Math.max(0, Number(row.amount) - fee);
+        }
+      }
+    }
+  } catch (_e) { /* fee unknown — accountant credit falls back to gross */ }
+
   // Mark RECEIVED — awaiting accountant confirmation before the wallet is credited.
-  await svc.from("razorpay_payments").update({ status: "paid", payment_id: paymentId, signature }).eq("id", row.id);
+  await svc.from("razorpay_payments").update({ status: "paid", payment_id: paymentId, signature, fee, net_amount: net }).eq("id", row.id);
 
   // Let accountants know a payment needs cross-checking + release.
   try {
