@@ -17,7 +17,7 @@ export const Route = createFileRoute("/new-service-request")({
 });
 
 type Field = { key: string; label: string; type: string; required: boolean; placeholder?: string; options?: string[] };
-type Svc = { id: string; name: string; category: string | null; category_id: string | null; service_group: string | null; service_charge: number; retailer_commission: number; form_schema: Field[] | null };
+type Svc = { id: string; name: string; category: string | null; category_id: string | null; service_group: string | null; service_charge: number; retailer_commission: number; form_schema: Field[] | null; logo_url: string | null };
 
 const inr = (n: number) => "₹" + Number(n || 0).toLocaleString("en-IN");
 const input = "h-11 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-india-green/30";
@@ -56,7 +56,7 @@ function NewRequestPage() {
       await ensureStaffSession();
       const [{ data }, mid, front, scRow] = await Promise.all([
         (supabase as any).from("services")
-          .select("id,name,category,category_id,service_group,service_charge,retailer_commission,form_schema")
+          .select("id,name,category,category_id,service_group,service_charge,retailer_commission,form_schema,logo_url")
           .eq("is_active", true).eq("service_type", "backend").order("sort_order").order("name"),
         (supabase as any).from("service_categories").select("id,parent_id").neq("kind", "frontend"),
         (supabase as any).from("service_categories").select("id").eq("kind", "frontend"),
@@ -209,7 +209,9 @@ function NewRequestPage() {
                         {list.map((s) => (
                           <button key={s.id} onClick={() => { setServiceId(s.id); setCategory(s.category || "Other"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
                             className="group flex flex-col items-start gap-1.5 rounded-xl border border-border bg-card p-3 text-left transition hover:-translate-y-0.5 hover:shadow-elev">
-                            <span className="grid h-9 w-9 place-items-center rounded-lg bg-india-green/10 font-bold text-india-green">{(s.name?.[0] || "S").toUpperCase()}</span>
+                            {s.logo_url
+                              ? <img src={s.logo_url} alt={s.name} className="h-9 w-9 rounded-lg border border-border bg-white object-contain p-0.5" />
+                              : <span className="grid h-9 w-9 place-items-center rounded-lg bg-india-green/10 font-bold text-india-green">{(s.name?.[0] || "S").toUpperCase()}</span>}
                             <p className="text-xs font-semibold leading-tight">{s.name}</p>
                             {Number(s.service_charge) > 0 && <p className="text-[11px] text-muted-foreground">{inr(Number(s.service_charge))}</p>}
                           </button>
