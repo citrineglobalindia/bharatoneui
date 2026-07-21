@@ -17,7 +17,7 @@ type Req = {
   id: string; user_id: string; field: string; old_value: string | null; new_value: string;
   status: string; remarks: string | null; created_at: string;
   requester_name: string | null; requester_email: string | null; requester_phone: string | null;
-  application_id: string | null;
+  application_id: string | null; jsko_id: string | null;
 };
 
 function Page() {
@@ -97,6 +97,9 @@ function Page() {
                   <td className="px-4 py-3">
                     <p className="font-semibold">{r.requester_name || r.requester_email || "—"}</p>
                     <p className="text-[11px] text-muted-foreground">{[r.application_id, r.requester_email, r.requester_phone].filter(Boolean).join(" · ")}</p>
+                    <span className={`mt-1 inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold ${r.jsko_id ? "bg-india-green text-white" : "bg-muted text-muted-foreground"}`}>
+                      JSKO ID: {r.jsko_id?.trim() || "Nill"}
+                    </span>
                   </td>
                   <td className="px-4 py-3">{fieldChip(r.field)}</td>
                   <td className="px-4 py-3 font-mono text-xs">{r.old_value || <span className="text-muted-foreground">Nill</span>}</td>
