@@ -407,12 +407,16 @@ function AepsPage() {
       const msg = String(e.message || "");
       if (/2\s*fa|before initiating|biometric authentication|authenticat/i.test(msg)) {
         toast.error("Daily authentication needed", { description: "Scan your own fingerprint to authenticate for today, then retry the transaction." });
-        setPid(null); setQuality(null);
       } else {
-        toast.error("Transaction failed", { description: msg });
+        toast.error("Transaction failed", { description: `${msg} — re-scan the customer's fingerprint before retrying.` });
       }
       load();
-    } finally { setBusy(false); }
+    } finally {
+      setBusy(false);
+      // A PID capture is single-use at NPCI: resubmitting one returns
+      // "Duplicate Biometric data". Force a fresh scan after every attempt.
+      setPid(null); setQuality(null);
+    }
   };
 
   const requestPayout = async () => {
