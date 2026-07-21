@@ -359,18 +359,29 @@ Deno.serve(async (req) => {
 
       // Spec (aeps-activate-fingpay): shop_type, latlong and the plain 12-digit
       // aadhar are required, and both address objects must carry state_id.
+      // Eko's multipart parser 500s on some encodings, and the format that
+      // worked historically is lost — so try the likely encodings in order and
+      // stop at the first that doesn't blow up server-side. A 500'd attempt has
+      // no effect, so cascading is safe.
       const addr = { line: vLine ?? "NA", city: vCity ?? "NA", state: vState ?? "NA", state_id: Number(state_id), pincode: vPin };
-      const data = await ekoMultipart(
-        `${V3}/admin/network/agent/${encodeURIComponent(userCode)}/aeps-fingpay/activate`,
-        "PUT",
-        {
-          initiator_id: EKO_INITIATOR_ID, modelname, devicenumber,
-          shop_type: Number(shop_type), aadhar: vAadhaar, latlong: latlong ?? "",
-          office_address: addr, address_as_per_proof: addr,
-        },
-        { pan_card: panF, aadhar_front: frontF, aadhar_back: backF },
-      );
-      if (!ekoOk(data)) { await setAgent({ last_error: ekoMsg(data) }); return json({ error: ekoMsg(data), raw: scrub(data) }, 400); }
+      const base = { initiator_id: EKO_INITIATOR_ID, modelname, devicenumber, shop_type: Number(shop_type), aadhar: vAadhaar, latlong: latlong ?? "" };
+      const bracket: Record<string, unknown> = { ...base };
+      for (const [k, v] of Object.entries(addr)) { bracket[`office_address[${k}]`] = v; bracket[`address_as_per_proof[${k}]`] = v; }
+      const variants: [string, Record<string, unknown>][] = [
+        ["bracket", bracket],
+        ["json", { ...base, office_address: addr, address_as_per_proof: addr }],
+        ["json-minimal", { initiator_id: EKO_INITIATOR_ID, modelname, devicenumber, office_address: addr, address_as_per_proof: addr }],
+      ];
+      const url = `${V3}/admin/network/agent/${encodeURIComponent(userCode)}/aeps-fingpay/activate`;
+      let data: any = null;
+      let usedVariant = "";
+      for (const [name, fields] of variants) {
+        data = await ekoMultipart(url, "PUT", fields, { pan_card: panF, aadhar_front: frontF, aadhar_back: backF });
+        usedVariant = name;
+        const isServerError = typeof data?.message === "string" && /^Eko HTTP 5/.test(data.message);
+        if (!isServerError) break;
+      }
+      if (!ekoOk(data)) { await setAgent({ last_error: `${ekoMsg(data)} (fmt:${usedVariant})` }); return json({ error: ekoMsg(data), raw: scrub(data), format_tried: usedVariant }, 400); }
       // Eko puts the agent into PENDING (2-3 business days). Mark as submitted,
       // and persist the details later steps reuse (eKYC needs aadhaar + latlong).
       await setAgent({
@@ -378,7 +389,7 @@ Deno.serve(async (req) => {
         agent_aadhaar: vAadhaar, latlong: latlong ?? null,
         settlement_account: account ?? null, settlement_ifsc: ifsc ?? null,
       });
-      return json({ ok: true, message: ekoMsg(data) });
+      return json({ ok: true, message: ekoMsg(data), format: usedVariant });
     }
 
     // --------------------------------------- one-time eKYC + daily auth
