@@ -61,7 +61,9 @@ function WalletPage() {
 
   // Payment QR managed by the admin (System Settings). Empty = no QR shown.
   const [qrUrl, setQrUrl] = useState<string>("");
-  const [payMode, setPayMode] = useState<"qr" | "razorpay">("qr");
+  // No mode pre-selected: the QR (or Razorpay panel) appears only after the
+  // retailer explicitly picks how they want to pay.
+  const [payMode, setPayMode] = useState<"qr" | "razorpay" | null>(null);
   useEffect(() => { (async () => {
     const { data } = await supabase.from("app_settings").select("value").eq("key", "wallet_qr_url").maybeSingle();
     setQrUrl(((data as any)?.value ?? "").trim());
@@ -166,7 +168,11 @@ function WalletPage() {
                 </div>
               </div>
 
-              {payMode === "qr" ? (
+              {payMode === null ? (
+                <p className="rounded-xl border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
+                  Enter the amount and choose a payment mode above to continue.
+                </p>
+              ) : payMode === "qr" ? (
                 <form onSubmit={submit} className="space-y-4">
                   {/* Step 3 — scan & pay */}
                   <div className="rounded-xl border border-india-green/30 bg-india-green/5 p-4">
