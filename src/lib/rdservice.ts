@@ -209,28 +209,44 @@ export function readDeviceInfo(pidXml: string): { model: string; serial: string;
   }
 }
 
+// The last successfully captured coordinates. Reusing the SAME lat,long for
+// every AePS operation (activation, eKYC, daily KYC, transactions) is
+// deliberate: NPCI/Eko compare the agent's locations, and a consistent shop
+// location matches better than slightly different GPS readings each time.
+const LATLONG_CACHE_KEY = "bharatone:last-latlong";
+function cacheLatLong(v: string) { try { localStorage.setItem(LATLONG_CACHE_KEY, v); } catch { /* ignore */ } }
+export function cachedLatLong(): string {
+  try { return (localStorage.getItem(LATLONG_CACHE_KEY) ?? "").trim(); } catch { return ""; }
+}
+
 /** Browser geolocation — Eko requires the merchant's real lat,long for fraud checks. */
 export function getLatLong(): Promise<string> {
   return new Promise((resolve) => {
-    if (!("geolocation" in navigator)) return resolve("");
+    if (!("geolocation" in navigator)) return resolve(cachedLatLong());
     navigator.geolocation.getCurrentPosition(
-      (pos) => resolve(`${pos.coords.latitude.toFixed(6)},${pos.coords.longitude.toFixed(6)}`),
-      () => resolve(""),
+      (pos) => { const v = `${pos.coords.latitude.toFixed(6)},${pos.coords.longitude.toFixed(6)}`; cacheLatLong(v); resolve(v); },
+      () => resolve(cachedLatLong()),
       { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 },
     );
   });
 }
 
-// Strict variant — REJECTS when location is unavailable or denied.
-// NPCI mandates geo-coordinates on every AePS operation, so callers must not proceed without it.
+// Strict variant — tries live GPS first, falls back to the last known shop
+// location, and only rejects when neither exists. NPCI mandates coordinates on
+// every AePS operation, so callers must not proceed with nothing at all.
 export function getLatLongStrict(): Promise<string> {
   return new Promise((resolve, reject) => {
-    if (!("geolocation" in navigator)) return reject(new Error("This device/browser cannot share location, which AEPS requires."));
-    navigator.geolocation.getCurrentPosition(
-      (pos) => resolve(`${pos.coords.latitude.toFixed(6)},${pos.coords.longitude.toFixed(6)}`),
-      (err) => reject(new Error(err.code === err.PERMISSION_DENIED
+    const fallback = (err?: GeolocationPositionError) => {
+      const cached = cachedLatLong();
+      if (cached) return resolve(cached);
+      reject(new Error(err && err.code === err.PERMISSION_DENIED
         ? "Location access is blocked. Allow location for this site and try again — AEPS requires your shop's location."
-        : "Could not get your location. Ensure location/GPS is on and try again.")),
+        : "Could not get your location. Ensure location/GPS is on and try again."));
+    };
+    if (!("geolocation" in navigator)) return fallback();
+    navigator.geolocation.getCurrentPosition(
+      (pos) => { const v = `${pos.coords.latitude.toFixed(6)},${pos.coords.longitude.toFixed(6)}`; cacheLatLong(v); resolve(v); },
+      (err) => fallback(err),
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 },
     );
   });
