@@ -28,7 +28,14 @@ const V3 = `${BASE}/v3`;
 const EKO_INITIATOR_ID = Deno.env.get("EKO_INITIATOR_ID") ?? "";
 const EKO_DEVELOPER_KEY = Deno.env.get("EKO_DEVELOPER_KEY") ?? "";
 const EKO_AUTH_KEY = Deno.env.get("EKO_AUTH_KEY") ?? "";
-const EKO_RSA_PUB = Deno.env.get("EKO_RSA_PUBLIC_KEY") ?? "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCaFyrzeDhMaFLx+LZUNOOO14Pj9aPfr+1WOanDgDHxo9NekENYcWUftM9Y17ul2pXr3bqw0GCh4uxNoTQ5cTH4buI42LI8ibMaf7Kppq9MzdzI9/7pOffgdSn+P8J64CJAk3VrVswVgfy8lABt7fL8R6XReI9x8ewwKHhCRTwBgQIDAQAB";
+// Environment-specific Eko RSA public keys — Aadhaar encrypted with the wrong
+// key cannot be decrypted by Fingpay and daily KYC fails with empty reasons.
+// (Same selection logic as the main `aeps` function.)
+const EKO_RSA_PUB_PROD =
+  "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCaFyrzeDhMaFLx+LZUNOOO14Pj9aPfr+1WOanDgDHxo9NekENYcWUftM9Y17ul2pXr3bqw0GCh4uxNoTQ5cTH4buI42LI8ibMaf7Kppq9MzdzI9/7pOffgdSn+P8J64CJAk3VrVswVgfy8lABt7fL8R6XReI9x8ewwKHhCRTwBgQIDAQAB";
+const EKO_RSA_PUB_STAGING =
+  "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCXa63O/UXt5S0Vi8DM/PWF4yugx2OcTVbcFPLfXmLm9ClEVJcRuBr7UDHjJ6gZgG/qcVez5r6AfsYl2PtKmYP3mQdbR/BjVOjnrRooXxwyio6DFk4hTTM8fqQGWWNm6XN5XsPK5+qD5Ic/L0vGrS5nMWDwjRt59gzgNMNMpjheBQIDAQAB";
+const EKO_RSA_PUB = Deno.env.get("EKO_RSA_PUBLIC_KEY") ?? (IS_PROD ? EKO_RSA_PUB_PROD : EKO_RSA_PUB_STAGING);
 
 const enc = new TextEncoder();
 const b64 = (buf: ArrayBuffer | Uint8Array) => btoa(String.fromCharCode(...new Uint8Array(buf as ArrayBuffer)));
