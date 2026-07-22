@@ -35,7 +35,6 @@ import { BharatOneLogo } from "@/components/bharatone-logo";
 import { DigitalIndiaLogo } from "@/components/digital-india-logo";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { PORTAL_CONFIGS } from "@/components/portal-login";
 import { supabase } from "@/integrations/supabase/client";
 
 const MORE_SERVICES = [
@@ -49,35 +48,6 @@ const MORE_SERVICES = [
   { label: "BharatOne ATM Machine Service", icon: Banknote, tone: "text-teal-600 bg-teal-50" },
   { label: "BharatOne Today Coffee Shop Franchise", icon: Coffee, tone: "text-[#6f4e37] bg-amber-50" },
 ];
-
-const DEMO_RETAILER = {
-  phone: "9876789876",
-  email: "harshitha@bharatone.in",
-  password: "Password@55",
-  name: "Harshitha",
-  dob: "28/02/2001",
-  role: "retailer" as const,
-};
-
-// All role logins handled by this single page.
-const ROLE_ACCOUNTS = Object.values(PORTAL_CONFIGS).map((c) => ({
-  username: c.demo.username.toLowerCase(),
-  password: c.demo.password,
-  name: c.demo.displayName,
-  role: c.role,
-  portal: c.portalName,
-  redirectTo: c.redirectTo ?? "/dashboard",
-}));
-
-// Demo staff logins are bridged to their real Supabase account so the dashboards
-// get a live session (RLS-protected data). NOTE: dev convenience only — for
-// production each user should sign in with their own credentials.
-const REAL_ACCOUNTS: Record<string, { email: string; password: string; dest: string }> = {
-  admin: { email: "sadanns123@gmail.com", password: "Password@55", dest: "/admin/registrations" },
-  accountant: { email: "accountant@bharatone.in", password: "Acct@1234", dest: "/accountant/registrations" },
-  qc: { email: "qc@bharatone.in", password: "QcCheck@12", dest: "/qc/kyc-queue" },
-  telecaller: { email: "telecaller@bharatone.in", password: "Tele@1234", dest: "/telecaller/registrations" },
-};
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -255,13 +225,7 @@ function LoginPage() {
                   } catch { /* fall through to other login paths */ }
                 }
                 const id = identifier.trim().toLowerCase();
-                const matchesRetailer =
-                  (id === DEMO_RETAILER.phone || id === DEMO_RETAILER.email) &&
-                  password === DEMO_RETAILER.password;
-                const roleAccount = ROLE_ACCOUNTS.find(
-                  (a) => a.username === id && a.password === password,
-                );
-                if (!matchesRetailer && !roleAccount) {
+                {
                   // Staff "username" login → maps to the synthetic email used at creation.
                   const staffEmail = `${id.replace(/[^a-z0-9._-]/g, "")}@staff.bharatone.app`;
                   const { data: sb, error: sbErr } = await supabase.auth.signInWithPassword({ email: staffEmail, password });
@@ -316,75 +280,6 @@ function LoginPage() {
                   });
                   return;
                 }
-                if (captchaInput.trim() !== captcha) {
-                  toast.error("Captcha does not match");
-                  return;
-                }
-                if (roleAccount) {
-                  const real = REAL_ACCOUNTS[roleAccount.role];
-                  if (real) {
-                    const { error: rErr } = await supabase.auth.signInWithPassword({
-                      email: real.email,
-                      password: real.password,
-                    });
-                    if (!rErr) {
-                      try {
-                        localStorage.setItem(
-                          "bharatone:auth",
-                          JSON.stringify({
-                            name: roleAccount.name,
-                            username: roleAccount.username,
-                            role: roleAccount.role,
-                            portal: roleAccount.portal,
-                            loggedInAt: new Date().toISOString(),
-                          }),
-                        );
-                      } catch {}
-                      toast.success(`Welcome, ${roleAccount.name}`, {
-                        description: `Signed in to ${roleAccount.portal}.`,
-                      });
-                      navigate({ to: real.dest });
-                      return;
-                    }
-                  }
-                  try {
-                    localStorage.setItem(
-                      "bharatone:auth",
-                      JSON.stringify({
-                        name: roleAccount.name,
-                        username: roleAccount.username,
-                        role: roleAccount.role,
-                        portal: roleAccount.portal,
-                        loggedInAt: new Date().toISOString(),
-                      }),
-                    );
-                  } catch {}
-                  toast.success(`Welcome, ${roleAccount.name}`, {
-                    description: `Signed in to ${roleAccount.portal}.`,
-                  });
-                  navigate({ to: roleAccount.redirectTo });
-                  return;
-                }
-                // Bridge the demo retailer to its REAL Supabase account so it has an
-                // authenticated session (needed to submit applications, upload, etc.).
-                const { error: dErr } = await supabase.auth.signInWithPassword({ email: DEMO_RETAILER.email, password: DEMO_RETAILER.password });
-                if (dErr) { toast.error("Could not sign in", { description: dErr.message }); return; }
-                try {
-                  localStorage.setItem(
-                    "bharatone:auth",
-                    JSON.stringify({
-                      name: DEMO_RETAILER.name,
-                      email: DEMO_RETAILER.email,
-                      role: DEMO_RETAILER.role,
-                      loggedInAt: new Date().toISOString(),
-                    }),
-                  );
-                } catch {}
-                try { await supabase.rpc("record_login"); } catch {}
-                toast.success(`Welcome, ${DEMO_RETAILER.name}`, {
-                  description: "Signed in as Retailer.",
-                });
-                navigate({ to: "/dashboard" });
               }}
             >
               <div>

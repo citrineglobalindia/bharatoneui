@@ -1,38 +1,13 @@
 import { supabase } from "./client";
 
-// Staff demo logins are bridged to these real Supabase accounts. On reload the
-// bridge (in login.tsx) doesn't re-run, so this restores the session if it was lost.
-const REAL_ACCOUNTS: Record<string, { email: string; password: string }> = {
-  admin: { email: "sadanns123@gmail.com", password: "Password@55" },
-  accountant: { email: "accountant@bharatone.in", password: "Acct@1234" },
-  qc: { email: "qc@bharatone.in", password: "QcCheck@12" },
-  telecaller: { email: "telecaller@bharatone.in", password: "Tele@1234" },
-  operator: { email: "operator@bharatone.in", password: "Operator@123" },
-  distributor: { email: "distributor@bharatone.in", password: "Distributor@123" },
-  retailer: { email: "harshitha@bharatone.in", password: "Password@55" },
-};
-
-function storedRole(): string | undefined {
-  try {
-    return JSON.parse(localStorage.getItem("bharatone:auth") || "{}").role;
-  } catch {
-    return undefined;
-  }
-}
-
-// Returns true if a Supabase session is available (existing or restored).
+// Returns true if a live Supabase session exists (restored from storage by
+// supabase-js if the tab was reloaded). This must NEVER create a session:
+// the old demo bridge signed into shared staff accounts with credentials
+// hardcoded in the bundle, which let anyone open a portal URL with no login.
 export async function ensureStaffSession(): Promise<boolean> {
   try {
     const { data } = await withTimeout(supabase.auth.getSession(), 6000);
-    if (data?.session) return true;
-    const role = storedRole();
-    // Real retailers/distributors sign in with their own credentials and keep their own
-    // session — never silently bridge them onto a shared staff account.
-    if (!role) return false;
-    const acct = REAL_ACCOUNTS[role];
-    if (!acct) return false;
-    const { error } = await withTimeout(supabase.auth.signInWithPassword(acct), 8000);
-    return !error;
+    return Boolean(data?.session);
   } catch {
     return false;
   }

@@ -24,6 +24,7 @@ import {
 import { toast } from "sonner";
 import { BharatOneLogo } from "@/components/bharatone-logo";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 
 export type PortalRole =
   | "qc"
@@ -44,13 +45,22 @@ export interface PortalConfig {
   tagline: string;
   accent: "saffron" | "green" | "indigo" | "rose" | "amber" | "sky" | "violet";
   icon: LucideIcon;
-  demo: {
-    username: string;
-    password: string;
-    displayName: string;
-  };
   redirectTo?: string;
 }
+
+// DB roles that may enter each portal (admin is always allowed on top).
+const PORTAL_DB_ROLES: Record<PortalRole, string[]> = {
+  qc: ["qc"],
+  accountant: ["accountant"],
+  admin: ["admin"],
+  distributor: ["distributor", "master-distributor"],
+  "master-distributor": ["master-distributor"],
+  hr: ["hr_staff", "manager"],
+  telecaller: ["telecaller"],
+  bde: ["bde"],
+  dro: ["dro"],
+  tro: ["tro"],
+};
 
 const ACCENT_MAP: Record<
   PortalConfig["accent"],
@@ -192,28 +202,64 @@ export function PortalLogin({ config }: { config: PortalConfig }) {
                 toast.error("Captcha does not match");
                 return;
               }
-              if (
-                id !== config.demo.username.toLowerCase() ||
-                password !== config.demo.password
-              ) {
+              if (!id || !password) {
+                toast.error("Enter your username and password");
+                return;
+              }
+              try { await supabase.auth.signOut(); localStorage.removeItem("bharatone:auth"); } catch { /* clear any stale session */ }
+              // Staff sign in with their email, or with the username their
+              // account was created under (synthetic @staff.bharatone.app).
+              const email = id.includes("@") ? id : `${id.replace(/[^a-z0-9._-]/g, "")}@staff.bharatone.app`;
+              const { data: sb, error: sbErr } = await supabase.auth.signInWithPassword({ email, password });
+              if (sbErr || !sb?.user) {
                 toast.error("Invalid credentials", {
                   description: "Check your username and password.",
                 });
                 return;
               }
+              // Enforce two-factor authentication if the account has a verified factor.
+              try {
+                const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+                if (aal?.nextLevel === "aal2" && aal.currentLevel !== "aal2") {
+                  const { data: fl } = await supabase.auth.mfa.listFactors();
+                  const factor = (fl?.totp ?? [])[0];
+                  if (factor) {
+                    const otp = window.prompt("Two-factor authentication: enter the 6-digit code from your authenticator app");
+                    if (!otp) { await supabase.auth.signOut(); toast.error("Two-factor code required"); return; }
+                    const { data: ch, error: chErr } = await supabase.auth.mfa.challenge({ factorId: factor.id });
+                    if (chErr) { await supabase.auth.signOut(); toast.error(chErr.message); return; }
+                    const { error: vErr } = await supabase.auth.mfa.verify({ factorId: factor.id, challengeId: ch.id, code: otp.trim() });
+                    if (vErr) { await supabase.auth.signOut(); toast.error("Invalid two-factor code"); return; }
+                  }
+                }
+              } catch { /* MFA not available — continue */ }
+              const [{ data: rr }, { data: prof }] = await Promise.all([
+                supabase.from("user_roles").select("role").eq("user_id", sb.user.id),
+                supabase.from("profiles").select("display_name").eq("id", sb.user.id).maybeSingle(),
+              ]);
+              const roles = new Set(((rr ?? []) as { role: string }[]).map((x) => x.role));
+              const allowed = [...PORTAL_DB_ROLES[config.role], "admin"].some((r) => roles.has(r));
+              if (!allowed) {
+                await supabase.auth.signOut();
+                toast.error("Not authorized", {
+                  description: `This account does not have access to the ${config.shortName} portal.`,
+                });
+                return;
+              }
+              const name = (prof as { display_name?: string } | null)?.display_name || sb.user.email?.split("@")[0] || "User";
               try {
                 localStorage.setItem(
                   "bharatone:auth",
                   JSON.stringify({
-                    name: config.demo.displayName,
-                    username: config.demo.username,
+                    name,
+                    email: sb.user.email,
                     role: config.role,
                     portal: config.portalName,
                     loggedInAt: new Date().toISOString(),
                   }),
                 );
               } catch {}
-              toast.success(`Welcome, ${config.demo.displayName}`, {
+              toast.success(`Welcome, ${name}`, {
                 description: `Signed in to ${config.portalName}.`,
               });
               navigate({ to: config.redirectTo ?? "/dashboard" });
@@ -308,7 +354,6 @@ export const PORTAL_CONFIGS: Record<PortalRole, PortalConfig> = {
     tagline: "Review KYC, applications and on-boarding submissions.",
     accent: "indigo",
     icon: ClipboardCheck,
-    demo: { username: "9845224260", password: "Password@66", displayName: "QC Reviewer" },
     redirectTo: "/qc/dashboard",
   },
   accountant: {
@@ -318,7 +363,6 @@ export const PORTAL_CONFIGS: Record<PortalRole, PortalConfig> = {
     tagline: "Settlements, ledgers, payouts and reconciliation.",
     accent: "green",
     icon: Calculator,
-    demo: { username: "8879789067", password: "Password@66", displayName: "Mahesh" },
     redirectTo: "/accountant/dashboard",
   },
   admin: {
@@ -328,7 +372,6 @@ export const PORTAL_CONFIGS: Record<PortalRole, PortalConfig> = {
     tagline: "Master control for BharatOne network operations.",
     accent: "saffron",
     icon: Crown,
-    demo: { username: "Admin", password: "Password@55", displayName: "Super Admin" },
     redirectTo: "/admin",
   },
   distributor: {
@@ -338,7 +381,6 @@ export const PORTAL_CONFIGS: Record<PortalRole, PortalConfig> = {
     tagline: "Manage your retailer network, stock and commissions.",
     accent: "sky",
     icon: Truck,
-    demo: { username: "7259809887", password: "Password@66", displayName: "Karthik M" },
     redirectTo: "/distributor/dashboard",
   },
   "master-distributor": {
@@ -348,11 +390,6 @@ export const PORTAL_CONFIGS: Record<PortalRole, PortalConfig> = {
     tagline: "Oversee distributors and regional performance.",
     accent: "violet",
     icon: Building2,
-    demo: {
-      username: "master.distributor",
-      password: "Master@2026",
-      displayName: "Master Distributor",
-    },
   },
   hr: {
     role: "hr",
@@ -361,7 +398,6 @@ export const PORTAL_CONFIGS: Record<PortalRole, PortalConfig> = {
     tagline: "People operations, attendance, payroll and talent management.",
     accent: "sky",
     icon: Users,
-    demo: { username: "hr.manager", password: "HR@2026", displayName: "Ananya Rao" },
     redirectTo: "/hr/dashboard",
   },
   telecaller: {
@@ -371,7 +407,6 @@ export const PORTAL_CONFIGS: Record<PortalRole, PortalConfig> = {
     tagline: "Lead assignment, call outcomes, follow-ups and activation tracking.",
     accent: "sky",
     icon: Users,
-    demo: { username: "telecaller.executive", password: "Call@2026", displayName: "Arjun Kumar" },
     redirectTo: "/telecaller",
   },
   bde: {
@@ -381,7 +416,6 @@ export const PORTAL_CONFIGS: Record<PortalRole, PortalConfig> = {
     tagline: "Partner acquisition, onboarding, territory growth and performance.",
     accent: "sky",
     icon: BriefcaseBusiness,
-    demo: { username: "bde.executive", password: "Growth@2026", displayName: "Rahul Kumar" },
     redirectTo: "/bde",
   },
   dro: {
@@ -391,7 +425,6 @@ export const PORTAL_CONFIGS: Record<PortalRole, PortalConfig> = {
     tagline: "District-level oversight, approvals and audits.",
     accent: "rose",
     icon: Map,
-    demo: { username: "8974532567", password: "Password@66", displayName: "Kavya" },
     redirectTo: "/dro/dashboard",
   },
   tro: {
@@ -401,7 +434,6 @@ export const PORTAL_CONFIGS: Record<PortalRole, PortalConfig> = {
     tagline: "Taluk-level field operations and onboarding.",
     accent: "amber",
     icon: MapPin,
-    demo: { username: "8974532566", password: "Password@66", displayName: "Navya" },
     redirectTo: "/tro/dashboard",
   },
 };
