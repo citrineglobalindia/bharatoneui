@@ -6,6 +6,7 @@ import { Gallery } from "@/components/site/Gallery";
 import { Button } from "@/components/ui/button";
 import { Counter } from "@/components/site/Counter";
 import {
+  ArrowRight,
   Target,
   Eye,
   Award,
@@ -298,7 +299,7 @@ function AboutPage() {
 /* -------------------------------------------------------------------------- */
 /* Timeline — line fills as user scrolls through the section                  */
 /* -------------------------------------------------------------------------- */
-function Timeline({ milestones }: { milestones: typeof milestones extends infer T ? T : never } & { milestones: { year: string; title: string; desc: string }[] }) {
+function Timeline({ milestones }: { milestones: { year: string; title: string; desc: string }[] }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: containerRef,
