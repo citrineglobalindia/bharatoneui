@@ -565,9 +565,11 @@ Deno.serve(async (req) => {
       }
       const ok = ekoOk(result);
       const d = result?.data ?? {};
-      // tx_status: 0=Success, 1=Fail, 2=Awaited — treat awaited as pending.
+      // tx_status: 0=Success, 1=Fail, 2=Awaited, 3=Refund Pending, 4=Refunded, 5=On Hold.
       const txStat = String(d.tx_status ?? result?.tx_status ?? "");
-      const finalStatus = !ok ? "failed" : txStat === "2" ? "pending_reconciliation" : "success";
+      const finalStatus = !ok || txStat === "1" || txStat === "4" ? "failed"
+        : txStat === "2" || txStat === "3" || txStat === "5" ? "pending_reconciliation"
+        : "success";
       const custBalance = d.customer_balance ?? d.balance_amount ?? d.balance ?? null;
       const statement = d.mini_statement_list ?? d.transactions ?? d.statement ?? null;
       await svc.from("aeps_transactions").update({
@@ -592,7 +594,21 @@ Deno.serve(async (req) => {
       const { client_ref_id } = body;
       if (!client_ref_id) return json({ error: "client_ref_id is required" }, 400);
       const { data: txn } = await svc.from("aeps_transactions").select("*").eq("client_ref_id", client_ref_id).maybeSingle();
-      if (!txn) return json({ error: "Unknown transaction" }, 404);
+      if (!txn) {
+        // Settlement refs (BHS…) live in aeps_settlements — same Eko inquiry endpoint.
+        const { data: st } = await svc.from("aeps_settlements").select("*").eq("client_ref_id", client_ref_id).maybeSingle();
+        if (!st) return json({ error: "Unknown transaction" }, 404);
+        if (st.user_id !== user.id && !roleList.includes("admin")) return json({ error: "Forbidden" }, 403);
+        const data = await ekoGet(`${V1}/transactions/${encodeURIComponent(client_ref_id)}?initiator_id=${encodeURIComponent(EKO_INITIATOR_ID)}`);
+        const d = data?.data ?? {};
+        const s = String(d.tx_status ?? "");
+        const mapped = s === "0" ? "success" : s === "1" || s === "4" ? "failed" : "pending_reconciliation";
+        await svc.from("aeps_settlements").update({
+          status: ekoOk(data) ? mapped : st.status, tid: d.tid ?? st.tid, bank_ref_num: d.bank_ref_num || st.bank_ref_num,
+          message: ekoMsg(data), updated_at: new Date().toISOString(),
+        }).eq("id", st.id);
+        return json({ ok: ekoOk(data), status: ekoOk(data) ? mapped : st.status, message: ekoMsg(data) });
+      }
       if (txn.agent_id !== user.id && !roleList.includes("admin")) return json({ error: "Forbidden" }, 403);
       const data = await ekoGet(`${V1}/transactions/${encodeURIComponent(client_ref_id)}?initiator_id=${encodeURIComponent(EKO_INITIATOR_ID)}`);
       const d = data?.data ?? {};
@@ -707,8 +723,12 @@ Deno.serve(async (req) => {
       }
       const ok = ekoOk(result);
       const d = result?.data ?? {};
+      // tx_status: 0=Success, 2=Initiated, 4=Refunded, 5=Hold (per the fund-
+      // settlement doc). Refunded = money came back, so the settlement failed.
       const txStat = String(d.tx_status ?? result?.tx_status ?? "");
-      const finalStatus = !ok ? "failed" : txStat === "2" ? "pending_reconciliation" : "success";
+      const finalStatus = !ok || txStat === "1" || txStat === "4" ? "failed"
+        : txStat === "2" || txStat === "3" || txStat === "5" ? "pending_reconciliation"
+        : "success";
       await svc.from("aeps_settlements").update({
         status: finalStatus, tid: d.tid ?? null, bank_ref_num: d.bank_ref_num || null,
         fee: d.totalfee != null && d.totalfee !== "" ? Number(d.totalfee) : (d.fee != null && d.fee !== "" ? Number(d.fee) : null),
