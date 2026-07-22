@@ -114,6 +114,7 @@ function AepsPage() {
 
   // Eko fund settlement (Cashout) — shown only when the admin enables 'merchant' mode.
   const [cashout, setCashout] = useState<{ unsettled_fund: number; remaining_limit: number; accounts: { recipient_id: string; name: string; account: string; ifsc: string }[] } | null>(null);
+  const [cashoutErr, setCashoutErr] = useState<string | null>(null);
   const [settleHistory, setSettleHistory] = useState<any[]>([]);
   const [showAddAcct, setShowAddAcct] = useState(false);
   const [saAccount, setSaAccount] = useState("");
@@ -149,9 +150,10 @@ function AepsPage() {
   const loadCashout = useCallback(async () => {
     try {
       const r = await call("settlement_accounts");
+      setCashoutErr(null);
       setCashout({ unsettled_fund: r.unsettled_fund ?? 0, remaining_limit: r.remaining_limit ?? 0, accounts: r.accounts ?? [] });
       if ((r.accounts ?? []).length) setStRecipient((cur) => cur || String(r.accounts[0].recipient_id));
-    } catch { /* cashout optional */ }
+    } catch (e: any) { setCashoutErr(e.message || "Could not reach Eko"); }
     try {
       const h = await (supabase as any).from("aeps_settlements").select("*").order("created_at", { ascending: false }).limit(10);
       setSettleHistory((h?.data as any[]) ?? []);
@@ -866,11 +868,16 @@ function AepsPage() {
 
             <div className="rounded-xl bg-sky-50 p-4">
               <p className="text-[11px] font-semibold text-sky-700">Unsettled AePS fund at Eko</p>
-              <p className="mt-0.5 text-2xl font-extrabold text-sky-700">{inr(cashout?.unsettled_fund ?? 0)}</p>
+              <p className="mt-0.5 text-2xl font-extrabold text-sky-700">{cashout ? inr(cashout.unsettled_fund) : "—"}</p>
               <p className="mt-0.5 text-[11px] text-muted-foreground">
-                Daily limit left {inr(cashout?.remaining_limit ?? 0)} · Mon–Fri 10 AM–5 PM · max ₹2,00,000 per settlement · after 5 PM settles next working day
+                Daily limit left {cashout ? inr(cashout.remaining_limit) : "—"} · Mon–Fri 10 AM–5 PM · max ₹2,00,000 per settlement · after 5 PM settles next working day
               </p>
             </div>
+            {cashoutErr && (
+              <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-[11px] font-semibold text-amber-800">
+                Could not fetch your settlement balance from Eko: {cashoutErr} — press Refresh to retry.
+              </p>
+            )}
 
             {/* Registered settlement accounts */}
             <div className="mt-3">

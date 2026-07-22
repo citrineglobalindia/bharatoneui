@@ -625,7 +625,14 @@ Deno.serve(async (req) => {
 
     if (action === "settlement_accounts") {
       const qs = new URLSearchParams({ initiator_id: EKO_INITIATOR_ID, user_code: userCode });
-      const d = await ekoGet(`${KYC_V3}/user/payment/aeps/settlement/accounts?${qs}`);
+      let d = await ekoGet(`${KYC_V3}/user/payment/aeps/settlement/accounts?${qs}`);
+      if (!ekoOk(d)) {
+        // First failure is usually service 39 not yet active for this agent —
+        // activate it once and retry, instead of silently reporting ₹0.
+        await ekoForm(`${V3}/admin/network/agent/${encodeURIComponent(userCode)}/service/39/activate`, "PUT", { initiator_id: EKO_INITIATOR_ID });
+        d = await ekoGet(`${KYC_V3}/user/payment/aeps/settlement/accounts?${qs}`);
+      }
+      if (!ekoOk(d)) return json({ error: ekoMsg(d), raw: scrub(d) }, 400);
       const list = (d?.data?.fund_transfer_list ?? []) as Record<string, unknown>[];
       // Mirror Eko's recipient list locally so `settle` can verify ownership.
       for (const r of list) {
