@@ -617,6 +617,8 @@ function CommissionSetup() {
   const [quote, setQuote] = useState<any>(null);
   const [twofaCharge, setTwofaCharge] = useState("");
   const [chargeSaving, setChargeSaving] = useState(false);
+  const [settlementMode, setSettlementMode] = useState("off");
+  const [modeSaving, setModeSaving] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -625,6 +627,8 @@ function CommissionSetup() {
     setSlabs((data as Slab[]) ?? []);
     const { data: cs } = await supabase.from("app_settings").select("value").eq("key", "aeps_daily_2fa_charge").maybeSingle();
     setTwofaCharge(String((cs as any)?.value ?? "0"));
+    const { data: sm } = await supabase.from("app_settings").select("value").eq("key", "aeps_settlement_mode").maybeSingle();
+    setSettlementMode(String((sm as any)?.value ?? "off"));
     setLoading(false);
   }
   useEffect(() => { load(); }, []);
@@ -684,6 +688,18 @@ function CommissionSetup() {
     } finally { setChargeSaving(false); }
   };
 
+  const saveSettlementMode = async () => {
+    setModeSaving(true);
+    try {
+      await ensureStaffSession();
+      const { error } = await (supabase as any).rpc("set_app_setting", { p_key: "aeps_settlement_mode", p_value: settlementMode });
+      if (error) throw error;
+      toast.success(settlementMode === "merchant" ? "Cashout enabled — agents can settle their Eko fund to their own bank" : "Cashout disabled");
+    } catch (e: any) {
+      toast.error("Could not save", { description: e.message });
+    } finally { setModeSaving(false); }
+  };
+
   const companyShare = 100 - Number(form.retailer_share || 0) - Number(form.distributor_share || 0);
 
   return (
@@ -711,6 +727,28 @@ function CommissionSetup() {
           </L>
           <button onClick={saveCharge} disabled={chargeSaving} className="inline-flex items-center gap-1.5 rounded-lg bg-india-green px-4 h-10 text-sm font-semibold text-white disabled:opacity-50">
             {chargeSaving ? "Saving…" : "Save charge"}
+          </button>
+        </div>
+      </div>
+
+      {/* AEPS Cashout (Eko fund settlement) mode */}
+      <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
+        <p className="mb-1 text-sm font-bold">AEPS Cashout (fund settlement)</p>
+        <p className="mb-3 text-[11px] text-muted-foreground">
+          <b>Enabled</b> lets each agent settle their unsettled AePS fund at Eko directly to their own verified bank account
+          (requires the Eko account to be in <b>"My Merchant"</b> settlement configuration — confirm with Eko before enabling;
+          the configuration can only change once every 15 days). Keep <b>Off</b> if the Eko account is in "Self" mode, where
+          BharatOne receives the whole float and pays agents through the internal payout flow.
+        </p>
+        <div className="flex items-end gap-3">
+          <L label="Mode">
+            <select value={settlementMode} onChange={(e) => setSettlementMode(e.target.value)} className="h-10 w-56 rounded-lg border border-border bg-background px-2 text-sm">
+              <option value="off">Off (internal payouts only)</option>
+              <option value="merchant">Enabled (My Merchant)</option>
+            </select>
+          </L>
+          <button onClick={saveSettlementMode} disabled={modeSaving} className="inline-flex items-center gap-1.5 rounded-lg bg-india-green px-4 h-10 text-sm font-semibold text-white disabled:opacity-50">
+            {modeSaving ? "Saving…" : "Save"}
           </button>
         </div>
       </div>

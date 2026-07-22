@@ -248,6 +248,7 @@ Deno.serve(async (req) => {
 
   try {
     if (action === "config") {
+      const { data: modeRow } = await svc.from("app_settings").select("value").eq("key", "aeps_settlement_mode").maybeSingle();
       return json({
         env: EKO_ENV,
         keys_set: !!(EKO_DEVELOPER_KEY && EKO_AUTH_KEY && EKO_INITIATOR_ID),
@@ -258,6 +259,7 @@ Deno.serve(async (req) => {
         daily_kyc_done: dailyKycDoneToday,
         can_transact: !!agent?.onboarded && !!agent?.service_activated && !!agent?.ekyc_done && dailyKycDoneToday,
         last_error: agent?.last_error ?? null,
+        settlement_enabled: String((modeRow as { value?: string } | null)?.value ?? "off") === "merchant",
       });
     }
 
@@ -292,6 +294,7 @@ Deno.serve(async (req) => {
         ? raw.map((b: any) => ({
             value: b.value ?? b.bank_code ?? b.code ?? b.id,
             label: b.label ?? b.name ?? b.bank_name ?? String(b.value ?? ""),
+            ...(b.id != null ? { bank_id: b.id } : {}),
             ...(b.stateCode ? { stateCode: b.stateCode } : {}),
           }))
         : [];
@@ -598,6 +601,115 @@ Deno.serve(async (req) => {
       await svc.from("aeps_transactions").update({ status: ekoOk(data) ? mapped : txn.status, rrn: d.bank_ref_num ?? txn.rrn, message: ekoMsg(data), response: scrub(data), updated_at: new Date().toISOString() }).eq("id", txn.id);
       if (ekoOk(data) && mapped === "success" && !txn.commission_settled && MOVES_MONEY(txn.service_type)) { await svc.rpc("settle_aeps_commission", { p_txn_id: txn.id }); }
       return json({ ok: ekoOk(data), status: mapped, message: ekoMsg(data) });
+    }
+
+    // ------------------------------------------ AePS Cashout (fund settlement)
+    // Settles the agent's unsettled AePS fund at Eko to their own bank account
+    // (EPS "AePS Cashout": settlement/account, settlement/accounts, settlement).
+    // Only meaningful when the Eko account is configured "My Merchant"; gated by
+    // app_settings.aeps_settlement_mode = 'merchant' so nothing can move money
+    // before that config is confirmed with Eko. Service code 39 per agent.
+    if (action === "settlement_activate" || action === "settlement_accounts" || action === "settlement_add_account" || action === "settle") {
+      const { data: modeRow } = await svc.from("app_settings").select("value").eq("key", "aeps_settlement_mode").maybeSingle();
+      const mode = String((modeRow as { value?: string } | null)?.value ?? "off");
+      if (mode !== "merchant") return json({ error: "Cashout is not enabled. Ask the administrator to enable Eko fund settlement." }, 403);
+      if (!userCode) return json({ error: "This retailer is not onboarded for AEPS" }, 400);
+      if (!agent?.service_activated) return json({ error: "Complete AEPS activation first" }, 400);
+    }
+
+    // One-time activation of the Fund Settlement service (code 39) for this agent.
+    if (action === "settlement_activate") {
+      const data = await ekoForm(`${V3}/admin/network/agent/${encodeURIComponent(userCode)}/service/39/activate`, "PUT", { initiator_id: EKO_INITIATOR_ID });
+      return json({ ok: ekoOk(data), message: ekoMsg(data), raw: scrub(data) }, ekoOk(data) ? 200 : 400);
+    }
+
+    if (action === "settlement_accounts") {
+      const qs = new URLSearchParams({ initiator_id: EKO_INITIATOR_ID, user_code: userCode });
+      const d = await ekoGet(`${KYC_V3}/user/payment/aeps/settlement/accounts?${qs}`);
+      const list = (d?.data?.fund_transfer_list ?? []) as Record<string, unknown>[];
+      // Mirror Eko's recipient list locally so `settle` can verify ownership.
+      for (const r of list) {
+        if (!r?.recipient_id) continue;
+        await svc.from("aeps_settlement_accounts").upsert({
+          user_id: user.id, recipient_id: String(r.recipient_id),
+          account: String(r.account ?? ""), ifsc: String(r.ifsc ?? ""), holder_name: (r.name as string) ?? null,
+        }, { onConflict: "user_id,recipient_id" });
+      }
+      return json({
+        ok: true,
+        unsettled_fund: Number(d?.data?.unsettled_fund ?? 0) || 0,
+        remaining_limit: Number(d?.data?.remaining_limit ?? 0) || 0,
+        accounts: list.map((r) => ({ recipient_id: String(r.recipient_id), name: r.name ?? "", account: r.account ?? "", ifsc: r.ifsc ?? "" })),
+        message: ekoMsg(d),
+      });
+    }
+
+    if (action === "settlement_add_account") {
+      const { account, ifsc, bank_id } = body;
+      if (!account || !/^\d{6,20}$/.test(String(account))) return json({ error: "Enter a valid bank account number" }, 400);
+      if (!ifsc || !/^[A-Z]{4}0[A-Z0-9]{6}$/i.test(String(ifsc))) return json({ error: "Enter a valid IFSC code" }, 400);
+      if (!bank_id) return json({ error: "Select the bank" }, 400);
+      const data = await ekoJson(`${KYC_V3}/user/payment/aeps/settlement/account`, "POST", {
+        initiator_id: EKO_INITIATOR_ID, user_code: userCode, service_code: 39,
+        bank_id: Number(bank_id), ifsc: String(ifsc).toUpperCase(), account: String(account),
+      });
+      if (!ekoOk(data)) {
+        // 1335 = holder-name mismatch (Eko returns both names), 1334 = bank sent no name.
+        const senderName = data?.data?.sender_name, recipientName = data?.data?.recipient_name;
+        const detail = senderName && recipientName ? ` (agent: ${senderName}, account holder: ${recipientName})` : "";
+        return json({ error: `${ekoMsg(data)}${detail}`, raw: scrub(data) }, 400);
+      }
+      const recipientId = String(data?.data?.recipient_id ?? "");
+      if (recipientId) {
+        await svc.from("aeps_settlement_accounts").upsert({
+          user_id: user.id, recipient_id: recipientId, bank_id: Number(bank_id),
+          account: String(account), ifsc: String(ifsc).toUpperCase(),
+        }, { onConflict: "user_id,recipient_id" });
+      }
+      return json({ ok: true, recipient_id: recipientId, message: ekoMsg(data) });
+    }
+
+    if (action === "settle") {
+      const { amount, recipient_id, payment_mode } = body;
+      const amt = Number(amount);
+      const pm = Number(payment_mode);
+      if (!(amt > 0)) return json({ error: "Enter a valid amount" }, 400);
+      if (amt > 200000) return json({ error: "Maximum ₹2,00,000 per settlement" }, 400);
+      if (![4, 5, 13].includes(pm)) return json({ error: "Pick NEFT, IMPS or RTGS" }, 400);
+      const { data: rec } = await svc.from("aeps_settlement_accounts").select("recipient_id").eq("user_id", user.id).eq("recipient_id", String(recipient_id)).maybeSingle();
+      if (!rec) return json({ error: "Pick one of your registered settlement accounts" }, 400);
+
+      const clientRefId = `BHS${Date.now()}${Math.floor(Math.random() * 900 + 100)}`;
+      const { data: row, error: insErr } = await svc.from("aeps_settlements").insert({
+        user_id: user.id, client_ref_id: clientRefId, amount: amt,
+        recipient_id: String(recipient_id), payment_mode: pm, status: "pending",
+      }).select("id").single();
+      if (insErr) return json({ error: "Could not record the settlement", detail: insErr.message }, 500);
+
+      let result: any = null;
+      let transportError: string | null = null;
+      try {
+        result = await ekoJson(`${KYC_V3}/user/payment/aeps/settlement`, "POST", {
+          initiator_id: EKO_INITIATOR_ID, client_ref_id: clientRefId, user_code: userCode,
+          amount: amt, recipient_id: Number(recipient_id), payment_mode: pm,
+        });
+      } catch (e) { transportError = String(e); }
+      if (transportError) {
+        await svc.from("aeps_settlements").update({ status: "pending_reconciliation", message: transportError, updated_at: new Date().toISOString() }).eq("id", row.id);
+        return json({ error: "Eko did not respond in time. This settlement is being verified — do NOT retry it.", client_ref_id: clientRefId, status: "pending_reconciliation" }, 504);
+      }
+      const ok = ekoOk(result);
+      const d = result?.data ?? {};
+      const txStat = String(d.tx_status ?? result?.tx_status ?? "");
+      const finalStatus = !ok ? "failed" : txStat === "2" ? "pending_reconciliation" : "success";
+      await svc.from("aeps_settlements").update({
+        status: finalStatus, tid: d.tid ?? null, bank_ref_num: d.bank_ref_num || null,
+        fee: d.totalfee != null && d.totalfee !== "" ? Number(d.totalfee) : (d.fee != null && d.fee !== "" ? Number(d.fee) : null),
+        gst: d.gst != null && d.gst !== "" ? Number(d.gst) : null,
+        message: ekoMsg(result), response: scrub(result), updated_at: new Date().toISOString(),
+      }).eq("id", row.id);
+      if (!ok) return json({ ok: false, error: ekoMsg(result), client_ref_id: clientRefId }, 400);
+      return json({ ok: true, client_ref_id: clientRefId, status: finalStatus, message: ekoMsg(result), tid: d.tid ?? null, bank_ref_num: d.bank_ref_num || null, total_fee: d.totalfee ?? d.fee ?? null, amount: amt });
     }
 
     return json({ error: "Unknown action" }, 400);
