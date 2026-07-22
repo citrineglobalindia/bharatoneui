@@ -364,10 +364,20 @@ Deno.serve(async (req) => {
       // stop at the first that doesn't blow up server-side. A 500'd attempt has
       // no effect, so cascading is safe.
       const addr = { line: vLine ?? "NA", city: vCity ?? "NA", state: vState ?? "NA", state_id: Number(state_id), pincode: vPin };
-      const base = { initiator_id: EKO_INITIATOR_ID, modelname, devicenumber, shop_type: Number(shop_type), aadhar: vAadhaar, latlong: latlong ?? "" };
+      const base = { initiator_id: EKO_INITIATOR_ID, modelname, devicenumber, account: account ?? "", ifsc: ifsc ?? "", shop_type: Number(shop_type), aadhar: vAadhaar, latlong: latlong ?? "" };
       const bracket: Record<string, unknown> = { ...base };
       for (const [k, v] of Object.entries(addr)) { bracket[`office_address[${k}]`] = v; bracket[`address_as_per_proof[${k}]`] = v; }
+      // Eko's own curl example sends the ENTIRE payload as a JSON string in one
+      // multipart field literally named "form-data" (strings throughout, incl.
+      // account + ifsc), with the three files alongside — so that goes first.
+      const docAddr = (a: typeof addr) => ({ ...a, state_id: String(state_id) });
       const variants: [string, Record<string, unknown>][] = [
+        ["form-data", { "form-data": JSON.stringify({
+          initiator_id: EKO_INITIATOR_ID, devicenumber, modelname,
+          account: String(account ?? ""), ifsc: String(ifsc ?? ""), aadhar: vAadhaar,
+          shop_type: String(shop_type), latlong: String(latlong ?? ""),
+          address_as_per_proof: docAddr(addr), office_address: docAddr(addr),
+        }) }],
         ["bracket", bracket],
         ["json", { ...base, office_address: addr, address_as_per_proof: addr }],
         ["json-minimal", { initiator_id: EKO_INITIATOR_ID, modelname, devicenumber, office_address: addr, address_as_per_proof: addr }],
