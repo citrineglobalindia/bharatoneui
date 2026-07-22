@@ -735,7 +735,7 @@ export function AdminWorkspace() {
               All systems operational
             </span>
           </div>
-          <NotificationsBell />
+          <NotificationsBell home="admin" />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="h-10 gap-2 px-2">

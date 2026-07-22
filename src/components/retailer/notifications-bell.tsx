@@ -114,7 +114,20 @@ function relTime(iso: string) {
   return new Date(iso).toLocaleDateString("en-IN");
 }
 
-export function NotificationsBell() {
+const PORTAL_PREFIXES = ["admin", "qc", "accountant", "distributor", "hr", "bde", "dro", "tro", "telecaller", "operator"];
+// When the bell is mounted inside a portal (`home`), a notification whose link
+// points into a DIFFERENT portal must not navigate there — that would jump the
+// user into another role's UI. Those items get an empty target and render as
+// non-navigating (mark-read only).
+function safeTo(link: string | null | undefined, home?: string): string {
+  const to = link ?? "/notifications";
+  if (!home) return to;
+  const seg = to.split("/")[1] ?? "";
+  if (PORTAL_PREFIXES.includes(seg) && seg !== home) return "";
+  return to;
+}
+
+export function NotificationsBell({ home }: { home?: string } = {}) {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<Notif[]>([]);
   const ref = useRef<HTMLDivElement>(null);
@@ -137,7 +150,7 @@ export function NotificationsBell() {
         title: n.title,
         body: n.body ?? "",
         time: relTime(n.created_at),
-        to: n.link ?? "/notifications",
+        to: safeTo(n.link, home),
         tone: toneFor(n.type),
         icon: iconFor(n.type),
         read: n.read,
@@ -203,13 +216,9 @@ export function NotificationsBell() {
                 No notifications yet
               </li>
             )}
-            {items.map((n) => (
-              <li key={n.id}>
-                <Link
-                  to={n.to as never}
-                  onClick={() => { markOne(n.id); setOpen(false); }}
-                  className={`flex gap-3 px-4 py-3 hover:bg-muted/60 transition ${n.read ? "" : "bg-saffron/[0.04]"}`}
-                >
+            {items.map((n) => {
+              const inner = (
+                <>
                   <span className={`mt-0.5 h-8 w-8 shrink-0 rounded-full flex items-center justify-center ${TONE[n.tone]}`}>
                     {n.icon}
                   </span>
@@ -221,9 +230,23 @@ export function NotificationsBell() {
                     <p className="text-xs text-muted-foreground leading-snug mt-0.5 line-clamp-2">{n.body}</p>
                     <p className="text-[10px] text-muted-foreground mt-1 font-medium">{n.time}</p>
                   </div>
-                </Link>
-              </li>
-            ))}
+                </>
+              );
+              const cls = `flex gap-3 px-4 py-3 hover:bg-muted/60 transition text-left w-full ${n.read ? "" : "bg-saffron/[0.04]"}`;
+              return (
+                <li key={n.id}>
+                  {n.to ? (
+                    <Link to={n.to as never} onClick={() => { markOne(n.id); setOpen(false); }} className={cls}>
+                      {inner}
+                    </Link>
+                  ) : (
+                    <button onClick={() => { markOne(n.id); setOpen(false); }} className={cls}>
+                      {inner}
+                    </button>
+                  )}
+                </li>
+              );
+            })}
           </ul>
 
           <div className="px-4 py-2.5 border-t border-border bg-muted/30">

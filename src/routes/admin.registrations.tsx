@@ -23,7 +23,7 @@ function AdminRegistrationsPage() {
           </Link>
           <BharatOneLogo size="lg" />
           <div className="absolute right-4 flex items-center gap-2">
-            <NotificationsBell />
+            <NotificationsBell home="admin" />
           </div>
         </div>
       </header>
