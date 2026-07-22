@@ -4,6 +4,7 @@ import { BharatOneLogo } from "@/components/bharatone-logo";
 import { PageHeader } from "@/components/retailer/page-header";
 import { RegistrationsReview } from "@/components/registrations/registrations-review";
 import { NotificationsBell } from "@/components/retailer/notifications-bell";
+import { usePortalGuard, PortalAuthGate } from "@/lib/portal-guard";
 
 export const Route = createFileRoute("/admin/registrations")({
   head: () => ({ meta: [{ title: "Retailer Approvals — BharatOne Admin" }] }),
@@ -11,6 +12,8 @@ export const Route = createFileRoute("/admin/registrations")({
 });
 
 function AdminRegistrationsPage() {
+  const ready = usePortalGuard("/admin-login", ["admin"]);
+  if (!ready) return <PortalAuthGate />;
   return (
     <div className="min-h-screen bg-tricolor">
       <header className="sticky top-0 z-30 border-b border-border bg-card/80 backdrop-blur-md">
