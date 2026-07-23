@@ -61,9 +61,6 @@ function AepsCashoutInner() {
   const [stMode, setStMode] = useState("5");
   const [stRecipient, setStRecipient] = useState("");
   const [stBusy, setStBusy] = useState(false);
-  // Bank account the agent gave at AEPS activation — used to pre-fill the
-  // settlement account so they don't re-enter it.
-  const [reg, setReg] = useState<{ account: string; ifsc: string } | null>(null);
 
   const loadCashout = useCallback(async () => {
     try {
@@ -90,7 +87,6 @@ function AepsCashoutInner() {
         const en = !!(st?.settlement_enabled && st?.service_activated);
         setEnabled(en);
         setReady(true);
-        if (st?.reg_account) setReg({ account: String(st.reg_account), ifsc: String(st.reg_ifsc ?? "") });
         if (!en) return;
         void loadCashout();
       } catch { if (on) setReady(true); }
@@ -113,18 +109,6 @@ function AepsCashoutInner() {
     } catch (e: any) { setBankInfo(null); setSaBankId(""); setBankErr(e?.message || "Could not look up the bank"); }
     finally { setBankBusy(false); }
   }, []);
-
-  // Pre-fill the settlement account from the agent's AEPS registration so they
-  // don't have to re-enter it — auto-open the form, fill account + IFSC, and
-  // resolve the bank from that IFSC. One tap to verify & enable.
-  useEffect(() => {
-    if (!enabled || !reg?.account) return;
-    if ((cashout?.accounts?.length ?? 0) > 0) return; // already has a registered account
-    setShowAddAcct(true);
-    setSaAccount((v) => v || reg.account);
-    setSaIfsc((v) => v || reg.ifsc);
-    if (reg.ifsc && !bankInfo) void resolveBank(reg.ifsc);
-  }, [enabled, reg, cashout, bankInfo, resolveBank]);
 
   const addSettlementAccount = async () => {
     if (!/^\d{6,20}$/.test(saAccount.trim())) return toast.error("Enter a valid account number");
@@ -209,9 +193,7 @@ function AepsCashoutInner() {
           </div>
         ) : (
           <p className="rounded-xl border border-dashed border-border px-3 py-3 text-xs text-muted-foreground">
-            {reg?.account
-              ? "Your AEPS registration bank account is pre-filled below — just verify it (₹1 penny-drop) to enable settlement."
-              : "No settlement account yet — add your own bank account (name must match your AEPS registration)."}
+            No settlement account yet — use “+ Add account” to enter your bank account (the holder name must match your AEPS registration).
           </p>
         )}
         {showAddAcct && (
