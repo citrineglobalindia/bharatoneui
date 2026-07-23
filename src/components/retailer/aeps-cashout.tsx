@@ -46,7 +46,8 @@ type Cashout = {
 function AepsCashoutInner() {
   const [ready, setReady] = useState(false);
   const [enabled, setEnabled] = useState(false);
-  const [bankList, setBankList] = useState<{ value: string; label: string; bank_id?: number }[]>([]);
+  const [bankInfo, setBankInfo] = useState<{ bank_id: number; bank: string; verify: boolean } | null>(null);
+  const [bankBusy, setBankBusy] = useState(false);
   const [cashout, setCashout] = useState<Cashout | null>(null);
   const [cashoutErr, setCashoutErr] = useState<string | null>(null);
   const [settleHistory, setSettleHistory] = useState<any[]>([]);
@@ -91,35 +92,44 @@ function AepsCashoutInner() {
         if (st?.reg_account) setReg({ account: String(st.reg_account), ifsc: String(st.reg_ifsc ?? "") });
         if (!en) return;
         void loadCashout();
-        try {
-          const r = await call("banks");
-          if (on) setBankList((r?.list ?? []) as { value: string; label: string; bank_id?: number }[]);
-        } catch { /* optional */ }
       } catch { if (on) setReady(true); }
     })();
     return () => { on = false; };
   }, [loadCashout]);
 
+  // Resolve the Eko bank_id + name from an IFSC (the settlement form needs
+  // bank_id, which the plain bank list does not carry).
+  const resolveBank = useCallback(async (ifsc: string) => {
+    const code = String(ifsc || "").toUpperCase().trim();
+    if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(code)) { setBankInfo(null); setSaBankId(""); return; }
+    setBankBusy(true);
+    try {
+      const r = await call("bank_by_ifsc", { ifsc: code });
+      if (r?.bank_id != null) {
+        setBankInfo({ bank_id: Number(r.bank_id), bank: String(r.bank || ""), verify: !!r.verification_available });
+        setSaBankId(String(r.bank_id));
+      } else { setBankInfo(null); setSaBankId(""); }
+    } catch { setBankInfo(null); setSaBankId(""); }
+    finally { setBankBusy(false); }
+  }, []);
+
   // Pre-fill the settlement account from the agent's AEPS registration so they
   // don't have to re-enter it — auto-open the form, fill account + IFSC, and
-  // auto-match the bank by IFSC prefix. One tap to verify & enable.
+  // resolve the bank from that IFSC. One tap to verify & enable.
   useEffect(() => {
     if (!enabled || !reg?.account) return;
     if ((cashout?.accounts?.length ?? 0) > 0) return; // already has a registered account
     setShowAddAcct(true);
     setSaAccount((v) => v || reg.account);
     setSaIfsc((v) => v || reg.ifsc);
-    if (!saBankId && reg.ifsc && bankList.length) {
-      const code = reg.ifsc.slice(0, 4).toUpperCase();
-      const m = bankList.find((b) => String(b.value).toUpperCase() === code && b.bank_id != null);
-      if (m?.bank_id != null) setSaBankId(String(m.bank_id));
-    }
-  }, [enabled, reg, cashout, bankList, saBankId]);
+    if (reg.ifsc && !bankInfo) void resolveBank(reg.ifsc);
+  }, [enabled, reg, cashout, bankInfo, resolveBank]);
 
   const addSettlementAccount = async () => {
-    if (!saBankId) return toast.error("Select the bank");
     if (!/^\d{6,20}$/.test(saAccount.trim())) return toast.error("Enter a valid account number");
     if (!/^[A-Z]{4}0[A-Z0-9]{6}$/i.test(saIfsc.trim())) return toast.error("Enter a valid IFSC code");
+    if (!saBankId || !bankInfo) return toast.error("Could not identify the bank from that IFSC — check the IFSC and try again");
+    if (!bankInfo.verify) return toast.error("This bank doesn't support account verification — settlement needs a bank that does");
     setSaBusy(true);
     try {
       const r = await call("add_account", { account: saAccount.trim(), ifsc: saIfsc.trim().toUpperCase(), bank_id: Number(saBankId) });
@@ -209,14 +219,19 @@ function AepsCashoutInner() {
               <input inputMode="numeric" value={saAccount} onChange={(e) => setSaAccount(e.target.value.replace(/\D/g, ""))} className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm" />
             </label>
             <label><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">IFSC</span>
-              <input value={saIfsc} onChange={(e) => setSaIfsc(e.target.value.toUpperCase())} maxLength={11} className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm" />
+              <input value={saIfsc} onChange={(e) => { const v = e.target.value.toUpperCase(); setSaIfsc(v); if (/^[A-Z]{4}0[A-Z0-9]{6}$/.test(v)) void resolveBank(v); else { setBankInfo(null); setSaBankId(""); } }} maxLength={11} className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm" />
             </label>
-            <label className="sm:col-span-2"><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Bank</span>
-              <select value={saBankId} onChange={(e) => setSaBankId(e.target.value)} className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm">
-                <option value="">Select bank…</option>
-                {bankList.filter((b) => b.bank_id != null).map((b) => <option key={String(b.bank_id)} value={String(b.bank_id)}>{b.label}</option>)}
-              </select>
-            </label>
+            <div className="sm:col-span-2"><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Bank (auto-detected from IFSC)</span>
+              <div className="flex h-9 w-full items-center rounded-lg border border-border bg-muted/50 px-3 text-sm">
+                {bankBusy ? <span className="flex items-center gap-2 text-muted-foreground"><Loader2 className="h-3.5 w-3.5 animate-spin" /> Looking up bank…</span>
+                  : bankInfo ? <span className="font-medium">{bankInfo.bank}</span>
+                  : saIfsc ? <span className="text-amber-700">Enter a valid IFSC to find the bank</span>
+                  : <span className="text-muted-foreground">Fills in once you enter the IFSC</span>}
+              </div>
+              {bankInfo && !bankInfo.verify && (
+                <p className="mt-1 text-[11px] font-semibold text-amber-700">This bank does not support account verification, so it can't be used for settlement. Use an account at a bank that does.</p>
+              )}
+            </div>
             <div className="sm:col-span-2">
               <button onClick={addSettlementAccount} disabled={saBusy} className="inline-flex items-center gap-1.5 rounded-lg bg-sky-600 px-4 h-9 text-xs font-bold text-white disabled:opacity-50">
                 {saBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />} Verify & add account

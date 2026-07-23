@@ -148,6 +148,23 @@ Deno.serve(async (req) => {
       return json({ ok: ekoOk(d), list, message: ekoMsg(d) });
     }
 
+    // Resolve the Eko bank_id (+ whether penny-drop verification is available)
+    // from an IFSC. The settlement-account form needs bank_id, which the plain
+    // bank list does NOT carry — this IFSC lookup is the correct source.
+    if (action === "bank_by_ifsc") {
+      const ifsc = String(body.ifsc ?? "").toUpperCase().trim();
+      if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifsc)) return json({ error: "Enter a valid IFSC" }, 400);
+      const d = await ekoGet(`${KYC_V3}/tools/reference/banks/ifsc/${encodeURIComponent(ifsc)}?initiator_id=${encodeURIComponent(EKO_INITIATOR_ID)}`);
+      if (!ekoOk(d)) return json({ ok: false, error: ekoMsg(d), raw: scrub(d) }, 400);
+      return json({
+        ok: true,
+        bank_id: d?.data?.bank_id ?? null,
+        bank: d?.data?.bank ?? "",
+        branch: d?.data?.branch ?? "",
+        verification_available: String(d?.data?.isverificationavailable ?? "") === "1",
+      });
+    }
+
     // Everything below moves money / changes state → require Cashout enabled + activated agent.
     if (!settlementEnabled) return json({ error: "Cashout is not enabled. Ask the administrator to enable Eko fund settlement." }, 403);
     if (!userCode) return json({ error: "This retailer is not onboarded for AEPS" }, 400);
