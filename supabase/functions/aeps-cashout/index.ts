@@ -26,6 +26,7 @@ const EKO_ENV = (Deno.env.get("EKO_ENV") ?? "staging").toLowerCase();
 const IS_PROD = EKO_ENV === "production" || EKO_ENV === "prod";
 const HOST = IS_PROD ? "https://api.eko.in:25002" : "https://staging.eko.in:25004";
 const PATH_ROOT = IS_PROD ? "ekoicici" : "ekoapi";
+const V1 = `${HOST}/${PATH_ROOT}/v1`;
 const V3 = `${HOST}/${PATH_ROOT}/v3`;
 const RAW_BASE = (Deno.env.get("EKO_BASE_URL") ?? "").trim().replace(/\/+$/, "");
 const KYC_V3 = `${RAW_BASE || (IS_PROD ? "https://api.eko.in:25002/ekoicici" : "https://staging.eko.in:25004/ekoapi")}/v3`;
@@ -154,15 +155,30 @@ Deno.serve(async (req) => {
     if (action === "bank_by_ifsc") {
       const ifsc = String(body.ifsc ?? "").toUpperCase().trim();
       if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifsc)) return json({ error: "Enter a valid IFSC" }, 400);
-      const d = await ekoGet(`${KYC_V3}/tools/reference/banks/ifsc/${encodeURIComponent(ifsc)}?initiator_id=${encodeURIComponent(EKO_INITIATOR_ID)}`);
-      if (!ekoOk(d)) return json({ ok: false, error: ekoMsg(d), raw: scrub(d) }, 400);
-      return json({
-        ok: true,
-        bank_id: d?.data?.bank_id ?? null,
-        bank: d?.data?.bank ?? "",
-        branch: d?.data?.branch ?? "",
-        verification_available: String(d?.data?.isverificationavailable ?? "") === "1",
-      });
+      const ii = encodeURIComponent(EKO_INITIATOR_ID);
+      // Try the IFSC lookup first, then the bank-code lookup, then a v1 variant —
+      // Eko's tools endpoints have moved between versions before.
+      const candidates = [
+        `${KYC_V3}/tools/reference/banks/ifsc/${encodeURIComponent(ifsc)}?initiator_id=${ii}`,
+        `${KYC_V3}/tools/reference/bank/${encodeURIComponent(ifsc.slice(0, 4))}?ifsc=${encodeURIComponent(ifsc)}&initiator_id=${ii}`,
+        `${V1}/tools/reference/banks/ifsc/${encodeURIComponent(ifsc)}?initiator_id=${ii}`,
+      ];
+      let last: any = null;
+      for (const url of candidates) {
+        const d = await ekoGet(url);
+        last = d;
+        const bankId = d?.data?.bank_id;
+        if (ekoOk(d) && bankId != null) {
+          return json({
+            ok: true,
+            bank_id: bankId,
+            bank: d?.data?.bank ?? d?.data?.name ?? "",
+            branch: d?.data?.branch ?? "",
+            verification_available: String(d?.data?.isverificationavailable ?? "") === "1",
+          });
+        }
+      }
+      return json({ ok: false, error: ekoMsg(last) || "Could not look up this IFSC at Eko", raw: scrub(last) }, 400);
     }
 
     // Everything below moves money / changes state → require Cashout enabled + activated agent.

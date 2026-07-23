@@ -48,6 +48,7 @@ function AepsCashoutInner() {
   const [enabled, setEnabled] = useState(false);
   const [bankInfo, setBankInfo] = useState<{ bank_id: number; bank: string; verify: boolean } | null>(null);
   const [bankBusy, setBankBusy] = useState(false);
+  const [bankErr, setBankErr] = useState<string | null>(null);
   const [cashout, setCashout] = useState<Cashout | null>(null);
   const [cashoutErr, setCashoutErr] = useState<string | null>(null);
   const [settleHistory, setSettleHistory] = useState<any[]>([]);
@@ -101,15 +102,15 @@ function AepsCashoutInner() {
   // bank_id, which the plain bank list does not carry).
   const resolveBank = useCallback(async (ifsc: string) => {
     const code = String(ifsc || "").toUpperCase().trim();
-    if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(code)) { setBankInfo(null); setSaBankId(""); return; }
-    setBankBusy(true);
+    if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(code)) { setBankInfo(null); setSaBankId(""); setBankErr(null); return; }
+    setBankBusy(true); setBankErr(null);
     try {
       const r = await call("bank_by_ifsc", { ifsc: code });
       if (r?.bank_id != null) {
         setBankInfo({ bank_id: Number(r.bank_id), bank: String(r.bank || ""), verify: !!r.verification_available });
         setSaBankId(String(r.bank_id));
-      } else { setBankInfo(null); setSaBankId(""); }
-    } catch { setBankInfo(null); setSaBankId(""); }
+      } else { setBankInfo(null); setSaBankId(""); setBankErr("Bank not found for this IFSC"); }
+    } catch (e: any) { setBankInfo(null); setSaBankId(""); setBankErr(e?.message || "Could not look up the bank"); }
     finally { setBankBusy(false); }
   }, []);
 
@@ -225,6 +226,7 @@ function AepsCashoutInner() {
               <div className="flex h-9 w-full items-center rounded-lg border border-border bg-muted/50 px-3 text-sm">
                 {bankBusy ? <span className="flex items-center gap-2 text-muted-foreground"><Loader2 className="h-3.5 w-3.5 animate-spin" /> Looking up bank…</span>
                   : bankInfo ? <span className="font-medium">{bankInfo.bank}</span>
+                  : bankErr ? <span className="text-rose-700">{bankErr}</span>
                   : saIfsc ? <span className="text-amber-700">Enter a valid IFSC to find the bank</span>
                   : <span className="text-muted-foreground">Fills in once you enter the IFSC</span>}
               </div>
