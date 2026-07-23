@@ -114,7 +114,29 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (channel !== "email") return json({ error: "Only email OTP is supported" }, 400);
+    // ---- Mobile OTP: issue the code, deliver via notify-dispatch (SMSJust, DLT 'otp' template) ----
+    // registration_otps already supports channel 'mobile'; the same verify_registration_otp
+    // RPC checks it. Delivery reuses the unified dispatcher so all SMS goes through one
+    // DLT-compliant path — this function never talks to the SMS gateway directly.
+    if (channel === "mobile" || channel === "sms") {
+      const mobile = String(target ?? "").replace(/\D/g, "");
+      if (!/^[6-9]\d{9}$/.test(mobile)) return json({ error: "Enter a valid 10-digit mobile number" }, 400);
+      const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+      const { data: code, error } = await supabase.rpc("issue_registration_otp", { _target: mobile, _channel: "mobile" });
+      if (error) { console.error("issue_registration_otp (mobile) failed:", error.message); return json({ error: error.message }, 400); }
+      // vars: [OTP code, validity minutes] — must match the registered template's two variables.
+      const { data: dispatch, error: dErr } = await supabase.functions.invoke("notify-dispatch", {
+        body: { channel: "sms", to: mobile, template_key: "otp", vars: [code, "10"] },
+      });
+      const sent = !dErr && (dispatch as { status?: string } | null)?.status === "sent";
+      if (sent) { console.log("OTP SMS sent to", mobile); return json({ sent: true, via: "smsjust" }); }
+      const detail = dErr ? String(dErr) : String((dispatch as { message?: string } | null)?.message ?? "sms send failed");
+      console.error("OTP SMS FAILED for", mobile, "->", detail);
+      if (devMode) return json({ sent: true, dev: true, dev_code: code, detail });
+      return json({ error: "Could not send the OTP SMS. Please try again in a moment.", detail }, 502);
+    }
+
+    if (channel !== "email") return json({ error: "Only email and mobile OTP are supported" }, 400);
     if (!target || !EMAIL_RE.test(target)) return json({ error: "Invalid email address" }, 400);
 
     const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);

@@ -18,7 +18,6 @@ import { OtpSuccessDialog, type OtpSuccessChannel } from "../otp-success-dialog"
 import { useRegistration } from "../registration-context";
 import { supabase } from "@/integrations/supabase/client";
 
-const MOCK_OTP = "123456";
 const RESEND_COOLDOWN = 30;
 
 type Channel = "email" | "mobile";
@@ -40,6 +39,7 @@ export function AccountStep() {
   const [emailError, setEmailError] = useState<string | null>(null);
   const [emailNote, setEmailNote] = useState<string | null>(null);
   const [mobileError, setMobileError] = useState<string | null>(null);
+  const [mobileNote, setMobileNote] = useState<string | null>(null);
   const [emailCooldown, setEmailCooldown] = useState(0);
   const [mobileCooldown, setMobileCooldown] = useState(0);
 
@@ -103,8 +103,28 @@ export function AccountStep() {
         setMobileError("Enter a valid 10-digit mobile number first.");
         return;
       }
-      setMobileOtp(Array(6).fill(""));
       setMobileError(null);
+      setMobileNote(null);
+      const { data, error } = await supabase.functions.invoke("send-otp", {
+        body: { channel: "mobile", target: mobile },
+      });
+      if (error) {
+        let msg = "Could not send the code. Please try again in a moment.";
+        try {
+          const ctx = (error as { context?: Response }).context;
+          const b = ctx ? await ctx.json() : null;
+          if (b?.error) msg = String(b.error);
+        } catch { /* keep default */ }
+        setMobileError(msg);
+        return;
+      }
+      const devCode = (data as { dev_code?: string } | null)?.dev_code;
+      if (devCode && /^[0-9]{6}$/.test(devCode)) {
+        setMobileOtp(devCode.split(""));
+        setMobileNote(`Test mode: code auto-filled (${devCode}).`);
+      } else {
+        setMobileOtp(Array(6).fill(""));
+      }
       setMobileSent(true);
       setMobileCooldown(RESEND_COOLDOWN);
       setTimeout(() => mobileInputsRef.current[0]?.focus(), 50);
@@ -137,9 +157,14 @@ export function AccountStep() {
       const code = mobileOtp.join("");
       if (code.length !== 6) return setMobileError("Please enter the complete 6-digit code.");
       setVerifyingMobile(true);
-      await new Promise((r) => setTimeout(r, 700));
+      const { data, error } = await supabase.rpc("verify_registration_otp", {
+        _target: mobile,
+        _channel: "mobile",
+        _code: code,
+      });
       setVerifyingMobile(false);
-      if (code === MOCK_OTP) {
+      const ok = !error && (data as { verified?: boolean } | null)?.verified === true;
+      if (ok) {
         setMobileVerified(true);
         setMobileError(null);
         if (emailVerified) {
@@ -148,7 +173,7 @@ export function AccountStep() {
           setSuccessChannel("mobile");
         }
         setSuccessOpen(true);
-      } else setMobileError("Incorrect code. Please try again or resend.");
+      } else setMobileError("Incorrect or expired code. Please try again or resend.");
     }
   };
 
@@ -236,20 +261,73 @@ export function AccountStep() {
       </SectionCard>
 
       <SectionCard title="Mobile Number" icon={<Phone className="h-4 w-4" />}>
-        <div className="flex gap-2">
-          <div className="inline-flex h-12 shrink-0 items-center justify-center rounded-xl border border-input bg-muted px-3 text-sm font-semibold text-foreground">+91</div>
-          <input
-            className={inputCls} autoComplete="off"
-            placeholder="10 digit mobile number"
-            maxLength={10}
-            inputMode="numeric"
-            value={mobile}
-            onChange={(e) => setMobile(sanitizeMobile(e.target.value))}
-          />
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <div className="flex flex-1 gap-2">
+            <div className="inline-flex h-12 shrink-0 items-center justify-center rounded-xl border border-input bg-muted px-3 text-sm font-semibold text-foreground">+91</div>
+            <input
+              className={inputCls} autoComplete="off"
+              placeholder="10 digit mobile number"
+              maxLength={10}
+              inputMode="numeric"
+              value={mobile}
+              onChange={(e) => {
+                setMobile(sanitizeMobile(e.target.value));
+                setMobileVerified(false);
+                setMobileSent(false);
+                setMobileError(null);
+              }}
+              disabled={mobileVerified}
+            />
+          </div>
+          {!mobileVerified && (
+            <Button
+              type="button"
+              onClick={() => sendOtp("mobile")}
+              disabled={!validMobile || (mobileSent && mobileCooldown > 0)}
+              className="h-12 shrink-0 bg-india-green text-white hover:bg-india-green/90"
+            >
+              {mobileSent ? (
+                mobileCooldown > 0 ? (
+                  <><RefreshCw className="h-4 w-4" /> Resend in {mobileCooldown}s</>
+                ) : (
+                  <><RefreshCw className="h-4 w-4" /> Resend OTP</>
+                )
+              ) : (
+                <><KeyRound className="h-4 w-4" /> Send OTP</>
+              )}
+            </Button>
+          )}
+          {mobileVerified && (
+            <span className="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-xl bg-emerald-100 px-3 text-xs font-bold uppercase tracking-wider text-emerald-700 ring-1 ring-emerald-200">
+              <CheckCircle2 className="h-4 w-4" /> Verified
+            </span>
+          )}
         </div>
-        <p className="mt-2 text-[12px] leading-relaxed text-muted-foreground">
-          📱 Enter your mobile number. SMS OTP verification is temporarily disabled.
-        </p>
+
+        {mobileSent && !mobileVerified && (
+          <OtpRow
+            label="mobile"
+            otp={mobileOtp}
+            setOtp={setMobileOtp}
+            error={mobileError}
+            setError={setMobileError}
+            verifying={verifyingMobile}
+            onVerify={() => verifyChannel("mobile")}
+            inputsRef={mobileInputsRef}
+          />
+        )}
+
+        {mobileError && !mobileSent && !mobileVerified && (
+          <p className="mt-2 text-[12px] font-medium text-red-600">{mobileError}</p>
+        )}
+        {mobileNote && !mobileVerified && (
+          <p className="mt-2 rounded-md border border-amber-300 bg-amber-50 px-2.5 py-1.5 text-[12px] font-medium text-amber-800">{mobileNote}</p>
+        )}
+        {!mobileSent && !mobileVerified && (
+          <p className="text-[12px] leading-relaxed text-muted-foreground">
+            📱 We'll send a 6-digit verification code to this mobile via SMS.
+          </p>
+        )}
       </SectionCard>
 
       {emailVerified && (
