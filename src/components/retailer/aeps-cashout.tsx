@@ -21,10 +21,10 @@ const tone: Record<string, string> = {
   pending_reconciliation: "bg-amber-100 text-amber-800",
 };
 
-// Invoke the shared `aeps` edge function. Kept local so this file has no
-// dependency on the core page.
+// Invoke the dedicated `aeps-cashout` edge function. Kept local so this file has
+// no dependency on the core page or the core `aeps` gateway.
 async function call(action: string, extra: Record<string, unknown> = {}) {
-  const { data, error } = await supabase.functions.invoke("aeps", { body: { action, ...extra } });
+  const { data, error } = await supabase.functions.invoke("aeps-cashout", { body: { action, ...extra } });
   if (error) {
     let msg = "Request failed";
     try {
@@ -62,7 +62,7 @@ function AepsCashoutInner() {
 
   const loadCashout = useCallback(async () => {
     try {
-      const r = await call("settlement_accounts");
+      const r = await call("accounts");
       setCashoutErr(null);
       setCashout({ unsettled_fund: r.unsettled_fund ?? 0, remaining_limit: r.remaining_limit ?? 0, accounts: r.accounts ?? [] });
       if ((r.accounts ?? []).length) setStRecipient((cur) => cur || String(r.accounts[0].recipient_id));
@@ -80,7 +80,7 @@ function AepsCashoutInner() {
     let on = true;
     (async () => {
       try {
-        const st = await call("config").catch(() => null);
+        const st = await call("status").catch(() => null);
         if (!on) return;
         const en = !!(st?.settlement_enabled && st?.service_activated);
         setEnabled(en);
@@ -88,7 +88,7 @@ function AepsCashoutInner() {
         if (!en) return;
         void loadCashout();
         try {
-          const r = await call("get_banks");
+          const r = await call("banks");
           if (on) setBankList((r?.list ?? []) as { value: string; label: string; bank_id?: number }[]);
         } catch { /* optional */ }
       } catch { if (on) setReady(true); }
@@ -102,7 +102,7 @@ function AepsCashoutInner() {
     if (!/^[A-Z]{4}0[A-Z0-9]{6}$/i.test(saIfsc.trim())) return toast.error("Enter a valid IFSC code");
     setSaBusy(true);
     try {
-      const r = await call("settlement_add_account", { account: saAccount.trim(), ifsc: saIfsc.trim().toUpperCase(), bank_id: Number(saBankId) });
+      const r = await call("add_account", { account: saAccount.trim(), ifsc: saIfsc.trim().toUpperCase(), bank_id: Number(saBankId) });
       toast.success("Settlement account added", { description: r.message });
       setShowAddAcct(false); setSaAccount(""); setSaIfsc(""); setSaBankId("");
       await loadCashout();
@@ -111,7 +111,7 @@ function AepsCashoutInner() {
       // agent — activate it once and ask the agent to retry.
       if (/service.*not|not.*service|activate/i.test(e.message)) {
         try {
-          await call("settlement_activate");
+          await call("activate");
           toast.info("Settlement service activated", { description: "Try adding the account again." });
         } catch { toast.error("Could not add account", { description: e.message }); }
       } else toast.error("Could not add account", { description: e.message });
