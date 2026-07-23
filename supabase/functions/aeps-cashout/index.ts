@@ -121,12 +121,16 @@ Deno.serve(async (req) => {
 
   try {
     // Whether Cashout is available for this agent (what the UI gates its card on).
+    // Also returns the bank account the agent gave at AEPS activation so the UI
+    // can pre-fill the settlement account instead of asking them to re-enter it.
     if (action === "status") {
       return json({
         settlement_enabled: settlementEnabled,
         service_activated: !!agent?.service_activated,
         onboarded: !!agent?.onboarded,
         user_code: userCode || null,
+        reg_account: (agent as any)?.settlement_account ?? null,
+        reg_ifsc: (agent as any)?.settlement_ifsc ?? null,
       });
     }
 

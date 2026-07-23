@@ -59,6 +59,9 @@ function AepsCashoutInner() {
   const [stMode, setStMode] = useState("5");
   const [stRecipient, setStRecipient] = useState("");
   const [stBusy, setStBusy] = useState(false);
+  // Bank account the agent gave at AEPS activation — used to pre-fill the
+  // settlement account so they don't re-enter it.
+  const [reg, setReg] = useState<{ account: string; ifsc: string } | null>(null);
 
   const loadCashout = useCallback(async () => {
     try {
@@ -85,6 +88,7 @@ function AepsCashoutInner() {
         const en = !!(st?.settlement_enabled && st?.service_activated);
         setEnabled(en);
         setReady(true);
+        if (st?.reg_account) setReg({ account: String(st.reg_account), ifsc: String(st.reg_ifsc ?? "") });
         if (!en) return;
         void loadCashout();
         try {
@@ -95,6 +99,22 @@ function AepsCashoutInner() {
     })();
     return () => { on = false; };
   }, [loadCashout]);
+
+  // Pre-fill the settlement account from the agent's AEPS registration so they
+  // don't have to re-enter it — auto-open the form, fill account + IFSC, and
+  // auto-match the bank by IFSC prefix. One tap to verify & enable.
+  useEffect(() => {
+    if (!enabled || !reg?.account) return;
+    if ((cashout?.accounts?.length ?? 0) > 0) return; // already has a registered account
+    setShowAddAcct(true);
+    setSaAccount((v) => v || reg.account);
+    setSaIfsc((v) => v || reg.ifsc);
+    if (!saBankId && reg.ifsc && bankList.length) {
+      const code = reg.ifsc.slice(0, 4).toUpperCase();
+      const m = bankList.find((b) => String(b.value).toUpperCase() === code && b.bank_id != null);
+      if (m?.bank_id != null) setSaBankId(String(m.bank_id));
+    }
+  }, [enabled, reg, cashout, bankList, saBankId]);
 
   const addSettlementAccount = async () => {
     if (!saBankId) return toast.error("Select the bank");
@@ -177,7 +197,11 @@ function AepsCashoutInner() {
             ))}
           </div>
         ) : (
-          <p className="rounded-xl border border-dashed border-border px-3 py-3 text-xs text-muted-foreground">No settlement account yet — add your own bank account (name must match your AEPS registration).</p>
+          <p className="rounded-xl border border-dashed border-border px-3 py-3 text-xs text-muted-foreground">
+            {reg?.account
+              ? "Your AEPS registration bank account is pre-filled below — just verify it (₹1 penny-drop) to enable settlement."
+              : "No settlement account yet — add your own bank account (name must match your AEPS registration)."}
+          </p>
         )}
         {showAddAcct && (
           <div className="mt-2 grid gap-2 rounded-xl bg-muted/40 p-3 sm:grid-cols-2">
