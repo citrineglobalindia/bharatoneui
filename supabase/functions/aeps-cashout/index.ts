@@ -30,6 +30,9 @@ const V1 = `${HOST}/${PATH_ROOT}/v1`;
 const V3 = `${HOST}/${PATH_ROOT}/v3`;
 const RAW_BASE = (Deno.env.get("EKO_BASE_URL") ?? "").trim().replace(/\/+$/, "");
 const KYC_V3 = `${RAW_BASE || (IS_PROD ? "https://api.eko.in:25002/ekoicici" : "https://staging.eko.in:25004/ekoapi")}/v3`;
+// Eko's util / Bank-&-IFSC reference endpoints live on the STANDARD base per the
+// docs (no :25002 port) — the :25002 AePS gateway 404s them ("Endpoint not found").
+const DOC_V3 = IS_PROD ? "https://api.eko.in/ekoicici/v3" : "https://staging.eko.in/ekoapi/v3";
 const EKO_INITIATOR_ID = Deno.env.get("EKO_INITIATOR_ID") ?? "";
 const EKO_DEVELOPER_KEY = Deno.env.get("EKO_DEVELOPER_KEY") ?? "";
 const EKO_AUTH_KEY = Deno.env.get("EKO_AUTH_KEY") ?? "";
@@ -159,9 +162,9 @@ Deno.serve(async (req) => {
       // Try the IFSC lookup first, then the bank-code lookup, then a v1 variant —
       // Eko's tools endpoints have moved between versions before.
       const candidates = [
+        `${DOC_V3}/tools/reference/banks/ifsc/${encodeURIComponent(ifsc)}?initiator_id=${ii}`,
+        `${DOC_V3}/tools/reference/bank/${encodeURIComponent(ifsc.slice(0, 4))}?ifsc=${encodeURIComponent(ifsc)}&initiator_id=${ii}`,
         `${KYC_V3}/tools/reference/banks/ifsc/${encodeURIComponent(ifsc)}?initiator_id=${ii}`,
-        `${KYC_V3}/tools/reference/bank/${encodeURIComponent(ifsc.slice(0, 4))}?ifsc=${encodeURIComponent(ifsc)}&initiator_id=${ii}`,
-        `${V1}/tools/reference/banks/ifsc/${encodeURIComponent(ifsc)}?initiator_id=${ii}`,
       ];
       let last: any = null;
       for (const url of candidates) {
