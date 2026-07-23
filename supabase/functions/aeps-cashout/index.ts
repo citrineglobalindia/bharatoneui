@@ -26,7 +26,6 @@ const EKO_ENV = (Deno.env.get("EKO_ENV") ?? "staging").toLowerCase();
 const IS_PROD = EKO_ENV === "production" || EKO_ENV === "prod";
 const HOST = IS_PROD ? "https://api.eko.in:25002" : "https://staging.eko.in:25004";
 const PATH_ROOT = IS_PROD ? "ekoicici" : "ekoapi";
-const V1 = `${HOST}/${PATH_ROOT}/v1`;
 const V3 = `${HOST}/${PATH_ROOT}/v3`;
 const RAW_BASE = (Deno.env.get("EKO_BASE_URL") ?? "").trim().replace(/\/+$/, "");
 const KYC_V3 = `${RAW_BASE || (IS_PROD ? "https://api.eko.in:25002/ekoicici" : "https://staging.eko.in:25004/ekoapi")}/v3`;
@@ -200,12 +199,12 @@ Deno.serve(async (req) => {
 
     if (action === "accounts") {
       const qs = new URLSearchParams({ initiator_id: EKO_INITIATOR_ID, user_code: userCode });
-      let d = await ekoGet(`${KYC_V3}/user/payment/aeps/settlement/accounts?${qs}`);
+      let d = await ekoGet(`${DOC_V3}/user/payment/aeps/settlement/accounts?${qs}`);
       if (!ekoOk(d)) {
         // First failure is usually service 39 not yet active for this agent —
         // activate it once and retry, instead of silently reporting ₹0.
         await ekoForm(`${V3}/admin/network/agent/${encodeURIComponent(userCode)}/service/39/activate`, "PUT", { initiator_id: EKO_INITIATOR_ID });
-        d = await ekoGet(`${KYC_V3}/user/payment/aeps/settlement/accounts?${qs}`);
+        d = await ekoGet(`${DOC_V3}/user/payment/aeps/settlement/accounts?${qs}`);
       }
       if (!ekoOk(d)) return json({ error: ekoMsg(d), raw: scrub(d) }, 400);
       const rows = (d?.data?.fund_transfer_list ?? []) as Record<string, unknown>[];
@@ -230,7 +229,7 @@ Deno.serve(async (req) => {
       if (!account || !/^\d{6,20}$/.test(String(account))) return json({ error: "Enter a valid bank account number" }, 400);
       if (!ifsc || !/^[A-Z]{4}0[A-Z0-9]{6}$/i.test(String(ifsc))) return json({ error: "Enter a valid IFSC code" }, 400);
       if (!bank_id) return json({ error: "Select the bank" }, 400);
-      const data = await ekoJson(`${KYC_V3}/user/payment/aeps/settlement/account`, "POST", {
+      const data = await ekoJson(`${DOC_V3}/user/payment/aeps/settlement/account`, "POST", {
         initiator_id: EKO_INITIATOR_ID, user_code: userCode, service_code: 39,
         bank_id: Number(bank_id), ifsc: String(ifsc).toUpperCase(), account: String(account),
       });
@@ -270,7 +269,7 @@ Deno.serve(async (req) => {
       let result: any = null;
       let transportError: string | null = null;
       try {
-        result = await ekoJson(`${KYC_V3}/user/payment/aeps/settlement`, "POST", {
+        result = await ekoJson(`${DOC_V3}/user/payment/aeps/settlement`, "POST", {
           initiator_id: EKO_INITIATOR_ID, client_ref_id: clientRefId, user_code: userCode,
           amount: amt, recipient_id: Number(recipient_id), payment_mode: pm,
         });
