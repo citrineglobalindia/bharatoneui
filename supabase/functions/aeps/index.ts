@@ -251,6 +251,21 @@ Deno.serve(async (req) => {
   const dailyKycDoneToday = istDay(agent?.last_daily_kyc_at ?? null) === istDay(new Date());
 
   try {
+    // Minimum wallet balance to use AEPS (admin-configurable; 0 = off). Enforced
+    // on the charge-incurring / money-moving actions so a retailer can always
+    // cover the daily-2FA charge and any AEPS fees before they start.
+    if (action === "kyc_daily" || action === "transact") {
+      const { data: minRow } = await svc.from("app_settings").select("value").eq("key", "aeps_min_wallet_balance").maybeSingle();
+      const minBal = Number((minRow as { value?: string } | null)?.value ?? 0) || 0;
+      if (minBal > 0) {
+        const { data: w } = await svc.from("wallets").select("balance").eq("user_id", user.id).maybeSingle();
+        const bal = Number((w as { balance?: number } | null)?.balance ?? 0) || 0;
+        if (bal < minBal) {
+          return json({ error: `Your wallet balance is below the minimum of ₹${minBal} required for AEPS. Please top up your wallet to continue.`, code: "MIN_BALANCE", min_balance: minBal, balance: bal }, 402);
+        }
+      }
+    }
+
     if (action === "config") {
       const { data: modeRow } = await svc.from("app_settings").select("value").eq("key", "aeps_settlement_mode").maybeSingle();
       return json({
