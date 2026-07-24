@@ -274,15 +274,30 @@ Deno.serve(async (req) => {
       if (!roleList.some((r) => ["admin", "accountant", "operator"].includes(r))) {
         return json({ ok: false, error: "Not permitted" }, 403);
       }
-      const qs = new URLSearchParams({
-        initiator_id: EKO_INITIATOR_ID,
-        customer_id_type: "mobile_number",
-        customer_id: EKO_INITIATOR_ID,
+      // Eko has NO standalone wallet-balance endpoint — /user/account/balance
+      // 404s ("Endpoint not found") on every base and is absent from their
+      // current OpenAPI spec. The E-value float is only returned as `data.balance`
+      // on each transaction, so surface the most recent one with its timestamp.
+      const { data: last } = await svc
+        .from("aeps_transactions")
+        .select("response, created_at")
+        .eq("operation", "cash_withdrawal")
+        .eq("status", "success")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const rawBal = (last as any)?.response?.data?.balance;
+      const bal = rawBal != null && rawBal !== "" ? Number(rawBal) : null;
+      return json({
+        ok: true,
+        balance: Number.isFinite(bal) ? bal : null,
+        currency: "INR",
+        checked_at: (last as any)?.created_at ?? new Date().toISOString(),
+        source: "last_transaction",
+        note: bal == null
+          ? "Balance appears after the first successful AePS cash withdrawal."
+          : "Latest E-value from the most recent AePS cash withdrawal.",
       });
-      const data = await ekoGet(`${ACCT_V3}/user/account/balance?${qs}`);
-      if (!ekoOk(data)) return json({ ok: false, error: ekoMsg(data), raw: scrub(data) });
-      const bal = Number(data?.data?.balance);
-      return json({ ok: true, balance: Number.isFinite(bal) ? bal : null, currency: data?.data?.currency ?? "INR", checked_at: new Date().toISOString() });
     }
 
     // ---------------------------------------------- activation lookup lists
