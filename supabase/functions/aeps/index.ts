@@ -31,6 +31,10 @@ const V3 = `${HOST}/${PATH_ROOT}/v3`;
 // Same convention as the aeps-2fa function; override with EKO_BASE_URL if Eko moves it.
 const RAW_BASE = (Deno.env.get("EKO_BASE_URL") ?? "").trim().replace(/\/+$/, "");
 const KYC_V3 = `${RAW_BASE || (IS_PROD ? "https://api.eko.in:25002/ekoicici" : "https://staging.eko.in:25004/ekoapi")}/v3`;
+// Account/wallet/settlement endpoints live on the ekoapi base (:443), NOT the
+// :25002 ekoicici AePS gateway (which 404s them with "Endpoint not found").
+// Same base the aeps-cashout function uses for these calls.
+const ACCT_V3 = IS_PROD ? "https://api.eko.in/ekoapi/v3" : "https://staging.eko.in/ekoapi/v3";
 const EKO_INITIATOR_ID = Deno.env.get("EKO_INITIATOR_ID") ?? "";
 const EKO_DEVELOPER_KEY = Deno.env.get("EKO_DEVELOPER_KEY") ?? "";
 const EKO_AUTH_KEY = Deno.env.get("EKO_AUTH_KEY") ?? "";
@@ -275,7 +279,7 @@ Deno.serve(async (req) => {
         customer_id_type: "mobile_number",
         customer_id: EKO_INITIATOR_ID,
       });
-      const data = await ekoGet(`${KYC_V3}/user/account/balance?${qs}`);
+      const data = await ekoGet(`${ACCT_V3}/user/account/balance?${qs}`);
       if (!ekoOk(data)) return json({ ok: false, error: ekoMsg(data), raw: scrub(data) });
       const bal = Number(data?.data?.balance);
       return json({ ok: true, balance: Number.isFinite(bal) ? bal : null, currency: data?.data?.currency ?? "INR", checked_at: new Date().toISOString() });
