@@ -56,8 +56,9 @@ function AepsPage() {
   const [deviceHint, setDeviceHint] = useState<string | null>(null);
   const [authMode, setAuthMode] = useState<"finger" | "iris">("finger");
   const [showDrivers, setShowDrivers] = useState(false);
-  const [walletSum, setWalletSum] = useState<{ earned: number; paid: number; pending: number; available: number } | null>(null);
+  const [walletSum, setWalletSum] = useState<{ earned: number; paid: number; pending: number; available: number; charges?: number } | null>(null);
   const [payouts, setPayouts] = useState<any[]>([]);
+  const [history, setHistory] = useState<any[]>([]);
   const [payAmt, setPayAmt] = useState("");
   const [payBusy, setPayBusy] = useState(false);
   const [showPayout, setShowPayout] = useState(false);
@@ -152,6 +153,10 @@ function AepsPage() {
       const po = await (supabase as any).from("aeps_payouts").select("*").order("requested_at", { ascending: false }).limit(10);
       setPayouts((po?.data as any[]) ?? []);
     } catch { /* payouts optional */ }
+    try {
+      const h = await (supabase as any).rpc("aeps_wallet_history", { _limit: 40 });
+      setHistory((h?.data as any[]) ?? []);
+    } catch { /* history optional */ }
     setLoading(false);
   }
   useEffect(() => { load(); }, []);
@@ -743,7 +748,7 @@ function AepsPage() {
               <div className="flex-1 rounded-xl bg-india-green/10 p-4">
                 <p className="text-[11px] font-semibold text-india-green">Available to withdraw</p>
                 <p className="mt-0.5 text-2xl font-extrabold text-india-green">{inr(walletSum?.available ?? 0)}</p>
-                <p className="mt-0.5 text-[11px] text-muted-foreground">Earned {inr(walletSum?.earned ?? 0)} · Paid {inr(walletSum?.paid ?? 0)} · In process {inr(walletSum?.pending ?? 0)}</p>
+                <p className="mt-0.5 text-[11px] text-muted-foreground">Earned {inr(walletSum?.earned ?? 0)} · Paid {inr(walletSum?.paid ?? 0)} · In process {inr(walletSum?.pending ?? 0)} · KYC {inr(walletSum?.charges ?? 0)}</p>
               </div>
               <div className="grid flex-1 grid-cols-2 gap-2">
                 <div className="rounded-xl bg-muted/50 p-3"><p className="text-[11px] font-semibold text-muted-foreground">Withdrawal volume</p><p className="mt-0.5 text-base font-extrabold">{inr(wallet.wdVolume)}</p></div>
@@ -771,30 +776,35 @@ function AepsPage() {
               </div>
             )}
 
-            {payouts.length > 0 && (
+            {history.length > 0 && (
               <div className="mt-3">
-                <p className="mb-1 text-[11px] font-semibold text-muted-foreground">Recent withdrawals</p>
+                <p className="mb-1 text-[11px] font-semibold text-muted-foreground">Wallet history</p>
                 <div className="divide-y divide-border rounded-xl border border-border">
-                  {payouts.map((p) => (
-                    <div key={p.id} className="flex items-center justify-between px-3 py-2 text-xs">
-                      <span>{new Date(p.requested_at).toLocaleDateString("en-IN")} · {inr(Number(p.amount))}{p.utr ? ` · UTR ${p.utr}` : ""}</span>
-                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${p.status === "paid" ? "bg-emerald-100 text-emerald-700" : p.status === "rejected" ? "bg-rose-100 text-rose-700" : "bg-amber-100 text-amber-700"}`}>
-                        {p.status === "requested" ? "In process" : p.status}
-                      </span>
-                    </div>
-                  ))}
+                  {history.map((h, i) => {
+                    const credit = h.direction === "credit";
+                    const label = h.kind === "commission" ? "AEPS commission"
+                      : h.kind === "withdrawal" ? "Withdrawal to bank"
+                      : h.kind === "daily_kyc" ? "Daily KYC charge"
+                      : (h.description || "Adjustment");
+                    return (
+                      <div key={i} className="flex items-center justify-between px-3 py-2 text-xs">
+                        <span className="text-muted-foreground">{new Date(h.at).toLocaleDateString("en-IN")} · {label}</span>
+                        <span className={`font-bold ${credit ? "text-emerald-600" : "text-rose-600"}`}>
+                          {credit ? "+" : "−"} {inr(Number(h.amount))}
+                          {h.status && h.status !== "done" ? <span className="ml-1 font-medium text-amber-600">({h.status === "requested" ? "in process" : h.status})</span> : null}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
-            <p className="mt-2 text-[11px] text-muted-foreground">Commission from every successful AEPS transaction is credited here. Withdrawals are paid to your registered settlement bank account.</p>
+            <p className="mt-2 text-[11px] text-muted-foreground">Your AEPS commission is credited here. Daily KYC charges and withdrawals appear in the history above. Withdrawals are paid to your registered bank after team approval.</p>
           </div>
         )}
 
-        {/* AEPS Cashout — fully isolated in its own component/file (own data
-            loading + error boundary) so it can never affect or crash the core
-            AEPS flow (transactions / eKYC / daily 2FA). Renders nothing unless
-            the admin has enabled settlement for this agent. */}
-        <AepsCashout />
+        {/* AEPS Cashout hidden for now — Eko fund-settlement flow is pending. */}
+        {false && <AepsCashout />}
 
         {/* Scanner */}
         <div className="rounded-2xl border border-border bg-card p-4 shadow-soft">

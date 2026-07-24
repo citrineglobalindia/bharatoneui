@@ -528,6 +528,13 @@ Deno.serve(async (req) => {
       });
       if (!ekoOk(data)) { await setAgent({ last_error: ekoMsg(data) }); return json({ error: ekoMsg(data), raw: scrub(data) }, 400); }
       await setAgent({ last_daily_kyc_at: new Date().toISOString(), agent_bank_code: bankCode, last_error: null });
+      // Take the configured daily-2FA charge (aeps_daily_2fa_charge; 0 = no-op) from
+      // the agent's main wallet. Never fail the KYC on a charge error — the biometric
+      // already succeeded at Eko; an unpaid charge is a wallet issue, not a KYC one.
+      try {
+        const { error: chErr } = await svc.rpc("settle_aeps_2fa_charge", { p_agent: user.id, p_ref: null });
+        if (chErr) console.error("2fa charge:", chErr.message);
+      } catch (e) { console.error("2fa charge:", String(e)); }
       return json({ ok: true, message: ekoMsg(data) });
     }
 
