@@ -56,7 +56,7 @@ function AepsPage() {
   const [deviceHint, setDeviceHint] = useState<string | null>(null);
   const [authMode, setAuthMode] = useState<"finger" | "iris">("finger");
   const [showDrivers, setShowDrivers] = useState(false);
-  const [walletSum, setWalletSum] = useState<{ earned: number; paid: number; pending: number; available: number; charges?: number } | null>(null);
+  const [walletSum, setWalletSum] = useState<{ earned: number; paid: number; pending: number; available: number; charges?: number; principal?: number; commission?: number } | null>(null);
   const [payouts, setPayouts] = useState<any[]>([]);
   const [history, setHistory] = useState<any[]>([]);
   const [payAmt, setPayAmt] = useState("");
@@ -749,7 +749,7 @@ function AepsPage() {
               <div className="flex-1 rounded-xl bg-india-green/10 p-4">
                 <p className="text-[11px] font-semibold text-india-green">Available to withdraw</p>
                 <p className="mt-0.5 text-2xl font-extrabold text-india-green">{inr(walletSum?.available ?? 0)}</p>
-                <p className="mt-0.5 text-[11px] text-muted-foreground">Earned {inr(walletSum?.earned ?? 0)} · Paid {inr(walletSum?.paid ?? 0)} · In process {inr(walletSum?.pending ?? 0)} · KYC {inr(walletSum?.charges ?? 0)}</p>
+                <p className="mt-0.5 text-[11px] text-muted-foreground">Cash {inr(walletSum?.principal ?? 0)} · Commission {inr(walletSum?.commission ?? 0)} · Paid {inr(walletSum?.paid ?? 0)} · In process {inr(walletSum?.pending ?? 0)}</p>
               </div>
               <div className="grid flex-1 grid-cols-2 gap-2">
                 <div className="rounded-xl bg-muted/50 p-3"><p className="text-[11px] font-semibold text-muted-foreground">Withdrawal volume</p><p className="mt-0.5 text-base font-extrabold">{inr(wallet.wdVolume)}</p></div>
@@ -810,7 +810,8 @@ function AepsPage() {
                 <div className="divide-y divide-border rounded-xl border border-border">
                   {history.map((h, i) => {
                     const credit = h.direction === "credit";
-                    const label = h.kind === "commission" ? "AEPS commission"
+                    const label = h.kind === "principal" ? "AEPS cash deposit"
+                      : h.kind === "commission" ? "AEPS commission"
                       : h.kind === "withdrawal" ? "Withdrawal to bank"
                       : h.kind === "daily_kyc" ? "Daily KYC charge"
                       : (h.description || "Adjustment");
