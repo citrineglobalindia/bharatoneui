@@ -62,6 +62,7 @@ function AepsPage() {
   const [payAmt, setPayAmt] = useState("");
   const [payBusy, setPayBusy] = useState(false);
   const [showPayout, setShowPayout] = useState(false);
+  const [showSettlements, setShowSettlements] = useState(false);
   // Fallback when the daily 2FA endpoint keeps failing: re-run the full eKYC
   // (OTP + biometric), which Eko also accepts as that day's authentication.
   const [redoKyc, setRedoKyc] = useState(false);
@@ -756,13 +757,40 @@ function AepsPage() {
               </div>
             </div>
 
-            <div className="mt-3 flex items-center gap-2">
-              <button onClick={() => setShowPayout((v) => !v)} disabled={!(walletSum && walletSum.available > 0)}
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <button onClick={() => { setShowPayout((v) => !v); setShowSettlements(false); }} disabled={!(walletSum && walletSum.available > 0)}
                 className="inline-flex items-center gap-1.5 rounded-lg bg-india-green px-4 h-9 text-xs font-bold text-white disabled:opacity-50">
-                <Landmark className="h-3.5 w-3.5" /> Withdraw to bank
+                <Landmark className="h-3.5 w-3.5" /> Request withdrawal
               </button>
-              <span className="text-[11px] text-muted-foreground">Transfers to your settlement account after team approval.</span>
+              <button onClick={() => { setShowSettlements((v) => !v); setShowPayout(false); }}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-4 h-9 text-xs font-bold hover:bg-muted">
+                <Receipt className="h-3.5 w-3.5" /> View settlements
+              </button>
+              <span className="text-[11px] text-muted-foreground">Paid to your registered bank after team approval.</span>
             </div>
+
+            {showSettlements && (
+              <div className="mt-3">
+                <p className="mb-1 text-[11px] font-semibold text-muted-foreground">Bank settlements</p>
+                {payouts.length === 0 ? (
+                  <p className="rounded-xl border border-border p-3 text-xs text-muted-foreground">No withdrawal requests yet.</p>
+                ) : (
+                  <div className="divide-y divide-border rounded-xl border border-border">
+                    {payouts.map((p) => (
+                      <div key={p.id} className="flex items-center justify-between px-3 py-2 text-xs">
+                        <span className="text-muted-foreground">
+                          {new Date(p.requested_at).toLocaleDateString("en-IN")} · {inr(Number(p.amount))}
+                          {p.utr ? <span className="ml-1">· UTR {p.utr}</span> : null}
+                        </span>
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${p.status === "paid" ? "bg-emerald-100 text-emerald-700" : p.status === "rejected" ? "bg-rose-100 text-rose-700" : "bg-amber-100 text-amber-700"}`}>
+                          {p.status === "requested" ? "In process" : p.status === "paid" ? "Settled" : p.status}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {showPayout && (
               <div className="mt-3 flex flex-wrap items-end gap-2 rounded-xl bg-muted/40 p-3">
