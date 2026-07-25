@@ -21,7 +21,7 @@ type Txn = {
   id: string; operation: string; amount: number; status: string;
   aadhaar_last4: string | null; rrn: string | null; message: string | null;
   balance: number | null; client_ref_id: string | null;
-  commission: number; commission_settled: boolean; created_at: string;
+  commission: number; merchant_commission: number | null; commission_settled: boolean; created_at: string;
 };
 type Status = {
   env: string; keys_set: boolean; user_code: string | null;
@@ -63,7 +63,7 @@ function AepsPage() {
   const [payBusy, setPayBusy] = useState(false);
   const [showPayout, setShowPayout] = useState(false);
   const [showSettlements, setShowSettlements] = useState(false);
-  const [myBank, setMyBank] = useState<{ account?: string; ifsc?: string; holder?: string; pending?: any } | null>(null);
+  const [myBank, setMyBank] = useState<{ account?: string; ifsc?: string; holder?: string; pending?: any; next_change_at?: string | null } | null>(null);
   const [showBank, setShowBank] = useState(false);
   const [bankForm, setBankForm] = useState({ account: "", ifsc: "", holder: "" });
   const [bankBusy, setBankBusy] = useState(false);
@@ -524,8 +524,9 @@ function AepsPage() {
     for (const t of txns) {
       if (t.status !== "success") continue;
       txnCount++;
-      earned += Number(t.commission || 0);
-      if (t.commission_settled) settled += Number(t.commission || 0);
+      const retComm = Number(t.merchant_commission ?? t.commission ?? 0);
+      earned += retComm;
+      if (t.commission_settled) settled += retComm;
       if (t.operation === "cash_withdrawal" || t.operation === "aadhaar_pay") wdVolume += Number(t.amount || 0);
       if ((t.created_at || "").slice(0, 10) === today) todayCount++;
     }
@@ -800,12 +801,14 @@ function AepsPage() {
               )}
               {myBank?.pending ? (
                 <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">Change pending approval</span>
+              ) : myBank?.next_change_at ? (
+                <span className="text-[11px] text-muted-foreground">Can be changed again after {new Date(myBank.next_change_at).toLocaleString("en-IN")}</span>
               ) : (
                 <button onClick={() => setShowBank((v) => !v)} className="text-[11px] font-semibold text-india-green hover:underline">Change bank</button>
               )}
             </div>
 
-            {showBank && !myBank?.pending && (
+            {showBank && !myBank?.pending && !myBank?.next_change_at && (
               <div className="mt-2 grid gap-2 rounded-xl bg-muted/40 p-3 sm:grid-cols-2">
                 <input value={bankForm.holder} onChange={(e) => setBankForm({ ...bankForm, holder: e.target.value })} placeholder="Account holder name" className="h-9 rounded-lg border border-border bg-background px-3 text-sm sm:col-span-2" />
                 <input value={bankForm.account} onChange={(e) => setBankForm({ ...bankForm, account: e.target.value.replace(/\D/g, "") })} inputMode="numeric" placeholder="Account number" className="h-9 rounded-lg border border-border bg-background px-3 text-sm" />
@@ -1064,7 +1067,7 @@ function AepsPage() {
                     )}
                   </td>
                   <td className="px-3 py-2 text-right">
-                    {t.commission > 0 ? <span className={t.commission_settled ? "font-semibold text-emerald-600" : "text-muted-foreground"}>{inr(t.commission)}</span> : "—"}
+                    {(() => { const rc = Number(t.merchant_commission ?? t.commission ?? 0); return rc > 0 ? <span className={t.commission_settled ? "font-semibold text-emerald-600" : "text-muted-foreground"}>{inr(rc)}</span> : "—"; })()}
                   </td>
                 </tr>
               ))}
