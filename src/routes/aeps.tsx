@@ -63,6 +63,10 @@ function AepsPage() {
   const [payBusy, setPayBusy] = useState(false);
   const [showPayout, setShowPayout] = useState(false);
   const [showSettlements, setShowSettlements] = useState(false);
+  const [bank, setBank] = useState<{ account?: string; ifsc?: string; holder?: string; pending?: any } | null>(null);
+  const [showBank, setShowBank] = useState(false);
+  const [bankForm, setBankForm] = useState({ account: "", ifsc: "", holder: "" });
+  const [bankBusy, setBankBusy] = useState(false);
   // Fallback when the daily 2FA endpoint keeps failing: re-run the full eKYC
   // (OTP + biometric), which Eko also accepts as that day's authentication.
   const [redoKyc, setRedoKyc] = useState(false);
@@ -158,6 +162,10 @@ function AepsPage() {
       const h = await (supabase as any).rpc("aeps_wallet_history", { _limit: 40 });
       setHistory((h?.data as any[]) ?? []);
     } catch { /* history optional */ }
+    try {
+      const b = await (supabase as any).rpc("aeps_my_bank");
+      setBank((b?.data as any) ?? null);
+    } catch { /* bank optional */ }
     setLoading(false);
   }
   useEffect(() => { load(); }, []);
@@ -464,6 +472,20 @@ function AepsPage() {
     finally { setPayBusy(false); }
   };
 
+  const requestBankChange = async () => {
+    if (!/^\d{6,20}$/.test(bankForm.account)) return toast.error("Enter a valid bank account number");
+    if (!/^[A-Za-z]{4}0[A-Za-z0-9]{6}$/.test(bankForm.ifsc)) return toast.error("Enter a valid IFSC code");
+    if (!bankForm.holder.trim()) return toast.error("Enter the account holder name");
+    setBankBusy(true);
+    try {
+      const { error } = await (supabase as any).rpc("request_aeps_bank_change", { p_account: bankForm.account, p_ifsc: bankForm.ifsc.toUpperCase(), p_holder: bankForm.holder.trim() });
+      if (error) throw error;
+      toast.success("Bank change requested", { description: "The team will review and approve your new bank details." });
+      setBankForm({ account: "", ifsc: "", holder: "" }); setShowBank(false); await load();
+    } catch (e: any) { toast.error("Could not request bank change", { description: e.message }); }
+    finally { setBankBusy(false); }
+  };
+
   const recheck = async (t: Txn) => {
     if (!t.client_ref_id) return;
     try {
@@ -768,6 +790,31 @@ function AepsPage() {
               </button>
               <span className="text-[11px] text-muted-foreground">Paid to your registered bank after team approval.</span>
             </div>
+
+            <div className="mt-2 flex flex-wrap items-center gap-2 rounded-xl bg-muted/40 px-3 py-2">
+              <span className="text-[11px] text-muted-foreground">Settlement bank:</span>
+              {bank?.account ? (
+                <span className="text-xs font-semibold">{bank.holder} · {String(bank.account).replace(/.(?=.{4})/g, "•")} · {bank.ifsc}</span>
+              ) : (
+                <span className="text-xs text-muted-foreground">Not set</span>
+              )}
+              {bank?.pending ? (
+                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">Change pending approval</span>
+              ) : (
+                <button onClick={() => setShowBank((v) => !v)} className="text-[11px] font-semibold text-india-green hover:underline">Change bank</button>
+              )}
+            </div>
+
+            {showBank && !bank?.pending && (
+              <div className="mt-2 grid gap-2 rounded-xl bg-muted/40 p-3 sm:grid-cols-2">
+                <input value={bankForm.holder} onChange={(e) => setBankForm({ ...bankForm, holder: e.target.value })} placeholder="Account holder name" className="h-9 rounded-lg border border-border bg-background px-3 text-sm sm:col-span-2" />
+                <input value={bankForm.account} onChange={(e) => setBankForm({ ...bankForm, account: e.target.value.replace(/\D/g, "") })} inputMode="numeric" placeholder="Account number" className="h-9 rounded-lg border border-border bg-background px-3 text-sm" />
+                <input value={bankForm.ifsc} onChange={(e) => setBankForm({ ...bankForm, ifsc: e.target.value.toUpperCase() })} placeholder="IFSC code" className="h-9 rounded-lg border border-border bg-background px-3 text-sm" />
+                <button onClick={requestBankChange} disabled={bankBusy} className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-india-green px-4 h-9 text-xs font-bold text-white disabled:opacity-50 sm:col-span-2">
+                  {bankBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />} Submit new bank for approval
+                </button>
+              </div>
+            )}
 
             {showSettlements && (
               <div className="mt-3">
