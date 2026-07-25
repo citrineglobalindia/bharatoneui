@@ -380,7 +380,7 @@ function AepsUsers() {
 }
 
 // ---------------------------------------------------------------- payouts
-function Payouts() {
+export function Payouts() {
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
