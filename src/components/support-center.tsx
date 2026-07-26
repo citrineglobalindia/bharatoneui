@@ -13,7 +13,7 @@ const DEPARTMENTS = ["Technical", "Payments & Wallet", "Onboarding & KYC", "Serv
 type Cat = { id: string; name: string };
 type Sub = { id: string; category_id: string; name: string };
 type Svc = { id: string; name: string };
-type Prod = { id: string; subcategory_id: string | null; name: string };
+type Prod = { id: string; subcategory_id: string | null; category_id: string | null; name: string };
 type Prio = { id: string; name: string };
 const db = supabase as any;
 
@@ -43,7 +43,7 @@ export function SupportCenter() {
       supabase.from("support_tickets").select("*").order("created_at", { ascending: false }),
       db.from("service_categories").select("id,name").eq("is_active", true).order("sort_order").order("name"),
       db.from("service_subcategories").select("id,category_id,name").eq("is_active", true).order("sort_order").order("name"),
-      db.from("services").select("id,name,subcategory_id").eq("is_active", true).order("sort_order").order("name"),
+      db.from("services").select("id,name,subcategory_id,category_id").eq("is_active", true).order("sort_order").order("name"),
       db.from("support_priorities").select("id,name").eq("is_active", true).order("sort_order"),
     ]);
     setRows((t.data as Ticket[]) ?? []);
@@ -57,6 +57,11 @@ export function SupportCenter() {
   useEffect(() => { load(); }, []);
   const mine = rows.filter((t) => t.user_id === uid);
   const assignedCount = rows.filter((t) => t.assigned_to === uid && t.user_id !== uid).length;
+  // Catalog is Category -> Service (the sub-category layer is optional and often
+  // empty). Show sub-category only when the chosen category actually has some;
+  // services filter by category, narrowing further by sub-category if one is picked.
+  const subsForCat = subs.filter((s) => s.category_id === form.categoryId);
+  const svcForSel = prods.filter((p) => p.category_id === form.categoryId && (!form.subcategoryId || p.subcategory_id === form.subcategoryId));
 
   const raise = async () => {
     if (!form.subject.trim()) return toast.error("Enter a subject");
@@ -125,15 +130,19 @@ export function SupportCenter() {
               <option value="">Select category</option>
               {cats.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
-            <label className="mt-3 block text-[11px] font-semibold text-muted-foreground">Sub-Category</label>
-            <select className={inp} value={form.subcategoryId} onChange={(e) => setForm({ ...form, subcategoryId: e.target.value, product: "" })} disabled={!form.categoryId}>
-              <option value="">{form.categoryId ? "Select sub-category" : "Select a category first"}</option>
-              {subs.filter((s) => s.category_id === form.categoryId).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </select>
+            {subsForCat.length > 0 && (
+              <>
+                <label className="mt-3 block text-[11px] font-semibold text-muted-foreground">Sub-Category <span className="font-normal">(optional)</span></label>
+                <select className={inp} value={form.subcategoryId} onChange={(e) => setForm({ ...form, subcategoryId: e.target.value, product: "" })} disabled={!form.categoryId}>
+                  <option value="">{form.categoryId ? "All sub-categories" : "Select a category first"}</option>
+                  {subsForCat.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </>
+            )}
             <label className="mt-3 block text-[11px] font-semibold text-muted-foreground">Product / Service</label>
-            <select className={inp} value={form.product} onChange={(e) => setForm({ ...form, product: e.target.value })} disabled={!form.subcategoryId}>
-              <option value="">{!form.subcategoryId ? "Select a sub-category first" : (prods.filter((p) => p.subcategory_id === form.subcategoryId).length ? "Select product / service (optional)" : "No products / services for this sub-category")}</option>
-              {prods.filter((p) => p.subcategory_id === form.subcategoryId).map((p) => <option key={p.id} value={p.name}>{p.name}</option>)}
+            <select className={inp} value={form.product} onChange={(e) => setForm({ ...form, product: e.target.value })} disabled={!form.categoryId}>
+              <option value="">{!form.categoryId ? "Select a category first" : (svcForSel.length ? "Select product / service (optional)" : "No products / services for this category")}</option>
+              {svcForSel.map((p) => <option key={p.id} value={p.name}>{p.name}</option>)}
             </select>
             <label className="mt-3 block text-[11px] font-semibold text-muted-foreground">Subject</label>
             <input className={inp} placeholder="Brief summary" value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} />
