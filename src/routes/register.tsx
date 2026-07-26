@@ -434,7 +434,7 @@ function RegisterFlow() {
   const aadhaarOk = /^\d{12}$/.test(data.aadhaarNumber);
 
   const stepValid: Record<string, boolean> = {
-    portal: data.emailVerified,
+    portal: data.emailVerified && data.mobileVerified,
     account: accountVerified,
     personal: data.personalValid,
     business: !!data.shopName.trim() && addrOk && bankOk,

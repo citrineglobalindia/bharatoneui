@@ -34,7 +34,6 @@ type FetchedUser = {
   mobile: string;
 };
 
-const MOCK_OTP = "123456";
 const RESEND_COOLDOWN = 30;
 
 function maskEmail(email: string) {
@@ -56,7 +55,7 @@ export function OldPortalStep() {
   const seeded: FetchedUser | null = (data.jskoId || data.email)
     ? { username: data.jskoId || "", fullName: [data.firstName, data.middleName, data.surname].filter(Boolean).join(" "), email: data.email || "", mobile: data.mobile || "" }
     : null;
-  const [stage, setStage] = useState<Stage>(data.emailVerified ? "verified" : seeded ? "otp" : "lookup");
+  const [stage, setStage] = useState<Stage>((data.emailVerified && data.mobileVerified) ? "verified" : seeded ? "otp" : "lookup");
   const [username, setUsername] = useState(data.jskoId || "");
   const [jskoPassword, setJskoPassword] = useState("");
   const [showJskoPw, setShowJskoPw] = useState(false);
@@ -168,13 +167,28 @@ export function OldPortalStep() {
         setSendingEmail(false);
       }
     } else {
-      setSendingMobile(true);
-      setMobileOtp(Array(6).fill(""));
+      if (!user?.mobile) { setMobileError("No mobile on record for this JSKO ID."); return; }
+      if (sendingMobile) return;
       setMobileError(null);
-      setMobileSent(true);
-      setMobileCooldown(RESEND_COOLDOWN);
-      setSendingMobile(false);
-      setTimeout(() => mobileInputsRef.current[0]?.focus(), 50);
+      setSendingMobile(true);
+      try {
+        const { data, error } = await supabase.functions.invoke("send-otp", { body: { channel: "mobile", target: user.mobile } });
+        if (error) {
+          let msg = "Could not send the code. Please try again in a moment.";
+          try { const ctx = (error as { context?: Response }).context; const body = ctx ? await ctx.json() : null; if (body?.error) msg = String(body.error); } catch { /* ignore */ }
+          setMobileError(msg); return;
+        }
+        if ((data as { error?: string } | null)?.error) { setMobileError(String((data as { error?: string }).error)); return; }
+        const devCode = (data as { dev_code?: string } | null)?.dev_code;
+        if (devCode && /^[0-9]{6}$/.test(devCode)) setMobileOtp(devCode.split("")); else setMobileOtp(Array(6).fill(""));
+        setMobileSent(true);
+        setMobileCooldown(RESEND_COOLDOWN);
+        setTimeout(() => mobileInputsRef.current[0]?.focus(), 50);
+      } catch (e) {
+        setMobileError(e instanceof Error ? e.message : "Could not send the code. Please try again.");
+      } finally {
+        setSendingMobile(false);
+      }
     }
   };
 
@@ -199,9 +213,13 @@ export function OldPortalStep() {
         }
         setEmailVerified(true);
         setEmailError(null);
-        // SMS/mobile OTP is hidden for now — email verification alone proceeds.
-        setStage("verified");
-        setSuccessChannel("email");
+        // Both email and mobile are mandatory — only advance once both are done.
+        if (mobileVerified) {
+          setStage("verified");
+          setSuccessChannel("all");
+        } else {
+          setSuccessChannel("email");
+        }
         setSuccessOpen(true);
       } else {
         setVerifyingEmail(false);
@@ -214,9 +232,9 @@ export function OldPortalStep() {
         return;
       }
       setVerifyingMobile(true);
-      await new Promise((r) => setTimeout(r, 700));
+      const { data: vd, error: ve } = await supabase.rpc("verify_registration_otp", { _target: user!.mobile, _channel: "mobile", _code: code });
       setVerifyingMobile(false);
-      if (code === MOCK_OTP) {
+      if (!ve && (vd as { verified?: boolean } | null)?.verified === true) {
         setMobileVerified(true);
         setMobileError(null);
         if (emailVerified) {
@@ -264,6 +282,12 @@ export function OldPortalStep() {
           label="Verify Email"
           active={stage === "otp" && !emailVerified}
           done={emailVerified}
+        />
+        <Dash done={emailVerified && mobileVerified} />
+        <MiniStep
+          label="Verify Mobile"
+          active={stage === "otp" && !mobileVerified}
+          done={mobileVerified}
         />
       </div>
 
@@ -347,12 +371,12 @@ export function OldPortalStep() {
               <div><p className="text-[10px] uppercase tracking-wide text-muted-foreground">Email</p><p className="font-semibold text-foreground break-all">{user.email || "—"}</p></div>
               <div><p className="text-[10px] uppercase tracking-wide text-muted-foreground">Mobile</p><p className="font-semibold text-foreground">{user.mobile || "—"}</p></div>
             </div>
-            <p className="mt-2 text-[11px] text-muted-foreground">Verify the email below via OTP to continue your migration.</p>
+            <p className="mt-2 text-[11px] text-muted-foreground">Verify both your email and mobile below via OTP to continue your migration.</p>
           </div>
 
           {stage === "otp" && (
-            <Notice tone="warn" title="Email verification required">
-              For your security, please verify your <span className="font-semibold">registered email</span> to proceed.
+            <Notice tone="warn" title="Email &amp; mobile verification required">
+              For your security, please verify your <span className="font-semibold">registered email and mobile number</span> to proceed.
             </Notice>
           )}
 
@@ -375,6 +399,24 @@ export function OldPortalStep() {
               onVerify={() => verifyChannel("email")}
               inputsRef={emailInputsRef}
             />
+            <OtpCard
+              channel="mobile"
+              icon={<Phone className="h-4 w-4" />}
+              title="Mobile Verification"
+              target={maskMobile(user.mobile)}
+              otp={mobileOtp}
+              setOtp={setMobileOtp}
+              error={mobileError}
+              setError={setMobileError}
+              verified={mobileVerified}
+              verifying={verifyingMobile}
+              sent={mobileSent}
+              sending={sendingMobile}
+              cooldown={mobileCooldown}
+              onSend={() => sendOtp("mobile")}
+              onVerify={() => verifyChannel("mobile")}
+              inputsRef={mobileInputsRef}
+            />
           </div>
         </div>
       )}
@@ -388,10 +430,10 @@ export function OldPortalStep() {
             </span>
             <div className="min-w-0">
               <h3 className="font-display text-base font-bold text-foreground">
-                Email verified successfully
+                Email &amp; mobile verified successfully
               </h3>
               <p className="mt-0.5 text-[13px] text-muted-foreground">
-                Your <span className="font-semibold text-foreground">email</span> has been verified
+                Your <span className="font-semibold text-foreground">email and mobile number</span> have been verified
                 against the JSKO records. Click{" "}
                 <span className="font-semibold text-foreground">Next</span> to continue with your
                 personal details.
