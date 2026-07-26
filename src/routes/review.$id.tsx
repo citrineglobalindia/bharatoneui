@@ -207,7 +207,7 @@ function ReviewPage() {
         setCreds(c);
         try {
           const origin = typeof window !== "undefined" ? window.location.origin : "";
-          const { error: mailErr } = await supabase.functions.invoke("send-credentials", { body: { email: c.email, name: fullName, username: c.username, password: c.password, loginUrl: origin + "/login" } });
+          const { error: mailErr } = await supabase.functions.invoke("send-credentials", { body: { email: c.email, name: fullName, username: c.username, password: c.password, loginUrl: origin + "/login", mobile: reg.mobile, smsApproved: true } });
           if (mailErr) toast.error("Login email could not be sent", { description: mailErr.message }); else toast.success("Login details emailed to retailer");
         } catch (e) { toast.error("Login email failed", { description: e instanceof Error ? e.message : String(e) }); }
       }
