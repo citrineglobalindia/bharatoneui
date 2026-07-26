@@ -56,16 +56,22 @@ Deno.serve(async (req) => {
   const name = String((ticket as { user_name: string | null }).user_name ?? "").trim() || "Customer";
   if (!ticketNo) return json({ status: "skipped", reason: "no ticket number yet" });
 
-  // Resolve the raiser's mobile from their retailer registration.
+  // Resolve the raiser's number. profiles.phone is the contact shown on their
+  // account (the "registered number"); fall back to the KYC registration mobile
+  // and any alternate. First one that is a valid 10-digit Indian mobile wins.
+  const { data: prof } = await svc
+    .from("profiles").select("phone, alt_phone").eq("id", uid).maybeSingle();
   const { data: reg } = await svc
-    .from("retailer_registrations")
-    .select("mobile")
-    .eq("auth_user_id", uid)
-    .not("mobile", "is", null)
-    .limit(1)
-    .maybeSingle();
-  const mobile = normMobile((reg as { mobile: string | null } | null)?.mobile);
-  if (!/^[6-9]\d{9}$/.test(mobile)) return json({ status: "skipped", reason: "no valid mobile on file" });
+    .from("retailer_registrations").select("mobile")
+    .eq("auth_user_id", uid).not("mobile", "is", null).limit(1).maybeSingle();
+  const candidates = [
+    (prof as { phone?: string | null } | null)?.phone,
+    (reg as { mobile?: string | null } | null)?.mobile,
+    (prof as { alt_phone?: string | null } | null)?.alt_phone,
+  ];
+  let mobile = "";
+  for (const c of candidates) { const m = normMobile(c); if (/^[6-9]\d{9}$/.test(m)) { mobile = m; break; } }
+  if (!mobile) return json({ status: "skipped", reason: "no valid mobile on file" });
 
   // vars order must match the registered template: [name, ticket no].
   const { data: dispatch, error: dErr } = await svc.functions.invoke("notify-dispatch", {
