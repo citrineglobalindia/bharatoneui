@@ -227,7 +227,7 @@ function ReviewPage() {
       const link = `${window.location.origin}/reupload-docs/${res.token}`;
       const labels = DOC_KEYS.filter((d) => reqKeys[d.key]).map((d) => d.label);
       try {
-        await supabase.functions.invoke("send-doc-request", { body: { email: res.email, name: res.name, link, docs: labels, note: reqMsg || "" } });
+        await supabase.functions.invoke("send-doc-request", { body: { email: res.email, name: res.name, mobile: res.mobile, reason: reqMsg || "", link, docs: labels, note: reqMsg || "" } });
         toast.success("Re-upload link emailed to the retailer");
       } catch { toast.message("Saved. Email could not be sent — share the link manually.", { description: link }); }
       setReqOpen(false); setReqMsg("Not approved"); await load(); await loadEvents(); await loadHistory();
