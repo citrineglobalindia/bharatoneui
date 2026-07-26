@@ -83,10 +83,14 @@ export function SupportCenter() {
 
     const { data: created, error } = await db.from("support_tickets")
       .insert({ user_id: u.user.id, user_name: me.name, user_role: me.role, category: catName, subcategory: subName, product: form.product || null, priority: "Low", subject: form.subject.trim(), body: form.body || null, attachments })
-      .select("ticket_no").single();
+      .select("id, ticket_no").single();
     setSending(false);
     if (error) return toast.error("Couldn't raise ticket", { description: error.message });
     const no = (created as any)?.ticket_no;
+    // Fire-and-forget: SMS the raiser their complaint/ticket acknowledgement
+    // (DLT 'ticket_registered'). Never block the UI on delivery.
+    const tid = (created as any)?.id;
+    if (tid) { void supabase.functions.invoke("ticket-sms", { body: { ticket_id: tid } }); }
     toast.success("Ticket raised" + (no ? ` — ${no}` : ""), { description: no ? `Your support ticket ${no} has been created. Our team will respond shortly.` : "Our team will respond shortly." });
     setForm({ department: DEPARTMENTS[0], service: "", categoryId: cats[0]?.id ?? "", subcategoryId: "", product: "", priority: "Low", subject: "", body: "" });
     setFiles([]); load();
