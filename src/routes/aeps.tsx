@@ -64,6 +64,9 @@ function AepsPage() {
   const [payBusy, setPayBusy] = useState(false);
   const [showPayout, setShowPayout] = useState(false);
   const [showSettlements, setShowSettlements] = useState(false);
+  const [showTransfer, setShowTransfer] = useState(false);
+  const [transferAmt, setTransferAmt] = useState("");
+  const [transferBusy, setTransferBusy] = useState(false);
   const [myBank, setMyBank] = useState<{ account?: string; ifsc?: string; holder?: string; pending?: any; next_change_at?: string | null } | null>(null);
   const [showBank, setShowBank] = useState(false);
   const [bankForm, setBankForm] = useState({ account: "", ifsc: "", holder: "" });
@@ -473,6 +476,21 @@ function AepsPage() {
     finally { setPayBusy(false); }
   };
 
+  const transferToMain = async () => {
+    const amt = Number(transferAmt);
+    if (!(amt > 0)) return toast.error("Enter a valid amount to transfer");
+    if (walletSum && amt > walletSum.available) return toast.error(`You can transfer up to ${inr(walletSum.available)}`);
+    setTransferBusy(true);
+    try {
+      const { data, error } = await (supabase as any).rpc("aeps_transfer_to_main", { p_amount: amt });
+      if (error) throw error;
+      if (data?.ok === false) throw new Error(data?.message || "Transfer failed");
+      toast.success("Transferred to main wallet", { description: `${inr(amt)} moved to your main wallet. It now shows in your wallet transactions.` });
+      setTransferAmt(""); setShowTransfer(false); await load();
+    } catch (e: any) { toast.error("Could not transfer", { description: e.message }); }
+    finally { setTransferBusy(false); }
+  };
+
   const requestBankChange = async () => {
     if (!/^\d{6,20}$/.test(bankForm.account)) return toast.error("Enter a valid bank account number");
     if (!/^[A-Za-z]{4}0[A-Za-z0-9]{6}$/.test(bankForm.ifsc)) return toast.error("Enter a valid IFSC code");
@@ -782,16 +800,33 @@ function AepsPage() {
             </div>
 
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <button onClick={() => { setShowPayout((v) => !v); setShowSettlements(false); }} disabled={!(walletSum && walletSum.available > 0)}
+              <button onClick={() => { setShowPayout((v) => !v); setShowSettlements(false); setShowTransfer(false); }} disabled={!(walletSum && walletSum.available > 0)}
                 className="inline-flex items-center gap-1.5 rounded-lg bg-india-green px-4 h-9 text-xs font-bold text-white disabled:opacity-50">
                 <Landmark className="h-3.5 w-3.5" /> Request withdrawal
               </button>
-              <button onClick={() => { setShowSettlements((v) => !v); setShowPayout(false); }}
+              <button onClick={() => { setShowTransfer((v) => !v); setShowPayout(false); setShowSettlements(false); }} disabled={!(walletSum && walletSum.available > 0)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-india-green px-4 h-9 text-xs font-bold text-india-green hover:bg-india-green/10 disabled:opacity-50">
+                <Wallet className="h-3.5 w-3.5" /> Transfer to main wallet
+              </button>
+              <button onClick={() => { setShowSettlements((v) => !v); setShowPayout(false); setShowTransfer(false); }}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-border px-4 h-9 text-xs font-bold hover:bg-muted">
                 <Receipt className="h-3.5 w-3.5" /> View settlements
               </button>
-              <span className="text-[11px] text-muted-foreground">Paid to your registered bank after team approval.</span>
+              <span className="text-[11px] text-muted-foreground">Withdraw to your bank, or move it to your main wallet instantly.</span>
             </div>
+
+            {showTransfer && (
+              <div className="mt-3 flex flex-wrap items-end gap-2 rounded-xl bg-muted/40 p-3">
+                <label className="flex-1 min-w-[160px]"><span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Amount to transfer to main wallet (₹)</span>
+                  <input inputMode="numeric" value={transferAmt} onChange={(e) => setTransferAmt(e.target.value.replace(/\D/g, ""))} placeholder={`Max ${inr(walletSum?.available ?? 0)}`} className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm" />
+                </label>
+                <button onClick={() => setTransferAmt(String(walletSum?.available ?? 0))} className="rounded-lg border border-border px-3 h-9 text-xs font-semibold hover:bg-muted">Max</button>
+                <button onClick={transferToMain} disabled={transferBusy} className="inline-flex items-center gap-1.5 rounded-lg bg-india-green px-4 h-9 text-xs font-bold text-white disabled:opacity-50">
+                  {transferBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />} Transfer instantly
+                </button>
+                <span className="w-full text-[11px] text-muted-foreground">Moves instantly to your main wallet — usable for services and recharges. Shows in your wallet transactions.</span>
+              </div>
+            )}
 
             <div className="mt-2 flex flex-wrap items-center gap-2 rounded-xl bg-muted/40 px-3 py-2">
               <span className="text-[11px] text-muted-foreground">Settlement bank:</span>
@@ -864,6 +899,7 @@ function AepsPage() {
                     const label = h.kind === "principal" ? "AEPS cash deposit"
                       : h.kind === "commission" ? "AEPS commission"
                       : h.kind === "withdrawal" ? "Withdrawal to bank"
+                      : h.kind === "aeps_to_main" ? "Transfer to main wallet"
                       : h.kind === "daily_kyc" ? "Daily KYC charge"
                       : (h.description || "Adjustment");
                     return (
