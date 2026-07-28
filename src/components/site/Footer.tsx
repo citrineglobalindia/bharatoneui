@@ -394,6 +394,7 @@ export function Footer() {
             <FooterLink href="/careers">Careers</FooterLink>
             <FooterLink href="/gallery">Gallery</FooterLink>
             <FooterLink href="/terms">Terms &amp; Conditions</FooterLink>
+            <FooterLink href="/refund-policy">Refund Policy</FooterLink>
           </motion.ul>
         </motion.div>
 
@@ -456,6 +457,7 @@ export function Footer() {
         <motion.div variants={itemVariants} className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
           <a href="/privacy" className="hover:text-background">Privacy</a>
           <a href="/terms" className="hover:text-background">Terms</a>
+          <a href="/refund-policy" className="hover:text-background">Refund Policy</a>
           <span aria-hidden className="h-3 w-px bg-background/20" />
           <span>Version : 1.0</span>
           <span aria-hidden className="h-3 w-px bg-background/20" />
