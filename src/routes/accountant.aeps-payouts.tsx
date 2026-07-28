@@ -4,6 +4,7 @@ import { AccountantShell } from "@/components/accountant/accountant-shell";
 import { PageHeader } from "@/components/retailer/page-header";
 import { Payouts } from "@/components/admin/aeps-admin";
 import { AepsBankChanges } from "@/components/admin/aeps-bank-changes";
+import { AepsMiniStatement } from "@/components/aeps/aeps-mini-statement";
 
 export const Route = createFileRoute("/accountant/aeps-payouts")({
   head: () => ({ meta: [{ title: "AEPS Payouts — BharatOne Accountant" }] }),
@@ -16,6 +17,7 @@ export const Route = createFileRoute("/accountant/aeps-payouts")({
           subtitle="Approve retailer AEPS wallet withdrawals and record the bank UTR."
         />
         <Payouts />
+        <AepsMiniStatement />
         <AepsBankChanges />
       </div>
     </AccountantShell>

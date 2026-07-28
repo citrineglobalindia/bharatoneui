@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 import { useSort, SortTh } from "@/components/ui/sortable";
+import { AepsMiniStatement } from "@/components/aeps/aeps-mini-statement";
 
 type Slab = {
   id: string; operation: string; min_amount: number; max_amount: number | null;
@@ -43,7 +44,7 @@ const blank = (): Slab => ({
 });
 
 export function AepsAdmin() {
-  const [tab, setTab] = useState<"monitor" | "commission" | "payouts" | "users">("monitor");
+  const [tab, setTab] = useState<"monitor" | "commission" | "payouts" | "users" | "statement">("monitor");
   return (
     <div className="space-y-5">
       <div>
@@ -53,14 +54,14 @@ export function AepsAdmin() {
       <EkoBalance />
 
       <div className="flex gap-1.5">
-        {([["monitor", "Transaction Monitor"], ["users", "Users"], ["commission", "Commission Setup"], ["payouts", "Payout Requests"]] as const).map(([k, l]) => (
+        {([["monitor", "Transaction Monitor"], ["statement", "Mini Statement"], ["users", "Users"], ["commission", "Commission Setup"], ["payouts", "Payout Requests"]] as const).map(([k, l]) => (
           <button key={k} onClick={() => setTab(k)}
             className={`rounded-full px-4 h-9 text-xs font-semibold transition ${tab === k ? "bg-india-green text-white" : "border border-border bg-card hover:bg-muted"}`}>
             {l}
           </button>
         ))}
       </div>
-      {tab === "monitor" ? <Monitor /> : tab === "users" ? <AepsUsers /> : tab === "commission" ? <CommissionSetup /> : <Payouts />}
+      {tab === "monitor" ? <Monitor /> : tab === "statement" ? <AepsMiniStatement /> : tab === "users" ? <AepsUsers /> : tab === "commission" ? <CommissionSetup /> : <Payouts />}
     </div>
   );
 }

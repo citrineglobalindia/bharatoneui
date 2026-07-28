@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { discoverDeviceVerbose, captureFingerprint, getLatLong, getLatLongStrict, readDeviceInfo, type RdDevice } from "@/lib/rdservice";
 import { AEPS_BANKS } from "@/lib/aeps-banks";
+import { AepsMiniStatement } from "@/components/aeps/aeps-mini-statement";
 
 export const Route = createFileRoute("/aeps")({
   head: () => ({ meta: [{ title: "AEPS Banking — BharatOne" }] }),
@@ -1031,6 +1032,9 @@ function AepsPage() {
             )}
           </div>
         )}
+
+        {/* AEPS commission mini statement (retailer's own share) */}
+        <AepsMiniStatement />
 
         {/* History */}
         <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-soft">
