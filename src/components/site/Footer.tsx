@@ -10,6 +10,7 @@ import {
 import { Mail, Phone, MapPin, ArrowRight, ArrowUp, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/bharatone-logo.png";
+import footerInspiration from "@/assets/footer-inspiration.jpg";
 
 /* -------------------------------------------------------------------------- */
 /* Inline brand-icon SVGs (lucide-react 1.16 has no brand glyphs)             */
@@ -425,14 +426,14 @@ export function Footer() {
               <span>10th B Cross, Krishnaraja Puram,<br />Hassan, Karnataka 573201</span>
             </motion.li>
           </motion.ul>
-          {inspiration && (
-            <motion.div variants={itemVariants} className="mt-6">
-              <div className="overflow-hidden rounded-xl border border-background/15 bg-background/5">
-                <img src={inspiration.url} alt={inspiration.tagline} className="h-44 w-full object-cover" />
-              </div>
+          <motion.div variants={itemVariants} className="mt-6">
+            <div className="flex items-center justify-center overflow-hidden rounded-xl border border-background/15 bg-background/5 p-2">
+              <img src={inspiration?.url || footerInspiration} alt={inspiration?.tagline || "In remembrance"} className="max-h-44 w-full object-contain" />
+            </div>
+            {inspiration?.tagline && (
               <p className="mt-2 text-center text-sm font-semibold italic text-background/85" translate="no">&ldquo;{inspiration.tagline}&rdquo;</p>
-            </motion.div>
-          )}
+            )}
+          </motion.div>
         </motion.div>
       </motion.div>
 
