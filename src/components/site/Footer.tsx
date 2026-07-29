@@ -427,12 +427,12 @@ export function Footer() {
             </motion.li>
           </motion.ul>
           <motion.div variants={itemVariants} className="mt-6">
-            <div className="flex items-center justify-center overflow-hidden rounded-xl border border-background/15 bg-background/5 p-2">
-              <img src={inspiration?.url || footerInspiration} alt={inspiration?.tagline || "In remembrance"} className="max-h-44 w-full object-contain" />
+            <div className="flex items-center justify-center overflow-hidden rounded-xl">
+              <img src={inspiration?.url || footerInspiration} alt={inspiration?.tagline || "Ratan Tata"} className="max-h-44 w-full object-contain" />
             </div>
-            {inspiration?.tagline && (
-              <p className="mt-2 text-center text-sm font-semibold italic text-background/85" translate="no">&ldquo;{inspiration.tagline}&rdquo;</p>
-            )}
+            <p className="mt-2 text-center text-sm font-semibold italic text-background/85" translate="no">
+              {inspiration?.tagline ? `“${inspiration.tagline}”` : "Inspired By: Ratan Tata"}
+            </p>
           </motion.div>
         </motion.div>
       </motion.div>
