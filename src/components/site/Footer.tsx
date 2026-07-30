@@ -10,7 +10,20 @@ import {
 import { Mail, Phone, MapPin, ArrowRight, ArrowUp, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { isServiceHidden } from "@/lib/hidden-services";
-import { slugify, visibleServiceTitles } from "@/components/site/Services";
+import { slugify } from "@/components/site/Services";
+
+/** Registered name of the operating company, shown at the foot of every page. */
+const LEGAL_ENTITY = "BharatOne Services and Affiliates Private Limited";
+
+/** Statutory and recognition registrations displayed alongside the company name. */
+const REGISTRATIONS: { label: string; value: string }[] = [
+  { label: "CIN", value: "U81100KA2025PTC198087" },
+  { label: "GSTIN", value: "29AANCB2642K1ZB" },
+  { label: "MSME UDYAM", value: "UDYAM-KR-16-0054742" },
+  { label: "Startup India Recognition", value: "DIPP207157" },
+  { label: "Startup Karnataka Recognition", value: "KITS/SK-REGN/2025-26/17441" },
+  { label: "ISO 9001:2015", value: "IN/50418838/8007" },
+];
 import logo from "@/assets/bharatone-logo.png";
 import footerInspiration from "@/assets/footer-inspiration.jpg";
 
@@ -490,33 +503,30 @@ export function Footer() {
         style={{ background: "var(--gradient-tricolor)", opacity: 0.5 }}
       />
 
-      {/* Every public service, in one line. This is the catalogue's main entry point
-          now that the homepage services grid has been removed. Driven off
-          visibleServiceTitles so it stays in step with HIDDEN_SERVICES. */}
+      {/* Statutory identity — company name and the registrations we're required or
+          entitled to display. */}
       <motion.div
         variants={containerVariants}
         {...animateProps}
         className="container mx-auto px-4 pt-6 sm:px-6"
       >
-        <motion.h4
+        <motion.p
           variants={itemVariants}
-          className="mb-3 text-center text-[11px] font-semibold uppercase tracking-[0.15em] text-background/45"
+          className="text-center text-[13px] font-semibold tracking-tight text-background/85"
         >
-          All Services
-        </motion.h4>
+          {LEGAL_ENTITY}
+        </motion.p>
         <motion.ul
           variants={containerVariants}
-          className="flex flex-wrap items-center justify-center gap-x-1 gap-y-2 text-xs text-background/60"
+          className="mt-2 flex flex-wrap items-center justify-center gap-x-1.5 gap-y-1.5 text-[11px] leading-relaxed text-background/55"
         >
-          {visibleServiceTitles.map((title, i) => (
-            <motion.li key={title} variants={linkVariants} className="flex items-center">
-              {i > 0 && <span aria-hidden className="mr-1 h-3 w-px bg-background/15" />}
-              <a
-                href={`/citizen-services#${slugify(title)}`}
-                className="rounded px-1.5 py-0.5 transition-colors hover:text-background hover:underline underline-offset-4"
-              >
-                {title}
-              </a>
+          {REGISTRATIONS.map((r, i) => (
+            <motion.li key={r.label} variants={linkVariants} className="flex items-center">
+              {i > 0 && <span aria-hidden className="mr-1.5 h-3 w-px bg-background/15" />}
+              <span className="whitespace-nowrap">
+                <span className="text-background/45">{r.label}:</span>{" "}
+                <span className="font-medium text-background/75">{r.value}</span>
+              </span>
             </motion.li>
           ))}
         </motion.ul>
