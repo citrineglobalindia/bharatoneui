@@ -86,6 +86,7 @@ import { RolesPermissions } from "@/components/admin/roles-permissions";
 import { SystemSettings } from "@/components/admin/system-settings";
 import { GalleryManager } from "@/components/admin/gallery-manager";
 import { SitePagesManager } from "@/components/admin/site-pages-manager";
+import { NewsletterAdmin } from "@/components/admin/newsletter-admin";
 import { HeroManager } from "@/components/admin/hero-manager";
 import { AwardsManager } from "@/components/admin/awards-manager";
 import { HeadlinesManager } from "@/components/admin/headlines-manager";
@@ -185,6 +186,7 @@ const NAVIGATION: NavGroup[] = [
       { label: "System Settings", icon: Settings },
       { label: "Website Gallery", icon: ImageIcon },
       { label: "Website Pages", icon: FileText },
+      { label: "Newsletter", icon: Megaphone },
       { label: "Notice Board", icon: Megaphone },
       { label: "Retailer Notice", icon: Bell },
       { label: "Old JSKO IDs", icon: IdCard },
@@ -518,6 +520,7 @@ const HEADERLESS_SECTIONS = new Set([
   "Retailer Network",
   "Website Gallery",
   "Website Pages",
+  "Newsletter",
 ]);
 
 export function AdminWorkspace() {
@@ -1180,6 +1183,8 @@ export function AdminWorkspace() {
               <RetailerMap scope="admin" />
             ) : active === "System Settings" ? (
               <SystemSettings />
+            ) : active === "Newsletter" ? (
+              <NewsletterAdmin />
             ) : active === "Website Pages" ? (
               <SitePagesManager />
             ) : active === "Website Gallery" ? (

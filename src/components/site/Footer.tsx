@@ -174,24 +174,37 @@ function ChakraDecoration({
 function Newsletter() {
   const [email, setEmail] = useState("");
   const [state, setState] = useState<"idle" | "submitting" | "success">("idle");
+  const [error, setError] = useState<string | null>(null);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || state === "submitting") return;
+    setError(null);
     setState("submitting");
-    // Newsletter capture will be wired to the portal backend later.
-    setTimeout(() => {
+    try {
+      const { data, error: rpcErr } = await (supabase as any).rpc("subscribe_newsletter", {
+        p_email: email, p_source: "footer",
+      });
+      if (rpcErr) throw new Error(rpcErr.message);
+      if (data && data.ok === false) {
+        setError(String(data.message ?? "Please enter a valid email address."));
+        setState("idle");
+        return;
+      }
       setState("success");
       setEmail("");
-      setTimeout(() => setState("idle"), 3200);
-    }, 400);
+      setTimeout(() => setState("idle"), 3600);
+    } catch {
+      setError("Couldn't subscribe right now. Please try again.");
+      setState("idle");
+    }
   };
 
   return (
     <motion.form
       variants={itemVariants}
       onSubmit={onSubmit}
-      className="relative flex w-full max-w-sm items-center"
+      className="relative flex w-full max-w-sm flex-col items-start"
     >
       <div className="relative flex w-full items-center overflow-hidden rounded-full bg-background/10 ring-1 ring-background/15 transition-all focus-within:ring-saffron">
         <Mail className="ml-4 h-4 w-4 shrink-0 text-background/60" />
@@ -249,6 +262,8 @@ function Newsletter() {
           </AnimatePresence>
         </motion.button>
       </div>
+      {error && <p className="mt-2 pl-4 text-xs font-medium text-red-400">{error}</p>}
+      {state === "success" && <p className="mt-2 pl-4 text-xs font-medium text-india-green">You're on the list — thanks for subscribing.</p>}
     </motion.form>
   );
 }
