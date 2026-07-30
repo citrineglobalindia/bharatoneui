@@ -413,15 +413,6 @@ export function Footer() {
         </motion.div>
 
         <motion.div variants={itemVariants}>
-          <h4 className="mb-4 text-sm font-semibold uppercase tracking-wider text-background/90">Policies</h4>
-          <motion.ul variants={containerVariants} className="space-y-2.5 text-sm">
-            {pages.filter((p) => p.footer_group === "Policies").map((p) => (
-              <FooterLink key={p.slug} href={`/p/${p.slug}`}>{p.title}</FooterLink>
-            ))}
-          </motion.ul>
-        </motion.div>
-
-        <motion.div variants={itemVariants}>
           <h4 className="mb-4 text-sm font-semibold uppercase tracking-wider text-background/90">Services</h4>
           <motion.ul variants={containerVariants} className="space-y-2.5 text-sm">
             <FooterLink href="/citizen-services#e-gov">E-Governance</FooterLink>
@@ -429,6 +420,15 @@ export function Footer() {
             <FooterLink href="/citizen-services#aeps">Banking & AEPS</FooterLink>
             <FooterLink href="/citizen-services#irctc">Travel & IRCTC</FooterLink>
             <FooterLink href="/citizen-services#bbps">Bill Payments (BBPS)</FooterLink>
+          </motion.ul>
+        </motion.div>
+
+        <motion.div variants={itemVariants}>
+          <h4 className="mb-4 text-sm font-semibold uppercase tracking-wider text-background/90">Policies</h4>
+          <motion.ul variants={containerVariants} className="space-y-2.5 text-sm">
+            {pages.filter((p) => p.footer_group === "Policies").map((p) => (
+              <FooterLink key={p.slug} href={`/p/${p.slug}`}>{p.title}</FooterLink>
+            ))}
           </motion.ul>
         </motion.div>
 
