@@ -65,9 +65,9 @@ export async function hmacHex(message: string, key: string): Promise<string> {
 export function plainHashText(params: Record<string, unknown>): string {
   return Object.keys(params)
     .filter((k) => k !== "secureHash")
-    .sort()
+    .sort()   // plain ASCII sort — confirmed against a live UAT status response
     .map((k) => params[k])
-    .filter((v) => v !== null && v !== undefined && String(v) !== "")
+    .filter((v) => v !== null && v !== undefined && String(v) !== "" && v !== false)
     .map((v) => String(v))
     .join("");
 }
