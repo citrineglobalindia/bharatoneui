@@ -131,7 +131,9 @@ function RegisterFlow() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Admin-configurable retailer registration fee (System Settings → Registration Fee).
-  const [retailerFee, setRetailerFee] = useState<number>(20060);
+  // The fallback must match the franchise terms (₹5,999) — it is only used if the
+  // app_settings read fails, and a stale value here would quote the wrong amount.
+  const [retailerFee, setRetailerFee] = useState<number>(5999);
   useEffect(() => {
     supabase
       .from("app_settings")
