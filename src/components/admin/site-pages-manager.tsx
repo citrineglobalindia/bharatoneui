@@ -10,9 +10,9 @@ type Page = {
   sort_order: number; published: boolean; meta_description: string | null; updated_at: string;
 };
 
-const GROUPS = ["Company", "Services", "Legal", "Support"];
+const GROUPS = ["Company", "Services", "Policies", "Support"];
 const blank = (): Partial<Page> => ({
-  slug: "", title: "", subtitle: "", content: "", footer_group: "Company",
+  slug: "", title: "", subtitle: "", content: "", footer_group: "Policies",
   show_in_footer: true, show_in_bottom_bar: false, sort_order: 100, published: true, meta_description: "",
 });
 

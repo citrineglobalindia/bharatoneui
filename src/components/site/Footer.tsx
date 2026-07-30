@@ -374,7 +374,7 @@ export function Footer() {
       <motion.div
         variants={containerVariants}
         {...animateProps}
-        className="container mx-auto grid grid-cols-2 gap-10 px-4 py-14 sm:px-6 md:grid-cols-4"
+        className="container mx-auto grid grid-cols-2 gap-10 px-4 py-14 sm:px-6 md:grid-cols-3 lg:grid-cols-5"
       >
         <motion.div variants={itemVariants} className="col-span-2 space-y-5 md:col-span-1">
           <div className="inline-block rounded-xl bg-background p-2.5 shadow-soft">
@@ -407,6 +407,15 @@ export function Footer() {
             <FooterLink href="/careers">Careers</FooterLink>
             <FooterLink href="/gallery">Gallery</FooterLink>
             {pages.filter((p) => p.footer_group === "Company").map((p) => (
+              <FooterLink key={p.slug} href={`/p/${p.slug}`}>{p.title}</FooterLink>
+            ))}
+          </motion.ul>
+        </motion.div>
+
+        <motion.div variants={itemVariants}>
+          <h4 className="mb-4 text-sm font-semibold uppercase tracking-wider text-background/90">Policies</h4>
+          <motion.ul variants={containerVariants} className="space-y-2.5 text-sm">
+            {pages.filter((p) => p.footer_group === "Policies").map((p) => (
               <FooterLink key={p.slug} href={`/p/${p.slug}`}>{p.title}</FooterLink>
             ))}
           </motion.ul>
