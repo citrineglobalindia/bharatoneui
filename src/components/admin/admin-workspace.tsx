@@ -34,7 +34,7 @@ import {
   Network,
   type LucideIcon,
   ImageIcon, Megaphone, FolderTree, TrendingUp, Search as SearchIcon, BellRing, Bell, IdCard,
-  Server, LayoutGrid, Plus, List, ChevronRight, PanelLeftClose, PanelLeftOpen, ShoppingBag } from "lucide-react";
+  Server, LayoutGrid, Plus, List, ChevronRight, PanelLeftClose, PanelLeftOpen, ShoppingBag, FileText } from "lucide-react";
 import {
   Area,
   AreaChart,
@@ -85,6 +85,7 @@ import {
 import { RolesPermissions } from "@/components/admin/roles-permissions";
 import { SystemSettings } from "@/components/admin/system-settings";
 import { GalleryManager } from "@/components/admin/gallery-manager";
+import { SitePagesManager } from "@/components/admin/site-pages-manager";
 import { HeroManager } from "@/components/admin/hero-manager";
 import { AwardsManager } from "@/components/admin/awards-manager";
 import { HeadlinesManager } from "@/components/admin/headlines-manager";
@@ -183,6 +184,7 @@ const NAVIGATION: NavGroup[] = [
       { label: "Live Chat", icon: MessageSquare },
       { label: "System Settings", icon: Settings },
       { label: "Website Gallery", icon: ImageIcon },
+      { label: "Website Pages", icon: FileText },
       { label: "Notice Board", icon: Megaphone },
       { label: "Retailer Notice", icon: Bell },
       { label: "Old JSKO IDs", icon: IdCard },
@@ -515,6 +517,7 @@ const HEADERLESS_SECTIONS = new Set([
   "KYC Approvals",
   "Retailer Network",
   "Website Gallery",
+  "Website Pages",
 ]);
 
 export function AdminWorkspace() {
@@ -1177,6 +1180,8 @@ export function AdminWorkspace() {
               <RetailerMap scope="admin" />
             ) : active === "System Settings" ? (
               <SystemSettings />
+            ) : active === "Website Pages" ? (
+              <SitePagesManager />
             ) : active === "Website Gallery" ? (
               <div className="space-y-8">
                 <div>

@@ -303,6 +303,18 @@ export function Footer() {
     return () => { on = false; };
   }, []);
 
+  // CR-160 — footer pages (Terms, Privacy, Refund, or any new page) are managed
+  // in Admin → Website Pages and rendered at /p/<slug>.
+  const [pages, setPages] = useState<{ slug: string; title: string; footer_group: string; show_in_bottom_bar: boolean }[]>([]);
+  useEffect(() => {
+    let on = true;
+    (async () => {
+      const { data } = await (supabase as any).rpc("site_footer_pages");
+      if (on && data) setPages(data as typeof pages);
+    })();
+    return () => { on = false; };
+  }, []);
+
   // Admin-managed "inspired by" photo + tagline shown below the address.
   const [inspiration, setInspiration] = useState<{ url: string; tagline: string } | null>(null);
   useEffect(() => {
@@ -394,8 +406,9 @@ export function Footer() {
             <FooterLink href="/schemes">Schemes</FooterLink>
             <FooterLink href="/careers">Careers</FooterLink>
             <FooterLink href="/gallery">Gallery</FooterLink>
-            <FooterLink href="/terms">Terms &amp; Conditions</FooterLink>
-            <FooterLink href="/refund-policy">Refund Policy</FooterLink>
+            {pages.filter((p) => p.footer_group === "Company").map((p) => (
+              <FooterLink key={p.slug} href={`/p/${p.slug}`}>{p.title}</FooterLink>
+            ))}
           </motion.ul>
         </motion.div>
 
@@ -456,9 +469,9 @@ export function Footer() {
           © {new Date().getFullYear()} BharatOne Services. All rights reserved.
         </motion.span>
         <motion.div variants={itemVariants} className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
-          <a href="/privacy" className="hover:text-background">Privacy</a>
-          <a href="/terms" className="hover:text-background">Terms</a>
-          <a href="/refund-policy" className="hover:text-background">Refund Policy</a>
+          {pages.filter((p) => p.show_in_bottom_bar).map((p) => (
+            <a key={p.slug} href={`/p/${p.slug}`} className="hover:text-background">{p.title}</a>
+          ))}
           <span aria-hidden className="h-3 w-px bg-background/20" />
           <span>Version : 1.0</span>
           <span aria-hidden className="h-3 w-px bg-background/20" />
