@@ -18,12 +18,14 @@ import {
 type AccessRow = {
   id: number; at: string; user_id: string | null; actor: string | null; actor_ref: string | null;
   role: string | null; ip: string | null; user_agent: string | null; session_id: string | null;
+  device_id: string | null; country: string | null; region: string | null; timezone: string | null;
   kind: string; module: string | null; route: string | null; action: string;
   entity: string | null; status: string; latency_ms: number | null; detail: unknown;
 };
 
 type SessionRow = {
-  session_id: string; ip: string | null; user_id: string | null; actor: string | null;
+  session_id: string; ip: string | null; device_id: string | null; country: string | null;
+  region: string | null; timezone: string | null; user_id: string | null; actor: string | null;
   actor_ref: string | null; role: string | null; user_agent: string | null;
   first_seen: string; last_seen: string; events: number; pages: number;
   failures: number; routes: string | null;
@@ -36,9 +38,10 @@ type HealthRow = {
 
 type Stats = {
   events_24h: number; events_1h: number; failures_24h: number; users_24h: number;
-  ips_24h: number; last_event: string | null;
+  ips_24h: number; devices_24h: number; last_event: string | null;
   by_kind?: { kind: string; n: number }[];
   by_module?: { module: string; n: number }[];
+  by_region?: { region: string; n: number }[];
   top_routes?: { route: string; n: number }[];
 };
 
@@ -128,6 +131,7 @@ export function PlatformLogs() {
   const [module, setModule] = useState("");
   const [status, setStatus] = useState("");
   const [ip, setIp] = useState("");
+  const [dev, setDev] = useState("");
   const [q, setQ] = useState("");
   const [limit, setLimit] = useState(300);
   const [hours, setHours] = useState(24);
@@ -155,6 +159,7 @@ export function PlatformLogs() {
           p_module: module || null,
           p_status: status || null,
           p_ip: ip || null,
+          p_device: dev || null,
           p_q: q || null,
           p_since: since,
         }),
@@ -183,7 +188,7 @@ export function PlatformLogs() {
     } finally {
       setLoading(false);
     }
-  }, [kind, module, status, ip, q, limit, hours, tab]);
+  }, [kind, module, status, ip, dev, q, limit, hours, tab]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -232,6 +237,7 @@ export function PlatformLogs() {
     { icon: AlertTriangle, label: "Failures (24h)", value: stats?.failures_24h ?? 0, tone: (stats?.failures_24h ?? 0) > 0 ? "text-red-600" : "text-slate-900" },
     { icon: Users, label: "Signed-in users", value: stats?.users_24h ?? 0, tone: "text-slate-900" },
     { icon: Globe, label: "Distinct IPs", value: stats?.ips_24h ?? 0, tone: "text-slate-900" },
+    { icon: MonitorSmartphone, label: "Devices", value: stats?.devices_24h ?? 0, tone: "text-slate-900" },
   ];
 
   return (
@@ -266,7 +272,7 @@ export function PlatformLogs() {
                 if (tab === "sessions") {
                   download(`bharatone-sessions-${new Date().toISOString().slice(0, 10)}.csv`,
                     toCsv(sessions as unknown as Record<string, unknown>[],
-                      ["last_seen", "first_seen", "ip", "actor", "actor_ref", "role", "user_agent", "events", "pages", "failures", "routes"]));
+                      ["last_seen", "first_seen", "ip", "region", "country", "timezone", "device_id", "actor", "actor_ref", "role", "user_agent", "events", "pages", "failures", "routes"]));
                 } else if (tab === "system") {
                   download(`bharatone-system-events-${new Date().toISOString().slice(0, 10)}.csv`,
                     toCsv(health as unknown as Record<string, unknown>[],
@@ -274,7 +280,7 @@ export function PlatformLogs() {
                 } else {
                   download(`bharatone-access-log-${new Date().toISOString().slice(0, 10)}.csv`,
                     toCsv(rows.map((r) => ({ ...r, detail: JSON.stringify(r.detail ?? "") })) as unknown as Record<string, unknown>[],
-                      ["at", "ip", "actor", "actor_ref", "role", "kind", "module", "action", "route", "entity", "status", "latency_ms", "user_agent", "session_id", "detail"]));
+                      ["at", "ip", "region", "country", "timezone", "device_id", "actor", "actor_ref", "role", "kind", "module", "action", "route", "entity", "status", "latency_ms", "user_agent", "session_id", "detail"]));
                 }
               }}
             >
@@ -284,7 +290,7 @@ export function PlatformLogs() {
         </div>
 
         {/* stats */}
-        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           {cards.map((c) => (
             <div key={c.label} className="rounded-xl border bg-white p-4 shadow-sm">
               <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -348,6 +354,10 @@ export function PlatformLogs() {
                   value={ip} onChange={(e) => setIp(e.target.value)}
                   placeholder="Filter by IP" className="h-10 w-[150px]"
                 />
+                <Input
+                  value={dev} onChange={(e) => setDev(e.target.value)}
+                  placeholder="Filter by device ID" className="h-10 w-[170px]"
+                />
               </>
             )}
             <select value={hours} onChange={(e) => setHours(+e.target.value)} className="h-10 rounded-md border bg-white px-3 text-sm">
@@ -376,6 +386,7 @@ export function PlatformLogs() {
                     <th className="whitespace-nowrap px-3 py-2.5 font-bold">Time</th>
                     <th className="whitespace-nowrap px-3 py-2.5 font-bold">Who</th>
                     <th className="whitespace-nowrap px-3 py-2.5 font-bold">IP address</th>
+                    <th className="whitespace-nowrap px-3 py-2.5 font-bold">Region</th>
                     <th className="whitespace-nowrap px-3 py-2.5 font-bold">Device</th>
                     <th className="whitespace-nowrap px-3 py-2.5 font-bold">Type</th>
                     <th className="whitespace-nowrap px-3 py-2.5 font-bold">Module</th>
@@ -385,7 +396,7 @@ export function PlatformLogs() {
                 </thead>
                 <tbody>
                   {rows.length === 0 && (
-                    <tr><td colSpan={8} className="px-3 py-14 text-center text-muted-foreground">
+                    <tr><td colSpan={9} className="px-3 py-14 text-center text-muted-foreground">
                       No entries for these filters.
                     </td></tr>
                   )}
@@ -405,11 +416,36 @@ export function PlatformLogs() {
                             </>
                           ) : <span className="text-muted-foreground">Visitor</span>}
                         </td>
-                        <td className="whitespace-nowrap px-3 py-2 font-mono text-xs">{r.ip ?? "—"}</td>
+                        <td className="whitespace-nowrap px-3 py-2">
+                          <button
+                            className="font-mono text-xs text-primary underline-offset-2 hover:underline"
+                            onClick={(e) => { e.stopPropagation(); setIp(r.ip ?? ""); }}
+                          >
+                            {r.ip ?? "—"}
+                          </button>
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-2 text-xs">
+                          {r.region || r.country ? (
+                            <>
+                              <div className="font-medium">{r.region || "—"}</div>
+                              <div className="text-[11px] text-muted-foreground">
+                                {r.country || ""}{r.timezone ? ` · ${r.timezone}` : ""}
+                              </div>
+                            </>
+                          ) : <span className="text-muted-foreground">—</span>}
+                        </td>
                         <td className="whitespace-nowrap px-3 py-2 text-xs text-muted-foreground">
                           <span className="inline-flex items-center gap-1">
                             <MonitorSmartphone className="h-3 w-3" />{device(r.user_agent)}
                           </span>
+                          {r.device_id && (
+                            <button
+                              className="block font-mono text-[10px] text-primary underline-offset-2 hover:underline"
+                              onClick={(e) => { e.stopPropagation(); setDev(r.device_id ?? ""); }}
+                            >
+                              {r.device_id}
+                            </button>
+                          )}
                         </td>
                         <td className="px-3 py-2">
                           <Badge variant="outline" className={`text-[10px] ${KIND_STYLE[r.kind] ?? ""}`}>{r.kind}</Badge>
@@ -432,11 +468,13 @@ export function PlatformLogs() {
                       </tr>
                       {expanded === r.id && (
                         <tr className="border-t bg-slate-50/70">
-                          <td colSpan={8} className="px-4 py-3">
+                          <td colSpan={9} className="px-4 py-3">
                             <div className="grid gap-3 text-xs sm:grid-cols-2 lg:grid-cols-4">
                               <div><div className="font-semibold text-muted-foreground">Session</div><div className="font-mono">{r.session_id || "—"}</div></div>
+                              <div><div className="font-semibold text-muted-foreground">Device ID</div><div className="font-mono">{r.device_id || "—"}</div></div>
                               <div><div className="font-semibold text-muted-foreground">User ID</div><div className="font-mono break-all">{r.user_id || "—"}</div></div>
-                              <div className="lg:col-span-2"><div className="font-semibold text-muted-foreground">User agent</div><div className="break-all">{r.user_agent || "—"}</div></div>
+                              <div><div className="font-semibold text-muted-foreground">Location</div><div>{[r.region, r.country].filter(Boolean).join(", ") || "—"}{r.timezone ? ` · ${r.timezone}` : ""}</div></div>
+                              <div className="lg:col-span-4"><div className="font-semibold text-muted-foreground">User agent</div><div className="break-all">{r.user_agent || "—"}</div></div>
                             </div>
                             {r.detail != null && (
                               <pre className="mt-3 overflow-auto rounded-lg bg-slate-900 p-3 text-[11px] leading-relaxed text-slate-100">
@@ -466,6 +504,7 @@ export function PlatformLogs() {
                   <tr>
                     <th className="whitespace-nowrap px-3 py-2.5 font-bold">Last seen</th>
                     <th className="whitespace-nowrap px-3 py-2.5 font-bold">IP address</th>
+                    <th className="whitespace-nowrap px-3 py-2.5 font-bold">Region</th>
                     <th className="whitespace-nowrap px-3 py-2.5 font-bold">Who</th>
                     <th className="whitespace-nowrap px-3 py-2.5 font-bold">Device</th>
                     <th className="whitespace-nowrap px-3 py-2.5 font-bold">Started</th>
@@ -477,7 +516,7 @@ export function PlatformLogs() {
                 </thead>
                 <tbody>
                   {sessions.length === 0 && (
-                    <tr><td colSpan={9} className="px-3 py-14 text-center text-muted-foreground">No sessions in this window.</td></tr>
+                    <tr><td colSpan={10} className="px-3 py-14 text-center text-muted-foreground">No sessions in this window.</td></tr>
                   )}
                   {sessions.map((s) => (
                     <tr key={s.session_id} className="border-t hover:bg-slate-50">
@@ -490,6 +529,12 @@ export function PlatformLogs() {
                           {s.ip ?? "—"}
                         </button>
                       </td>
+                      <td className="whitespace-nowrap px-3 py-2 text-xs">
+                        <div className="font-medium">{s.region || "—"}</div>
+                        <div className="text-[11px] text-muted-foreground">
+                          {s.country || ""}{s.timezone ? ` · ${s.timezone}` : ""}
+                        </div>
+                      </td>
                       <td className="whitespace-nowrap px-3 py-2">
                         {s.actor ? (
                           <>
@@ -499,7 +544,17 @@ export function PlatformLogs() {
                           </>
                         ) : <span className="text-muted-foreground">Anonymous visitor</span>}
                       </td>
-                      <td className="whitespace-nowrap px-3 py-2 text-xs text-muted-foreground">{device(s.user_agent)}</td>
+                      <td className="whitespace-nowrap px-3 py-2 text-xs text-muted-foreground">
+                        {device(s.user_agent)}
+                        {s.device_id && (
+                          <button
+                            className="block font-mono text-[10px] text-primary underline-offset-2 hover:underline"
+                            onClick={() => { setDev(s.device_id ?? ""); setTab("requests"); }}
+                          >
+                            {s.device_id}
+                          </button>
+                        )}
+                      </td>
                       <td className="whitespace-nowrap px-3 py-2 text-xs text-muted-foreground">{fmt(s.first_seen)}</td>
                       <td className="px-3 py-2 tabular-nums">{s.events}</td>
                       <td className="px-3 py-2 tabular-nums">{s.pages}</td>
@@ -552,8 +607,11 @@ export function PlatformLogs() {
         )}
 
         <p className="mt-4 text-xs text-muted-foreground">
-          IP addresses and devices are recorded server-side and cannot be altered from the browser.
-          Entries are kept for 90 days, then deleted automatically.
+          IP address and country are recorded server-side from the request itself and cannot be altered
+          from the browser. Region is the nearest Cloudflare edge, so treat it as approximate — the
+          country and the browser timezone are the reliable location signals. The device ID is a stable
+          per-browser identifier that survives sign-out, so the same physical device can be followed
+          across sessions and across accounts. Entries are kept for 90 days, then deleted automatically.
         </p>
       </div>
     </div>

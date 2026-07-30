@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="robots" content="noindex, nofollow"/>
+<title>System health — BharatOne</title>
+<style>
+:root{
+  --saff:#ff9123; --green:#138808; --ink:#0f172a; --muted:#64748b; --line:#e6ebe6;
+  --bg:#f6f8f6; --card:#ffffff; --done:#138808; --partial:#d98a00; --todo:#e11d48;
+  --shadow:0 10px 30px rgba(16,24,40,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;line-height:1.55}
+.wrap{max-width:1300px;margin:0 auto;padding:0 22px}
+header.top{position:relative;overflow:hidden;background:#0c1a10;color:#fff;padding:22px 0 0}
+header.top .bar{position:absolute;inset:0 0 auto 0;height:4px;background:linear-gradient(90deg,var(--saff),#fff,var(--green));background-size:200% 100%;animation:slide 6s linear infinite}
+@keyframes slide{to{background-position:-200% 0}}
+header.top::after{content:"";position:absolute;right:-120px;top:-140px;width:340px;height:340px;border-radius:50%;background:radial-gradient(circle at 30% 30%,rgba(255,145,35,.25),transparent 60%);filter:blur(6px)}
+.brand{display:flex;align-items:center;gap:12px;position:relative;z-index:1}
+.logo{width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,var(--saff),var(--green));display:grid;place-items:center;font-weight:800;font-size:19px}
+.brand h1{font-size:20px;font-weight:800}
+.brand p{font-size:12.5px;color:#9fb3a4}
+.tabs{display:flex;gap:4px;margin-top:18px;position:relative;z-index:1;flex-wrap:wrap}
+.tabs a{display:block;padding:10px 16px;border-radius:11px 11px 0 0;font-size:13.5px;font-weight:700;color:#9fb3a4;text-decoration:none;transition:.16s;white-space:nowrap}
+.tabs a:hover{background:rgba(255,255,255,.07);color:#fff}
+.tabs a[aria-current]{background:var(--bg);color:var(--ink)}
+.signout{position:absolute;right:22px;top:26px;z-index:2;font-size:12px;color:#9fb3a4;text-decoration:none}
+.signout:hover{color:#fff}
+.pulse{width:8px;height:8px;border-radius:50%;display:inline-block;animation:pz 2s infinite}
+@keyframes pz{0%,100%{opacity:1}50%{opacity:.35}}
+.h-ok{background:var(--done)} .h-warn{background:var(--partial)} .h-down{background:var(--todo)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}
+.muted{color:var(--muted)}
+.empty{padding:44px 16px;text-align:center;color:var(--muted);font-size:13.5px}
+@media(max-width:640px){.signout{display:none}}
+
+.hero{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:20px 22px;margin-bottom:18px}
+.hero .t{display:flex;align-items:center;gap:12px;font-size:21px;font-weight:800}
+.hero .meta{font-size:12.5px;color:var(--muted);text-align:right}
+.mods{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:13px}
+.mod{padding:15px 16px;border-radius:15px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);transition:.18s;animation:rise .35s ease both}
+.mod:hover{transform:translateY(-2px)}
+@keyframes rise{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+.mod .r1{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.mod b{font-size:14.5px}
+.mod .pill{font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:999px;text-transform:uppercase;letter-spacing:.03em}
+.p-ok{background:rgba(19,136,8,.12);color:#0f7a06}
+.p-warn{background:rgba(217,138,0,.15);color:#a56a00}
+.p-down{background:rgba(225,29,72,.12);color:#be123c}
+.mod .cat{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
+.mod .stats{display:flex;gap:16px;margin-top:12px;padding-top:11px;border-top:1px solid var(--line)}
+.mod .stats div{font-size:11px;color:var(--muted)}
+.mod .stats b{display:block;font-size:15px;color:var(--ink);font-variant-numeric:tabular-nums}
+.sec{margin-top:26px;font-size:15px;font-weight:800;display:flex;align-items:center;gap:9px}
+.inc{padding:14px 16px;margin-top:11px;border-radius:14px;background:var(--card);border:1px solid var(--line);border-left:4px solid var(--todo);box-shadow:var(--shadow)}
+.inc.res{border-left-color:var(--done);opacity:.8}
+.inc .h{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.inc b{font-size:14px}
+.inc .w{font-size:11.5px;color:var(--muted)}
+.inc p{font-size:12.5px;color:var(--muted);margin-top:5px}
+</style>
+</head>
+<body>
+
+<div id="gate" style="position:fixed;inset:0;z-index:999;background:linear-gradient(135deg,#0c1a10,#123a1a);display:flex;align-items:center;justify-content:center;padding:20px">
+  <div style="width:100%;max-width:390px;background:#fff;border-radius:18px;padding:30px 28px;box-shadow:0 30px 70px rgba(0,0,0,.35)">
+    <div style="display:flex;align-items:center;gap:11px;margin-bottom:6px">
+      <div style="width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,#ff9123,#138808);display:grid;place-items:center;color:#fff;font-weight:800">B1</div>
+      <div><div style="font-weight:800;font-size:16px">BharatOne</div><div style="font-size:12px;color:#64748b">System health</div></div>
+    </div>
+    <p style="font-size:13px;color:#64748b;margin:12px 0 16px">Sign in to continue.</p>
+    <label style="font-size:12px;font-weight:700;color:#0f172a">User name</label>
+    <input id="gu" type="email" autocomplete="username" style="width:100%;height:42px;margin:5px 0 12px;border:1px solid #e6ebe6;border-radius:10px;padding:0 12px;font-size:14px;outline:none"/>
+    <label style="font-size:12px;font-weight:700;color:#0f172a">Password</label>
+    <input id="gp" type="password" autocomplete="current-password" style="width:100%;height:42px;margin:5px 0 12px;border:1px solid #e6ebe6;border-radius:10px;padding:0 12px;font-size:14px;outline:none"/>
+    <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#64748b;margin-bottom:14px"><input id="gr" type="checkbox"/> Keep me signed in on this device</label>
+    <div id="gerr" style="display:none;font-size:12.5px;color:#e11d48;margin-bottom:10px">That user name or password is not right.</div>
+    <button id="gb" style="width:100%;height:44px;border:0;border-radius:11px;background:linear-gradient(135deg,#ff9123,#138808);color:#fff;font-weight:800;font-size:14.5px;cursor:pointer">Sign in</button>
+  </div>
+</div>
+
+<div id="app" style="display:none">
+<header class="top">
+  <div class="bar"></div>
+  <a href="#" id="signout" class="signout">Sign out</a>
+  <div class="wrap">
+    <div class="brand"><div class="logo">B1</div><div><h1>System health</h1><p>Live status of every module on the platform</p></div></div>
+    <nav class="tabs"><a href="/status/">Planning board</a><a href="/status/health/" aria-current="page">System health</a><a href="/status/activity/">Activity log</a></nav>
+  </div>
+</header>
+<div class="wrap" style="padding-top:22px;padding-bottom:60px">
+
+<div class="card hero" id="hero"></div>
+<div class="mods" id="mods"></div>
+<div id="inc"></div>
+<p style="margin-top:24px;font-size:11.5px;color:var(--muted)">
+  Checks run automatically every 5 minutes against the live platform. Full per-module history is in
+  Admin → System Health.</p>
+
+</div>
+</div>
+<script>
+
+const SB_URL="https://grgfodievkckwefubjyj.supabase.co";
+const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdyZ2ZvZGlldmtja3dlZnVianlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1ODUxOTksImV4cCI6MjA5NzE2MTE5OX0.NZTUkQKWlgLyXbMbU_g1Wn1lgPEgPO72LS55DUBLSIg";
+const rpc=(fn,body)=>fetch(SB_URL+"/rest/v1/rpc/"+fn,{method:"POST",
+  headers:{"Content-Type":"application/json","apikey":SB_KEY,"Authorization":"Bearer "+SB_KEY},
+  body:JSON.stringify(body||{})}).then(r=>r.ok?r.json():null).catch(()=>null);
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const tfmt=t=>new Date(t).toLocaleString("en-IN",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit",second:"2-digit"});
+const tshort=t=>new Date(t).toLocaleString("en-IN",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"});
+function agoTxt(t){const s=Math.max(0,Math.round((Date.now()-new Date(t))/1000));
+  if(s<60)return s+"s ago"; if(s<3600)return Math.round(s/60)+"m ago";
+  if(s<86400)return Math.round(s/3600)+"h ago"; return Math.round(s/86400)+"d ago";}
+
+
+async function loadHealth(){
+  const h=await rpc("public_health_summary",{});
+  if(!h||!h.modules) return;
+  const lbl=h.overall==="ok"?"All systems operational":h.overall==="warn"?"Degraded performance":"Outage detected";
+  document.getElementById("hero").innerHTML=`
+    <div class="t"><span class="pulse h-${h.overall}"></span> ${lbl}</div>
+    <div class="meta">${h.modules.length} modules monitored · scanned every 5 minutes<br/>Last scan ${agoTxt(h.generated_at)} · ${tshort(h.generated_at)}</div>`;
+
+  document.getElementById("mods").innerHTML=h.modules.map((m,i)=>{
+    const up=m.checks_24h?Math.round(100*(m.checks_24h-(m.fails_24h||0))/m.checks_24h):100;
+    return `<div class="mod" style="animation-delay:${i*28}ms">
+      <div class="r1">
+        <div><b>${esc(m.name)}</b><div class="cat">${esc(m.category||"")}</div></div>
+        <span class="pill p-${m.status}">${m.status}</span>
+      </div>
+      <div class="stats">
+        <div><b>${up}%</b>uptime 24h</div>
+        <div><b>${m.checks_24h||0}</b>checks 24h</div>
+        <div><b>${m.latency_ms!=null?m.latency_ms+"ms":"—"}</b>response</div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:9px">
+        ${m.last_checked?"Checked "+agoTxt(m.last_checked):"Not checked yet"}
+        ${m.since?" · stable since "+tshort(m.since):""}
+      </div>
+    </div>`;}).join("");
+
+  const open=(h.open_incidents||[]);
+  document.getElementById("inc").innerHTML = open.length
+    ? `<div class="sec"><span class="pulse h-down"></span> Open incidents (${open.length})</div>` +
+      open.map(i=>`<div class="inc"><div class="h"><b>${esc(i.title)}</b>
+        <span class="w">Started ${tshort(i.started_at)} · ${agoTxt(i.started_at)}</span></div>
+        ${i.detail?`<p>${esc(i.detail)}</p>`:""}</div>`).join("")
+    : `<div class="sec"><span class="pulse h-ok"></span> No open incidents</div>
+       <div class="card" style="padding:18px 20px;margin-top:11px;font-size:13.5px;color:var(--muted)">
+         Every module is responding normally. If one stops, an incident opens here automatically and the
+         administrators are notified.</div>`;
+}
+function boot(){ loadHealth(); setInterval(loadHealth, 60000); }
+
+
+const U_H="8a95b6297adede2eaa777200f16c7c8320401ac4f171710cfcd13dd74abb2057", P_H="3bba120c8cd005aa02aa9f5daed17b239d5be80ada96c9ba5235368e738e00ba";
+const SALT="bharatone-status-2026", SKEY="bo_status_auth";
+async function sha(s){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("");}
+function unlock(){document.getElementById("gate").style.display="none";document.getElementById("app").style.display="block";if(!window.__booted){window.__booted=1;boot();}}
+async function tryLogin(){
+  const u=document.getElementById("gu").value.trim().toLowerCase(), p=document.getElementById("gp").value;
+  const uh=await sha(u), ph=await sha(u+"|"+p+"|"+SALT);
+  if(uh===U_H&&ph===P_H){(document.getElementById("gr").checked?localStorage:sessionStorage).setItem(SKEY,ph);unlock();}
+  else{const e=document.getElementById("gerr");e.style.display="block";
+    e.parentElement.animate([{transform:"translateX(0)"},{transform:"translateX(-9px)"},{transform:"translateX(9px)"},{transform:"translateX(0)"}],{duration:280});}
+}
+document.getElementById("gb").onclick=tryLogin;
+["gu","gp"].forEach(id=>document.getElementById(id).addEventListener("keydown",e=>{if(e.key==="Enter")tryLogin();}));
+var so=document.getElementById("signout"); if(so) so.onclick=(e)=>{e.preventDefault();localStorage.removeItem(SKEY);sessionStorage.removeItem(SKEY);location.reload();};
+window.addEventListener("load",()=>{
+  if(localStorage.getItem(SKEY)===P_H||sessionStorage.getItem(SKEY)===P_H) unlock();
+  else document.getElementById("gu").focus();
+});
+
+</script>
+</body>
+</html>

@@ -14,6 +14,7 @@
 // extra round trip every few seconds instead of one per request.
 
 const SESSION_KEY = "bo_audit_sid";
+const DEVICE_KEY = "bo_device_id";
 const FLUSH_MS = 4000;
 const MAX_BUFFER = 40;
 
@@ -124,6 +125,38 @@ export function auditSessionId(): string {
   }
 }
 
+/**
+ * Stable identifier for this browser, kept in localStorage so it survives sign-out,
+ * tab closes and restarts. Lets you follow one physical device across sessions and
+ * across different accounts — which is what catches a shared or borrowed login.
+ * (It is cleared if the user wipes site data; that is unavoidable in a browser.)
+ */
+export function deviceId(): string {
+  if (typeof window === "undefined") return "server";
+  try {
+    let id = window.localStorage.getItem(DEVICE_KEY);
+    if (!id) {
+      id =
+        "d-" +
+        ((crypto as any)?.randomUUID?.().replace(/-/g, "").slice(0, 20) ??
+          Date.now().toString(36) + Math.random().toString(36).slice(2, 10));
+      window.localStorage.setItem(DEVICE_KEY, id);
+    }
+    return id;
+  } catch {
+    return "no-storage";
+  }
+}
+
+/** Browser timezone — a useful second signal for region alongside the geo-IP country. */
+function timezone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+  } catch {
+    return "";
+  }
+}
+
 /** Grab the current access token so the RPC can resolve auth.uid(). */
 function accessToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -168,7 +201,12 @@ async function flush(useKeepalive = false): Promise<void> {
     await originalFetch(`${SUPABASE_URL}/rest/v1/rpc/log_access_batch`, {
       method: "POST",
       headers,
-      body: JSON.stringify({ p_events: batch, p_session: auditSessionId() }),
+      body: JSON.stringify({
+        p_events: batch,
+        p_session: auditSessionId(),
+        p_device: deviceId(),
+        p_tz: timezone(),
+      }),
       keepalive: useKeepalive,
     });
   } catch {
@@ -327,4 +365,6 @@ export function startAudit(): void {
   window.addEventListener("pagehide", () => void flush(true));
 }
 
-export default { logAccess, logPageView, logAuthEvent, startAudit, auditedFetch, auditSessionId };
+export default {
+  logAccess, logPageView, logAuthEvent, startAudit, auditedFetch, auditSessionId, deviceId,
+};
