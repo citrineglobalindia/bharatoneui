@@ -43,6 +43,7 @@ import { Route as GstRouteImport } from './routes/gst'
 import { Route as GovServicesRouteImport } from './routes/gov-services'
 import { Route as GetStartedRouteImport } from './routes/get-started'
 import { Route as GalleryRouteImport } from './routes/gallery'
+import { Route as FranchiseTermsRouteImport } from './routes/franchise-terms'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as FeedbackRouteImport } from './routes/feedback'
 import { Route as EstoreRouteImport } from './routes/estore'
@@ -347,6 +348,11 @@ const GetStartedRoute = GetStartedRouteImport.update({
 const GalleryRoute = GalleryRouteImport.update({
   id: '/gallery',
   path: '/gallery',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FranchiseTermsRoute = FranchiseTermsRouteImport.update({
+  id: '/franchise-terms',
+  path: '/franchise-terms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
@@ -1058,6 +1064,7 @@ export interface FileRoutesByFullPath {
   '/estore': typeof EstoreRoute
   '/feedback': typeof FeedbackRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/franchise-terms': typeof FranchiseTermsRoute
   '/gallery': typeof GalleryRoute
   '/get-started': typeof GetStartedRoute
   '/gov-services': typeof GovServicesRoute
@@ -1229,6 +1236,7 @@ export interface FileRoutesByTo {
   '/estore': typeof EstoreRoute
   '/feedback': typeof FeedbackRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/franchise-terms': typeof FranchiseTermsRoute
   '/gallery': typeof GalleryRoute
   '/get-started': typeof GetStartedRoute
   '/gov-services': typeof GovServicesRoute
@@ -1399,6 +1407,7 @@ export interface FileRoutesById {
   '/estore': typeof EstoreRoute
   '/feedback': typeof FeedbackRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/franchise-terms': typeof FranchiseTermsRoute
   '/gallery': typeof GalleryRoute
   '/get-started': typeof GetStartedRoute
   '/gov-services': typeof GovServicesRoute
@@ -1572,6 +1581,7 @@ export interface FileRouteTypes {
     | '/estore'
     | '/feedback'
     | '/forgot-password'
+    | '/franchise-terms'
     | '/gallery'
     | '/get-started'
     | '/gov-services'
@@ -1743,6 +1753,7 @@ export interface FileRouteTypes {
     | '/estore'
     | '/feedback'
     | '/forgot-password'
+    | '/franchise-terms'
     | '/gallery'
     | '/get-started'
     | '/gov-services'
@@ -1912,6 +1923,7 @@ export interface FileRouteTypes {
     | '/estore'
     | '/feedback'
     | '/forgot-password'
+    | '/franchise-terms'
     | '/gallery'
     | '/get-started'
     | '/gov-services'
@@ -2084,6 +2096,7 @@ export interface RootRouteChildren {
   EstoreRoute: typeof EstoreRoute
   FeedbackRoute: typeof FeedbackRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
+  FranchiseTermsRoute: typeof FranchiseTermsRoute
   GalleryRoute: typeof GalleryRoute
   GetStartedRoute: typeof GetStartedRoute
   GovServicesRoute: typeof GovServicesRoute
@@ -2447,6 +2460,13 @@ declare module '@tanstack/react-router' {
       path: '/gallery'
       fullPath: '/gallery'
       preLoaderRoute: typeof GalleryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/franchise-terms': {
+      id: '/franchise-terms'
+      path: '/franchise-terms'
+      fullPath: '/franchise-terms'
+      preLoaderRoute: typeof FranchiseTermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/forgot-password': {
@@ -3551,6 +3571,7 @@ const rootRouteChildren: RootRouteChildren = {
   EstoreRoute: EstoreRoute,
   FeedbackRoute: FeedbackRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
+  FranchiseTermsRoute: FranchiseTermsRoute,
   GalleryRoute: GalleryRoute,
   GetStartedRoute: GetStartedRoute,
   GovServicesRoute: GovServicesRoute,

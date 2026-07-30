@@ -44,6 +44,7 @@ import {
   type DistributorFormData,
 } from "@/components/register/distributor-single";
 import { RegistrationProvider, useRegistration } from "@/components/register/registration-context";
+import { FranchiseTerms, hasAcceptedFranchiseTerms } from "@/components/register/franchise-terms";
 import { validateBankDetails } from "@/components/register/bank-details";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -107,6 +108,15 @@ async function uploadFile(folder: string, label: string, file: File | undefined)
 function RegisterFlow() {
   const { type } = Route.useSearch();
   const navigate = Route.useNavigate();
+
+  // New retailers must read and accept the Franchise Application Details before the
+  // registration form is shown. Gating it here (rather than only on /franchise-terms)
+  // means the form cannot be reached by typing the URL directly.
+  // `null` = not yet checked, so nothing flashes during hydration.
+  const [termsOk, setTermsOk] = useState<boolean | null>(null);
+  useEffect(() => {
+    setTermsOk(type === "new" ? hasAcceptedFranchiseTerms() : true);
+  }, [type]);
   const { data, files, set, clearDraft } = useRegistration();
   const steps = type === "old" ? oldSteps : newSteps;
   const [current, setCurrent] = useState(0);
@@ -461,6 +471,10 @@ function RegisterFlow() {
               : currentKey === "selfie"
                 ? "Capture your selfie to continue"
                 : "Complete the required fields to continue";
+
+  // Placed after every hook above so the rules of hooks are respected.
+  if (termsOk === null) return <div className="min-h-screen bg-tricolor" />;
+  if (!termsOk) return <FranchiseTerms onAccept={() => setTermsOk(true)} />;
 
   return (
     <div className="min-h-screen bg-tricolor">
