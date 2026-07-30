@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { FranchiseTerms } from "@/components/register/franchise-terms";
+import { FranchiseTerms, grantFranchiseTermsPass } from "@/components/register/franchise-terms";
 
 /**
  * Standalone, linkable copy of the Franchise Application Details & Terms.
@@ -23,5 +23,13 @@ export const Route = createFileRoute("/franchise-terms")({
 
 function FranchiseTermsPage() {
   const navigate = useNavigate();
-  return <FranchiseTerms onAccept={() => navigate({ to: "/register", search: { type: "new" } })} />;
+  return (
+    <FranchiseTerms
+      onAccept={() => {
+        // One-shot token so /register does not immediately re-show the same document.
+        grantFranchiseTermsPass();
+        navigate({ to: "/register", search: { type: "new" } });
+      }}
+    />
+  );
 }

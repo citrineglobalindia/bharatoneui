@@ -44,7 +44,7 @@ import {
   type DistributorFormData,
 } from "@/components/register/distributor-single";
 import { RegistrationProvider, useRegistration } from "@/components/register/registration-context";
-import { FranchiseTerms, hasAcceptedFranchiseTerms } from "@/components/register/franchise-terms";
+import { FranchiseTerms, consumeFranchiseTermsPass } from "@/components/register/franchise-terms";
 import { validateBankDetails } from "@/components/register/bank-details";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -112,11 +112,17 @@ function RegisterFlow() {
   // New retailers must read and accept the Franchise Application Details before the
   // registration form is shown. Gating it here (rather than only on /franchise-terms)
   // means the form cannot be reached by typing the URL directly.
-  // `null` = not yet checked, so nothing flashes during hydration.
-  const [termsOk, setTermsOk] = useState<boolean | null>(null);
+  //
+  // Acceptance deliberately lasts only as long as this visit — it is a per-application
+  // declaration, so returning to the form later shows the document again. `null` means
+  // "not yet decided", which keeps the terms from flashing before hydration.
+  const [accepted, setAccepted] = useState<boolean | null>(null);
   useEffect(() => {
-    setTermsOk(type === "new" ? hasAcceptedFranchiseTerms() : true);
-  }, [type]);
+    // True only when arriving straight from the standalone /franchise-terms page,
+    // and the token is spent in the process.
+    setAccepted(consumeFranchiseTermsPass());
+  }, []);
+  const termsOk = type === "new" ? accepted : true;
   const { data, files, set, clearDraft } = useRegistration();
   const steps = type === "old" ? oldSteps : newSteps;
   const [current, setCurrent] = useState(0);
@@ -474,7 +480,7 @@ function RegisterFlow() {
 
   // Placed after every hook above so the rules of hooks are respected.
   if (termsOk === null) return <div className="min-h-screen bg-tricolor" />;
-  if (!termsOk) return <FranchiseTerms onAccept={() => setTermsOk(true)} />;
+  if (!termsOk) return <FranchiseTerms onAccept={() => setAccepted(true)} />;
 
   return (
     <div className="min-h-screen bg-tricolor">

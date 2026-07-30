@@ -4,9 +4,10 @@
 // the franchise details, refund policy and terms, then tick the declaration at the
 // foot of the page. Modelled on the KarnatakaOne / GramOne franchisee terms gate.
 //
-// Acceptance is remembered in localStorage (so a reload mid-registration does not
-// force it again) AND written to the platform access log, which records who accepted,
-// when, and from which IP and device — see src/lib/audit.ts.
+// Acceptance is NOT remembered between visits — this is a per-application legal
+// declaration, so anyone landing on /register?type=new is asked to read and accept it
+// again. Every acceptance is written to the platform access log, which records who
+// accepted, when, and from which IP and device — see src/lib/audit.ts.
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
@@ -25,24 +26,36 @@ import { BharatOneLogo } from "@/components/bharatone-logo";
 import { Button } from "@/components/ui/button";
 import { logAccess } from "@/lib/audit";
 
-/** Bump this if the terms change — everyone is then asked to accept again. */
+/** Recorded against each acceptance in the audit log. */
 export const FRANCHISE_TERMS_VERSION = "2026-07-30";
-const ACCEPT_KEY = "bo_franchise_terms_accepted";
 
-export function hasAcceptedFranchiseTerms(): boolean {
-  if (typeof window === "undefined") return false;
+/**
+ * One-shot hand-off token.
+ *
+ * Only used when the applicant accepts on the standalone /franchise-terms page and is
+ * then forwarded to /register?type=new — without it they would be shown the very same
+ * document twice in a row. /register consumes the token and immediately deletes it, so
+ * it grants exactly one passage; coming back to the registration form later always
+ * shows the terms again.
+ */
+const PASS_KEY = "bo_franchise_terms_pass";
+
+export function grantFranchiseTermsPass(): void {
   try {
-    return window.localStorage.getItem(ACCEPT_KEY) === FRANCHISE_TERMS_VERSION;
+    window.sessionStorage.setItem(PASS_KEY, FRANCHISE_TERMS_VERSION);
   } catch {
-    return false;
+    /* private browsing — the applicant simply accepts once more on /register */
   }
 }
 
-function rememberAcceptance() {
+export function consumeFranchiseTermsPass(): boolean {
+  if (typeof window === "undefined") return false;
   try {
-    window.localStorage.setItem(ACCEPT_KEY, FRANCHISE_TERMS_VERSION);
+    const ok = window.sessionStorage.getItem(PASS_KEY) === FRANCHISE_TERMS_VERSION;
+    if (ok) window.sessionStorage.removeItem(PASS_KEY);
+    return ok;
   } catch {
-    /* private browsing — the gate simply re-appears on reload */
+    return false;
   }
 }
 
@@ -244,7 +257,6 @@ export function FranchiseTerms({ onAccept }: { onAccept: () => void }) {
 
   const proceed = () => {
     if (!agreed) return;
-    rememberAcceptance();
     logAccess({
       kind: "action",
       module: "registration",
