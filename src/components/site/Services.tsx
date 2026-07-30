@@ -27,6 +27,13 @@ const allServices = [
 
 const services = withoutHiddenServices(allServices);
 
+/**
+ * Titles of the services currently shown to the public, in display order.
+ * The footer uses this so its links can never drift out of step with the
+ * catalogue or with HIDDEN_SERVICES.
+ */
+export const visibleServiceTitles: string[] = services.map((s) => s.title);
+
 export function Services() {
   return (
     <section id="services" className="py-20 sm:py-28">

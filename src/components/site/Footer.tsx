@@ -10,6 +10,7 @@ import {
 import { Mail, Phone, MapPin, ArrowRight, ArrowUp, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { isServiceHidden } from "@/lib/hidden-services";
+import { slugify, visibleServiceTitles } from "@/components/site/Services";
 import logo from "@/assets/bharatone-logo.png";
 import footerInspiration from "@/assets/footer-inspiration.jpg";
 
@@ -431,17 +432,15 @@ export function Footer() {
         <motion.div variants={itemVariants}>
           <h4 className="mb-4 text-sm font-semibold uppercase tracking-wider text-background/90">Services</h4>
           <motion.ul variants={containerVariants} className="space-y-2.5 text-sm">
-            {/* Kept in step with the site-wide HIDDEN_SERVICES list. */}
-            <FooterLink href="/citizen-services#e-gov">E-Governance</FooterLink>
-            <FooterLink href="/citizen-services#nadakacheri">Nadakacheri Services</FooterLink>
-            {!isServiceHidden("Banking & AEPS") && (
-              <FooterLink href="/citizen-services#aeps">Banking & AEPS</FooterLink>
-            )}
-            <FooterLink href="/citizen-services#irctc">Travel & IRCTC</FooterLink>
-            {!isServiceHidden("Bill Payments (BBPS)") && (
-              <FooterLink href="/citizen-services#bbps">Bill Payments (BBPS)</FooterLink>
-            )}
-            <FooterLink href="/citizen-services#health">Health & Insurance</FooterLink>
+            {/* Anchors are generated with the same slugify() the /citizen-services
+                cards use, so they always land on the right section. Hidden services
+                drop out automatically. */}
+            {["E-Governance", "Nadakacheri Services", "Banking & AEPS", "Travel & IRCTC",
+              "Bill Payments (BBPS)", "Health & Insurance"]
+              .filter((t) => !isServiceHidden(t))
+              .map((t) => (
+                <FooterLink key={t} href={`/citizen-services#${slugify(t)}`}>{t}</FooterLink>
+              ))}
           </motion.ul>
         </motion.div>
 
@@ -490,6 +489,38 @@ export function Footer() {
         className="mx-auto h-px w-[92%] origin-left"
         style={{ background: "var(--gradient-tricolor)", opacity: 0.5 }}
       />
+
+      {/* Every public service, in one line. This is the catalogue's main entry point
+          now that the homepage services grid has been removed. Driven off
+          visibleServiceTitles so it stays in step with HIDDEN_SERVICES. */}
+      <motion.div
+        variants={containerVariants}
+        {...animateProps}
+        className="container mx-auto px-4 pt-6 sm:px-6"
+      >
+        <motion.h4
+          variants={itemVariants}
+          className="mb-3 text-center text-[11px] font-semibold uppercase tracking-[0.15em] text-background/45"
+        >
+          All Services
+        </motion.h4>
+        <motion.ul
+          variants={containerVariants}
+          className="flex flex-wrap items-center justify-center gap-x-1 gap-y-2 text-xs text-background/60"
+        >
+          {visibleServiceTitles.map((title, i) => (
+            <motion.li key={title} variants={linkVariants} className="flex items-center">
+              {i > 0 && <span aria-hidden className="mr-1 h-3 w-px bg-background/15" />}
+              <a
+                href={`/citizen-services#${slugify(title)}`}
+                className="rounded px-1.5 py-0.5 transition-colors hover:text-background hover:underline underline-offset-4"
+              >
+                {title}
+              </a>
+            </motion.li>
+          ))}
+        </motion.ul>
+      </motion.div>
 
       <motion.div
         variants={containerVariants}
