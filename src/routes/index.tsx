@@ -5,7 +5,8 @@ import { AnimatePresence } from "framer-motion";
 import { Navbar } from "@/components/site/Navbar";
 import { HeadlinesMarquee } from "@/components/site/HeadlinesMarquee";
 import { Hero, Stats } from "@/components/site/Hero";
-import { Services } from "@/components/site/Services";
+// <Services /> is no longer rendered on the homepage — see the comment in the JSX below.
+// The module is still needed for its `slugify` export, used by /citizen-services.
 import { Schemes, LiveStats, CTA, Awards, Testimonials } from "@/components/site/Schemes";
 import { Footer } from "@/components/site/Footer";
 import { Chatbot } from "@/components/site/Chatbot";
@@ -48,7 +49,9 @@ function Index() {
         <HeadlinesMarquee />
         <Hero />
         <Stats />
-        <Services />
+        {/* The "Essential Services for Every Citizen" grid was removed from the
+            homepage on 30 Jul 2026. The full catalogue still lives at
+            /citizen-services; drop <Services /> back in here to restore it. */}
         <Schemes />
         <LiveStats />
         <CTA />
