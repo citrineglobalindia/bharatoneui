@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
+import { withoutHiddenServices } from "@/lib/hidden-services";
 
 export const Route = createFileRoute("/citizen-services")({
   component: ServicesPage,
@@ -40,7 +41,8 @@ const categories = [
   { key: "welfare", label: "Welfare" },
 ];
 
-const services = [
+// Anything listed in HIDDEN_SERVICES is filtered out below — see src/lib/hidden-services.ts.
+const allServices = [
   { icon: Landmark, title: "E-Governance", cat: "gov", desc: "Apply for essential government documents — fast, transparent and citizen-friendly.", features: ["Birth & death certificates", "Khata & land records", "Marriage registration"] },
   { icon: FileText, title: "Nadakacheri Services", cat: "gov", desc: "Caste, income & residential certificates processed by local experts.", features: ["Caste certificate", "Income certificate", "Residence proof"] },
   { icon: IdCard, title: "Aadhaar & PAN", cat: "gov", desc: "Linkage, update and verification services in minutes.", features: ["Aadhaar update", "PAN application", "Aadhaar-PAN link"] },
@@ -54,6 +56,8 @@ const services = [
   { icon: Tractor, title: "Farmer Services", cat: "welfare", desc: "Subsidies, FASTag, PM-Kisan and agri-document support.", features: ["PM-Kisan", "Crop insurance", "Soil health card"] },
   { icon: FileText, title: "Online FIR", cat: "gov", desc: "Lodge complaints quickly with assisted FIR registration.", features: ["Assisted filing", "Status tracking", "Document upload"] },
 ];
+
+const services = withoutHiddenServices(allServices);
 
 function ServicesPage() {
   const [q, setQ] = useState("");

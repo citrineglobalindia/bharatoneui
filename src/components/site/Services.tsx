@@ -3,12 +3,14 @@ import {
   Landmark, FileText, CreditCard, Train, Receipt, Heart,
   GraduationCap, Tractor, ArrowRight, Building2, IdCard, Wallet,
 } from "lucide-react";
+import { withoutHiddenServices } from "@/lib/hidden-services";
 
 // Shared with /citizen-services so "View Details" scrolls to the matching card.
 export const slugify = (s: string) =>
   s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 
-const services = [
+// Anything listed in HIDDEN_SERVICES is filtered out below — see src/lib/hidden-services.ts.
+const allServices = [
   { icon: Landmark, title: "E-Governance", desc: "Apply for essential government documents fast, transparent, and citizen-friendly." },
   { icon: FileText, title: "Nadakacheri Services", desc: "Caste, income & residential certificates processed by local experts." },
   { icon: CreditCard, title: "Banking & AEPS", desc: "Aadhaar Enabled Payments, Micro ATM, Money Transfer & mini banking." },
@@ -22,6 +24,8 @@ const services = [
   { icon: Wallet, title: "Loans & Finance", desc: "Personal, business, and government scheme-based loans." },
   { icon: FileText, title: "Online FIR", desc: "Lodge complaints quickly with assisted FIR registration." },
 ];
+
+const services = withoutHiddenServices(allServices);
 
 export function Services() {
   return (

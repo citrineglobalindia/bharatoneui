@@ -9,6 +9,7 @@ import {
 } from "framer-motion";
 import { Mail, Phone, MapPin, ArrowRight, ArrowUp, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { isServiceHidden } from "@/lib/hidden-services";
 import logo from "@/assets/bharatone-logo.png";
 import footerInspiration from "@/assets/footer-inspiration.jpg";
 
@@ -430,11 +431,17 @@ export function Footer() {
         <motion.div variants={itemVariants}>
           <h4 className="mb-4 text-sm font-semibold uppercase tracking-wider text-background/90">Services</h4>
           <motion.ul variants={containerVariants} className="space-y-2.5 text-sm">
+            {/* Kept in step with the site-wide HIDDEN_SERVICES list. */}
             <FooterLink href="/citizen-services#e-gov">E-Governance</FooterLink>
             <FooterLink href="/citizen-services#nadakacheri">Nadakacheri Services</FooterLink>
-            <FooterLink href="/citizen-services#aeps">Banking & AEPS</FooterLink>
+            {!isServiceHidden("Banking & AEPS") && (
+              <FooterLink href="/citizen-services#aeps">Banking & AEPS</FooterLink>
+            )}
             <FooterLink href="/citizen-services#irctc">Travel & IRCTC</FooterLink>
-            <FooterLink href="/citizen-services#bbps">Bill Payments (BBPS)</FooterLink>
+            {!isServiceHidden("Bill Payments (BBPS)") && (
+              <FooterLink href="/citizen-services#bbps">Bill Payments (BBPS)</FooterLink>
+            )}
+            <FooterLink href="/citizen-services#health">Health & Insurance</FooterLink>
           </motion.ul>
         </motion.div>
 
