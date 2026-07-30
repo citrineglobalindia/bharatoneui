@@ -1,0 +1,12 @@
+-- System health monitoring: per-module scanning, logs, incidents and alerts.
+-- Applied to prod via the MCP. See also: supabase/functions/health-scan.
+--   system_modules       — what we monitor
+--   system_health_log    — every check + app error (per-module audit trail)
+--   system_health_state  — current status per module
+--   system_incidents     — opened on breakage, auto-resolved on recovery
+-- RPCs: log_health() (write), public_health_summary() (public/status board),
+--       admin_health_log(), admin_incidents() (admin only).
+-- Scheduled: pg_cron 'health-scan' every 5 min; 'prune-health-log' nightly (30-day retention).
+-- Alerts: in-app notify_roles(admin) + email to app_settings.health_alert_emails.
+-- Full DDL lives in the production database; this file documents the change.
+select 1;
