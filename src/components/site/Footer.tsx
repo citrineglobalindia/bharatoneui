@@ -122,7 +122,7 @@ function SocialIcon({
       whileHover={{ scale: 1.12, y: -3 }}
       whileTap={{ scale: 0.94 }}
       transition={{ type: "spring", stiffness: 380, damping: 18 }}
-      className="group relative flex h-10 w-10 items-center justify-center rounded-full bg-background/10 backdrop-blur-sm transition-colors hover:bg-saffron"
+      className="group relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-background/10 backdrop-blur-sm transition-colors hover:bg-saffron"
     >
       <span className="absolute inset-0 rounded-full opacity-0 ring-2 ring-saffron/40 transition-opacity duration-300 group-hover:opacity-100" />
       <Icon className="h-4 w-4" />
@@ -391,7 +391,7 @@ export function Footer() {
             </span>
             Live across 1,000+ centers in India
           </motion.div>
-          <motion.div variants={containerVariants} className="flex flex-wrap gap-2.5 pt-1">
+          <motion.div variants={containerVariants} className="flex items-center gap-2 pt-1">
             {SOCIALS.filter((s) => socials[s.key]).map((s) => (
               <SocialIcon key={s.key} href={socials[s.key]!} label={s.label} Icon={s.Icon} />
             ))}
