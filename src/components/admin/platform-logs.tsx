@@ -9,36 +9,84 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
-  Activity, AlertTriangle, Download, Globe, Loader2, Lock, MonitorSmartphone,
-  RefreshCw, Search, Server, Users,
+  Activity,
+  AlertTriangle,
+  Download,
+  Globe,
+  Loader2,
+  Lock,
+  MonitorSmartphone,
+  RefreshCw,
+  Search,
+  Server,
+  Users,
 } from "lucide-react";
 
 /* ------------------------------------------------------------------ types */
 
 type AccessRow = {
-  id: number; at: string; user_id: string | null; actor: string | null; actor_ref: string | null;
-  role: string | null; ip: string | null; user_agent: string | null; session_id: string | null;
-  device_id: string | null; country: string | null; region: string | null; timezone: string | null;
-  kind: string; module: string | null; route: string | null; action: string;
-  entity: string | null; status: string; latency_ms: number | null; detail: unknown;
+  id: number;
+  at: string;
+  user_id: string | null;
+  actor: string | null;
+  actor_ref: string | null;
+  role: string | null;
+  ip: string | null;
+  user_agent: string | null;
+  session_id: string | null;
+  device_id: string | null;
+  country: string | null;
+  region: string | null;
+  timezone: string | null;
+  kind: string;
+  module: string | null;
+  route: string | null;
+  action: string;
+  entity: string | null;
+  status: string;
+  latency_ms: number | null;
+  detail: unknown;
 };
 
 type SessionRow = {
-  session_id: string; ip: string | null; device_id: string | null; country: string | null;
-  region: string | null; timezone: string | null; user_id: string | null; actor: string | null;
-  actor_ref: string | null; role: string | null; user_agent: string | null;
-  first_seen: string; last_seen: string; events: number; pages: number;
-  failures: number; routes: string | null;
+  session_id: string;
+  ip: string | null;
+  device_id: string | null;
+  country: string | null;
+  region: string | null;
+  timezone: string | null;
+  user_id: string | null;
+  actor: string | null;
+  actor_ref: string | null;
+  role: string | null;
+  user_agent: string | null;
+  first_seen: string;
+  last_seen: string;
+  events: number;
+  pages: number;
+  failures: number;
+  routes: string | null;
 };
 
 type HealthRow = {
-  created_at: string; module_key: string; module_name?: string; status: string;
-  level: string | null; message: string; source: string; latency_ms: number | null;
+  created_at: string;
+  module_key: string;
+  module_name?: string;
+  status: string;
+  level: string | null;
+  message: string;
+  source: string;
+  latency_ms: number | null;
 };
 
 type Stats = {
-  events_24h: number; events_1h: number; failures_24h: number; users_24h: number;
-  ips_24h: number; devices_24h: number; last_event: string | null;
+  events_24h: number;
+  events_1h: number;
+  failures_24h: number;
+  users_24h: number;
+  ips_24h: number;
+  devices_24h: number;
+  last_event: string | null;
   by_kind?: { kind: string; n: number }[];
   by_module?: { module: string; n: number }[];
   by_region?: { region: string; n: number }[];
@@ -49,7 +97,11 @@ type Stats = {
 
 const fmt = (t: string) =>
   new Date(t).toLocaleString("en-IN", {
-    day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", second: "2-digit",
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
   });
 
 const ago = (t: string) => {
@@ -63,20 +115,32 @@ const ago = (t: string) => {
 /** Compact, readable device string from a user agent. */
 function device(ua: string | null): string {
   if (!ua) return "—";
-  const os =
-    /Windows NT 10/.test(ua) ? "Windows" :
-    /Windows/.test(ua) ? "Windows" :
-    /iPhone|iPad|iPod/.test(ua) ? "iOS" :
-    /Android/.test(ua) ? "Android" :
-    /Mac OS X/.test(ua) ? "macOS" :
-    /Linux/.test(ua) ? "Linux" : "";
-  const br =
-    /Edg\//.test(ua) ? "Edge" :
-    /OPR\/|Opera/.test(ua) ? "Opera" :
-    /Chrome\//.test(ua) ? "Chrome" :
-    /Firefox\//.test(ua) ? "Firefox" :
-    /Safari\//.test(ua) ? "Safari" :
-    /bot|crawl|spider/i.test(ua) ? "Bot" : "";
+  const os = /Windows NT 10/.test(ua)
+    ? "Windows"
+    : /Windows/.test(ua)
+      ? "Windows"
+      : /iPhone|iPad|iPod/.test(ua)
+        ? "iOS"
+        : /Android/.test(ua)
+          ? "Android"
+          : /Mac OS X/.test(ua)
+            ? "macOS"
+            : /Linux/.test(ua)
+              ? "Linux"
+              : "";
+  const br = /Edg\//.test(ua)
+    ? "Edge"
+    : /OPR\/|Opera/.test(ua)
+      ? "Opera"
+      : /Chrome\//.test(ua)
+        ? "Chrome"
+        : /Firefox\//.test(ua)
+          ? "Firefox"
+          : /Safari\//.test(ua)
+            ? "Safari"
+            : /bot|crawl|spider/i.test(ua)
+              ? "Bot"
+              : "";
   return [br, os].filter(Boolean).join(" · ") || ua.slice(0, 28);
 }
 
@@ -97,7 +161,9 @@ const STATUS_STYLE: Record<string, string> = {
 
 function toCsv(rows: Record<string, unknown>[], headers: string[]): string {
   const cell = (v: unknown) =>
-    `"${String(v ?? "").replace(/"/g, '""').replace(/\r?\n/g, " ")}"`;
+    `"${String(v ?? "")
+      .replace(/"/g, '""')
+      .replace(/\r?\n/g, " ")}"`;
   return [headers.join(",")]
     .concat(rows.map((r) => headers.map((h) => cell(r[h])).join(",")))
     .join("\n");
@@ -113,7 +179,59 @@ function download(name: string, body: string) {
 
 /* ------------------------------------------------------------------ page */
 
-type Tab = "requests" | "sessions" | "system";
+type JourneyStep = {
+  at: string;
+  kind: string;
+  module: string | null;
+  route: string | null;
+  action: string;
+  status: string;
+  latency_ms: number | null;
+  ip: string | null;
+  device_id: string | null;
+  region: string | null;
+  country: string | null;
+  actor: string | null;
+  actor_ref: string | null;
+  session_id: string;
+  seconds_on_page: number | null;
+  seconds_since_previous: number | null;
+  detail: any;
+};
+
+type JourneySummary = {
+  session_id: string;
+  actor: string | null;
+  actor_ref: string | null;
+  role: string | null;
+  ip: string | null;
+  device_id: string | null;
+  user_agent: string | null;
+  region: string | null;
+  country: string | null;
+  timezone: string | null;
+  started_at: string;
+  ended_at: string;
+  duration_s: number;
+  pages: number;
+  actions: number;
+  api_calls: number;
+  errors: number;
+  entry_page: string | null;
+  exit_page: string | null;
+};
+
+/** "2m 14s" — readable at a glance, which raw seconds are not. */
+function dur(s: number | null | undefined): string {
+  if (s == null) return "—";
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m ${s % 60}s`;
+  const h = Math.floor(m / 60);
+  return `${h}h ${m % 60}m`;
+}
+
+type Tab = "requests" | "sessions" | "journey" | "system";
 
 export function PlatformLogs() {
   const [allowed, setAllowed] = useState<boolean | null>(null);
@@ -125,6 +243,25 @@ export function PlatformLogs() {
   const [sessions, setSessions] = useState<SessionRow[]>([]);
   const [health, setHealth] = useState<HealthRow[]>([]);
   const [expanded, setExpanded] = useState<number | null>(null);
+
+  // Journey view
+  const [journeySid, setJourneySid] = useState<string | null>(null);
+  const [journey, setJourney] = useState<JourneyStep[]>([]);
+  const [jSummary, setJSummary] = useState<JourneySummary | null>(null);
+  const [jLoading, setJLoading] = useState(false);
+
+  const openJourney = useCallback(async (sid: string) => {
+    setJourneySid(sid);
+    setTab("journey");
+    setJLoading(true);
+    const [{ data: steps }, { data: sum }] = await Promise.all([
+      (supabase as any).rpc("admin_user_journey", { p_session: sid, p_hours: 720, p_limit: 2000 }),
+      (supabase as any).rpc("admin_journey_summary", { p_session: sid, p_hours: 720 }),
+    ]);
+    setJourney((steps ?? []) as JourneyStep[]);
+    setJSummary((sum ?? null) as JourneySummary | null);
+    setJLoading(false);
+  }, []);
 
   // filters
   const [kind, setKind] = useState("");
@@ -148,7 +285,10 @@ export function PlatformLogs() {
     setLoading(true);
     try {
       const { data: auth } = await supabase.auth.getUser();
-      if (!auth?.user) { setAllowed(false); return; }
+      if (!auth?.user) {
+        setAllowed(false);
+        return;
+      }
 
       const since = new Date(Date.now() - hours * 3600 * 1000).toISOString();
       const [{ data: s }, { data: log }] = await Promise.all([
@@ -166,20 +306,28 @@ export function PlatformLogs() {
       ]);
 
       // admin_access_stats returns NULL to anyone who is not an administrator.
-      if (s == null) { setAllowed(false); return; }
+      if (s == null) {
+        setAllowed(false);
+        return;
+      }
       setAllowed(true);
       setStats(s as Stats);
       setRows((log ?? []) as AccessRow[]);
 
-      if (tab === "sessions") {
+      // The journey tab needs the session list too, to choose a visit from.
+      if (tab === "sessions" || tab === "journey") {
         const { data: ss } = await (supabase as any).rpc("admin_access_sessions", {
-          p_hours: hours, p_limit: 200,
+          p_hours: hours,
+          p_limit: 200,
         });
         setSessions((ss ?? []) as SessionRow[]);
       }
       if (tab === "system") {
         const { data: hh } = await (supabase as any).rpc("admin_health_log", {
-          p_module: null, p_level: null, p_limit: 400, p_source: null,
+          p_module: null,
+          p_level: null,
+          p_limit: 400,
+          p_source: null,
         });
         setHealth((hh ?? []) as HealthRow[]);
       }
@@ -190,7 +338,9 @@ export function PlatformLogs() {
     }
   }, [kind, module, status, ip, dev, q, limit, hours, tab]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   // Live tail
   const liveRef = useRef(load);
@@ -213,7 +363,12 @@ export function PlatformLogs() {
             The platform log contains IP addresses and customer activity. Sign in with an
             administrator account to view it.
           </p>
-          <Button className="mt-5 w-full" onClick={() => { window.location.href = "/admin-login"; }}>
+          <Button
+            className="mt-5 w-full"
+            onClick={() => {
+              window.location.href = "/admin-login";
+            }}
+          >
             Go to admin sign-in
           </Button>
         </div>
@@ -232,12 +387,27 @@ export function PlatformLogs() {
   /* ------------------------------------------------------------ render */
 
   const cards = [
-    { icon: Activity, label: "Events (24h)", value: stats?.events_24h ?? 0, tone: "text-slate-900" },
+    {
+      icon: Activity,
+      label: "Events (24h)",
+      value: stats?.events_24h ?? 0,
+      tone: "text-slate-900",
+    },
     { icon: Server, label: "Last hour", value: stats?.events_1h ?? 0, tone: "text-slate-900" },
-    { icon: AlertTriangle, label: "Failures (24h)", value: stats?.failures_24h ?? 0, tone: (stats?.failures_24h ?? 0) > 0 ? "text-red-600" : "text-slate-900" },
+    {
+      icon: AlertTriangle,
+      label: "Failures (24h)",
+      value: stats?.failures_24h ?? 0,
+      tone: (stats?.failures_24h ?? 0) > 0 ? "text-red-600" : "text-slate-900",
+    },
     { icon: Users, label: "Signed-in users", value: stats?.users_24h ?? 0, tone: "text-slate-900" },
     { icon: Globe, label: "Distinct IPs", value: stats?.ips_24h ?? 0, tone: "text-slate-900" },
-    { icon: MonitorSmartphone, label: "Devices", value: stats?.devices_24h ?? 0, tone: "text-slate-900" },
+    {
+      icon: MonitorSmartphone,
+      label: "Devices",
+      value: stats?.devices_24h ?? 0,
+      tone: "text-slate-900",
+    },
   ];
 
   return (
@@ -250,37 +420,99 @@ export function PlatformLogs() {
               <Server className="h-6 w-6 text-primary" /> Platform logs
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Every request, page view, sign-in and error — with the originating IP address and device.
+              Every request, page view, sign-in and error — with the originating IP address and
+              device.
               {stats?.last_event ? ` Last event ${ago(stats.last_event)}.` : ""}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Button
-              variant={live ? "default" : "outline"} size="sm"
+              variant={live ? "default" : "outline"}
+              size="sm"
               onClick={() => setLive((v) => !v)}
             >
-              <span className={`mr-2 inline-block h-2 w-2 rounded-full ${live ? "animate-pulse bg-white" : "bg-slate-400"}`} />
+              <span
+                className={`mr-2 inline-block h-2 w-2 rounded-full ${live ? "animate-pulse bg-white" : "bg-slate-400"}`}
+              />
               {live ? "Live" : "Paused"}
             </Button>
             <Button variant="outline" size="sm" onClick={() => void load()} disabled={loading}>
-              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+              {loading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="mr-2 h-4 w-4" />
+              )}
               Refresh
             </Button>
             <Button
-              variant="outline" size="sm"
+              variant="outline"
+              size="sm"
               onClick={() => {
                 if (tab === "sessions") {
-                  download(`bharatone-sessions-${new Date().toISOString().slice(0, 10)}.csv`,
-                    toCsv(sessions as unknown as Record<string, unknown>[],
-                      ["last_seen", "first_seen", "ip", "region", "country", "timezone", "device_id", "actor", "actor_ref", "role", "user_agent", "events", "pages", "failures", "routes"]));
+                  download(
+                    `bharatone-sessions-${new Date().toISOString().slice(0, 10)}.csv`,
+                    toCsv(sessions as unknown as Record<string, unknown>[], [
+                      "last_seen",
+                      "first_seen",
+                      "ip",
+                      "region",
+                      "country",
+                      "timezone",
+                      "device_id",
+                      "actor",
+                      "actor_ref",
+                      "role",
+                      "user_agent",
+                      "events",
+                      "pages",
+                      "failures",
+                      "routes",
+                    ]),
+                  );
                 } else if (tab === "system") {
-                  download(`bharatone-system-events-${new Date().toISOString().slice(0, 10)}.csv`,
-                    toCsv(health as unknown as Record<string, unknown>[],
-                      ["created_at", "module_key", "status", "level", "source", "message", "latency_ms"]));
+                  download(
+                    `bharatone-system-events-${new Date().toISOString().slice(0, 10)}.csv`,
+                    toCsv(health as unknown as Record<string, unknown>[], [
+                      "created_at",
+                      "module_key",
+                      "status",
+                      "level",
+                      "source",
+                      "message",
+                      "latency_ms",
+                    ]),
+                  );
                 } else {
-                  download(`bharatone-access-log-${new Date().toISOString().slice(0, 10)}.csv`,
-                    toCsv(rows.map((r) => ({ ...r, detail: JSON.stringify(r.detail ?? "") })) as unknown as Record<string, unknown>[],
-                      ["at", "ip", "region", "country", "timezone", "device_id", "actor", "actor_ref", "role", "kind", "module", "action", "route", "entity", "status", "latency_ms", "user_agent", "session_id", "detail"]));
+                  download(
+                    `bharatone-access-log-${new Date().toISOString().slice(0, 10)}.csv`,
+                    toCsv(
+                      rows.map((r) => ({
+                        ...r,
+                        detail: JSON.stringify(r.detail ?? ""),
+                      })) as unknown as Record<string, unknown>[],
+                      [
+                        "at",
+                        "ip",
+                        "region",
+                        "country",
+                        "timezone",
+                        "device_id",
+                        "actor",
+                        "actor_ref",
+                        "role",
+                        "kind",
+                        "module",
+                        "action",
+                        "route",
+                        "entity",
+                        "status",
+                        "latency_ms",
+                        "user_agent",
+                        "session_id",
+                        "detail",
+                      ],
+                    ),
+                  );
                 }
               }}
             >
@@ -303,16 +535,21 @@ export function PlatformLogs() {
 
         {/* tabs */}
         <div className="mt-6 flex gap-1 rounded-xl border bg-white p-1 shadow-sm sm:w-fit">
-          {([
-            ["requests", "Requests & activity"],
-            ["sessions", "Sessions & IPs"],
-            ["system", "System events"],
-          ] as [Tab, string][]).map(([k, label]) => (
+          {(
+            [
+              ["requests", "Requests & activity"],
+              ["sessions", "Sessions & IPs"],
+              ["journey", "User journey"],
+              ["system", "System events"],
+            ] as [Tab, string][]
+          ).map(([k, label]) => (
             <button
               key={k}
               onClick={() => setTab(k)}
               className={`flex-1 whitespace-nowrap rounded-lg px-4 py-2 text-sm font-semibold transition sm:flex-none ${
-                tab === k ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-slate-100"
+                tab === k
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-slate-100"
               }`}
             >
               {label}
@@ -321,18 +558,24 @@ export function PlatformLogs() {
         </div>
 
         {/* filters */}
-        {tab !== "system" && (
+        {tab !== "system" && tab !== "journey" && (
           <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border bg-white p-3 shadow-sm">
             <div className="relative min-w-[200px] flex-1">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                value={q} onChange={(e) => setQ(e.target.value)}
-                placeholder="Search action, person, route, IP…" className="pl-9"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Search action, person, route, IP…"
+                className="pl-9"
               />
             </div>
             {tab === "requests" && (
               <>
-                <select value={kind} onChange={(e) => setKind(e.target.value)} className="h-10 rounded-md border bg-white px-3 text-sm">
+                <select
+                  value={kind}
+                  onChange={(e) => setKind(e.target.value)}
+                  className="h-10 rounded-md border bg-white px-3 text-sm"
+                >
                   <option value="">All types</option>
                   <option value="page">Page views</option>
                   <option value="api">API calls</option>
@@ -340,34 +583,58 @@ export function PlatformLogs() {
                   <option value="action">Actions</option>
                   <option value="error">Errors</option>
                 </select>
-                <select value={module} onChange={(e) => setModule(e.target.value)} className="h-10 rounded-md border bg-white px-3 text-sm">
+                <select
+                  value={module}
+                  onChange={(e) => setModule(e.target.value)}
+                  className="h-10 rounded-md border bg-white px-3 text-sm"
+                >
                   <option value="">All modules</option>
-                  {modules.map((m) => <option key={m} value={m}>{m}</option>)}
+                  {modules.map((m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))}
                 </select>
-                <select value={status} onChange={(e) => setStatus(e.target.value)} className="h-10 rounded-md border bg-white px-3 text-sm">
+                <select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                  className="h-10 rounded-md border bg-white px-3 text-sm"
+                >
                   <option value="">Any outcome</option>
                   <option value="ok">Success</option>
                   <option value="fail">Failed</option>
                   <option value="warn">Warning</option>
                 </select>
                 <Input
-                  value={ip} onChange={(e) => setIp(e.target.value)}
-                  placeholder="Filter by IP" className="h-10 w-[150px]"
+                  value={ip}
+                  onChange={(e) => setIp(e.target.value)}
+                  placeholder="Filter by IP"
+                  className="h-10 w-[150px]"
                 />
                 <Input
-                  value={dev} onChange={(e) => setDev(e.target.value)}
-                  placeholder="Filter by device ID" className="h-10 w-[170px]"
+                  value={dev}
+                  onChange={(e) => setDev(e.target.value)}
+                  placeholder="Filter by device ID"
+                  className="h-10 w-[170px]"
                 />
               </>
             )}
-            <select value={hours} onChange={(e) => setHours(+e.target.value)} className="h-10 rounded-md border bg-white px-3 text-sm">
+            <select
+              value={hours}
+              onChange={(e) => setHours(+e.target.value)}
+              className="h-10 rounded-md border bg-white px-3 text-sm"
+            >
               <option value={1}>Last hour</option>
               <option value={24}>Last 24 hours</option>
               <option value={168}>Last 7 days</option>
               <option value={720}>Last 30 days</option>
             </select>
             {tab === "requests" && (
-              <select value={limit} onChange={(e) => setLimit(+e.target.value)} className="h-10 rounded-md border bg-white px-3 text-sm">
+              <select
+                value={limit}
+                onChange={(e) => setLimit(+e.target.value)}
+                className="h-10 rounded-md border bg-white px-3 text-sm"
+              >
                 <option value={300}>300 rows</option>
                 <option value={1000}>1000 rows</option>
                 <option value={2000}>2000 rows</option>
@@ -396,9 +663,11 @@ export function PlatformLogs() {
                 </thead>
                 <tbody>
                   {rows.length === 0 && (
-                    <tr><td colSpan={9} className="px-3 py-14 text-center text-muted-foreground">
-                      No entries for these filters.
-                    </td></tr>
+                    <tr>
+                      <td colSpan={9} className="px-3 py-14 text-center text-muted-foreground">
+                        No entries for these filters.
+                      </td>
+                    </tr>
                   )}
                   {rows.map((r) => (
                     <Fragment key={r.id}>
@@ -406,20 +675,33 @@ export function PlatformLogs() {
                         onClick={() => setExpanded(expanded === r.id ? null : r.id)}
                         className="cursor-pointer border-t hover:bg-slate-50"
                       >
-                        <td className="whitespace-nowrap px-3 py-2 tabular-nums text-muted-foreground">{fmt(r.at)}</td>
+                        <td className="whitespace-nowrap px-3 py-2 tabular-nums text-muted-foreground">
+                          {fmt(r.at)}
+                        </td>
                         <td className="whitespace-nowrap px-3 py-2">
                           {r.actor ? (
                             <>
                               <span className="font-semibold">{r.actor}</span>
-                              {r.actor_ref && <span className="ml-1.5 text-xs text-muted-foreground">{r.actor_ref}</span>}
-                              {r.role && <div className="text-[11px] text-muted-foreground">{r.role}</div>}
+                              {r.actor_ref && (
+                                <span className="ml-1.5 text-xs text-muted-foreground">
+                                  {r.actor_ref}
+                                </span>
+                              )}
+                              {r.role && (
+                                <div className="text-[11px] text-muted-foreground">{r.role}</div>
+                              )}
                             </>
-                          ) : <span className="text-muted-foreground">Visitor</span>}
+                          ) : (
+                            <span className="text-muted-foreground">Visitor</span>
+                          )}
                         </td>
                         <td className="whitespace-nowrap px-3 py-2">
                           <button
                             className="font-mono text-xs text-primary underline-offset-2 hover:underline"
-                            onClick={(e) => { e.stopPropagation(); setIp(r.ip ?? ""); }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setIp(r.ip ?? "");
+                            }}
                           >
                             {r.ip ?? "—"}
                           </button>
@@ -429,40 +711,62 @@ export function PlatformLogs() {
                             <>
                               <div className="font-medium">{r.region || "—"}</div>
                               <div className="text-[11px] text-muted-foreground">
-                                {r.country || ""}{r.timezone ? ` · ${r.timezone}` : ""}
+                                {r.country || ""}
+                                {r.timezone ? ` · ${r.timezone}` : ""}
                               </div>
                             </>
-                          ) : <span className="text-muted-foreground">—</span>}
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
                         </td>
                         <td className="whitespace-nowrap px-3 py-2 text-xs text-muted-foreground">
                           <span className="inline-flex items-center gap-1">
-                            <MonitorSmartphone className="h-3 w-3" />{device(r.user_agent)}
+                            <MonitorSmartphone className="h-3 w-3" />
+                            {device(r.user_agent)}
                           </span>
                           {r.device_id && (
                             <button
                               className="block font-mono text-[10px] text-primary underline-offset-2 hover:underline"
-                              onClick={(e) => { e.stopPropagation(); setDev(r.device_id ?? ""); }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDev(r.device_id ?? "");
+                              }}
                             >
                               {r.device_id}
                             </button>
                           )}
                         </td>
                         <td className="px-3 py-2">
-                          <Badge variant="outline" className={`text-[10px] ${KIND_STYLE[r.kind] ?? ""}`}>{r.kind}</Badge>
+                          <Badge
+                            variant="outline"
+                            className={`text-[10px] ${KIND_STYLE[r.kind] ?? ""}`}
+                          >
+                            {r.kind}
+                          </Badge>
                         </td>
-                        <td className="whitespace-nowrap px-3 py-2 text-xs font-medium">{r.module || "—"}</td>
+                        <td className="whitespace-nowrap px-3 py-2 text-xs font-medium">
+                          {r.module || "—"}
+                        </td>
                         <td className="px-3 py-2">
                           <div className="font-medium">{r.action}</div>
                           {(r.route || r.entity) && (
                             <div className="text-[11px] text-muted-foreground">
-                              {r.route}{r.entity ? ` · ${r.entity}` : ""}
+                              {r.route}
+                              {r.entity ? ` · ${r.entity}` : ""}
                             </div>
                           )}
                         </td>
                         <td className="whitespace-nowrap px-3 py-2">
-                          <Badge variant="outline" className={`text-[10px] ${STATUS_STYLE[r.status] ?? ""}`}>{r.status}</Badge>
+                          <Badge
+                            variant="outline"
+                            className={`text-[10px] ${STATUS_STYLE[r.status] ?? ""}`}
+                          >
+                            {r.status}
+                          </Badge>
                           {r.latency_ms != null && (
-                            <span className="ml-1.5 text-[11px] tabular-nums text-muted-foreground">{r.latency_ms}ms</span>
+                            <span className="ml-1.5 text-[11px] tabular-nums text-muted-foreground">
+                              {r.latency_ms}ms
+                            </span>
                           )}
                         </td>
                       </tr>
@@ -470,15 +774,35 @@ export function PlatformLogs() {
                         <tr className="border-t bg-slate-50/70">
                           <td colSpan={9} className="px-4 py-3">
                             <div className="grid gap-3 text-xs sm:grid-cols-2 lg:grid-cols-4">
-                              <div><div className="font-semibold text-muted-foreground">Session</div><div className="font-mono">{r.session_id || "—"}</div></div>
-                              <div><div className="font-semibold text-muted-foreground">Device ID</div><div className="font-mono">{r.device_id || "—"}</div></div>
-                              <div><div className="font-semibold text-muted-foreground">User ID</div><div className="font-mono break-all">{r.user_id || "—"}</div></div>
-                              <div><div className="font-semibold text-muted-foreground">Location</div><div>{[r.region, r.country].filter(Boolean).join(", ") || "—"}{r.timezone ? ` · ${r.timezone}` : ""}</div></div>
-                              <div className="lg:col-span-4"><div className="font-semibold text-muted-foreground">User agent</div><div className="break-all">{r.user_agent || "—"}</div></div>
+                              <div>
+                                <div className="font-semibold text-muted-foreground">Session</div>
+                                <div className="font-mono">{r.session_id || "—"}</div>
+                              </div>
+                              <div>
+                                <div className="font-semibold text-muted-foreground">Device ID</div>
+                                <div className="font-mono">{r.device_id || "—"}</div>
+                              </div>
+                              <div>
+                                <div className="font-semibold text-muted-foreground">User ID</div>
+                                <div className="font-mono break-all">{r.user_id || "—"}</div>
+                              </div>
+                              <div>
+                                <div className="font-semibold text-muted-foreground">Location</div>
+                                <div>
+                                  {[r.region, r.country].filter(Boolean).join(", ") || "—"}
+                                  {r.timezone ? ` · ${r.timezone}` : ""}
+                                </div>
+                              </div>
+                              <div className="lg:col-span-4">
+                                <div className="font-semibold text-muted-foreground">
+                                  User agent
+                                </div>
+                                <div className="break-all">{r.user_agent || "—"}</div>
+                              </div>
                             </div>
                             {r.detail != null && (
                               <pre className="mt-3 overflow-auto rounded-lg bg-slate-900 p-3 text-[11px] leading-relaxed text-slate-100">
-{JSON.stringify(r.detail, null, 2)}
+                                {JSON.stringify(r.detail, null, 2)}
                               </pre>
                             )}
                           </td>
@@ -516,15 +840,24 @@ export function PlatformLogs() {
                 </thead>
                 <tbody>
                   {sessions.length === 0 && (
-                    <tr><td colSpan={10} className="px-3 py-14 text-center text-muted-foreground">No sessions in this window.</td></tr>
+                    <tr>
+                      <td colSpan={10} className="px-3 py-14 text-center text-muted-foreground">
+                        No sessions in this window.
+                      </td>
+                    </tr>
                   )}
                   {sessions.map((s) => (
                     <tr key={s.session_id} className="border-t hover:bg-slate-50">
-                      <td className="whitespace-nowrap px-3 py-2 tabular-nums">{fmt(s.last_seen)}</td>
+                      <td className="whitespace-nowrap px-3 py-2 tabular-nums">
+                        {fmt(s.last_seen)}
+                      </td>
                       <td className="whitespace-nowrap px-3 py-2">
                         <button
                           className="font-mono text-xs text-primary underline-offset-2 hover:underline"
-                          onClick={() => { setIp(s.ip ?? ""); setTab("requests"); }}
+                          onClick={() => {
+                            setIp(s.ip ?? "");
+                            setTab("requests");
+                          }}
                         >
                           {s.ip ?? "—"}
                         </button>
@@ -532,38 +865,264 @@ export function PlatformLogs() {
                       <td className="whitespace-nowrap px-3 py-2 text-xs">
                         <div className="font-medium">{s.region || "—"}</div>
                         <div className="text-[11px] text-muted-foreground">
-                          {s.country || ""}{s.timezone ? ` · ${s.timezone}` : ""}
+                          {s.country || ""}
+                          {s.timezone ? ` · ${s.timezone}` : ""}
                         </div>
                       </td>
                       <td className="whitespace-nowrap px-3 py-2">
                         {s.actor ? (
                           <>
                             <span className="font-semibold">{s.actor}</span>
-                            {s.actor_ref && <span className="ml-1.5 text-xs text-muted-foreground">{s.actor_ref}</span>}
-                            {s.role && <div className="text-[11px] text-muted-foreground">{s.role}</div>}
+                            {s.actor_ref && (
+                              <span className="ml-1.5 text-xs text-muted-foreground">
+                                {s.actor_ref}
+                              </span>
+                            )}
+                            {s.role && (
+                              <div className="text-[11px] text-muted-foreground">{s.role}</div>
+                            )}
                           </>
-                        ) : <span className="text-muted-foreground">Anonymous visitor</span>}
+                        ) : (
+                          <span className="text-muted-foreground">Anonymous visitor</span>
+                        )}
                       </td>
                       <td className="whitespace-nowrap px-3 py-2 text-xs text-muted-foreground">
                         {device(s.user_agent)}
                         {s.device_id && (
                           <button
                             className="block font-mono text-[10px] text-primary underline-offset-2 hover:underline"
-                            onClick={() => { setDev(s.device_id ?? ""); setTab("requests"); }}
+                            onClick={() => {
+                              setDev(s.device_id ?? "");
+                              setTab("requests");
+                            }}
                           >
                             {s.device_id}
                           </button>
                         )}
                       </td>
-                      <td className="whitespace-nowrap px-3 py-2 text-xs text-muted-foreground">{fmt(s.first_seen)}</td>
+                      <td className="whitespace-nowrap px-3 py-2 text-xs text-muted-foreground">
+                        {fmt(s.first_seen)}
+                      </td>
                       <td className="px-3 py-2 tabular-nums">{s.events}</td>
                       <td className="px-3 py-2 tabular-nums">{s.pages}</td>
-                      <td className={`px-3 py-2 tabular-nums ${s.failures > 0 ? "font-semibold text-red-600" : ""}`}>{s.failures}</td>
-                      <td className="max-w-[380px] px-3 py-2 text-[11px] text-muted-foreground">{s.routes || "—"}</td>
+                      <td
+                        className={`px-3 py-2 tabular-nums ${s.failures > 0 ? "font-semibold text-red-600" : ""}`}
+                      >
+                        {s.failures}
+                      </td>
+                      <td className="max-w-[380px] px-3 py-2 text-[11px] text-muted-foreground">
+                        {s.routes || "—"}
+                        <button
+                          onClick={() => openJourney(s.session_id)}
+                          className="mt-1 block text-[11px] font-semibold text-primary underline-offset-2 hover:underline"
+                        >
+                          View full journey →
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {/* ------------------------------------------------ user journey */}
+        {tab === "journey" && (
+          <div className="mt-4 grid gap-4 lg:grid-cols-[320px_1fr]">
+            {/* pick a visit */}
+            <div className="overflow-hidden rounded-xl border bg-white shadow-sm">
+              <div className="border-b bg-slate-50 px-3 py-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                Choose a visit ({sessions.length})
+              </div>
+              <div className="max-h-[62vh] overflow-auto">
+                {sessions.length === 0 && (
+                  <p className="p-6 text-center text-sm text-muted-foreground">
+                    No visits in this window. Widen the time range on another tab.
+                  </p>
+                )}
+                {sessions.map((s) => (
+                  <button
+                    key={s.session_id}
+                    onClick={() => openJourney(s.session_id)}
+                    className={`block w-full border-b px-3 py-2.5 text-left transition hover:bg-slate-50 ${
+                      journeySid === s.session_id
+                        ? "bg-primary/5 ring-1 ring-inset ring-primary/30"
+                        : ""
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate text-sm font-semibold">
+                        {s.actor ?? "Anonymous visitor"}
+                      </span>
+                      <span className="shrink-0 text-[11px] text-muted-foreground">
+                        {ago(s.last_seen)}
+                      </span>
+                    </div>
+                    <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] text-muted-foreground">
+                      <span className="font-mono">{s.ip ?? "—"}</span>
+                      {s.region && <span>· {s.region}</span>}
+                      <span>
+                        · {s.pages} page{s.pages === 1 ? "" : "s"}
+                      </span>
+                      {s.failures > 0 && (
+                        <span className="font-semibold text-red-600">· {s.failures} failed</span>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* the journey itself */}
+            <div className="overflow-hidden rounded-xl border bg-white shadow-sm">
+              {!journeySid && (
+                <p className="p-14 text-center text-sm text-muted-foreground">
+                  Pick a visit on the left to replay exactly what that person did, in order, with
+                  how long they spent on each page.
+                </p>
+              )}
+
+              {journeySid && jLoading && (
+                <div className="p-14 text-center">
+                  <Loader2 className="mx-auto h-6 w-6 animate-spin text-slate-400" />
+                </div>
+              )}
+
+              {journeySid && !jLoading && (
+                <>
+                  {jSummary && (
+                    <div className="border-b bg-slate-50 px-4 py-3">
+                      <div className="flex flex-wrap items-baseline justify-between gap-2">
+                        <p className="text-sm font-bold">
+                          {jSummary.actor ?? "Anonymous visitor"}
+                          {jSummary.actor_ref && (
+                            <span className="ml-2 text-xs font-normal text-muted-foreground">
+                              {jSummary.actor_ref}
+                            </span>
+                          )}
+                          {jSummary.role && (
+                            <span className="ml-2 rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-bold uppercase">
+                              {jSummary.role}
+                            </span>
+                          )}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {fmt(jSummary.started_at)} → {fmt(jSummary.ended_at)}
+                        </p>
+                      </div>
+                      <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-xs text-muted-foreground">
+                        <span>
+                          Visit lasted <b className="text-foreground">{dur(jSummary.duration_s)}</b>
+                        </span>
+                        <span>
+                          <b className="text-foreground">{jSummary.pages}</b> pages
+                        </span>
+                        <span>
+                          <b className="text-foreground">{jSummary.api_calls}</b> API calls
+                        </span>
+                        {jSummary.errors > 0 && (
+                          <span className="text-red-600">
+                            <b>{jSummary.errors}</b> failures
+                          </span>
+                        )}
+                        <span className="font-mono">{jSummary.ip}</span>
+                        {jSummary.region && (
+                          <span>
+                            {jSummary.region}
+                            {jSummary.country ? `, ${jSummary.country}` : ""}
+                          </span>
+                        )}
+                        <span>{device(jSummary.user_agent)}</span>
+                      </div>
+                      <div className="mt-1.5 text-xs text-muted-foreground">
+                        Entered on <b className="text-foreground">{jSummary.entry_page ?? "—"}</b>
+                        {" · "}last seen on{" "}
+                        <b className="text-foreground">{jSummary.exit_page ?? "—"}</b>
+                        {jSummary.device_id && (
+                          <>
+                            {" "}
+                            · device <span className="font-mono">{jSummary.device_id}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="max-h-[56vh] overflow-auto p-4">
+                    <ol className="relative border-l-2 border-slate-200 pl-5">
+                      {journey.map((st, i) => {
+                        const isPage = st.kind === "page";
+                        const bad = st.status !== "ok";
+                        return (
+                          <li key={i} className="relative pb-4 last:pb-0">
+                            <span
+                              className={`absolute -left-[27px] mt-1 h-3 w-3 rounded-full border-2 border-white ${
+                                bad ? "bg-red-500" : isPage ? "bg-primary" : "bg-slate-300"
+                              }`}
+                            />
+                            <div className="flex flex-wrap items-baseline gap-x-2">
+                              <span className="text-[11px] tabular-nums text-muted-foreground">
+                                {new Date(st.at).toLocaleTimeString("en-IN")}
+                              </span>
+                              {isPage ? (
+                                <span className="text-sm font-bold">{st.route}</span>
+                              ) : (
+                                <span
+                                  className={`text-sm ${bad ? "font-semibold text-red-600" : ""}`}
+                                >
+                                  {st.action}
+                                </span>
+                              )}
+                              {isPage && st.seconds_on_page != null && (
+                                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
+                                  stayed {dur(st.seconds_on_page)}
+                                </span>
+                              )}
+                              {isPage && st.seconds_on_page == null && (
+                                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                                  last page of the visit
+                                </span>
+                              )}
+                              <Badge
+                                variant="outline"
+                                className={`text-[10px] ${KIND_STYLE[st.kind] ?? ""}`}
+                              >
+                                {st.kind}
+                              </Badge>
+                              {st.latency_ms != null && (
+                                <span className="text-[11px] text-muted-foreground">
+                                  {st.latency_ms}ms
+                                </span>
+                              )}
+                            </div>
+                            {isPage && st.detail?.title && (
+                              <p className="text-[11px] text-muted-foreground">
+                                {String(st.detail.title)}
+                              </p>
+                            )}
+                            {bad && st.detail && (
+                              <p className="text-[11px] text-red-600">
+                                {String(st.detail.text ?? st.detail.error ?? st.detail.code ?? "")}
+                              </p>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ol>
+                    {journey.length === 0 && (
+                      <p className="py-10 text-center text-sm text-muted-foreground">
+                        Nothing recorded for this visit.
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="border-t bg-slate-50 px-4 py-2 text-[11px] text-muted-foreground">
+                    {journey.length} events · time on a page is measured to the next page they
+                    opened, so the final page of a visit has no duration
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}
@@ -584,19 +1143,38 @@ export function PlatformLogs() {
                 </thead>
                 <tbody>
                   {health.length === 0 && (
-                    <tr><td colSpan={5} className="px-3 py-14 text-center text-muted-foreground">No system events.</td></tr>
+                    <tr>
+                      <td colSpan={5} className="px-3 py-14 text-center text-muted-foreground">
+                        No system events.
+                      </td>
+                    </tr>
                   )}
                   {health.map((h, i) => (
                     <tr key={i} className="border-t hover:bg-slate-50">
-                      <td className="whitespace-nowrap px-3 py-2 tabular-nums text-muted-foreground">{fmt(h.created_at)}</td>
-                      <td className="whitespace-nowrap px-3 py-2 font-medium">{h.module_name || h.module_key}</td>
-                      <td className="whitespace-nowrap px-3 py-2 text-xs text-muted-foreground">{h.source}</td>
+                      <td className="whitespace-nowrap px-3 py-2 tabular-nums text-muted-foreground">
+                        {fmt(h.created_at)}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-2 font-medium">
+                        {h.module_name || h.module_key}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-2 text-xs text-muted-foreground">
+                        {h.source}
+                      </td>
                       <td className="px-3 py-2">
-                        <Badge variant="outline" className={`text-[10px] ${STATUS_STYLE[h.status] ?? ""}`}>{h.status}</Badge>
+                        <Badge
+                          variant="outline"
+                          className={`text-[10px] ${STATUS_STYLE[h.status] ?? ""}`}
+                        >
+                          {h.status}
+                        </Badge>
                       </td>
                       <td className="px-3 py-2">
                         {h.message}
-                        {h.latency_ms != null && <span className="ml-2 text-[11px] text-muted-foreground">{h.latency_ms}ms</span>}
+                        {h.latency_ms != null && (
+                          <span className="ml-2 text-[11px] text-muted-foreground">
+                            {h.latency_ms}ms
+                          </span>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -607,11 +1185,12 @@ export function PlatformLogs() {
         )}
 
         <p className="mt-4 text-xs text-muted-foreground">
-          IP address and country are recorded server-side from the request itself and cannot be altered
-          from the browser. Region is the nearest Cloudflare edge, so treat it as approximate — the
-          country and the browser timezone are the reliable location signals. The device ID is a stable
-          per-browser identifier that survives sign-out, so the same physical device can be followed
-          across sessions and across accounts. Entries are kept for 90 days, then deleted automatically.
+          IP address and country are recorded server-side from the request itself and cannot be
+          altered from the browser. Region is the nearest Cloudflare edge, so treat it as
+          approximate — the country and the browser timezone are the reliable location signals. The
+          device ID is a stable per-browser identifier that survives sign-out, so the same physical
+          device can be followed across sessions and across accounts. Entries are kept for 90 days,
+          then deleted automatically.
         </p>
       </div>
     </div>

@@ -37,7 +37,8 @@ export type AuditEvent = {
 const SUPABASE_URL =
   (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_SUPABASE_URL) || "";
 const SUPABASE_KEY =
-  (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY) || "";
+  (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY) ||
+  "";
 
 /** Endpoints that must never be logged, or the log would log itself for ever. */
 const SILENT = [
@@ -253,7 +254,11 @@ const originalFetch: typeof fetch =
  */
 export const auditedFetch: typeof fetch = async (input, init) => {
   const url =
-    typeof input === "string" ? input : input instanceof URL ? input.toString() : (input as Request).url;
+    typeof input === "string"
+      ? input
+      : input instanceof URL
+        ? input.toString()
+        : (input as Request).url;
   const method = (init?.method ?? (input as Request)?.method ?? "GET").toUpperCase();
   const t0 = Date.now();
 
@@ -310,17 +315,34 @@ export const auditedFetch: typeof fetch = async (input, init) => {
 
 let lastRoute = "";
 
-/** Record that the user opened a page. Called on every route change. */
-export function logPageView(path: string, title?: string): void {
+/**
+ * Record that the user opened a page. Called on every route change.
+ *
+ * The label is built from the ROUTE, never from document.title: at the moment a route
+ * change fires, the title still belongs to the previous page, so using it mislabels
+ * every entry by one step. The real title is captured a tick later, into `detail`.
+ */
+export function logPageView(path: string, _title?: string): void {
   if (!path || path === lastRoute) return;
+  const from = lastRoute;
   lastRoute = path;
-  logAccess({
-    kind: "page",
-    module: moduleForRoute(path),
-    route: path,
-    action: `Opened ${title || path}`,
-    detail: { referrer: typeof document !== "undefined" ? document.referrer || undefined : undefined },
-  });
+
+  const settleTitle = () =>
+    typeof document !== "undefined" ? document.title || undefined : undefined;
+
+  setTimeout(() => {
+    logAccess({
+      kind: "page",
+      module: moduleForRoute(path),
+      route: path,
+      action: `Opened ${path}`,
+      detail: {
+        title: settleTitle(),
+        from: from || undefined,
+        referrer: typeof document !== "undefined" ? document.referrer || undefined : undefined,
+      },
+    });
+  }, 0);
 }
 
 export function logAuthEvent(
@@ -366,5 +388,11 @@ export function startAudit(): void {
 }
 
 export default {
-  logAccess, logPageView, logAuthEvent, startAudit, auditedFetch, auditSessionId, deviceId,
+  logAccess,
+  logPageView,
+  logAuthEvent,
+  startAudit,
+  auditedFetch,
+  auditSessionId,
+  deviceId,
 };
