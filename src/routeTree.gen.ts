@@ -24,6 +24,7 @@ import { Route as ServicesRouteImport } from './routes/services'
 import { Route as SchemesRouteImport } from './routes/schemes'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as RegisterRouteImport } from './routes/register'
+import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
 import { Route as RechargeRouteImport } from './routes/recharge'
 import { Route as QcLoginRouteImport } from './routes/qc-login'
 import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
@@ -35,6 +36,7 @@ import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as NewServiceRequestRouteImport } from './routes/new-service-request'
 import { Route as MoneyTransferRouteImport } from './routes/money-transfer'
 import { Route as MasterDistributorLoginRouteImport } from './routes/master-distributor-login'
+import { Route as LogsRouteImport } from './routes/logs'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as HrLoginRouteImport } from './routes/hr-login'
 import { Route as GstRouteImport } from './routes/gst'
@@ -98,6 +100,7 @@ import { Route as QcDashboardRouteImport } from './routes/qc.dashboard'
 import { Route as QcChangePasswordRouteImport } from './routes/qc.change-password'
 import { Route as QcApprovedRouteImport } from './routes/qc.approved'
 import { Route as ProjectApprovalTokenRouteImport } from './routes/project-approval.$token'
+import { Route as PSlugRouteImport } from './routes/p.$slug'
 import { Route as HrTrainingRouteImport } from './routes/hr.training'
 import { Route as HrSupportRouteImport } from './routes/hr.support'
 import { Route as HrSettingsRouteImport } from './routes/hr.settings'
@@ -167,6 +170,7 @@ import { Route as AccountantDashboardRouteImport } from './routes/accountant.das
 import { Route as AccountantChangePasswordRouteImport } from './routes/accountant.change-password'
 import { Route as AccountantApplicationsRouteImport } from './routes/accountant.applications'
 import { Route as AccountantAppLedgerRouteImport } from './routes/accountant.app-ledger'
+import { Route as AccountantAepsPayoutsRouteImport } from './routes/accountant.aeps-payouts'
 import { Route as DistributorRetailersIndexRouteImport } from './routes/distributor.retailers.index'
 import { Route as TroRetailersIdRouteImport } from './routes/tro.retailers.$id'
 import { Route as QcKycReviewIdRouteImport } from './routes/qc.kyc-review.$id'
@@ -250,6 +254,11 @@ const RegisterRoute = RegisterRouteImport.update({
   path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RefundPolicyRoute = RefundPolicyRouteImport.update({
+  id: '/refund-policy',
+  path: '/refund-policy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RechargeRoute = RechargeRouteImport.update({
   id: '/recharge',
   path: '/recharge',
@@ -303,6 +312,11 @@ const MoneyTransferRoute = MoneyTransferRouteImport.update({
 const MasterDistributorLoginRoute = MasterDistributorLoginRouteImport.update({
   id: '/master-distributor-login',
   path: '/master-distributor-login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LogsRoute = LogsRouteImport.update({
+  id: '/logs',
+  path: '/logs',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -619,6 +633,11 @@ const QcApprovedRoute = QcApprovedRouteImport.update({
 const ProjectApprovalTokenRoute = ProjectApprovalTokenRouteImport.update({
   id: '/project-approval/$token',
   path: '/project-approval/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PSlugRoute = PSlugRouteImport.update({
+  id: '/p/$slug',
+  path: '/p/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HrTrainingRoute = HrTrainingRouteImport.update({
@@ -975,6 +994,11 @@ const AccountantAppLedgerRoute = AccountantAppLedgerRouteImport.update({
   path: '/accountant/app-ledger',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountantAepsPayoutsRoute = AccountantAepsPayoutsRouteImport.update({
+  id: '/accountant/aeps-payouts',
+  path: '/accountant/aeps-payouts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DistributorRetailersIndexRoute =
   DistributorRetailersIndexRouteImport.update({
     id: '/',
@@ -1040,6 +1064,7 @@ export interface FileRoutesByFullPath {
   '/gst': typeof GstRoute
   '/hr-login': typeof HrLoginRoute
   '/login': typeof LoginRoute
+  '/logs': typeof LogsRoute
   '/master-distributor-login': typeof MasterDistributorLoginRoute
   '/money-transfer': typeof MoneyTransferRoute
   '/new-service-request': typeof NewServiceRequestRoute
@@ -1051,6 +1076,7 @@ export interface FileRoutesByFullPath {
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/qc-login': typeof QcLoginRoute
   '/recharge': typeof RechargeRoute
+  '/refund-policy': typeof RefundPolicyRoute
   '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
   '/schemes': typeof SchemesRoute
@@ -1066,6 +1092,7 @@ export interface FileRoutesByFullPath {
   '/tro-login': typeof TroLoginRoute
   '/video-kyc': typeof VideoKycRoute
   '/wallet': typeof WalletRouteWithChildren
+  '/accountant/aeps-payouts': typeof AccountantAepsPayoutsRoute
   '/accountant/app-ledger': typeof AccountantAppLedgerRoute
   '/accountant/applications': typeof AccountantApplicationsRoute
   '/accountant/change-password': typeof AccountantChangePasswordRoute
@@ -1135,6 +1162,7 @@ export interface FileRoutesByFullPath {
   '/hr/settings': typeof HrSettingsRoute
   '/hr/support': typeof HrSupportRoute
   '/hr/training': typeof HrTrainingRoute
+  '/p/$slug': typeof PSlugRoute
   '/project-approval/$token': typeof ProjectApprovalTokenRoute
   '/qc/approved': typeof QcApprovedRoute
   '/qc/change-password': typeof QcChangePasswordRoute
@@ -1207,6 +1235,7 @@ export interface FileRoutesByTo {
   '/gst': typeof GstRoute
   '/hr-login': typeof HrLoginRoute
   '/login': typeof LoginRoute
+  '/logs': typeof LogsRoute
   '/master-distributor-login': typeof MasterDistributorLoginRoute
   '/money-transfer': typeof MoneyTransferRoute
   '/new-service-request': typeof NewServiceRequestRoute
@@ -1218,6 +1247,7 @@ export interface FileRoutesByTo {
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/qc-login': typeof QcLoginRoute
   '/recharge': typeof RechargeRoute
+  '/refund-policy': typeof RefundPolicyRoute
   '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
   '/schemes': typeof SchemesRoute
@@ -1232,6 +1262,7 @@ export interface FileRoutesByTo {
   '/transactions': typeof TransactionsRoute
   '/tro-login': typeof TroLoginRoute
   '/video-kyc': typeof VideoKycRoute
+  '/accountant/aeps-payouts': typeof AccountantAepsPayoutsRoute
   '/accountant/app-ledger': typeof AccountantAppLedgerRoute
   '/accountant/applications': typeof AccountantApplicationsRoute
   '/accountant/change-password': typeof AccountantChangePasswordRoute
@@ -1300,6 +1331,7 @@ export interface FileRoutesByTo {
   '/hr/settings': typeof HrSettingsRoute
   '/hr/support': typeof HrSupportRoute
   '/hr/training': typeof HrTrainingRoute
+  '/p/$slug': typeof PSlugRoute
   '/project-approval/$token': typeof ProjectApprovalTokenRoute
   '/qc/approved': typeof QcApprovedRoute
   '/qc/change-password': typeof QcChangePasswordRoute
@@ -1373,6 +1405,7 @@ export interface FileRoutesById {
   '/gst': typeof GstRoute
   '/hr-login': typeof HrLoginRoute
   '/login': typeof LoginRoute
+  '/logs': typeof LogsRoute
   '/master-distributor-login': typeof MasterDistributorLoginRoute
   '/money-transfer': typeof MoneyTransferRoute
   '/new-service-request': typeof NewServiceRequestRoute
@@ -1384,6 +1417,7 @@ export interface FileRoutesById {
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/qc-login': typeof QcLoginRoute
   '/recharge': typeof RechargeRoute
+  '/refund-policy': typeof RefundPolicyRoute
   '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
   '/schemes': typeof SchemesRoute
@@ -1399,6 +1433,7 @@ export interface FileRoutesById {
   '/tro-login': typeof TroLoginRoute
   '/video-kyc': typeof VideoKycRoute
   '/wallet': typeof WalletRouteWithChildren
+  '/accountant/aeps-payouts': typeof AccountantAepsPayoutsRoute
   '/accountant/app-ledger': typeof AccountantAppLedgerRoute
   '/accountant/applications': typeof AccountantApplicationsRoute
   '/accountant/change-password': typeof AccountantChangePasswordRoute
@@ -1468,6 +1503,7 @@ export interface FileRoutesById {
   '/hr/settings': typeof HrSettingsRoute
   '/hr/support': typeof HrSupportRoute
   '/hr/training': typeof HrTrainingRoute
+  '/p/$slug': typeof PSlugRoute
   '/project-approval/$token': typeof ProjectApprovalTokenRoute
   '/qc/approved': typeof QcApprovedRoute
   '/qc/change-password': typeof QcChangePasswordRoute
@@ -1542,6 +1578,7 @@ export interface FileRouteTypes {
     | '/gst'
     | '/hr-login'
     | '/login'
+    | '/logs'
     | '/master-distributor-login'
     | '/money-transfer'
     | '/new-service-request'
@@ -1553,6 +1590,7 @@ export interface FileRouteTypes {
     | '/privacy-policy'
     | '/qc-login'
     | '/recharge'
+    | '/refund-policy'
     | '/register'
     | '/reports'
     | '/schemes'
@@ -1568,6 +1606,7 @@ export interface FileRouteTypes {
     | '/tro-login'
     | '/video-kyc'
     | '/wallet'
+    | '/accountant/aeps-payouts'
     | '/accountant/app-ledger'
     | '/accountant/applications'
     | '/accountant/change-password'
@@ -1637,6 +1676,7 @@ export interface FileRouteTypes {
     | '/hr/settings'
     | '/hr/support'
     | '/hr/training'
+    | '/p/$slug'
     | '/project-approval/$token'
     | '/qc/approved'
     | '/qc/change-password'
@@ -1709,6 +1749,7 @@ export interface FileRouteTypes {
     | '/gst'
     | '/hr-login'
     | '/login'
+    | '/logs'
     | '/master-distributor-login'
     | '/money-transfer'
     | '/new-service-request'
@@ -1720,6 +1761,7 @@ export interface FileRouteTypes {
     | '/privacy-policy'
     | '/qc-login'
     | '/recharge'
+    | '/refund-policy'
     | '/register'
     | '/reports'
     | '/schemes'
@@ -1734,6 +1776,7 @@ export interface FileRouteTypes {
     | '/transactions'
     | '/tro-login'
     | '/video-kyc'
+    | '/accountant/aeps-payouts'
     | '/accountant/app-ledger'
     | '/accountant/applications'
     | '/accountant/change-password'
@@ -1802,6 +1845,7 @@ export interface FileRouteTypes {
     | '/hr/settings'
     | '/hr/support'
     | '/hr/training'
+    | '/p/$slug'
     | '/project-approval/$token'
     | '/qc/approved'
     | '/qc/change-password'
@@ -1874,6 +1918,7 @@ export interface FileRouteTypes {
     | '/gst'
     | '/hr-login'
     | '/login'
+    | '/logs'
     | '/master-distributor-login'
     | '/money-transfer'
     | '/new-service-request'
@@ -1885,6 +1930,7 @@ export interface FileRouteTypes {
     | '/privacy-policy'
     | '/qc-login'
     | '/recharge'
+    | '/refund-policy'
     | '/register'
     | '/reports'
     | '/schemes'
@@ -1900,6 +1946,7 @@ export interface FileRouteTypes {
     | '/tro-login'
     | '/video-kyc'
     | '/wallet'
+    | '/accountant/aeps-payouts'
     | '/accountant/app-ledger'
     | '/accountant/applications'
     | '/accountant/change-password'
@@ -1969,6 +2016,7 @@ export interface FileRouteTypes {
     | '/hr/settings'
     | '/hr/support'
     | '/hr/training'
+    | '/p/$slug'
     | '/project-approval/$token'
     | '/qc/approved'
     | '/qc/change-password'
@@ -2042,6 +2090,7 @@ export interface RootRouteChildren {
   GstRoute: typeof GstRoute
   HrLoginRoute: typeof HrLoginRoute
   LoginRoute: typeof LoginRoute
+  LogsRoute: typeof LogsRoute
   MasterDistributorLoginRoute: typeof MasterDistributorLoginRoute
   MoneyTransferRoute: typeof MoneyTransferRoute
   NewServiceRequestRoute: typeof NewServiceRequestRoute
@@ -2053,6 +2102,7 @@ export interface RootRouteChildren {
   PrivacyPolicyRoute: typeof PrivacyPolicyRoute
   QcLoginRoute: typeof QcLoginRoute
   RechargeRoute: typeof RechargeRoute
+  RefundPolicyRoute: typeof RefundPolicyRoute
   RegisterRoute: typeof RegisterRoute
   ReportsRoute: typeof ReportsRoute
   SchemesRoute: typeof SchemesRoute
@@ -2068,6 +2118,7 @@ export interface RootRouteChildren {
   TroLoginRoute: typeof TroLoginRoute
   VideoKycRoute: typeof VideoKycRoute
   WalletRoute: typeof WalletRouteWithChildren
+  AccountantAepsPayoutsRoute: typeof AccountantAepsPayoutsRoute
   AccountantAppLedgerRoute: typeof AccountantAppLedgerRoute
   AccountantApplicationsRoute: typeof AccountantApplicationsRoute
   AccountantChangePasswordRoute: typeof AccountantChangePasswordRoute
@@ -2125,6 +2176,7 @@ export interface RootRouteChildren {
   HrSettingsRoute: typeof HrSettingsRoute
   HrSupportRoute: typeof HrSupportRoute
   HrTrainingRoute: typeof HrTrainingRoute
+  PSlugRoute: typeof PSlugRoute
   ProjectApprovalTokenRoute: typeof ProjectApprovalTokenRoute
   QcApprovedRoute: typeof QcApprovedRoute
   QcChangePasswordRoute: typeof QcChangePasswordRoute
@@ -2264,6 +2316,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/refund-policy': {
+      id: '/refund-policy'
+      path: '/refund-policy'
+      fullPath: '/refund-policy'
+      preLoaderRoute: typeof RefundPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/recharge': {
       id: '/recharge'
       path: '/recharge'
@@ -2339,6 +2398,13 @@ declare module '@tanstack/react-router' {
       path: '/master-distributor-login'
       fullPath: '/master-distributor-login'
       preLoaderRoute: typeof MasterDistributorLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/logs': {
+      id: '/logs'
+      path: '/logs'
+      fullPath: '/logs'
+      preLoaderRoute: typeof LogsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -2780,6 +2846,13 @@ declare module '@tanstack/react-router' {
       path: '/project-approval/$token'
       fullPath: '/project-approval/$token'
       preLoaderRoute: typeof ProjectApprovalTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/p/$slug': {
+      id: '/p/$slug'
+      path: '/p/$slug'
+      fullPath: '/p/$slug'
+      preLoaderRoute: typeof PSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/hr/training': {
@@ -3265,6 +3338,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountantAppLedgerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/accountant/aeps-payouts': {
+      id: '/accountant/aeps-payouts'
+      path: '/accountant/aeps-payouts'
+      fullPath: '/accountant/aeps-payouts'
+      preLoaderRoute: typeof AccountantAepsPayoutsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/distributor/retailers/': {
       id: '/distributor/retailers/'
       path: '/'
@@ -3477,6 +3557,7 @@ const rootRouteChildren: RootRouteChildren = {
   GstRoute: GstRoute,
   HrLoginRoute: HrLoginRoute,
   LoginRoute: LoginRoute,
+  LogsRoute: LogsRoute,
   MasterDistributorLoginRoute: MasterDistributorLoginRoute,
   MoneyTransferRoute: MoneyTransferRoute,
   NewServiceRequestRoute: NewServiceRequestRoute,
@@ -3488,6 +3569,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyPolicyRoute: PrivacyPolicyRoute,
   QcLoginRoute: QcLoginRoute,
   RechargeRoute: RechargeRoute,
+  RefundPolicyRoute: RefundPolicyRoute,
   RegisterRoute: RegisterRoute,
   ReportsRoute: ReportsRoute,
   SchemesRoute: SchemesRoute,
@@ -3503,6 +3585,7 @@ const rootRouteChildren: RootRouteChildren = {
   TroLoginRoute: TroLoginRoute,
   VideoKycRoute: VideoKycRoute,
   WalletRoute: WalletRouteWithChildren,
+  AccountantAepsPayoutsRoute: AccountantAepsPayoutsRoute,
   AccountantAppLedgerRoute: AccountantAppLedgerRoute,
   AccountantApplicationsRoute: AccountantApplicationsRoute,
   AccountantChangePasswordRoute: AccountantChangePasswordRoute,
@@ -3561,6 +3644,7 @@ const rootRouteChildren: RootRouteChildren = {
   HrSettingsRoute: HrSettingsRoute,
   HrSupportRoute: HrSupportRoute,
   HrTrainingRoute: HrTrainingRoute,
+  PSlugRoute: PSlugRoute,
   ProjectApprovalTokenRoute: ProjectApprovalTokenRoute,
   QcApprovedRoute: QcApprovedRoute,
   QcChangePasswordRoute: QcChangePasswordRoute,

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Activity, Loader2, RefreshCw, Download, Search, AlertTriangle, CheckCircle2, PlayCircle } from "lucide-react";
+import { Activity, Loader2, RefreshCw, Download, Search, AlertTriangle, CheckCircle2, PlayCircle, Server } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 
@@ -94,6 +94,9 @@ export function SystemHealth() {
           <p className="text-sm text-muted-foreground">Automatic scanner runs every 5 minutes. Every check is logged per module, and admins are alerted the moment something breaks.</p>
         </div>
         <div className="flex gap-2">
+          <a href="/logs" className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-10 text-sm font-semibold hover:bg-muted">
+            <Server className="h-4 w-4" /> Platform logs
+          </a>
           <button onClick={load} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-10 text-sm font-semibold hover:bg-muted">
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh
           </button>

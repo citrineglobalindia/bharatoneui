@@ -13,6 +13,8 @@ import { useEffect } from "react";
 import appCss from "../styles.css?url";
 import { Toaster } from "sonner";
 import { LiveChatWidget } from "@/components/live-chat-widget";
+import { startAudit, logPageView, logAuthEvent } from "@/lib/audit";
+import { supabase } from "@/integrations/supabase/client";
 
 function NotFoundComponent() {
   return (
@@ -174,12 +176,40 @@ const PUBLIC_PATHS = new Set([
   "/gallery", "/privacy", "/schemes", "/terms",
 ]);
 
+/**
+ * Feeds the platform access log at /logs: one entry per page opened, plus sign-in
+ * and sign-out events. The IP and device behind each entry are resolved server-side.
+ */
+function useAccessAudit(pathname: string) {
+  useEffect(() => {
+    startAudit();
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN") {
+        logAuthEvent("Signed in", "ok", { email: session?.user?.email ?? undefined });
+      } else if (event === "SIGNED_OUT") {
+        logAuthEvent("Signed out", "ok");
+      } else if (event === "PASSWORD_RECOVERY") {
+        logAuthEvent("Started password recovery", "ok");
+      } else if (event === "USER_UPDATED") {
+        logAuthEvent("Account details updated", "ok");
+      }
+    });
+    return () => data.subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    logPageView(pathname, typeof document !== "undefined" ? document.title : undefined);
+  }, [pathname]);
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   // Re-key on pathname so each navigation cross-fades. Single-page workspaces
   // (admin panels, register steps) use internal state / query params, so their
   // pathname is stable and they stay mounted.
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+
+  useAccessAudit(pathname);
 
   // CR-150 — the public marketing pages carry their own Chatbot bubble. Rendering
   // the portal Live Chat widget there too stacked two buttons in the same corner
