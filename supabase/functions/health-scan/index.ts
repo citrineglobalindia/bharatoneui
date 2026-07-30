@@ -116,41 +116,41 @@ Deno.serve(async (req) => {
     }
   }
 
-  // SMS / DLT delivery
-  {
+  // Delivery channels (SMS / email). Recency-aware: if the most recent sends are
+  // succeeding, the channel is healthy even if older attempts failed — otherwise a
+  // fixed service would stay red for 24h.
+  const deliveryCheck = async (channel: "sms" | "email", label: string) => {
     const { data, error } = await svc.from("notification_log")
-      .select("status,channel").eq("channel", "sms").gte("created_at", since).limit(500);
+      .select("status,created_at").eq("channel", channel)
+      .gte("created_at", since).order("created_at", { ascending: false }).limit(200);
     if (error) {
-      await log("sms", { status: "warn", message: `Could not read SMS log: ${error.message.slice(0, 90)}` });
-    } else {
-      const rows = data ?? [];
-      const total = rows.length;
-      const failed = rows.filter((r: { status: string }) => r.status === "failed").length;
-      const rate = total ? Math.round((failed / total) * 100) : 0;
-      await log("sms", total === 0
-        ? { status: "ok", message: "No SMS sent in the last 24h", detail: { total } }
-        : rate >= 40
-          ? { status: "down", message: `SMS failing: ${rate}% (${failed}/${total})`, detail: { total, failed } }
-          : rate >= 15
-            ? { status: "warn", message: `Elevated SMS failures: ${rate}% (${failed}/${total})`, detail: { total, failed } }
-            : { status: "ok", message: `${total} SMS sent, ${rate}% failed`, detail: { total, failed } });
+      await log(channel, { status: "warn", message: `Could not read ${label} log: ${error.message.slice(0, 90)}` });
+      return;
     }
-  }
-
-  // Email delivery
-  {
-    const { data } = await svc.from("notification_log")
-      .select("status").eq("channel", "email").gte("created_at", since).limit(300);
-    const rows = data ?? [];
+    const rows = (data ?? []) as { status: string }[];
     const total = rows.length;
-    const failed = rows.filter((r: { status: string }) => r.status === "failed").length;
-    const rate = total ? Math.round((failed / total) * 100) : 0;
-    await log("email", total === 0
-      ? { status: "ok", message: "No emails sent in the last 24h" }
-      : rate >= 40 ? { status: "down", message: `Email failing: ${rate}% (${failed}/${total})`, detail: { total, failed } }
-      : rate >= 15 ? { status: "warn", message: `Elevated email failures: ${rate}%`, detail: { total, failed } }
-      : { status: "ok", message: `${total} emails sent, ${rate}% failed`, detail: { total, failed } });
-  }
+    if (total === 0) { await log(channel, { status: "ok", message: `No ${label} sent in the last 24h`, detail: { total } }); return; }
+
+    const failed = rows.filter((r) => r.status === "failed").length;
+    const rate = Math.round((failed / total) * 100);
+    // Recovery rule: the latest 3 attempts (or all, if fewer) all succeeded.
+    const recent = rows.slice(0, Math.min(3, total));
+    const recovered = recent.every((r) => r.status === "sent");
+
+    if (recovered) {
+      await log(channel, failed > 0
+        ? { status: "ok", message: `${label} healthy — latest ${recent.length} sent OK (${failed} older failure${failed === 1 ? "" : "s"} in 24h)`, detail: { total, failed, rate } }
+        : { status: "ok", message: `${total} ${label} sent, 0% failed`, detail: { total, failed } });
+      return;
+    }
+    await log(channel, rate >= 40
+      ? { status: "down", message: `${label} failing: ${rate}% (${failed}/${total})`, detail: { total, failed } }
+      : rate >= 15
+        ? { status: "warn", message: `Elevated ${label} failures: ${rate}% (${failed}/${total})`, detail: { total, failed } }
+        : { status: "ok", message: `${total} ${label} sent, ${rate}% failed`, detail: { total, failed } });
+  };
+  await deliveryCheck("sms", "SMS");
+  await deliveryCheck("email", "email");
 
   // Razorpay: unreconciled payments sitting too long
   {

@@ -1,0 +1,276 @@
+{
+  "info": {
+    "name": "BharatOne — Eko AEPS (Staging)",
+    "_postman_id": "b1a7e2c4-aeps-eko-0001",
+    "description": "Eko Connect / AEPS-Fingpay endpoints as integrated by BharatOne, verified against Eko staging (https://staging.eko.in:25004).\n\nAUTH (Eko Security 2.0): the collection-level pre-request script auto-computes `secret-key` and `secret-key-timestamp` on every request from `auth_key`. You only need to fill in the collection variables.\n\nSET THESE VARIABLES (Collection > Variables tab):\n  host              https://staging.eko.in:25004   (staging)\n  developer_key     <your Eko developer key>\n  auth_key          <the key Eko emailed you>   (staging sample: d2fe1d99-6298-4af2-8cc5-d97dcf46df30)\n  initiator_id      <your registered mobile number>\n  user_code         <the agent's mobile number>\n\nNOTE ON PAN: onboarding runs Eko's live PAN verification. On staging this returns `response_type_id 1253 – PAN verification fail` for real PANs. Ask Eko for a staging test PAN, or to disable PAN verification for the UAT account.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "host", "value": "https://staging.eko.in:25004" },
+    { "key": "developer_key", "value": "" },
+    { "key": "auth_key", "value": "d2fe1d99-6298-4af2-8cc5-d97dcf46df30" },
+    { "key": "initiator_id", "value": "" },
+    { "key": "user_code", "value": "" },
+    { "key": "secret_key", "value": "" },
+    { "key": "secret_key_timestamp", "value": "" }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Eko Security 2.0 — derive secret-key + secret-key-timestamp on every request.",
+          "// encodedKey = base64(auth_key);  ts = epoch millis;",
+          "// secret-key = base64( HMAC_SHA256( message=ts, key=encodedKey ) )",
+          "var authKey = pm.collectionVariables.get('auth_key');",
+          "if (!authKey) { console.warn('Set the auth_key collection variable'); }",
+          "var encodedKey = CryptoJS.enc.Base64.stringify(CryptoJS.enc.Utf8.parse(authKey));",
+          "var ts = String(Date.now());",
+          "var sig = CryptoJS.HmacSHA256(ts, encodedKey);",
+          "var secretKey = CryptoJS.enc.Base64.stringify(sig);",
+          "pm.collectionVariables.set('secret_key', secretKey);",
+          "pm.collectionVariables.set('secret_key_timestamp', ts);",
+          "",
+          "// Optional: for the AePS transaction, request_hash = base64(HMAC_SHA256(ts + encrypted_aadhaar + amount + user_code)).",
+          "// Set collection vars enc_aadhaar, txn_amount, user_code before running that request to auto-fill request_hash.",
+          "var encA = pm.collectionVariables.get('enc_aadhaar');",
+          "if (encA) {",
+          "  var uc = pm.collectionVariables.get('user_code') || '';",
+          "  var amt = pm.collectionVariables.get('txn_amount') || '0';",
+          "  var rh = CryptoJS.HmacSHA256(ts + encA + amt + uc, encodedKey);",
+          "  pm.collectionVariables.set('request_hash', CryptoJS.enc.Base64.stringify(rh));",
+          "}"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "0. Auth check — Transaction Inquiry (GET)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "developer_key", "value": "{{developer_key}}" },
+          { "key": "secret-key", "value": "{{secret_key}}" },
+          { "key": "secret-key-timestamp", "value": "{{secret_key_timestamp}}" }
+        ],
+        "url": {
+          "raw": "{{host}}/ekoapi/v1/transactions/PINGCHK000?initiator_id={{initiator_id}}",
+          "host": ["{{host}}"],
+          "path": ["ekoapi", "v1", "transactions", "PINGCHK000"],
+          "query": [{ "key": "initiator_id", "value": "{{initiator_id}}" }]
+        },
+        "description": "A quick way to confirm the credentials are accepted. A JSON reply (e.g. 'Invalid_tid_Format') means auth passed. A 401/'invalid developer_key' means the keys are wrong."
+      }
+    },
+    {
+      "name": "1. Onboard Agent (PUT, v1, form-urlencoded)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "developer_key", "value": "{{developer_key}}" },
+          { "key": "secret-key", "value": "{{secret_key}}" },
+          { "key": "secret-key-timestamp", "value": "{{secret_key_timestamp}}" },
+          { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            { "key": "initiator_id", "value": "{{initiator_id}}" },
+            { "key": "user_code", "value": "{{user_code}}" },
+            { "key": "pan_number", "value": "KKPPS5924C" },
+            { "key": "mobile", "value": "{{user_code}}" },
+            { "key": "first_name", "value": "SADHAN" },
+            { "key": "last_name", "value": "KUMARA N S" },
+            { "key": "email", "value": "citrineglobalindia@gmail.com" },
+            { "key": "dob", "value": "1995-11-20" },
+            { "key": "shop_name", "value": "Citrine" },
+            { "key": "residence_address", "value": "{\"line\":\"Hassan\",\"city\":\"Hassan\",\"state\":\"Karnataka\",\"pincode\":\"573201\"}" }
+          ]
+        },
+        "url": {
+          "raw": "{{host}}/ekoapi/v1/user/onboard",
+          "host": ["{{host}}"],
+          "path": ["ekoapi", "v1", "user", "onboard"]
+        },
+        "description": "Registers an agent. On staging this reaches Eko's live PAN verification and returns response_type_id 1253 'PAN verification fail' for real PANs — the blocker to raise with Eko."
+      }
+    },
+    {
+      "name": "2. Settlement Account Balance (GET)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "developer_key", "value": "{{developer_key}}" },
+          { "key": "secret-key", "value": "{{secret_key}}" },
+          { "key": "secret-key-timestamp", "value": "{{secret_key_timestamp}}" }
+        ],
+        "url": {
+          "raw": "{{host}}/ekoapi/v3/user/account/balance?initiator_id={{initiator_id}}&customer_id_type=mobile_number&customer_id={{initiator_id}}",
+          "host": ["{{host}}"],
+          "path": ["ekoapi", "v3", "user", "account", "balance"],
+          "query": [
+            { "key": "initiator_id", "value": "{{initiator_id}}" },
+            { "key": "customer_id_type", "value": "mobile_number" },
+            { "key": "customer_id", "value": "{{initiator_id}}" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "3. Activate AePS Fingpay (PUT, multipart)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "developer_key", "value": "{{developer_key}}" },
+          { "key": "secret-key", "value": "{{secret_key}}" },
+          { "key": "secret-key-timestamp", "value": "{{secret_key_timestamp}}" }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            { "key": "initiator_id", "value": "{{initiator_id}}", "type": "text" },
+            { "key": "modelname", "value": "MFS100", "type": "text" },
+            { "key": "devicenumber", "value": "<device serial>", "type": "text" },
+            { "key": "office_address", "value": "{\"line\":\"Hassan\",\"city\":\"Hassan\",\"state\":\"Karnataka\",\"pincode\":\"573201\"}", "type": "text" },
+            { "key": "address_as_per_proof", "value": "{\"line\":\"Hassan\",\"city\":\"Hassan\",\"state\":\"Karnataka\",\"pincode\":\"573201\"}", "type": "text" },
+            { "key": "pan_card", "type": "file", "src": [] },
+            { "key": "aadhar_front", "type": "file", "src": [] },
+            { "key": "aadhar_back", "type": "file", "src": [] }
+          ]
+        },
+        "url": {
+          "raw": "{{host}}/ekoapi/v3/admin/network/agent/{{user_code}}/aeps-fingpay/activate",
+          "host": ["{{host}}"],
+          "path": ["ekoapi", "v3", "admin", "network", "agent", "{{user_code}}", "aeps-fingpay", "activate"]
+        },
+        "description": "Attach PAN / Aadhaar front / Aadhaar back files (JPG or PDF, < 1 MB, not PNG). After activation the agent goes PENDING for 2-3 business days."
+      }
+    },
+    {
+      "name": "4. AePS KYC — Send OTP (POST)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "developer_key", "value": "{{developer_key}}" },
+          { "key": "secret-key", "value": "{{secret_key}}" },
+          { "key": "secret-key-timestamp", "value": "{{secret_key_timestamp}}" },
+          { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+        ],
+        "body": { "mode": "urlencoded", "urlencoded": [
+          { "key": "initiator_id", "value": "{{initiator_id}}" },
+          { "key": "user_code", "value": "{{user_code}}" }
+        ] },
+        "url": {
+          "raw": "{{host}}/ekoapi/v3/user/aeps-fingpay/kyc/otp",
+          "host": ["{{host}}"],
+          "path": ["ekoapi", "v3", "user", "aeps-fingpay", "kyc", "otp"]
+        }
+      }
+    },
+    {
+      "name": "5. AePS KYC — Verify OTP (PUT)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "developer_key", "value": "{{developer_key}}" },
+          { "key": "secret-key", "value": "{{secret_key}}" },
+          { "key": "secret-key-timestamp", "value": "{{secret_key_timestamp}}" },
+          { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+        ],
+        "body": { "mode": "urlencoded", "urlencoded": [
+          { "key": "initiator_id", "value": "{{initiator_id}}" },
+          { "key": "user_code", "value": "{{user_code}}" },
+          { "key": "otp", "value": "<otp>" }
+        ] },
+        "url": {
+          "raw": "{{host}}/ekoapi/v3/user/aeps-fingpay/kyc/otp/verify",
+          "host": ["{{host}}"],
+          "path": ["ekoapi", "v3", "user", "aeps-fingpay", "kyc", "otp", "verify"]
+        }
+      }
+    },
+    {
+      "name": "6. AePS KYC — Biometric (PUT)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "developer_key", "value": "{{developer_key}}" },
+          { "key": "secret-key", "value": "{{secret_key}}" },
+          { "key": "secret-key-timestamp", "value": "{{secret_key_timestamp}}" },
+          { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+        ],
+        "body": { "mode": "urlencoded", "urlencoded": [
+          { "key": "initiator_id", "value": "{{initiator_id}}" },
+          { "key": "user_code", "value": "{{user_code}}" },
+          { "key": "piddata", "value": "<PidData XML from RD service>" },
+          { "key": "latlong", "value": "12.3,76.6" },
+          { "key": "source_ip", "value": "" }
+        ] },
+        "url": {
+          "raw": "{{host}}/ekoapi/v3/user/aeps-fingpay/kyc/biometric",
+          "host": ["{{host}}"],
+          "path": ["ekoapi", "v3", "user", "aeps-fingpay", "kyc", "biometric"]
+        }
+      }
+    },
+    {
+      "name": "7. AePS KYC — Daily (PUT)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "developer_key", "value": "{{developer_key}}" },
+          { "key": "secret-key", "value": "{{secret_key}}" },
+          { "key": "secret-key-timestamp", "value": "{{secret_key_timestamp}}" },
+          { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+        ],
+        "body": { "mode": "urlencoded", "urlencoded": [
+          { "key": "initiator_id", "value": "{{initiator_id}}" },
+          { "key": "user_code", "value": "{{user_code}}" },
+          { "key": "piddata", "value": "<PidData XML from RD service>" },
+          { "key": "latlong", "value": "12.3,76.6" }
+        ] },
+        "url": {
+          "raw": "{{host}}/ekoapi/v3/user/aeps-fingpay/kyc/daily",
+          "host": ["{{host}}"],
+          "path": ["ekoapi", "v3", "user", "aeps-fingpay", "kyc", "daily"]
+        }
+      }
+    },
+    {
+      "name": "8. AePS Transaction (POST)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "developer_key", "value": "{{developer_key}}" },
+          { "key": "secret-key", "value": "{{secret_key}}" },
+          { "key": "secret-key-timestamp", "value": "{{secret_key_timestamp}}" },
+          { "key": "request_hash", "value": "{{request_hash}}" },
+          { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+        ],
+        "body": { "mode": "urlencoded", "urlencoded": [
+          { "key": "initiator_id", "value": "{{initiator_id}}" },
+          { "key": "user_code", "value": "{{user_code}}" },
+          { "key": "service_type", "value": "3", "description": "2=Cash Withdrawal, 3=Balance, 4=Mini Statement, 5=Aadhaar Pay" },
+          { "key": "customer_id", "value": "<customer 10-digit mobile>" },
+          { "key": "bank_code", "value": "SBIN" },
+          { "key": "amount", "value": "{{txn_amount}}" },
+          { "key": "client_ref_id", "value": "BHOTEST001" },
+          { "key": "pipe", "value": "0" },
+          { "key": "notify_customer", "value": "0" },
+          { "key": "aadhar", "value": "{{enc_aadhaar}}", "description": "RSA/PKCS1-encrypted, base64" },
+          { "key": "piddata", "value": "<PidData XML>" },
+          { "key": "latlong", "value": "12.3,76.6" },
+          { "key": "source_ip", "value": "" }
+        ] },
+        "url": {
+          "raw": "{{host}}/ekoapi/v3/customer/collection/aeps-fingpay",
+          "host": ["{{host}}"],
+          "path": ["ekoapi", "v3", "customer", "collection", "aeps-fingpay"]
+        },
+        "description": "request_hash is auto-computed by the pre-request script if you set enc_aadhaar, txn_amount and user_code collection variables. aadhar must be RSA-encrypted with Eko's public key (see docs)."
+      }
+    }
+  ]
+}

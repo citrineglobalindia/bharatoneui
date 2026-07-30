@@ -3,7 +3,9 @@
 Running memory of hard-won facts, decisions and gotchas. **Read this before touching AePS or BBPS.**
 Update it whenever something non-obvious is learned, especially anything that cost time to discover.
 
-Last updated: 18 July 2026
+Last updated: 21 July 2026
+
+For AePS, sections 3 and 8 are superseded in part by **section 9**, which is the current state.
 
 ---
 
@@ -228,44 +230,114 @@ should cap file size and compress images before they reach Storage.
 
 ---
 
-## 8. AePS daily KYC (1714) — TWO STAGED FIXES, not yet deployed (20 Jul 2026)
+## 8. AePS daily KYC (1714) — both staged fixes now resolved (20 Jul 2026, closed 21 Jul)
 
-Both come from Eko's **live** docs (https://eps.eko.in/docs/aeps-daily-auth) and a direct request
-from Eko support. Neither is a guess. Deploy these together, then retest agent 38520005.
+> **Status as of 21 Jul 2026: this section is history, not a to-do list.** Both fixes below have
+> been actioned and one of them was *reverted*. Do not re-apply Fix 1. See section 9.
 
-### Fix 1 — send `client_ref_id` (Eko explicitly asked for this)
-Eko support: *"We need client_ref_id (unique transaction reference of your system). This will help
-identify the request being made with what payload."*
+Both came from Eko's **live** docs (https://eps.eko.in/docs/aeps-daily-auth) and a direct request
+from Eko support.
 
-We currently send **no** client_ref_id on `kyc_daily`, so Eko cannot locate our calls in their logs
-— which is why every support round trip has stalled. Add a unique id per call, store it on
-`aeps_agents` (or a new `aeps_kyc_log` table) so it can be quoted to Eko afterwards:
+### Fix 1 — send `client_ref_id` — **APPLIED, THEN REVERTED. Do not re-add.**
+Eko support asked for it: *"We need client_ref_id (unique transaction reference of your system).
+This will help identify the request being made with what payload."*
 
-```ts
-const clientRefId = `BHOKYC${Date.now()}${Math.floor(Math.random()*900+100)}`;
-// include client_ref_id: clientRefId in the daily KYC payload, and persist it
-```
+We added it. It made things worse. With `client_ref_id` in the body, agent 38520005 began returning
+`{"message":"No key for Response"}` — an undocumented shape with no status field at all — instead of
+a well-formed `1714`. Eko's live spec lists exactly seven body parameters for this endpoint and
+`client_ref_id` is not one of them; sending an eighth appears to break their payload matching.
 
-### Fix 2 — send the body as JSON, not form-encoded
-Eko's live Daily KYC reference specifies `content-type: application/json` and shows a JSON example
-body. The older AePS Partner API **PDF** showed `--data-urlencode` (form), which is what the current
-code follows via `ekoForm`. Their docs list *"Invalid biometric data — check the wadh value in the
-PID block"* as a 1714 cause; a form-encoded body parsed as JSON would mangle the PID XML and present
-exactly that way.
+Current behaviour (`supabase/functions/aeps-2fa/index.ts`): we **generate and log** the reference
+locally to `aeps_kyc_attempts` so it can be quoted to Eko support, and we **do not send it** in the
+request body. This is deliberate. The five `client_ref_id` values quoted in the escalation were
+captured this way.
 
-Change in `supabase/functions/aeps/index.ts`, action `kyc_daily`:
-`ekoForm(...)` → **`ekoJson(...)`** (same URL, same fields).
-A patched copy is staged at `outputs/aeps_index.ts` with this change already applied.
+### Fix 2 — send the body as JSON, not form-encoded — **APPLIED AND LIVE**
+Eko's live Daily KYC reference specifies `content-type: application/json`. The older AePS Partner
+API **PDF** showed `--data-urlencode`, which the original code followed via `ekoForm`.
+
+Done. `supabase/functions/aeps/index.ts` action `kyc_daily` now calls `ekoJson(...)`
+(see line ~426), and the dedicated `aeps-2fa` function sends JSON throughout.
+**It did not fix 1714.**
 
 ### Documented 1714 causes (from their live docs — worth knowing)
 1. KYC failed — no reason returned
 2. **Invalid biometric data — check the `wadh` value in the PID block**
 3. Bank eKYC pending — re-run Send OTP → Verify OTP → Biometric
 
-Our `data.reason` is "Transaction Not Completed" (not the bank-eKYC message), and eKYC is confirmed
-complete by their own 461 response — so **cause 2 is the live candidate**.
+Cause 2 was our working hypothesis. It has since been effectively ruled out from our side: the
+`wadh` we send matches Eko's own reference capture page byte for byte, and UIDAI independently
+confirmed the biometric authenticates (agent 38520004, 17 Jul 18:58:08 IST, ICICI-deployed device,
+UIDAI response code `bf219d4b17d64d9b969be90d209cdcb4`).
 
 ### Deploy note
 The AePS edge function must be uploaded in full; a partial/placeholder upload took it down for
 ~2 minutes on 18 Jul. Deploy the complete file, then verify with one daily-auth attempt and read the
 `aeps` response in DevTools.
+
+---
+
+## 9. AePS 2FA — where it actually stands (21 Jul 2026)
+
+Daily KYC has **never succeeded once**, for any agent, across ~12 attempts. Every adjacent endpoint
+works. The blocker is now escalated to Eko and we are waiting on them — see
+`eko-daily-kyc-escalation.md` in the repo root for the full technical write-up sent to their team.
+
+### What we fixed on our side since 18 Jul
+
+**`b9913ff` — rebuilt the one-time eKYC chain to Eko's EPS spec.** The original implementation was
+materially incomplete, which is the most plausible reason daily KYC never had a valid session to
+build on:
+
+- Verify OTP was missing `customer_id`, encrypted `aadhar`, `reference_tid` and `latlong` — all
+  required by the spec.
+- Biometric eKYC was missing `customer_id`, `bank_code`, `otp_ref_id` and `reference_tid`, so the
+  fingerprint was never bound to the OTP session.
+- The `otp_ref_id` and `reference_tid` returned by each step were never captured or carried forward.
+  They are now persisted on `aeps_agents` as `kyc_otp_ref` / `kyc_ref_tid`.
+- Endpoints were `/user/aeps-fingpay/kyc/*` form-encoded; the spec is
+  `/user/collection/aeps-fingpay/kyc/*` with `application/json`.
+
+**`e478e81` — eKYC completion no longer counts as the day's 2FA.** We were setting
+`last_daily_kyc_at` on eKYC success, so the UI believed 2FA was done and sent the agent straight to
+a transaction — which Fingpay then rejected with `1467` "Please do 2fa before initiating
+transaction". Daily biometric KYC is a **separate mandatory step**. We now leave
+`last_daily_kyc_at` untouched on eKYC so the UI walks the agent through Daily KYC first.
+
+### Deployed versions (verified 21 Jul)
+
+| Function | Version | Deployed | Matches |
+|---|---|---|---|
+| `aeps` | v44 | 21 Jul 05:27 UTC | `e478e81` |
+| `aeps-2fa` | v2 | 20 Jul 11:20 UTC | `b9913ff` — content verified identical |
+
+Note the `aeps-2fa` deploy timestamp *precedes* its commit timestamp: it was deployed for testing on
+20 Jul and committed on 21 Jul. The deployed source is byte-identical to the committed file. This is
+not a stale deploy — check content, not timestamps, before redeploying.
+
+### Why this is now Eko's to answer
+
+The same single capture routine — identical `PidOptions`, device and `wadh` — produces a PID block
+their **Biometric eKYC** endpoint accepts and their **Daily KYC** endpoint rejects. For agent
+38520006 the two calls were 90 minutes apart on the same day, same device, same operator: eKYC
+succeeded, daily KYC failed.
+
+Three agents returned three *different* reasons to identical client behaviour within eight minutes
+on 20 Jul (`Transaction Not Completed` / `Authentication Failed. Invalid Biometric data.` /
+`Please complete bank eKYC to process the transaction.`), which points at per-agent state on their
+side rather than a client defect. Note that `Transaction Not Completed`, `No key for Response` and
+`1467` appear **nowhere** in Eko's documentation, and `346` — returned by 38520004 — is documented
+on their own Send OTP page as "AePS Fingpay service not activated for this agent", despite their
+team confirming activation verbally.
+
+### Open asks with Eko
+
+Server logs for the five quoted `client_ref_id` values; raw `GET /user/account/services` for all
+three agents showing service_code `43` status; confirmation that Daily KYC is enabled on initiator
+`9611151671`; an explanation of the eKYC/Daily-KYC contradiction; the full `response_type_id` table;
+and confirmation of whether a non-zero E-value balance is required (our balance is ₹0 and their docs
+do not list it as a prerequisite for a non-financial call).
+
+**Lesson:** when a partner's support team asks for an undocumented parameter, add it behind a flag
+and be ready to pull it. Fix 1 above was requested by Eko support directly and still broke the
+endpoint worse than before.

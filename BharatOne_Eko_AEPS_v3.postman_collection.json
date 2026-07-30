@@ -1,0 +1,298 @@
+{
+  "info": {
+    "name": "BharatOne · Eko AePS v3",
+    "description": "Complete Aadhaar Enabled Payment System (AePS) lifecycle against Eko's ekoicici/v3 API.\n\nFlow order:\n1. Onboard User  (one-time, sets email on the agent profile — REQUIRED before activation)\n2. Activate AePS Service  (one-time, multipart, uploads KYC docs)\n3. eKYC: Send OTP -> Verify OTP -> Biometric  (one-time)\n4. Daily KYC  (once per day before transacting)\n5. Transactions: Cash Withdrawal / Balance Enquiry / Mini Statement\n\nBEFORE YOU START — set these Collection Variables (Collection > Variables tab):\n  base_url        = https://api.eko.in:25002/ekoicici  (production)\n  developer_key   = <your Eko developer key>\n  auth_key        = <your Eko auth key / secret used for signing>\n  initiator_id    = 9611151671\n  user_code       = the agent's registered mobile (e.g. 7026977147). After Onboard, Eko returns the real user_code — paste it here (e.g. 38520002).\n\nThe collection-level Pre-request Script auto-computes:\n  secret-key           = base64( HMAC-SHA256( message = timestamp, key = base64(auth_key) ) )\n  secret-key-timestamp = current epoch millis\nso you never set those two by hand.\n\nNOTE ON AADHAAR: for eKYC and Transactions the `aadhar` field must be RSA (PKCS#1 v1.5) encrypted with Eko's public key and Base64-encoded — Postman cannot generate this. Paste a pre-encrypted value into the `aadhar_encrypted` variable, or run these steps through the BharatOne portal which encrypts server-side. For Onboard and Activate the Aadhaar is sent in plain form.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Auto-generate Eko signature headers for every request.",
+          "var authKey = pm.collectionVariables.get('auth_key') || '';",
+          "var ts = Date.now().toString();",
+          "var base64AuthKey = CryptoJS.enc.Base64.stringify(CryptoJS.enc.Utf8.parse(authKey));",
+          "var hmac = CryptoJS.HmacSHA256(ts, base64AuthKey);",
+          "var secretKey = CryptoJS.enc.Base64.stringify(hmac);",
+          "pm.collectionVariables.set('secret_key', secretKey);",
+          "pm.collectionVariables.set('secret_key_timestamp', ts);"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    { "key": "base_url", "value": "https://api.eko.in:25002/ekoicici" },
+    { "key": "developer_key", "value": "<FILL_DEVELOPER_KEY>" },
+    { "key": "auth_key", "value": "<FILL_AUTH_KEY>" },
+    { "key": "initiator_id", "value": "9611151671" },
+    { "key": "user_code", "value": "38520002" },
+    { "key": "customer_mobile", "value": "9999999999" },
+    { "key": "aadhar_encrypted", "value": "<RSA_ENCRYPTED_BASE64_AADHAAR>" },
+    { "key": "bank_code", "value": "" },
+    { "key": "secret_key", "value": "" },
+    { "key": "secret_key_timestamp", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1. Onboard User (EPS agent)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "developer_key", "value": "{{developer_key}}" },
+          { "key": "secret-key", "value": "{{secret_key}}" },
+          { "key": "secret-key-timestamp", "value": "{{secret_key_timestamp}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"initiator_id\": \"{{initiator_id}}\",\n  \"user_code\": \"7026977147\",\n  \"pan_number\": \"LUIPS8440M\",\n  \"mobile\": \"7026977147\",\n  \"first_name\": \"Syed\",\n  \"last_name\": \"Asim\",\n  \"email\": \"agent@example.com\",\n  \"dob\": \"2000-10-03\",\n  \"shop_name\": \"Syed Store\",\n  \"residence_address\": {\n    \"line\": \"Shop 5 MG Road\",\n    \"address1\": \"Shop 5 MG Road\",\n    \"city\": \"Bengaluru\",\n    \"state\": \"Karnataka\",\n    \"pincode\": \"560001\",\n    \"state_id\": \"23\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/v3/users/network/eps-agent",
+          "host": ["{{base_url}}"],
+          "path": ["v3", "users", "network", "eps-agent"]
+        },
+        "description": "One-time. Registers the agent AND writes their email into the ekoicici profile (mandatory — activation fails with status 1258 'Email Id is missing' if this profile has no email). Response returns data.user_code; paste it into the user_code collection variable."
+      }
+    },
+    {
+      "name": "2. Activate AePS Service",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "developer_key", "value": "{{developer_key}}" },
+          { "key": "secret-key", "value": "{{secret_key}}" },
+          { "key": "secret-key-timestamp", "value": "{{secret_key_timestamp}}" }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "form-data",
+              "value": "{\n  \"initiator_id\": \"{{initiator_id}}\",\n  \"devicenumber\": \"7258136\",\n  \"modelname\": \"Mantra\",\n  \"account\": \"38759149196\",\n  \"ifsc\": \"SBIN0007515\",\n  \"aadhar\": \"553481908278\",\n  \"shop_type\": \"4215\",\n  \"latlong\": \"12.9716,77.5946\",\n  \"address_as_per_proof\": { \"line\": \"Shop 5 MG Road\", \"address1\": \"Shop 5 MG Road\", \"city\": \"Bengaluru\", \"state\": \"Karnataka\", \"pincode\": \"560001\", \"state_id\": \"23\" },\n  \"office_address\": { \"line\": \"Shop 5 MG Road\", \"address1\": \"Shop 5 MG Road\", \"city\": \"Bengaluru\", \"state\": \"Karnataka\", \"pincode\": \"560001\", \"state_id\": \"23\" }\n}",
+              "type": "text",
+              "description": "Single field literally named 'form-data' holding ALL params as one JSON string. This exact shape is required by Eko."
+            },
+            { "key": "pan_card", "type": "file", "src": [], "description": "PAN image. JPG/JPEG/PDF only (NOT PNG), under 1 MB." },
+            { "key": "aadhar_front", "type": "file", "src": [], "description": "Aadhaar front. JPG/JPEG/PDF, under 1 MB." },
+            { "key": "aadhar_back", "type": "file", "src": [], "description": "Aadhaar back. JPG/JPEG/PDF, under 1 MB." }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/v3/admin/network/agent/{{user_code}}/aeps-fingpay/activate",
+          "host": ["{{base_url}}"],
+          "path": ["v3", "admin", "network", "agent", "{{user_code}}", "aeps-fingpay", "activate"]
+        },
+        "description": "One-time, multipart only. Success = status 0, message 'AePS Registration Successful', data.service_status '1'. Attach the three files in the Body tab (they show as blank until you pick a file)."
+      }
+    },
+    {
+      "name": "3a. eKYC — Send OTP",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "developer_key", "value": "{{developer_key}}" },
+          { "key": "secret-key", "value": "{{secret_key}}" },
+          { "key": "secret-key-timestamp", "value": "{{secret_key_timestamp}}" },
+          { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            { "key": "initiator_id", "value": "{{initiator_id}}" },
+            { "key": "user_code", "value": "{{user_code}}" },
+            { "key": "aadhar", "value": "{{aadhar_encrypted}}", "description": "RSA-encrypted, Base64." },
+            { "key": "customer_id", "value": "{{user_code}}", "description": "Agent's own mobile for agent eKYC." },
+            { "key": "latlong", "value": "12.9716,77.5946" }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/v3/user/collection/aeps-fingpay/kyc/otp",
+          "host": ["{{base_url}}"],
+          "path": ["v3", "user", "collection", "aeps-fingpay", "kyc", "otp"]
+        },
+        "description": "Sends OTP to the agent's Aadhaar-linked mobile. Note the returned otp_ref_id and reference_tid for the next step."
+      }
+    },
+    {
+      "name": "3b. eKYC — Verify OTP",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "developer_key", "value": "{{developer_key}}" },
+          { "key": "secret-key", "value": "{{secret_key}}" },
+          { "key": "secret-key-timestamp", "value": "{{secret_key_timestamp}}" },
+          { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            { "key": "initiator_id", "value": "{{initiator_id}}" },
+            { "key": "user_code", "value": "{{user_code}}" },
+            { "key": "aadhar", "value": "{{aadhar_encrypted}}" },
+            { "key": "customer_id", "value": "{{user_code}}" },
+            { "key": "latlong", "value": "12.9716,77.5946" },
+            { "key": "otp", "value": "123456", "description": "OTP the agent received." },
+            { "key": "otp_ref_id", "value": "", "description": "From Send OTP response." },
+            { "key": "reference_tid", "value": "", "description": "From Send OTP response." }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/v3/user/collection/aeps-fingpay/kyc/otp/verify",
+          "host": ["{{base_url}}"],
+          "path": ["v3", "user", "collection", "aeps-fingpay", "kyc", "otp", "verify"]
+        }
+      }
+    },
+    {
+      "name": "3c. eKYC — Biometric",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "developer_key", "value": "{{developer_key}}" },
+          { "key": "secret-key", "value": "{{secret_key}}" },
+          { "key": "secret-key-timestamp", "value": "{{secret_key_timestamp}}" },
+          { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            { "key": "initiator_id", "value": "{{initiator_id}}" },
+            { "key": "user_code", "value": "{{user_code}}" },
+            { "key": "aadhar", "value": "{{aadhar_encrypted}}" },
+            { "key": "customer_id", "value": "{{user_code}}" },
+            { "key": "latlong", "value": "12.9716,77.5946" },
+            { "key": "bank_code", "value": "{{bank_code}}", "description": "Agent's own bank (IIN/bank code)." },
+            { "key": "piddata", "value": "<CAPTURED_PID_XML>", "description": "Fingerprint PID block from the RD-service scanner." },
+            { "key": "otp_ref_id", "value": "" },
+            { "key": "reference_tid", "value": "" }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/v3/user/collection/aeps-fingpay/kyc/biometric",
+          "host": ["{{base_url}}"],
+          "path": ["v3", "user", "collection", "aeps-fingpay", "kyc", "biometric"]
+        },
+        "description": "Completes one-time eKYC with the agent's fingerprint. bank_code is required."
+      }
+    },
+    {
+      "name": "4. Daily KYC (biometric)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "developer_key", "value": "{{developer_key}}" },
+          { "key": "secret-key", "value": "{{secret_key}}" },
+          { "key": "secret-key-timestamp", "value": "{{secret_key_timestamp}}" },
+          { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            { "key": "initiator_id", "value": "{{initiator_id}}" },
+            { "key": "user_code", "value": "{{user_code}}" },
+            { "key": "aadhar", "value": "{{aadhar_encrypted}}" },
+            { "key": "customer_id", "value": "{{user_code}}" },
+            { "key": "latlong", "value": "12.9716,77.5946" },
+            { "key": "bank_code", "value": "{{bank_code}}" },
+            { "key": "piddata", "value": "<CAPTURED_PID_XML>" }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/v3/user/collection/aeps-fingpay/kyc/biometric/daily",
+          "host": ["{{base_url}}"],
+          "path": ["v3", "user", "collection", "aeps-fingpay", "kyc", "biometric", "daily"]
+        },
+        "description": "NPCI mandate: the agent re-authenticates with their own fingerprint once per day before serving customers."
+      }
+    },
+    {
+      "name": "5a. Txn — Cash Withdrawal",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "developer_key", "value": "{{developer_key}}" },
+          { "key": "secret-key", "value": "{{secret_key}}" },
+          { "key": "secret-key-timestamp", "value": "{{secret_key_timestamp}}" },
+          { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            { "key": "initiator_id", "value": "{{initiator_id}}" },
+            { "key": "user_code", "value": "{{user_code}}" },
+            { "key": "aadhar", "value": "{{aadhar_encrypted}}", "description": "CUSTOMER's RSA-encrypted Aadhaar." },
+            { "key": "bank_code", "value": "{{bank_code}}", "description": "Customer's bank code." },
+            { "key": "amount", "value": "100" },
+            { "key": "latlong", "value": "12.9716,77.5946" },
+            { "key": "piddata", "value": "<CUSTOMER_PID_XML>" }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/v3/customer/collection/aeps-fingpay/cash-withdrawl/{{customer_mobile}}",
+          "host": ["{{base_url}}"],
+          "path": ["v3", "customer", "collection", "aeps-fingpay", "cash-withdrawl", "{{customer_mobile}}"]
+        },
+        "description": "Customer mobile goes in the URL path. Note the spelling: cash-withdrawl."
+      }
+    },
+    {
+      "name": "5b. Txn — Balance Enquiry",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "developer_key", "value": "{{developer_key}}" },
+          { "key": "secret-key", "value": "{{secret_key}}" },
+          { "key": "secret-key-timestamp", "value": "{{secret_key_timestamp}}" },
+          { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            { "key": "initiator_id", "value": "{{initiator_id}}" },
+            { "key": "user_code", "value": "{{user_code}}" },
+            { "key": "aadhar", "value": "{{aadhar_encrypted}}" },
+            { "key": "bank_code", "value": "{{bank_code}}" },
+            { "key": "latlong", "value": "12.9716,77.5946" },
+            { "key": "piddata", "value": "<CUSTOMER_PID_XML>" }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/v3/customer/collection/aeps-fingpay/balance-enquiry/{{customer_mobile}}",
+          "host": ["{{base_url}}"],
+          "path": ["v3", "customer", "collection", "aeps-fingpay", "balance-enquiry", "{{customer_mobile}}"]
+        }
+      }
+    },
+    {
+      "name": "5c. Txn — Mini Statement",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "developer_key", "value": "{{developer_key}}" },
+          { "key": "secret-key", "value": "{{secret_key}}" },
+          { "key": "secret-key-timestamp", "value": "{{secret_key_timestamp}}" },
+          { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            { "key": "initiator_id", "value": "{{initiator_id}}" },
+            { "key": "user_code", "value": "{{user_code}}" },
+            { "key": "aadhar", "value": "{{aadhar_encrypted}}" },
+            { "key": "bank_code", "value": "{{bank_code}}" },
+            { "key": "latlong", "value": "12.9716,77.5946" },
+            { "key": "piddata", "value": "<CUSTOMER_PID_XML>" }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/v3/customer/collection/aeps-fingpay/mini-statement/{{customer_mobile}}",
+          "host": ["{{base_url}}"],
+          "path": ["v3", "customer", "collection", "aeps-fingpay", "mini-statement", "{{customer_mobile}}"]
+        }
+      }
+    }
+  ]
+}
