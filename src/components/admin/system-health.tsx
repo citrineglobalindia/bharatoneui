@@ -32,6 +32,7 @@ export function SystemHealth() {
   const [scanning, setScanning] = useState(false);
   const [modFilter, setModFilter] = useState<string>("");
   const [lvlFilter, setLvlFilter] = useState<string>("");
+  const [srcFilter, setSrcFilter] = useState<string>("");
   const [q, setQ] = useState("");
 
   const load = async () => {
@@ -39,7 +40,7 @@ export function SystemHealth() {
     await ensureStaffSession();
     const [{ data: sum }, { data: lg }, { data: inc }] = await Promise.all([
       (supabase as any).rpc("public_health_summary"),
-      (supabase as any).rpc("admin_health_log", { p_module: modFilter || null, p_level: lvlFilter || null, p_limit: 400 }),
+      (supabase as any).rpc("admin_health_log", { p_module: modFilter || null, p_level: lvlFilter || null, p_limit: 500, p_source: srcFilter || null }),
       (supabase as any).rpc("admin_incidents", { p_open_only: false, p_limit: 50 }),
     ]);
     if (sum) { setMods(sum.modules ?? []); setOverall(sum.overall ?? "ok"); }
@@ -47,7 +48,7 @@ export function SystemHealth() {
     setIncidents((inc as Inc[]) ?? []);
     setLoading(false);
   };
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [modFilter, lvlFilter]);
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [modFilter, lvlFilter, srcFilter]);
 
   const runScan = async () => {
     setScanning(true);
@@ -179,6 +180,11 @@ export function SystemHealth() {
             <select value={modFilter} onChange={(e) => setModFilter(e.target.value)} className="h-9 rounded-lg border border-border bg-background px-2 text-sm">
               <option value="">All modules</option>
               {mods.map((m) => <option key={m.key} value={m.key}>{m.name}</option>)}
+            </select>
+            <select value={srcFilter} onChange={(e) => setSrcFilter(e.target.value)} className="h-9 rounded-lg border border-border bg-background px-2 text-sm">
+              <option value="">All activity</option>
+              <option value="app">User / system activity</option>
+              <option value="scanner">Health checks</option>
             </select>
             <select value={lvlFilter} onChange={(e) => setLvlFilter(e.target.value)} className="h-9 rounded-lg border border-border bg-background px-2 text-sm">
               <option value="">All levels</option>
