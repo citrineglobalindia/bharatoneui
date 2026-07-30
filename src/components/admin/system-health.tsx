@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Activity, Loader2, RefreshCw, Download, Search, AlertTriangle, CheckCircle2, PlayCircle, Server } from "lucide-react";
+import { Activity, Loader2, RefreshCw, Download, Search, AlertTriangle, CheckCircle2, PlayCircle, Server, Lock, LockKeyhole } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 
@@ -23,7 +23,119 @@ const lvlTone: Record<string, string> = {
  * System Health — the platform scanner. Every module is probed on a schedule;
  * this screen shows current state, open incidents and the full per-module log.
  */
+type Access = {
+  is_owner: boolean; has_pin: boolean; unlocked: boolean;
+  unlocked_until: string | null; locked_until: string | null;
+};
+
+/**
+ * System Health is restricted to one named administrator and sits behind a PIN.
+ * Both gates are enforced in the database — the underlying RPCs return nothing to
+ * anyone else — so this screen is the polite face of a real restriction, not the
+ * restriction itself.
+ */
+function HealthGate({ onOpen }: { onOpen: () => void }) {
+  const [state, setState] = useState<Access | null>(null);
+  const [pin, setPin] = useState("");
+  const [pin2, setPin2] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const refresh = async () => {
+    await ensureStaffSession();
+    const { data } = await (supabase as any).rpc("health_access_state");
+    setState((data ?? null) as Access | null);
+    if ((data as Access)?.unlocked) onOpen();
+  };
+  useEffect(() => { refresh(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
+
+  if (!state) {
+    return <div className="grid h-64 place-items-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>;
+  }
+
+  if (!state.is_owner) {
+    return (
+      <div className="mx-auto max-w-md rounded-2xl border border-border bg-card p-8 text-center shadow-soft">
+        <Lock className="mx-auto h-8 w-8 text-muted-foreground" />
+        <h2 className="mt-4 text-lg font-extrabold">Restricted</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          System Health is limited to a single nominated administrator. Your account does not have
+          access to it.
+        </p>
+      </div>
+    );
+  }
+
+  const submit = async () => {
+    setErr(null); setBusy(true);
+    try {
+      if (!state.has_pin) {
+        if (pin !== pin2) { setErr("The two PINs do not match"); return; }
+        const { data } = await (supabase as any).rpc("health_set_pin", { p_new: pin, p_current: null });
+        if (!(data as any)?.ok) { setErr((data as any)?.message ?? "Could not set the PIN"); return; }
+        toast.success("PIN set");
+      } else {
+        const { data } = await (supabase as any).rpc("health_unlock", { p_pin: pin });
+        if (!(data as any)?.ok) {
+          const left = (data as any)?.attempts_left;
+          setErr(((data as any)?.message ?? "Incorrect PIN") + (left != null && left > 0 ? ` — ${left} attempt(s) left` : ""));
+          return;
+        }
+      }
+      setPin(""); setPin2("");
+      onOpen();
+    } finally { setBusy(false); }
+  };
+
+  return (
+    <div className="mx-auto max-w-md rounded-2xl border border-border bg-card p-8 shadow-soft">
+      <div className="text-center">
+        <Lock className="mx-auto h-8 w-8 text-admin" />
+        <h2 className="mt-4 text-lg font-extrabold">
+          {state.has_pin ? "Enter your PIN" : "Set a PIN for System Health"}
+        </h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          {state.has_pin
+            ? "This screen stays unlocked for 30 minutes."
+            : "Choose a 4 to 8 digit PIN. You will need it each time you open System Health."}
+        </p>
+      </div>
+
+      <div className="mt-6 space-y-3">
+        <input
+          type="password" inputMode="numeric" autoComplete="off" maxLength={8}
+          value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
+          onKeyDown={(e) => { if (e.key === "Enter" && !state.has_pin === false) submit(); }}
+          placeholder={state.has_pin ? "PIN" : "New PIN"}
+          className="h-12 w-full rounded-xl border border-border bg-background text-center text-2xl tracking-[0.5em] outline-none focus:border-admin"
+        />
+        {!state.has_pin && (
+          <input
+            type="password" inputMode="numeric" autoComplete="off" maxLength={8}
+            value={pin2} onChange={(e) => setPin2(e.target.value.replace(/\D/g, ""))}
+            placeholder="Confirm PIN"
+            className="h-12 w-full rounded-xl border border-border bg-background text-center text-2xl tracking-[0.5em] outline-none focus:border-admin"
+          />
+        )}
+        {err && <p className="text-center text-sm font-semibold text-rose-600">{err}</p>}
+        <button
+          onClick={submit} disabled={busy || pin.length < 4}
+          className="h-11 w-full rounded-xl bg-admin text-sm font-bold text-white disabled:opacity-50"
+        >
+          {busy ? "Please wait…" : state.has_pin ? "Unlock" : "Save PIN & open"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function SystemHealth() {
+  const [unlocked, setUnlocked] = useState(false);
+  if (!unlocked) return <HealthGate onOpen={() => setUnlocked(true)} />;
+  return <SystemHealthInner onLock={() => setUnlocked(false)} />;
+}
+
+function SystemHealthInner({ onLock }: { onLock: () => void }) {
   const [mods, setMods] = useState<Mod[]>([]);
   const [overall, setOverall] = useState("ok");
   const [logs, setLogs] = useState<Log[]>([]);
@@ -97,6 +209,12 @@ export function SystemHealth() {
           <a href="/logs" className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-10 text-sm font-semibold hover:bg-muted">
             <Server className="h-4 w-4" /> Platform logs
           </a>
+          <button
+            onClick={async () => { await (supabase as any).rpc("health_lock"); onLock(); }}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-10 text-sm font-semibold hover:bg-muted"
+          >
+            <LockKeyhole className="h-4 w-4" /> Lock
+          </button>
           <button onClick={load} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-10 text-sm font-semibold hover:bg-muted">
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh
           </button>

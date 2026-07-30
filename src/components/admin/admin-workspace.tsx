@@ -337,10 +337,13 @@ function Sidebar({
   active,
   onChange,
   onClose,
+  hidden = [],
 }: {
   active: string;
   onChange: (value: string) => void;
   onClose?: () => void;
+  /** Menu entries this administrator is not permitted to see. */
+  hidden?: string[];
 }) {
   const me = useCurrentUser();
   const [expanded, setExpanded] = useState<Record<string, boolean>>({ Backend: true, Frontend: true });
@@ -378,7 +381,7 @@ function Sidebar({
               {group.label}
             </p>
             <div className="space-y-1">
-              {group.items.map((item) => {
+              {group.items.filter((item) => !hidden.includes(item.label)).map((item) => {
                 const Icon = item.icon;
 
                 if (item.children) {
@@ -531,6 +534,17 @@ const HEADERLESS_SECTIONS = new Set([
 ]);
 
 export function AdminWorkspace() {
+  // System Health is limited to one nominated administrator (enforced in the DB).
+  // Hide the menu entry from everyone else rather than advertise a locked door.
+  const [isHealthOwner, setIsHealthOwner] = useState(false);
+  useEffect(() => {
+    (supabase as any).rpc("health_access_state").then(
+      ({ data }: any) => setIsHealthOwner(!!data?.is_owner),
+      () => setIsHealthOwner(false),
+    );
+  }, []);
+  const hiddenNav = isHealthOwner ? [] : ["System Health"];
+
   const __ready = usePortalGuard("/admin-login", ["admin"]);
   const [active, setActive] = useState("Executive Overview");
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -681,7 +695,7 @@ export function AdminWorkspace() {
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       <aside className={`hidden w-72 shrink-0 ${deskCollapsed ? "" : "lg:block"}`}>
-        <Sidebar active={active} onChange={setActive} />
+        <Sidebar active={active} onChange={setActive} hidden={hiddenNav} />
       </aside>
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 flex lg:hidden">
@@ -698,7 +712,7 @@ export function AdminWorkspace() {
             >
               <X />
             </Button>
-            <Sidebar active={active} onChange={setActive} onClose={() => setSidebarOpen(false)} />
+            <Sidebar active={active} onChange={setActive} onClose={() => setSidebarOpen(false)} hidden={hiddenNav} />
           </aside>
         </div>
       )}
