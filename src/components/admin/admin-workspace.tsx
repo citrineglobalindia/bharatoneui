@@ -34,7 +34,8 @@ import {
   Network,
   type LucideIcon,
   ImageIcon, Megaphone, FolderTree, TrendingUp, Search as SearchIcon, BellRing, Bell, IdCard,
-  Server, LayoutGrid, Plus, List, ChevronRight, PanelLeftClose, PanelLeftOpen, ShoppingBag, FileText } from "lucide-react";
+  Server, LayoutGrid, Plus, List, ChevronRight, PanelLeftClose, PanelLeftOpen, ShoppingBag, FileText,
+  CreditCard } from "lucide-react";
 import {
   Area,
   AreaChart,
@@ -87,6 +88,7 @@ import { SystemSettings } from "@/components/admin/system-settings";
 import { GalleryManager } from "@/components/admin/gallery-manager";
 import { SitePagesManager } from "@/components/admin/site-pages-manager";
 import { NewsletterAdmin } from "@/components/admin/newsletter-admin";
+import { IciciPayments } from "@/components/admin/icici-payments";
 import { SystemHealth } from "@/components/admin/system-health";
 import { HeroManager } from "@/components/admin/hero-manager";
 import { AwardsManager } from "@/components/admin/awards-manager";
@@ -189,6 +191,7 @@ const NAVIGATION: NavGroup[] = [
       { label: "Website Pages", icon: FileText },
       { label: "Newsletter", icon: Megaphone },
       { label: "System Health", icon: Activity },
+      { label: "ICICI Payments", icon: CreditCard },
       { label: "Notice Board", icon: Megaphone },
       { label: "Retailer Notice", icon: Bell },
       { label: "Old JSKO IDs", icon: IdCard },
@@ -524,6 +527,7 @@ const HEADERLESS_SECTIONS = new Set([
   "Website Pages",
   "Newsletter",
   "System Health",
+  "ICICI Payments",
 ]);
 
 export function AdminWorkspace() {
@@ -1186,6 +1190,8 @@ export function AdminWorkspace() {
               <RetailerMap scope="admin" />
             ) : active === "System Settings" ? (
               <SystemSettings />
+            ) : active === "ICICI Payments" ? (
+              <IciciPayments />
             ) : active === "System Health" ? (
               <SystemHealth />
             ) : active === "Newsletter" ? (
