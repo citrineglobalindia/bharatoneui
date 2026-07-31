@@ -116,9 +116,27 @@ export function istTxnDate(now: Date = new Date()): string {
 /** ICICI wants the amount as a plain decimal string with exactly two places. */
 export const money = (rupees: number): string => (Math.round(rupees * 100) / 100).toFixed(2);
 
-/** 000 and 0000 mean success. R1000 means accepted but still out-of-band (UPI). */
+/** 000 and 0000 mean success. */
 export const isSuccess = (code: string | undefined) => code === "000" || code === "0000";
-export const isPending = (code: string | undefined) => code === "R1000";
+
+/**
+ * Codes meaning "not finished yet" rather than "failed".
+ *
+ * The interface spec contains no list of response codes, so this cannot be exhaustive.
+ * Known so far: R1000 (request initiated, UPI out-of-band) and P0030 ("Awaiting user
+ * action" — a UPI collect sitting unapproved in the payer's app).
+ *
+ * Treating an unknown code as a failure is the dangerous direction: the status sweep
+ * only re-checks payments that are still open, so a payment wrongly marked failed
+ * would never be revisited even though the customer went on to pay. Anything that
+ * looks like waiting is therefore held open and left to the Transaction Status API,
+ * which reports the authoritative REQ / SUC / REJ / ERR.
+ */
+export const isPending = (code: string | undefined, description?: string) => {
+  const c = String(code ?? "");
+  if (c === "R1000" || /^P00/.test(c)) return true;
+  return /await|pending|progress|initiat|in process/i.test(String(description ?? ""));
+};
 
 /* ------------------------------------------------------------------ misc */
 

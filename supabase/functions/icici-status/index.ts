@@ -73,7 +73,12 @@ Deno.serve(async (req) => {
 
   const { data: rows, error } = single
     ? await q.eq("merchant_txn_no", single).limit(1)
-    : await q.in("status", ["initiated", "pending"]).lt("created_at", cutoff)
+    // Recently-failed rows are revisited too. Response codes are undocumented, so a
+    // payment could have been classified wrongly; the status API is authoritative and
+    // a genuine failure simply stays failed.
+    : await q.in("status", ["initiated", "pending", "failed"])
+        .lt("created_at", cutoff)
+        .gt("created_at", new Date(Date.now() - 45 * 60 * 1000).toISOString())
         .order("created_at", { ascending: true }).limit(50);
 
   if (error) return json({ ok: false, message: error.message }, 500);

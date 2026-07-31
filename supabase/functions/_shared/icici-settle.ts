@@ -84,8 +84,9 @@ export async function settleIciciPayment(
   }
 
   const code = String(payload.responseCode ?? "");
+  const desc = String(payload.respDescription ?? payload.responseDescription ?? "");
   const paid = isSuccess(code);
-  const pending = isPending(code);
+  const pending = isPending(code, desc);
   const next = paid ? "paid" : pending ? "pending" : "failed";
 
   // Trust our own amount, not the posted one, when deciding what was owed — but flag
