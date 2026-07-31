@@ -30,6 +30,7 @@ import { Route as QcLoginRouteImport } from './routes/qc-login'
 import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PortalsRouteImport } from './routes/portals'
+import { Route as PaymentResultRouteImport } from './routes/payment-result'
 import { Route as PanRouteImport } from './routes/pan'
 import { Route as OperatorRouteImport } from './routes/operator'
 import { Route as NotificationsRouteImport } from './routes/notifications'
@@ -283,6 +284,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const PortalsRoute = PortalsRouteImport.update({
   id: '/portals',
   path: '/portals',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PaymentResultRoute = PaymentResultRouteImport.update({
+  id: '/payment-result',
+  path: '/payment-result',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PanRoute = PanRouteImport.update({
@@ -1078,6 +1084,7 @@ export interface FileRoutesByFullPath {
   '/notifications': typeof NotificationsRoute
   '/operator': typeof OperatorRoute
   '/pan': typeof PanRoute
+  '/payment-result': typeof PaymentResultRoute
   '/portals': typeof PortalsRoute
   '/privacy': typeof PrivacyRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
@@ -1250,6 +1257,7 @@ export interface FileRoutesByTo {
   '/notifications': typeof NotificationsRoute
   '/operator': typeof OperatorRoute
   '/pan': typeof PanRoute
+  '/payment-result': typeof PaymentResultRoute
   '/portals': typeof PortalsRoute
   '/privacy': typeof PrivacyRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
@@ -1421,6 +1429,7 @@ export interface FileRoutesById {
   '/notifications': typeof NotificationsRoute
   '/operator': typeof OperatorRoute
   '/pan': typeof PanRoute
+  '/payment-result': typeof PaymentResultRoute
   '/portals': typeof PortalsRoute
   '/privacy': typeof PrivacyRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
@@ -1595,6 +1604,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/operator'
     | '/pan'
+    | '/payment-result'
     | '/portals'
     | '/privacy'
     | '/privacy-policy'
@@ -1767,6 +1777,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/operator'
     | '/pan'
+    | '/payment-result'
     | '/portals'
     | '/privacy'
     | '/privacy-policy'
@@ -1937,6 +1948,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/operator'
     | '/pan'
+    | '/payment-result'
     | '/portals'
     | '/privacy'
     | '/privacy-policy'
@@ -2110,6 +2122,7 @@ export interface RootRouteChildren {
   NotificationsRoute: typeof NotificationsRoute
   OperatorRoute: typeof OperatorRoute
   PanRoute: typeof PanRoute
+  PaymentResultRoute: typeof PaymentResultRoute
   PortalsRoute: typeof PortalsRoute
   PrivacyRoute: typeof PrivacyRoute
   PrivacyPolicyRoute: typeof PrivacyPolicyRoute
@@ -2369,6 +2382,13 @@ declare module '@tanstack/react-router' {
       path: '/portals'
       fullPath: '/portals'
       preLoaderRoute: typeof PortalsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/payment-result': {
+      id: '/payment-result'
+      path: '/payment-result'
+      fullPath: '/payment-result'
+      preLoaderRoute: typeof PaymentResultRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pan': {
@@ -3585,6 +3605,7 @@ const rootRouteChildren: RootRouteChildren = {
   NotificationsRoute: NotificationsRoute,
   OperatorRoute: OperatorRoute,
   PanRoute: PanRoute,
+  PaymentResultRoute: PaymentResultRoute,
   PortalsRoute: PortalsRoute,
   PrivacyRoute: PrivacyRoute,
   PrivacyPolicyRoute: PrivacyPolicyRoute,
