@@ -56,6 +56,22 @@ Deno.serve(async (req) => {
     if (!route?.enabled || route.gateway !== "icici") {
       return json({ status: "not_configured", message: "This payment is not routed to ICICI" }, 200);
     }
+    // While the gateway is in TEST (UAT) mode no real money moves, so a customer
+    // could "pay" and have their wallet credited for nothing. Restrict test mode to
+    // administrators, so a flow can be routed to ICICI and rehearsed on production
+    // without any risk of a retailer walking into the sandbox.
+    if (gw?.mode !== "live") {
+      const { data: isAdmin } = userId
+        ? await svc.from("user_roles").select("role").eq("user_id", userId).eq("role", "admin").maybeSingle()
+        : { data: null };
+      if (!isAdmin) {
+        return json({
+          status: "not_configured",
+          message: "Online payment is being tested and is not open yet. Please use the other options below.",
+        }, 200);
+      }
+    }
+
     if (!gw?.active || !configured()) {
       await svc.from("razorpay_payments").insert({
         gateway: "icici", user_id: userId, purpose, ref_id: refId,
