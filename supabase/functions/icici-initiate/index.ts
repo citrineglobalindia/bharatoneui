@@ -61,10 +61,10 @@ Deno.serve(async (req) => {
     // administrators, so a flow can be routed to ICICI and rehearsed on production
     // without any risk of a retailer walking into the sandbox.
     if (gw?.mode !== "live") {
-      const { data: isAdmin } = userId
-        ? await svc.from("user_roles").select("role").eq("user_id", userId).eq("role", "admin").maybeSingle()
-        : { data: null };
-      if (!isAdmin) {
+      const { data: allowed } = userId
+        ? await svc.rpc("icici_test_allowed", { p_user: userId })
+        : { data: false };
+      if (!allowed) {
         return json({
           status: "not_configured",
           message: "Online payment is being tested and is not open yet. Please use the other options below.",
