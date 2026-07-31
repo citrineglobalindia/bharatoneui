@@ -83,6 +83,17 @@ Deno.serve(async (req) => {
       customerEmailID: String(body.email ?? "").trim() || "dummy@gmail.com",
     };
     if (AGG_ID) payload.aggregatorID = AGG_ID;
+
+    // Restricting the payment method matters for more than tidiness (spec p.7, p.9):
+    //   - the hosted page shows only what we ask for, instead of every option;
+    //   - with UPI it drops the convenience fee, since UPI is zero-MDR in India;
+    //   - customerUPIAlias pre-fills the payer's VPA so ICICI can send a collect
+    //     request to their app, avoiding the QR scan that some apps refuse.
+    const payMode = String(body.payment_mode ?? "").trim().toUpperCase();
+    if (["CARD", "NB", "WALLET", "UPI"].includes(payMode)) payload.paymentMode = payMode;
+    const vpa = String(body.upi_vpa ?? "").trim();
+    if (payMode === "UPI" && /^[\w.\-]{2,}@[\w.\-]{2,}$/.test(vpa)) payload.customerUPIAlias = vpa.slice(0, 45);
+
     const mobile = String(body.contact ?? "").replace(/\D/g, "").slice(-10);
     if (/^\d{10}$/.test(mobile)) payload.customerMobileNo = mobile;
     const custName = String(body.name ?? "").trim();
