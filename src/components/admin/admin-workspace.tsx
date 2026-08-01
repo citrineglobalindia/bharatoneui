@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePortalGuard, PortalAuthGate } from "@/lib/portal-guard";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
   Activity,
   AlertTriangle,
@@ -533,6 +533,27 @@ const HEADERLESS_SECTIONS = new Set([
   "ICICI Payments",
 ]);
 
+// ── Which module is open is kept in the URL, not in component state ────────
+// It used to be useState("Executive Overview"). That meant the address bar
+// never changed as you moved around, so pressing refresh — or Back — always
+// returned you to Executive Overview instead of the module you were reading.
+// Keeping it in ?m= makes refresh, Back/Forward and bookmarking all work.
+const slugifyModule = (label: string) =>
+  label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+
+const MODULE_BY_SLUG: Map<string, string> = (() => {
+  const m = new Map<string, string>();
+  for (const group of NAVIGATION) {
+    for (const item of group.items) {
+      m.set(slugifyModule(item.label), item.label);
+      for (const child of item.children ?? []) m.set(slugifyModule(child.label), child.label);
+    }
+  }
+  return m;
+})();
+
+const DEFAULT_MODULE = "Executive Overview";
+
 export function AdminWorkspace() {
   // System Health is limited to one nominated administrator (enforced in the DB).
   // Hide the menu entry from everyone else rather than advertise a locked door.
@@ -546,12 +567,19 @@ export function AdminWorkspace() {
   const hiddenNav = isHealthOwner ? [] : ["System Health"];
 
   const __ready = usePortalGuard("/admin-login", ["admin"]);
-  const [active, setActive] = useState("Executive Overview");
+
+  const navigate = useNavigate();
+  const search = useSearch({ strict: false }) as { m?: string };
+  const requested = MODULE_BY_SLUG.get(String(search?.m ?? "")) ?? DEFAULT_MODULE;
+  // Never honour a deep link into a module this administrator may not open.
+  const active = hiddenNav.includes(requested) ? DEFAULT_MODULE : requested;
+  const setActive = useCallback((label: string) => {
+    void navigate({ to: "/admin", search: { m: slugifyModule(label) } as never });
+  }, [navigate]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [deskCollapsed, setDeskCollapsed] = useState(false);
   const [lastUpdated, setLastUpdated] = useState("Just now");
   const [globalQuery, setGlobalQuery] = useState("");
-  const navigate = useNavigate();
   const me = useCurrentUser();
   const date = useMemo(
     () =>

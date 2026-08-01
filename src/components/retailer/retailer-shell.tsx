@@ -1,6 +1,7 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { usePortalGuard, PortalAuthGate } from "@/lib/portal-guard";
 import { useEffect, useRef, useState } from "react";
+import { cached } from "@/lib/session-cache";
 import {
   LayoutDashboard,
   Banknote,
@@ -92,11 +93,13 @@ function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: 
   useEffect(() => {
     let on = true;
     (async () => {
-      const [fc, mid, sv] = await Promise.all([
+      // Cached: the shell remounts on every navigation, and re-running these
+      // three queries per click was both slow and made the menu flicker.
+      const [fc, mid, sv] = await cached("retailer:service-menu", () => Promise.all([
         (supabase as any).from("service_categories").select("id,name").eq("kind", "frontend").eq("is_active", true).order("sort_order").order("name"),
         (supabase as any).from("service_categories").select("id,parent_id").neq("kind", "frontend"),
         (supabase as any).from("services").select("service_type,category_id,service_group").eq("is_active", true),
-      ]);
+      ]));
       if (!on) return;
       const front = (fc.data as { id: string; name: string }[]) ?? [];
       const frontIds = new Set(front.map((f) => f.id));

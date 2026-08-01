@@ -1,3 +1,4 @@
+import { clearPortalGuardCache, takeAfterLoginPath } from "@/lib/portal-guard";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
@@ -195,6 +196,7 @@ function LoginPage() {
                       : primary === "tro" ? "/tro/dashboard"
                       : primary === "distributor" ? "/distributor/dashboard"
                       : "/dashboard";
+                    clearPortalGuardCache();
                     // Persist the REAL identity so useCurrentUser/ensureStaffSession never fall back to a stale role.
                     try {
                       localStorage.setItem("bharatone:auth", JSON.stringify({
@@ -206,7 +208,7 @@ function LoginPage() {
                     } catch {}
                     if (dest === "/dashboard") { try { await supabase.rpc("record_login"); } catch {} }
                     toast.success("Welcome back");
-                    navigate({ to: dest });
+                    navigate({ to: (takeAfterLoginPath(dest) ?? dest) as never });
                     return;
                   }
                 }
@@ -282,13 +284,14 @@ function LoginPage() {
                       : primary === "tro" ? "/tro/dashboard"
                       : primary === "distributor" ? "/distributor/dashboard"
                       : "/dashboard";
+                    clearPortalGuardCache();
                     try {
                       localStorage.setItem("bharatone:auth", JSON.stringify({
                         name: (prof as any)?.display_name || id, email: sb.user.email, role: primary, loggedInAt: new Date().toISOString(),
                       }));
                     } catch {}
                     toast.success("Welcome back");
-                    navigate({ to: dest });
+                    navigate({ to: (takeAfterLoginPath(dest) ?? dest) as never });
                     return;
                   }
                   toast.error("Invalid credentials", {

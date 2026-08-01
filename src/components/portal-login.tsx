@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { clearPortalGuardCache, takeAfterLoginPath } from "@/lib/portal-guard";
 import {
   ArrowLeft,
   Eye,
@@ -259,10 +260,14 @@ export function PortalLogin({ config }: { config: PortalConfig }) {
                   }),
                 );
               } catch {}
+              clearPortalGuardCache();
               toast.success(`Welcome, ${name}`, {
                 description: `Signed in to ${config.portalName}.`,
               });
-              navigate({ to: config.redirectTo ?? "/dashboard" });
+              // If the guard bounced them here from a page inside this same
+              // portal, put them back on it rather than the portal's front page.
+              const home = config.redirectTo ?? "/dashboard";
+              navigate({ to: (takeAfterLoginPath(home) ?? home) as never });
             }}
           >
             <div>
