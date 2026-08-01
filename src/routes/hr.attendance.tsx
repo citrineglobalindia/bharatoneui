@@ -1,12 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { AttendanceLedger } from "@/components/hr/attendance-ledger";
+import { Attendance } from "@/components/hr/attendance";
 import { HrShell } from "@/components/hr/hr-shell";
 
 export const Route = createFileRoute("/hr/attendance")({
-  head: () => ({ meta: [{ title: "Attendance Ledger — BharatOne HR" }, { name: "description", content: "Monthly employee attendance ledger with daily status and totals." }] }),
-  component: AttendancePage,
+  head: () => ({
+    meta: [
+      { title: "Attendance — BharatOne HR" },
+      { name: "description", content: "Monthly attendance, with holidays and approved leave filled in automatically." },
+    ],
+  }),
+  component: () => (
+    <HrShell>
+      <div className="mx-auto max-w-[1800px]">
+        <Attendance />
+      </div>
+    </HrShell>
+  ),
 });
-
-function AttendancePage() {
-  return <HrShell><div className="mx-auto max-w-[1800px]"><AttendanceLedger /></div></HrShell>;
-}

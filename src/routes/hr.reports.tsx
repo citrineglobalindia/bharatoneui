@@ -1,3 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { HrInsightModule } from "@/components/hr/hr-insight-modules";
-export const Route = createFileRoute("/hr/reports")({ head:()=>({meta:[{title:"HR Reports — BharatOne"},{name:"description",content:"Generate workforce, attendance, leave, payroll and recruitment reports."}]}), component:()=> <HrInsightModule module="reports"/> });
+import { HrReports } from "@/components/hr/hr-reports";
+import { HrShell } from "@/components/hr/hr-shell";
+
+export const Route = createFileRoute("/hr/reports")({
+  head: () => ({
+    meta: [
+      { title: "Reports — BharatOne HR" },
+      { name: "description", content: "Staff, leave and attendance reports with CSV export." },
+    ],
+  }),
+  component: () => (
+    <HrShell>
+      <div className="mx-auto max-w-[1800px]">
+        <HrReports />
+      </div>
+    </HrShell>
+  ),
+});
