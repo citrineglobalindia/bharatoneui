@@ -89,7 +89,6 @@ import { GalleryManager } from "@/components/admin/gallery-manager";
 import { SitePagesManager } from "@/components/admin/site-pages-manager";
 import { NewsletterAdmin } from "@/components/admin/newsletter-admin";
 import { IciciPayments } from "@/components/admin/icici-payments";
-import { SystemHealth } from "@/components/admin/system-health";
 import { HeroManager } from "@/components/admin/hero-manager";
 import { AwardsManager } from "@/components/admin/awards-manager";
 import { HeadlinesManager } from "@/components/admin/headlines-manager";
@@ -190,7 +189,6 @@ const NAVIGATION: NavGroup[] = [
       { label: "Website Gallery", icon: ImageIcon },
       { label: "Website Pages", icon: FileText },
       { label: "Newsletter", icon: Megaphone },
-      { label: "System Health", icon: Activity },
       { label: "ICICI Payments", icon: CreditCard },
       { label: "Notice Board", icon: Megaphone },
       { label: "Retailer Notice", icon: Bell },
@@ -529,7 +527,6 @@ const HEADERLESS_SECTIONS = new Set([
   "Website Gallery",
   "Website Pages",
   "Newsletter",
-  "System Health",
   "ICICI Payments",
 ]);
 
@@ -555,16 +552,10 @@ const MODULE_BY_SLUG: Map<string, string> = (() => {
 const DEFAULT_MODULE = "Executive Overview";
 
 export function AdminWorkspace() {
-  // System Health is limited to one nominated administrator (enforced in the DB).
-  // Hide the menu entry from everyone else rather than advertise a locked door.
-  const [isHealthOwner, setIsHealthOwner] = useState(false);
-  useEffect(() => {
-    (supabase as any).rpc("health_access_state").then(
-      ({ data }: any) => setIsHealthOwner(!!data?.is_owner),
-      () => setIsHealthOwner(false),
-    );
-  }, []);
-  const hiddenNav = isHealthOwner ? [] : ["System Health"];
+  // System Health has moved to the Super Admin console. The admin workspace no
+  // longer references it at all — not the screen, not the menu entry, and not a
+  // greyed-out placeholder, because a locked door still tells you a room exists.
+  const hiddenNav: string[] = [];
 
   const __ready = usePortalGuard("/admin-login", ["admin"]);
 
@@ -1234,8 +1225,6 @@ export function AdminWorkspace() {
               <SystemSettings />
             ) : active === "ICICI Payments" ? (
               <IciciPayments />
-            ) : active === "System Health" ? (
-              <SystemHealth />
             ) : active === "Newsletter" ? (
               <NewsletterAdmin />
             ) : active === "Website Pages" ? (

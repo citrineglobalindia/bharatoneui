@@ -19,6 +19,8 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TelecallerLoginRouteImport } from './routes/telecaller-login'
 import { Route as TelecallerRouteImport } from './routes/telecaller'
 import { Route as SupportRouteImport } from './routes/support'
+import { Route as SuperLoginRouteImport } from './routes/super-login'
+import { Route as SuperRouteImport } from './routes/super'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ServicesRouteImport } from './routes/services'
 import { Route as SchemesRouteImport } from './routes/schemes'
@@ -233,6 +235,16 @@ const TelecallerRoute = TelecallerRouteImport.update({
 const SupportRoute = SupportRouteImport.update({
   id: '/support',
   path: '/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SuperLoginRoute = SuperLoginRouteImport.update({
+  id: '/super-login',
+  path: '/super-login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SuperRoute = SuperRouteImport.update({
+  id: '/super',
+  path: '/super',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsRoute = SettingsRouteImport.update({
@@ -1120,6 +1132,8 @@ export interface FileRoutesByFullPath {
   '/schemes': typeof SchemesRoute
   '/services': typeof ServicesRoute
   '/settings': typeof SettingsRoute
+  '/super': typeof SuperRoute
+  '/super-login': typeof SuperLoginRoute
   '/support': typeof SupportRoute
   '/telecaller': typeof TelecallerRouteWithChildren
   '/telecaller-login': typeof TelecallerLoginRoute
@@ -1297,6 +1311,8 @@ export interface FileRoutesByTo {
   '/schemes': typeof SchemesRoute
   '/services': typeof ServicesRoute
   '/settings': typeof SettingsRoute
+  '/super': typeof SuperRoute
+  '/super-login': typeof SuperLoginRoute
   '/support': typeof SupportRoute
   '/telecaller': typeof TelecallerRouteWithChildren
   '/telecaller-login': typeof TelecallerLoginRoute
@@ -1473,6 +1489,8 @@ export interface FileRoutesById {
   '/schemes': typeof SchemesRoute
   '/services': typeof ServicesRoute
   '/settings': typeof SettingsRoute
+  '/super': typeof SuperRoute
+  '/super-login': typeof SuperLoginRoute
   '/support': typeof SupportRoute
   '/telecaller': typeof TelecallerRouteWithChildren
   '/telecaller-login': typeof TelecallerLoginRoute
@@ -1652,6 +1670,8 @@ export interface FileRouteTypes {
     | '/schemes'
     | '/services'
     | '/settings'
+    | '/super'
+    | '/super-login'
     | '/support'
     | '/telecaller'
     | '/telecaller-login'
@@ -1829,6 +1849,8 @@ export interface FileRouteTypes {
     | '/schemes'
     | '/services'
     | '/settings'
+    | '/super'
+    | '/super-login'
     | '/support'
     | '/telecaller'
     | '/telecaller-login'
@@ -2004,6 +2026,8 @@ export interface FileRouteTypes {
     | '/schemes'
     | '/services'
     | '/settings'
+    | '/super'
+    | '/super-login'
     | '/support'
     | '/telecaller'
     | '/telecaller-login'
@@ -2182,6 +2206,8 @@ export interface RootRouteChildren {
   SchemesRoute: typeof SchemesRoute
   ServicesRoute: typeof ServicesRoute
   SettingsRoute: typeof SettingsRoute
+  SuperRoute: typeof SuperRoute
+  SuperLoginRoute: typeof SuperLoginRoute
   SupportRoute: typeof SupportRoute
   TelecallerRoute: typeof TelecallerRouteWithChildren
   TelecallerLoginRoute: typeof TelecallerLoginRoute
@@ -2357,6 +2383,20 @@ declare module '@tanstack/react-router' {
       path: '/support'
       fullPath: '/support'
       preLoaderRoute: typeof SupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/super-login': {
+      id: '/super-login'
+      path: '/super-login'
+      fullPath: '/super-login'
+      preLoaderRoute: typeof SuperLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/super': {
+      id: '/super'
+      path: '/super'
+      fullPath: '/super'
+      preLoaderRoute: typeof SuperRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings': {
@@ -3697,6 +3737,8 @@ const rootRouteChildren: RootRouteChildren = {
   SchemesRoute: SchemesRoute,
   ServicesRoute: ServicesRoute,
   SettingsRoute: SettingsRoute,
+  SuperRoute: SuperRoute,
+  SuperLoginRoute: SuperLoginRoute,
   SupportRoute: SupportRoute,
   TelecallerRoute: TelecallerRouteWithChildren,
   TelecallerLoginRoute: TelecallerLoginRoute,
