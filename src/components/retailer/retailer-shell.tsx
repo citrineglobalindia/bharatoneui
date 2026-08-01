@@ -2,6 +2,7 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { usePortalGuard, PortalAuthGate } from "@/lib/portal-guard";
 import { useEffect, useRef, useState } from "react";
 import { cached } from "@/lib/session-cache";
+import { useDisabledModules } from "@/hooks/use-modules";
 import {
   LayoutDashboard,
   Banknote,
@@ -34,7 +35,7 @@ import { NotificationsBell } from "@/components/retailer/notifications-bell";
 import { ProfileMenu } from "@/components/retailer/profile-menu";
 import { LanguageSwitch } from "@/components/retailer/language-switch";
 
-type NavItem = { label: string; icon: React.ReactNode; to: string; children?: { label: string; to: string }[] };
+type NavItem = { label: string; icon: React.ReactNode; to: string; moduleKey?: string; children?: { label: string; to: string }[] };
 type NavSection = { heading: string; items: NavItem[] };
 
 const NAV: NavSection[] = [
@@ -42,22 +43,22 @@ const NAV: NavSection[] = [
     heading: "Main",
     items: [
       { label: "Dashboard", icon: <LayoutDashboard className="h-4 w-4" />, to: "/dashboard" },
-      { label: "KYC Docs", icon: <FileCheck2 className="h-4 w-4" />, to: "/video-kyc" },
+      { label: "KYC Docs", icon: <FileCheck2 className="h-4 w-4" />, to: "/video-kyc", moduleKey: "retailer.video_kyc" },
     ],
   },
   {
     heading: "Services",
     items: [
       // Children are the admin-created FRONTEND categories, injected dynamically at render.
-      { label: "My Services", icon: <Wrench className="h-4 w-4" />, to: "/services" },
+      { label: "My Services", icon: <Wrench className="h-4 w-4" />, to: "/services", moduleKey: "retailer.services" },
       { label: "New Application", icon: <PlusCircle className="h-4 w-4" />, to: "/new-service-request" },
-      { label: "My Applications", icon: <ClipboardList className="h-4 w-4" />, to: "/applications" },
+      { label: "My Applications", icon: <ClipboardList className="h-4 w-4" />, to: "/applications", moduleKey: "retailer.applications" },
     ],
   },
   {
     heading: "Finance",
     items: [
-      { label: "Wallet", icon: <Wallet className="h-4 w-4" />, to: "/wallet", children: [
+      { label: "Wallet", icon: <Wallet className="h-4 w-4" />, to: "/wallet", moduleKey: "retailer.wallet", children: [
         { label: "My Wallet", to: "/wallet" },
         { label: "Recharges", to: "/wallet/recharges" },
         { label: "Ledger", to: "/wallet/ledger" },
@@ -65,18 +66,18 @@ const NAV: NavSection[] = [
         { label: "Mandatory Recoveries", to: "/wallet/mandatory-recoveries" },
         { label: "Refund Requests", to: "/wallet/refunds" },
       ] },
-      { label: "AEPS Banking", icon: <Banknote className="h-4 w-4" />, to: "/aeps" },
-      { label: "Recharge & Bills", icon: <Receipt className="h-4 w-4" />, to: "/bbps" },
-      { label: "E-Store", icon: <ShoppingBag className="h-4 w-4" />, to: "/estore" },
-      { label: "Transactions", icon: <ArrowLeftRight className="h-4 w-4" />, to: "/transactions" },
-      { label: "Reports", icon: <BarChart3 className="h-4 w-4" />, to: "/reports" },
+      { label: "AEPS Banking", icon: <Banknote className="h-4 w-4" />, to: "/aeps", moduleKey: "retailer.aeps" },
+      { label: "Recharge & Bills", icon: <Receipt className="h-4 w-4" />, to: "/bbps", moduleKey: "retailer.bbps" },
+      { label: "E-Store", icon: <ShoppingBag className="h-4 w-4" />, to: "/estore", moduleKey: "retailer.estore" },
+      { label: "Transactions", icon: <ArrowLeftRight className="h-4 w-4" />, to: "/transactions", moduleKey: "retailer.transactions" },
+      { label: "Reports", icon: <BarChart3 className="h-4 w-4" />, to: "/reports", moduleKey: "retailer.reports" },
     ],
   },
   {
     heading: "Support",
     items: [
-      { label: "Support Tickets", icon: <LifeBuoy className="h-4 w-4" />, to: "/support" },
-      { label: "Feedback", icon: <Smile className="h-4 w-4" />, to: "/feedback" },
+      { label: "Support Tickets", icon: <LifeBuoy className="h-4 w-4" />, to: "/support", moduleKey: "retailer.support" },
+      { label: "Feedback", icon: <Smile className="h-4 w-4" />, to: "/feedback", moduleKey: "retailer.feedback" },
       { label: "Settings", icon: <Settings className="h-4 w-4" />, to: "/settings" },
     ],
   },
@@ -86,6 +87,12 @@ function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: 
   const navigate = useNavigate();
   const me = useCurrentUser();
   const [openKey, setOpenKey] = useState<string | null>(null);
+  // Modules the super admin has switched off are removed from the menu. A
+  // section left with no items goes too, rather than leaving a bare heading.
+  const { off: disabledModules } = useDisabledModules();
+  const navSections = NAV
+    .map((sec) => ({ ...sec, items: sec.items.filter((i: any) => !i.moduleKey || !disabledModules.has(i.moduleKey)) }))
+    .filter((sec) => sec.items.length > 0);
   // Service Categories that actually have services — split by the menu they belong to:
   // My Services = Direct/API services, New Application = Backend services. Empty ones are hidden.
   const [myServiceCats, setMyServiceCats] = useState<{ id: string; name: string }[]>([]);
@@ -131,7 +138,7 @@ function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: 
         </div>
       </div>
       <nav className="flex-1 overflow-y-auto nav-scroll px-2 py-3 space-y-4">
-        {NAV.map((sec) => (
+        {navSections.map((sec) => (
           <div key={sec.heading}>
             <p className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{sec.heading}</p>
             <ul className="space-y-0.5">

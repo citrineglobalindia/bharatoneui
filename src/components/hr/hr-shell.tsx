@@ -1,6 +1,7 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { usePortalGuard, PortalAuthGate } from "@/lib/portal-guard";
 import { useState } from "react";
+import { useDisabledModules } from "@/hooks/use-modules";
 import {
   Bell, BriefcaseBusiness, CalendarCheck, ChartNoAxesCombined, ChevronDown,
   ClipboardList, FileChartColumn, GraduationCap, Headphones, LayoutDashboard, LogOut,
@@ -18,18 +19,18 @@ import {
 
 const NAV = [
   { label: "HR Dashboard", icon: LayoutDashboard, to: "/hr/dashboard" },
-  { label: "Employees", icon: UsersRound, to: "/hr/employees" },
-  { label: "Attendance", icon: CalendarCheck, to: "/hr/attendance" },
-  { label: "Leave Management", icon: ClipboardList, to: "/hr/leave" },
-  { label: "Recruitment", icon: BriefcaseBusiness, to: "/hr/recruitment" },
-  { label: "Onboarding", icon: UserPlus, to: "/hr/onboarding" },
-  { label: "Payroll", icon: WalletCards, to: "/hr/payroll" },
-  { label: "Performance", icon: ChartNoAxesCombined, to: "/hr/performance" },
-  { label: "Training", icon: GraduationCap, to: "/hr/training" },
-  { label: "ID Cards", icon: IdCard, to: "/hr/id-cards" },
-  { label: "Reports", icon: FileChartColumn, to: "/hr/reports" },
-  { label: "Policies", icon: BookOpen, to: "/hr/policies" },
-  { label: "HR Settings", icon: SlidersHorizontal, to: "/hr/hr-settings" },
+  { label: "Employees", icon: UsersRound, to: "/hr/employees", moduleKey: "hr.employees" },
+  { label: "Attendance", icon: CalendarCheck, to: "/hr/attendance", moduleKey: "hr.attendance" },
+  { label: "Leave Management", icon: ClipboardList, to: "/hr/leave", moduleKey: "hr.leave" },
+  { label: "Recruitment", icon: BriefcaseBusiness, to: "/hr/recruitment", moduleKey: "hr.recruitment" },
+  { label: "Onboarding", icon: UserPlus, to: "/hr/onboarding", moduleKey: "hr.onboarding" },
+  { label: "Payroll", icon: WalletCards, to: "/hr/payroll", moduleKey: "hr.payroll" },
+  { label: "Performance", icon: ChartNoAxesCombined, to: "/hr/performance", moduleKey: "hr.performance" },
+  { label: "Training", icon: GraduationCap, to: "/hr/training", moduleKey: "hr.training" },
+  { label: "ID Cards", icon: IdCard, to: "/hr/id-cards", moduleKey: "hr.id_cards" },
+  { label: "Reports", icon: FileChartColumn, to: "/hr/reports", moduleKey: "hr.reports" },
+  { label: "Policies", icon: BookOpen, to: "/hr/policies", moduleKey: "hr.policies" },
+  { label: "HR Settings", icon: SlidersHorizontal, to: "/hr/hr-settings", moduleKey: "hr.settings" },
 ];
 const ACCOUNT_NAV = [
   { label: "My Profile", icon: UserRound, to: "/hr/profile" },
@@ -41,6 +42,10 @@ const ACCOUNT_NAV = [
 function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
+  // Anything the super admin has switched off is removed from the menu rather
+  // than greyed out — a disabled entry you can still see is just a puzzle.
+  const { off } = useDisabledModules();
+  const nav = NAV.filter((i) => !i.moduleKey || !off.has(i.moduleKey));
   return (
     <div className="flex h-full flex-col bg-navy text-hr-foreground">
       <div className="border-b border-hr-foreground/10 p-5">
@@ -52,7 +57,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       <nav className="flex-1 overflow-y-auto nav-scroll p-3">
         <p className="px-3 pb-2 pt-1 text-[10px] font-bold uppercase tracking-widest text-hr-foreground/40">Workspace</p>
         <ul className="space-y-1">
-          {NAV.map((item) => {
+          {nav.map((item) => {
             const Icon = item.icon;
             const active = pathname === item.to;
             return (

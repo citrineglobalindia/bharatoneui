@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePortalGuard, PortalAuthGate } from "@/lib/portal-guard";
+import { useDisabledModules } from "@/hooks/use-modules";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
   Activity,
@@ -551,18 +552,33 @@ const MODULE_BY_SLUG: Map<string, string> = (() => {
 
 const DEFAULT_MODULE = "Executive Overview";
 
+// Registry key for a sidebar entry. Derived from the label rather than kept in a
+// second list, so a module cannot be renamed here and left behind in the switch
+// panel. Matches the keys seeded in public.platform_modules.
+export const adminModuleKey = (label: string) =>
+  "admin." + label.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/(^_|_$)/g, "");
+
 export function AdminWorkspace() {
   // System Health has moved to the Super Admin console. The admin workspace no
   // longer references it at all — not the screen, not the menu entry, and not a
   // greyed-out placeholder, because a locked door still tells you a room exists.
-  const hiddenNav: string[] = [];
+  //
+  // Anything the super admin has switched off disappears the same way: removed
+  // from the menu rather than shown greyed out.
+  const { off: disabledModules } = useDisabledModules();
+  const hiddenNav = useMemo(
+    () => NAVIGATION.flatMap((g) => g.items.map((i) => i.label))
+                    .filter((label) => disabledModules.has(adminModuleKey(label))),
+    [disabledModules],
+  );
 
   const __ready = usePortalGuard("/admin-login", ["admin"]);
 
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as { m?: string };
   const requested = MODULE_BY_SLUG.get(String(search?.m ?? "")) ?? DEFAULT_MODULE;
-  // Never honour a deep link into a module this administrator may not open.
+  // Never honour a deep link into a module that is hidden — whether it is hidden
+  // because it was switched off or because it is not this person's to open.
   const active = hiddenNav.includes(requested) ? DEFAULT_MODULE : requested;
   const setActive = useCallback((label: string) => {
     void navigate({ to: "/admin", search: { m: slugifyModule(label) } as never });

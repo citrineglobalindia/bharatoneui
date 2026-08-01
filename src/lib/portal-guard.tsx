@@ -32,7 +32,7 @@ import { supabase } from "@/integrations/supabase/client";
  * the data even if the UI were fooled.
  */
 
-type Verdict = { userId: string; roles: string[]; at: number };
+type Verdict = { userId: string; roles: string[]; isSuper: boolean; at: number };
 
 /** How long a verified set of roles is reused before being re-checked. */
 const ROLE_TTL_MS = 5 * 60 * 1000;
@@ -60,8 +60,14 @@ async function resolveVerdict(): Promise<Verdict | null> {
 
   if (cache && fresh(cache) && cache.userId === userId) return cache;
 
-  const { data: rows, error } = await supabase
-    .from("user_roles").select("role").eq("user_id", userId);
+  // The super admin holds no row in user_roles — the whole point is that the
+  // role does not exist in the enum, so it cannot show up in an admin's role
+  // list. Without asking separately, every portal guard would turn away the one
+  // account that is meant to reach all of them.
+  const [{ data: rows, error }, { data: sup }] = await Promise.all([
+    supabase.from("user_roles").select("role").eq("user_id", userId),
+    (supabase as any).rpc("super_session_state"),
+  ]);
   // A transient network failure must not sign a legitimate user out. If we
   // already knew their roles, keep trusting that until the TTL expires.
   if (error) return cache && cache.userId === userId ? cache : null;
@@ -69,6 +75,7 @@ async function resolveVerdict(): Promise<Verdict | null> {
   cache = {
     userId,
     roles: (rows ?? []).map((r: { role: string }) => r.role as string),
+    isSuper: (sup as { is_super?: boolean } | null)?.is_super === true,
     at: Date.now(),
   };
   return cache;
@@ -87,7 +94,8 @@ export function usePortalGuard(loginPath: string, allow: string[]): boolean {
   // If this user was already verified for this portal, start ready. That is
   // what removes the spinner between pages of the same portal.
   const [ready, setReady] = useState(
-    () => Boolean(cache && fresh(cache) && cache.roles.some((r) => allow.includes(r))),
+    () => Boolean(cache && fresh(cache) &&
+      (cache.isSuper || cache.roles.some((r) => allow.includes(r)))),
   );
   const allowRef = useRef(allow);
   allowRef.current = allow;
@@ -114,7 +122,10 @@ export function usePortalGuard(loginPath: string, allow: string[]): boolean {
       const v = await verdict();
       if (!active) return;
       if (!v) return deny();
-      if (v.roles.some((r) => allowRef.current.includes(r))) setReady(true);
+      // A verified super admin passes every portal guard. That is what "can
+      // handle everything" means in practice — one account that can open any
+      // portal without holding a row for each of their roles.
+      if (v.isSuper || v.roles.some((r) => allowRef.current.includes(r))) setReady(true);
       else deny();
     })();
 

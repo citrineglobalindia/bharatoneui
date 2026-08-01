@@ -10,7 +10,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {
   ShieldCheck, Loader2, RefreshCw, ToggleLeft, ToggleRight, Activity,
-  ScrollText, LogOut, Clock3, Search, LayoutDashboard, AlertTriangle,
+  ScrollText, LogOut, Clock3, Search, LayoutDashboard, AlertTriangle, ExternalLink,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { superState, clearSuperCache, clearModuleCache } from "@/lib/super-admin";
@@ -21,7 +21,8 @@ const db = supabase as any;
 
 type Module = {
   key: string; label: string; area: string; enabled: boolean;
-  note: string | null; sort_order: number; updated_at: string; updated_by_name: string | null;
+  note: string | null; path: string | null;
+  sort_order: number; updated_at: string; updated_by_name: string | null;
 };
 type Audit = { at: string; action: string; detail: any; ip: string | null };
 
@@ -173,8 +174,9 @@ function Modules() {
         <div>
           <h2 className="text-lg font-extrabold">Modules</h2>
           <p className="text-sm text-muted-foreground">
-            Switching a module off removes it from menus and blocks its pages for everyone
-            else. You keep access, so you can check it before switching it back on.
+            Everything an administrator can open, and everything the other portals contain,
+            listed in one place. Switching a module off removes it from menus and blocks its
+            pages for everyone else — you keep access, so you can check it first.
           </p>
         </div>
         <button onClick={load}
@@ -225,6 +227,12 @@ function Modules() {
                         </p>
                       )}
                     </div>
+                    {m.path && (
+                      <a href={m.path} target="_blank" rel="noreferrer"
+                         className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs font-semibold hover:bg-muted">
+                        <ExternalLink className="h-3.5 w-3.5" /> Open
+                      </a>
+                    )}
                     <button onClick={() => toggle(m)} disabled={busy === m.key}
                       className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition disabled:opacity-50 ${
                         m.enabled
