@@ -177,6 +177,10 @@ function LoginPage() {
                       : set.has("qc") ? "qc"
                       : set.has("telecaller") ? "telecaller"
                       : set.has("operator") ? "operator"
+                      : set.has("hr_staff") ? "hr_staff"
+                      : set.has("bde") ? "bde"
+                      : set.has("dro") ? "dro"
+                      : set.has("tro") ? "tro"
                       : set.has("distributor") ? "distributor"
                       : set.has("master-distributor") ? "master-distributor"
                       : "retailer";
@@ -185,6 +189,10 @@ function LoginPage() {
                       : primary === "qc" ? "/qc/kyc-queue"
                       : primary === "telecaller" ? "/telecaller/registrations"
                       : primary === "operator" ? "/operator"
+                      : primary === "hr_staff" ? "/hr/dashboard"
+                      : primary === "bde" ? "/bde/dashboard"
+                      : primary === "dro" ? "/dro/dashboard"
+                      : primary === "tro" ? "/tro/dashboard"
                       : primary === "distributor" ? "/distributor/dashboard"
                       : "/dashboard";
                     // Persist the REAL identity so useCurrentUser/ensureStaffSession never fall back to a stale role.
@@ -256,6 +264,10 @@ function LoginPage() {
                       : set.has("qc") ? "qc"
                       : set.has("telecaller") ? "telecaller"
                       : set.has("operator") ? "operator"
+                      : set.has("hr_staff") ? "hr_staff"
+                      : set.has("bde") ? "bde"
+                      : set.has("dro") ? "dro"
+                      : set.has("tro") ? "tro"
                       : set.has("distributor") ? "distributor"
                       : set.has("master-distributor") ? "master-distributor"
                       : "retailer";
@@ -264,6 +276,10 @@ function LoginPage() {
                       : primary === "qc" ? "/qc/kyc-queue"
                       : primary === "telecaller" ? "/telecaller/registrations"
                       : primary === "operator" ? "/operator"
+                      : primary === "hr_staff" ? "/hr/dashboard"
+                      : primary === "bde" ? "/bde/dashboard"
+                      : primary === "dro" ? "/dro/dashboard"
+                      : primary === "tro" ? "/tro/dashboard"
                       : primary === "distributor" ? "/distributor/dashboard"
                       : "/dashboard";
                     try {
