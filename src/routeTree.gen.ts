@@ -109,10 +109,12 @@ import { Route as HrSettingsRouteImport } from './routes/hr.settings'
 import { Route as HrReportsRouteImport } from './routes/hr.reports'
 import { Route as HrRecruitmentRouteImport } from './routes/hr.recruitment'
 import { Route as HrProfileRouteImport } from './routes/hr.profile'
+import { Route as HrPoliciesRouteImport } from './routes/hr.policies'
 import { Route as HrPerformanceRouteImport } from './routes/hr.performance'
 import { Route as HrPayrollRouteImport } from './routes/hr.payroll'
 import { Route as HrOnboardingRouteImport } from './routes/hr.onboarding'
 import { Route as HrLeaveRouteImport } from './routes/hr.leave'
+import { Route as HrHrSettingsRouteImport } from './routes/hr.hr-settings'
 import { Route as HrFeedbackRouteImport } from './routes/hr.feedback'
 import { Route as HrEmployeesRouteImport } from './routes/hr.employees'
 import { Route as HrDashboardRouteImport } from './routes/hr.dashboard'
@@ -682,6 +684,11 @@ const HrProfileRoute = HrProfileRouteImport.update({
   path: '/hr/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HrPoliciesRoute = HrPoliciesRouteImport.update({
+  id: '/hr/policies',
+  path: '/hr/policies',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HrPerformanceRoute = HrPerformanceRouteImport.update({
   id: '/hr/performance',
   path: '/hr/performance',
@@ -700,6 +707,11 @@ const HrOnboardingRoute = HrOnboardingRouteImport.update({
 const HrLeaveRoute = HrLeaveRouteImport.update({
   id: '/hr/leave',
   path: '/hr/leave',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HrHrSettingsRoute = HrHrSettingsRouteImport.update({
+  id: '/hr/hr-settings',
+  path: '/hr/hr-settings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HrFeedbackRoute = HrFeedbackRouteImport.update({
@@ -1166,10 +1178,12 @@ export interface FileRoutesByFullPath {
   '/hr/dashboard': typeof HrDashboardRoute
   '/hr/employees': typeof HrEmployeesRoute
   '/hr/feedback': typeof HrFeedbackRoute
+  '/hr/hr-settings': typeof HrHrSettingsRoute
   '/hr/leave': typeof HrLeaveRoute
   '/hr/onboarding': typeof HrOnboardingRoute
   '/hr/payroll': typeof HrPayrollRoute
   '/hr/performance': typeof HrPerformanceRoute
+  '/hr/policies': typeof HrPoliciesRoute
   '/hr/profile': typeof HrProfileRoute
   '/hr/recruitment': typeof HrRecruitmentRoute
   '/hr/reports': typeof HrReportsRoute
@@ -1337,10 +1351,12 @@ export interface FileRoutesByTo {
   '/hr/dashboard': typeof HrDashboardRoute
   '/hr/employees': typeof HrEmployeesRoute
   '/hr/feedback': typeof HrFeedbackRoute
+  '/hr/hr-settings': typeof HrHrSettingsRoute
   '/hr/leave': typeof HrLeaveRoute
   '/hr/onboarding': typeof HrOnboardingRoute
   '/hr/payroll': typeof HrPayrollRoute
   '/hr/performance': typeof HrPerformanceRoute
+  '/hr/policies': typeof HrPoliciesRoute
   '/hr/profile': typeof HrProfileRoute
   '/hr/recruitment': typeof HrRecruitmentRoute
   '/hr/reports': typeof HrReportsRoute
@@ -1511,10 +1527,12 @@ export interface FileRoutesById {
   '/hr/dashboard': typeof HrDashboardRoute
   '/hr/employees': typeof HrEmployeesRoute
   '/hr/feedback': typeof HrFeedbackRoute
+  '/hr/hr-settings': typeof HrHrSettingsRoute
   '/hr/leave': typeof HrLeaveRoute
   '/hr/onboarding': typeof HrOnboardingRoute
   '/hr/payroll': typeof HrPayrollRoute
   '/hr/performance': typeof HrPerformanceRoute
+  '/hr/policies': typeof HrPoliciesRoute
   '/hr/profile': typeof HrProfileRoute
   '/hr/recruitment': typeof HrRecruitmentRoute
   '/hr/reports': typeof HrReportsRoute
@@ -1686,10 +1704,12 @@ export interface FileRouteTypes {
     | '/hr/dashboard'
     | '/hr/employees'
     | '/hr/feedback'
+    | '/hr/hr-settings'
     | '/hr/leave'
     | '/hr/onboarding'
     | '/hr/payroll'
     | '/hr/performance'
+    | '/hr/policies'
     | '/hr/profile'
     | '/hr/recruitment'
     | '/hr/reports'
@@ -1857,10 +1877,12 @@ export interface FileRouteTypes {
     | '/hr/dashboard'
     | '/hr/employees'
     | '/hr/feedback'
+    | '/hr/hr-settings'
     | '/hr/leave'
     | '/hr/onboarding'
     | '/hr/payroll'
     | '/hr/performance'
+    | '/hr/policies'
     | '/hr/profile'
     | '/hr/recruitment'
     | '/hr/reports'
@@ -2030,10 +2052,12 @@ export interface FileRouteTypes {
     | '/hr/dashboard'
     | '/hr/employees'
     | '/hr/feedback'
+    | '/hr/hr-settings'
     | '/hr/leave'
     | '/hr/onboarding'
     | '/hr/payroll'
     | '/hr/performance'
+    | '/hr/policies'
     | '/hr/profile'
     | '/hr/recruitment'
     | '/hr/reports'
@@ -2192,10 +2216,12 @@ export interface RootRouteChildren {
   HrDashboardRoute: typeof HrDashboardRoute
   HrEmployeesRoute: typeof HrEmployeesRoute
   HrFeedbackRoute: typeof HrFeedbackRoute
+  HrHrSettingsRoute: typeof HrHrSettingsRoute
   HrLeaveRoute: typeof HrLeaveRoute
   HrOnboardingRoute: typeof HrOnboardingRoute
   HrPayrollRoute: typeof HrPayrollRoute
   HrPerformanceRoute: typeof HrPerformanceRoute
+  HrPoliciesRoute: typeof HrPoliciesRoute
   HrProfileRoute: typeof HrProfileRoute
   HrRecruitmentRoute: typeof HrRecruitmentRoute
   HrReportsRoute: typeof HrReportsRoute
@@ -2937,6 +2963,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HrProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/hr/policies': {
+      id: '/hr/policies'
+      path: '/hr/policies'
+      fullPath: '/hr/policies'
+      preLoaderRoute: typeof HrPoliciesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/hr/performance': {
       id: '/hr/performance'
       path: '/hr/performance'
@@ -2963,6 +2996,13 @@ declare module '@tanstack/react-router' {
       path: '/hr/leave'
       fullPath: '/hr/leave'
       preLoaderRoute: typeof HrLeaveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hr/hr-settings': {
+      id: '/hr/hr-settings'
+      path: '/hr/hr-settings'
+      fullPath: '/hr/hr-settings'
+      preLoaderRoute: typeof HrHrSettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/hr/feedback': {
@@ -3676,10 +3716,12 @@ const rootRouteChildren: RootRouteChildren = {
   HrDashboardRoute: HrDashboardRoute,
   HrEmployeesRoute: HrEmployeesRoute,
   HrFeedbackRoute: HrFeedbackRoute,
+  HrHrSettingsRoute: HrHrSettingsRoute,
   HrLeaveRoute: HrLeaveRoute,
   HrOnboardingRoute: HrOnboardingRoute,
   HrPayrollRoute: HrPayrollRoute,
   HrPerformanceRoute: HrPerformanceRoute,
+  HrPoliciesRoute: HrPoliciesRoute,
   HrProfileRoute: HrProfileRoute,
   HrRecruitmentRoute: HrRecruitmentRoute,
   HrReportsRoute: HrReportsRoute,

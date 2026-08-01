@@ -5,6 +5,8 @@ import {
   Bell, BriefcaseBusiness, CalendarCheck, ChartNoAxesCombined, ChevronDown,
   ClipboardList, FileChartColumn, GraduationCap, Headphones, LayoutDashboard, LogOut,
   Menu, MessageSquareText, Search, Settings, UserPlus, UserRound, UsersRound, WalletCards, X,
+  BookOpen,
+  SlidersHorizontal,
 } from "lucide-react";
 import { BharatOneLogo } from "@/components/bharatone-logo";
 import { Button } from "@/components/ui/button";
@@ -24,6 +26,8 @@ const NAV = [
   { label: "Performance", icon: ChartNoAxesCombined, to: "/hr/performance" },
   { label: "Training", icon: GraduationCap, to: "/hr/training" },
   { label: "Reports", icon: FileChartColumn, to: "/hr/reports" },
+  { label: "Policies", icon: BookOpen, to: "/hr/policies" },
+  { label: "HR Settings", icon: SlidersHorizontal, to: "/hr/hr-settings" },
 ];
 const ACCOUNT_NAV = [
   { label: "My Profile", icon: UserRound, to: "/hr/profile" },
@@ -71,7 +75,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 }
 
 export function HrShell({ children }: { children: React.ReactNode }) {
-  const __ready = usePortalGuard("/hr-login", ["hr_staff", "manager", "admin"]);
+  const __ready = usePortalGuard("/hr-login", ["hr_staff", "admin"]);
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   if (!__ready) return <PortalAuthGate />;
