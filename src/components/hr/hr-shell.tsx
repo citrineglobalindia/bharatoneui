@@ -7,6 +7,7 @@ import {
   Menu, MessageSquareText, Search, Settings, UserPlus, UserRound, UsersRound, WalletCards, X,
   BookOpen,
   SlidersHorizontal,
+  IdCard,
 } from "lucide-react";
 import { BharatOneLogo } from "@/components/bharatone-logo";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ const NAV = [
   { label: "Payroll", icon: WalletCards, to: "/hr/payroll" },
   { label: "Performance", icon: ChartNoAxesCombined, to: "/hr/performance" },
   { label: "Training", icon: GraduationCap, to: "/hr/training" },
+  { label: "ID Cards", icon: IdCard, to: "/hr/id-cards" },
   { label: "Reports", icon: FileChartColumn, to: "/hr/reports" },
   { label: "Policies", icon: BookOpen, to: "/hr/policies" },
   { label: "HR Settings", icon: SlidersHorizontal, to: "/hr/hr-settings" },

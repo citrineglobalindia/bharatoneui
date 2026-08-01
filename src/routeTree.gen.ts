@@ -72,6 +72,7 @@ import { Route as WalletRechargesRouteImport } from './routes/wallet.recharges'
 import { Route as WalletMandatoryRecoveriesRouteImport } from './routes/wallet.mandatory-recoveries'
 import { Route as WalletLedgerRouteImport } from './routes/wallet.ledger'
 import { Route as WalletDeductionsRouteImport } from './routes/wallet.deductions'
+import { Route as VerifyTokenRouteImport } from './routes/verify.$token'
 import { Route as TroSupportRouteImport } from './routes/tro.support'
 import { Route as TroServicesRouteImport } from './routes/tro.services'
 import { Route as TroRetailersRouteImport } from './routes/tro.retailers'
@@ -114,6 +115,7 @@ import { Route as HrPerformanceRouteImport } from './routes/hr.performance'
 import { Route as HrPayrollRouteImport } from './routes/hr.payroll'
 import { Route as HrOnboardingRouteImport } from './routes/hr.onboarding'
 import { Route as HrLeaveRouteImport } from './routes/hr.leave'
+import { Route as HrIdCardsRouteImport } from './routes/hr.id-cards'
 import { Route as HrHrSettingsRouteImport } from './routes/hr.hr-settings'
 import { Route as HrFeedbackRouteImport } from './routes/hr.feedback'
 import { Route as HrEmployeesRouteImport } from './routes/hr.employees'
@@ -499,6 +501,11 @@ const WalletDeductionsRoute = WalletDeductionsRouteImport.update({
   path: '/deductions',
   getParentRoute: () => WalletRoute,
 } as any)
+const VerifyTokenRoute = VerifyTokenRouteImport.update({
+  id: '/verify/$token',
+  path: '/verify/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TroSupportRoute = TroSupportRouteImport.update({
   id: '/tro/support',
   path: '/tro/support',
@@ -707,6 +714,11 @@ const HrOnboardingRoute = HrOnboardingRouteImport.update({
 const HrLeaveRoute = HrLeaveRouteImport.update({
   id: '/hr/leave',
   path: '/hr/leave',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HrIdCardsRoute = HrIdCardsRouteImport.update({
+  id: '/hr/id-cards',
+  path: '/hr/id-cards',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HrHrSettingsRoute = HrHrSettingsRouteImport.update({
@@ -1179,6 +1191,7 @@ export interface FileRoutesByFullPath {
   '/hr/employees': typeof HrEmployeesRoute
   '/hr/feedback': typeof HrFeedbackRoute
   '/hr/hr-settings': typeof HrHrSettingsRoute
+  '/hr/id-cards': typeof HrIdCardsRoute
   '/hr/leave': typeof HrLeaveRoute
   '/hr/onboarding': typeof HrOnboardingRoute
   '/hr/payroll': typeof HrPayrollRoute
@@ -1221,6 +1234,7 @@ export interface FileRoutesByFullPath {
   '/tro/retailers': typeof TroRetailersRouteWithChildren
   '/tro/services': typeof TroServicesRoute
   '/tro/support': typeof TroSupportRoute
+  '/verify/$token': typeof VerifyTokenRoute
   '/wallet/deductions': typeof WalletDeductionsRoute
   '/wallet/ledger': typeof WalletLedgerRoute
   '/wallet/mandatory-recoveries': typeof WalletMandatoryRecoveriesRoute
@@ -1352,6 +1366,7 @@ export interface FileRoutesByTo {
   '/hr/employees': typeof HrEmployeesRoute
   '/hr/feedback': typeof HrFeedbackRoute
   '/hr/hr-settings': typeof HrHrSettingsRoute
+  '/hr/id-cards': typeof HrIdCardsRoute
   '/hr/leave': typeof HrLeaveRoute
   '/hr/onboarding': typeof HrOnboardingRoute
   '/hr/payroll': typeof HrPayrollRoute
@@ -1394,6 +1409,7 @@ export interface FileRoutesByTo {
   '/tro/retailers': typeof TroRetailersRouteWithChildren
   '/tro/services': typeof TroServicesRoute
   '/tro/support': typeof TroSupportRoute
+  '/verify/$token': typeof VerifyTokenRoute
   '/wallet/deductions': typeof WalletDeductionsRoute
   '/wallet/ledger': typeof WalletLedgerRoute
   '/wallet/mandatory-recoveries': typeof WalletMandatoryRecoveriesRoute
@@ -1528,6 +1544,7 @@ export interface FileRoutesById {
   '/hr/employees': typeof HrEmployeesRoute
   '/hr/feedback': typeof HrFeedbackRoute
   '/hr/hr-settings': typeof HrHrSettingsRoute
+  '/hr/id-cards': typeof HrIdCardsRoute
   '/hr/leave': typeof HrLeaveRoute
   '/hr/onboarding': typeof HrOnboardingRoute
   '/hr/payroll': typeof HrPayrollRoute
@@ -1570,6 +1587,7 @@ export interface FileRoutesById {
   '/tro/retailers': typeof TroRetailersRouteWithChildren
   '/tro/services': typeof TroServicesRoute
   '/tro/support': typeof TroSupportRoute
+  '/verify/$token': typeof VerifyTokenRoute
   '/wallet/deductions': typeof WalletDeductionsRoute
   '/wallet/ledger': typeof WalletLedgerRoute
   '/wallet/mandatory-recoveries': typeof WalletMandatoryRecoveriesRoute
@@ -1705,6 +1723,7 @@ export interface FileRouteTypes {
     | '/hr/employees'
     | '/hr/feedback'
     | '/hr/hr-settings'
+    | '/hr/id-cards'
     | '/hr/leave'
     | '/hr/onboarding'
     | '/hr/payroll'
@@ -1747,6 +1766,7 @@ export interface FileRouteTypes {
     | '/tro/retailers'
     | '/tro/services'
     | '/tro/support'
+    | '/verify/$token'
     | '/wallet/deductions'
     | '/wallet/ledger'
     | '/wallet/mandatory-recoveries'
@@ -1878,6 +1898,7 @@ export interface FileRouteTypes {
     | '/hr/employees'
     | '/hr/feedback'
     | '/hr/hr-settings'
+    | '/hr/id-cards'
     | '/hr/leave'
     | '/hr/onboarding'
     | '/hr/payroll'
@@ -1920,6 +1941,7 @@ export interface FileRouteTypes {
     | '/tro/retailers'
     | '/tro/services'
     | '/tro/support'
+    | '/verify/$token'
     | '/wallet/deductions'
     | '/wallet/ledger'
     | '/wallet/mandatory-recoveries'
@@ -2053,6 +2075,7 @@ export interface FileRouteTypes {
     | '/hr/employees'
     | '/hr/feedback'
     | '/hr/hr-settings'
+    | '/hr/id-cards'
     | '/hr/leave'
     | '/hr/onboarding'
     | '/hr/payroll'
@@ -2095,6 +2118,7 @@ export interface FileRouteTypes {
     | '/tro/retailers'
     | '/tro/services'
     | '/tro/support'
+    | '/verify/$token'
     | '/wallet/deductions'
     | '/wallet/ledger'
     | '/wallet/mandatory-recoveries'
@@ -2217,6 +2241,7 @@ export interface RootRouteChildren {
   HrEmployeesRoute: typeof HrEmployeesRoute
   HrFeedbackRoute: typeof HrFeedbackRoute
   HrHrSettingsRoute: typeof HrHrSettingsRoute
+  HrIdCardsRoute: typeof HrIdCardsRoute
   HrLeaveRoute: typeof HrLeaveRoute
   HrOnboardingRoute: typeof HrOnboardingRoute
   HrPayrollRoute: typeof HrPayrollRoute
@@ -2258,6 +2283,7 @@ export interface RootRouteChildren {
   TroRetailersRoute: typeof TroRetailersRouteWithChildren
   TroServicesRoute: typeof TroServicesRoute
   TroSupportRoute: typeof TroSupportRoute
+  VerifyTokenRoute: typeof VerifyTokenRoute
   QcKycReviewIdRoute: typeof QcKycReviewIdRoute
 }
 
@@ -2704,6 +2730,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WalletDeductionsRouteImport
       parentRoute: typeof WalletRoute
     }
+    '/verify/$token': {
+      id: '/verify/$token'
+      path: '/verify/$token'
+      fullPath: '/verify/$token'
+      preLoaderRoute: typeof VerifyTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/tro/support': {
       id: '/tro/support'
       path: '/tro/support'
@@ -2996,6 +3029,13 @@ declare module '@tanstack/react-router' {
       path: '/hr/leave'
       fullPath: '/hr/leave'
       preLoaderRoute: typeof HrLeaveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hr/id-cards': {
+      id: '/hr/id-cards'
+      path: '/hr/id-cards'
+      fullPath: '/hr/id-cards'
+      preLoaderRoute: typeof HrIdCardsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/hr/hr-settings': {
@@ -3717,6 +3757,7 @@ const rootRouteChildren: RootRouteChildren = {
   HrEmployeesRoute: HrEmployeesRoute,
   HrFeedbackRoute: HrFeedbackRoute,
   HrHrSettingsRoute: HrHrSettingsRoute,
+  HrIdCardsRoute: HrIdCardsRoute,
   HrLeaveRoute: HrLeaveRoute,
   HrOnboardingRoute: HrOnboardingRoute,
   HrPayrollRoute: HrPayrollRoute,
@@ -3758,6 +3799,7 @@ const rootRouteChildren: RootRouteChildren = {
   TroRetailersRoute: TroRetailersRouteWithChildren,
   TroServicesRoute: TroServicesRoute,
   TroSupportRoute: TroSupportRoute,
+  VerifyTokenRoute: VerifyTokenRoute,
   QcKycReviewIdRoute: QcKycReviewIdRoute,
 }
 export const routeTree = rootRouteImport
