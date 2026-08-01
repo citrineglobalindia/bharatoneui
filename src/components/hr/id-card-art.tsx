@@ -53,21 +53,24 @@ function Frame({ side }: { side: "front" | "back" }) {
     <svg viewBox="0 0 540 856" className="bo-card-frame" preserveAspectRatio="none" aria-hidden="true">
       {side === "front" ? (
         <>
-          {/* top right */}
-          <path d="M168 0 C300 0 420 62 540 176 L540 0 Z" fill={ORANGE} />
-          <path d="M262 0 C372 0 456 46 540 132 L540 176 C420 62 300 0 168 0 Z" fill={GREEN} />
-          {/* bottom left */}
-          <path d="M0 856 L0 512 C90 618 168 726 232 856 Z" fill={GREEN} />
-          <path d="M0 512 L0 452 C112 566 200 700 268 856 L232 856 C168 726 90 618 0 512 Z" fill={ORANGE} />
+          {/* Top-right and bottom-left corners only. These are ribbons hugging
+              the corners, not sweeps across the card — the first attempt used
+              large filled wedges and they covered the name and the ID fields. */}
+          <path d="M382 0 Q540 0 540 192" fill="none" stroke={ORANGE} strokeWidth="38" />
+          <path d="M426 0 Q540 0 540 148 L540 0 Z" fill={GREEN} />
+          <path d="M0 716 Q0 856 178 856" fill="none" stroke={GREEN} strokeWidth="40" />
+          <path d="M0 764 Q0 856 130 856 L0 856 Z" fill={ORANGE} />
         </>
       ) : (
         <>
-          {/* left ribbon */}
-          <path d="M0 96 C86 190 128 320 128 428 C128 552 74 690 0 790 Z" fill={ORANGE} />
-          <path d="M0 96 L0 34 C104 150 152 300 152 428 C152 570 92 706 0 812 L0 790 C74 690 128 552 128 428 C128 320 86 190 0 96 Z" fill={GREEN} />
-          {/* bottom right */}
-          <path d="M540 528 C452 610 396 720 372 856 L540 856 Z" fill={GREEN} />
-          <path d="M540 470 C436 560 372 700 344 856 L372 856 C396 720 452 610 540 528 Z" fill={ORANGE} />
+          {/* A slim band down the left edge and a corner at the bottom right,
+              both kept clear of the text column. */}
+          {/* The left band bulges only slightly. A deeper curve looked better in
+              isolation but ran straight through the metadata labels. */}
+          <path d="M20 -20 Q52 428 20 876" fill="none" stroke={GREEN} strokeWidth="44" />
+          <path d="M-14 -20 Q10 428 -14 876" fill="none" stroke={ORANGE} strokeWidth="44" />
+          <path d="M540 668 Q470 782 416 856 L540 856 Z" fill={ORANGE} />
+          <path d="M540 722 Q488 804 452 856 L540 856 Z" fill={GREEN} />
         </>
       )}
     </svg>
@@ -182,45 +185,68 @@ export const ID_CARD_CSS = `
 .bo-card-body{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
   padding:3.4mm 4.6mm 2.6mm;}
 
-.bo-logo{height:6.4mm;width:auto;margin-top:1.2mm;}
-.bo-logo-sm{height:5.6mm;margin-top:0.6mm;}
-.bo-company{margin:2.2mm 0 0;font-size:2.05mm;font-weight:800;text-align:center;line-height:1.25;}
-.bo-address{margin:0.8mm 0 0;font-size:1.72mm;font-weight:700;text-align:center;line-height:1.3;}
+.bo-logo{height:6mm;width:auto;margin-top:0.8mm;}
+.bo-logo-sm{height:5mm;margin-top:0.4mm;}
+/* The company name is one line on the sample card. nowrap plus a touch of
+   negative tracking keeps it that way without relying on a specific font. */
+.bo-company{margin:1.7mm 0 0;font-size:1.78mm;font-weight:800;text-align:center;
+  line-height:1.2;white-space:nowrap;letter-spacing:-0.012em;}
+.bo-address{margin:0.7mm 0 0;font-size:1.45mm;font-weight:700;text-align:center;
+  line-height:1.25;white-space:nowrap;letter-spacing:-0.012em;}
 
-.bo-photo{margin-top:2.8mm;width:21mm;height:26mm;border-radius:2.6mm;overflow:hidden;
+.bo-photo{margin-top:2.4mm;width:20mm;height:24.5mm;border-radius:2.6mm;overflow:hidden;
   background:#efece8;display:flex;align-items:center;justify-content:center;flex:none;}
 .bo-photo img{width:100%;height:100%;object-fit:cover;display:block;}
 .bo-photo-empty{font-size:2mm;color:#8a8a8a;}
 
-.bo-name{margin:3.4mm 0 0;font-size:4.1mm;font-weight:800;text-align:center;line-height:1.15;}
-.bo-role{margin:1mm 0 0;font-size:3.1mm;font-weight:500;text-align:center;}
+.bo-name{margin:3mm 0 0;font-size:3.9mm;font-weight:800;text-align:center;line-height:1.12;}
+.bo-role{margin:0.9mm 0 0;font-size:2.9mm;font-weight:500;text-align:center;line-height:1.15;}
 
-.bo-fields{margin:3.2mm 0 0;display:grid;grid-template-columns:auto auto;
-  column-gap:2.2mm;row-gap:1.6mm;align-items:baseline;}
-.bo-fields dt{font-size:2.5mm;font-weight:500;text-align:right;}
-.bo-fields dd{margin:0;font-size:2.5mm;font-weight:600;}
+.bo-fields{margin:2.8mm 0 0;display:grid;grid-template-columns:auto auto;
+  column-gap:2mm;row-gap:1.4mm;align-items:baseline;}
+.bo-fields dt{font-size:2.3mm;font-weight:500;text-align:right;white-space:nowrap;}
+.bo-fields dd{margin:0;font-size:2.3mm;font-weight:600;white-space:nowrap;}
 
-.bo-sign{margin-top:auto;text-align:center;width:100%;}
-.bo-sign img{height:6mm;width:auto;margin:0 auto -1.4mm;display:block;}
-.bo-sign p{margin:0;font-size:2.3mm;font-weight:500;}
+.bo-sign{margin-top:auto;padding-top:1.6mm;text-align:center;width:100%;}
+.bo-sign img{height:5.4mm;width:auto;margin:0 auto -1.2mm;display:block;}
+.bo-sign p{margin:0;font-size:2.2mm;font-weight:500;}
 
-.bo-back{padding:3mm 4.4mm 2.4mm;}
-.bo-meta{margin:2.6mm 0 0;width:100%;display:grid;grid-template-columns:auto 1fr;
-  column-gap:4mm;row-gap:0.7mm;padding-left:3mm;}
-.bo-meta dt{font-size:2.1mm;font-weight:500;}
-.bo-meta dd{margin:0;font-size:2.1mm;font-weight:500;}
+/* The back is the tight one: five clauses of terms, a QR and a metadata block
+   all inside 85.6 mm. Every size below is chosen so the total column height
+   lands just under the card, with the QR pinned to the bottom by margin-top
+   auto — if a value here grows, something has to shrink to pay for it. */
+.bo-back{padding:2.6mm 4.2mm 2.2mm 6.4mm;}
+.bo-meta{margin:2.2mm 0 0;width:100%;display:grid;grid-template-columns:auto 1fr;
+  column-gap:3.4mm;row-gap:0.45mm;padding-left:1.6mm;}
+.bo-meta dt{font-size:1.95mm;font-weight:500;white-space:nowrap;}
+.bo-meta dd{margin:0;font-size:1.95mm;font-weight:500;}
 
-.bo-terms-title{margin:2.4mm 0 0;font-size:2.15mm;font-weight:800;text-align:center;}
-.bo-terms{margin-top:1mm;width:100%;}
-.bo-terms p{margin:0 0 0.9mm;font-size:1.78mm;line-height:1.32;text-align:left;}
+.bo-terms-title{margin:2mm 0 0;font-size:2mm;font-weight:800;text-align:center;}
+.bo-terms{margin-top:0.8mm;width:100%;}
+.bo-terms p{margin:0 0 0.65mm;font-size:1.5mm;line-height:1.26;text-align:left;}
 .bo-terms strong{font-weight:800;}
 
-.bo-qr{margin-top:auto;align-self:flex-start;width:16mm;height:16mm;}
+.bo-qr{margin-top:auto;padding-top:1.4mm;align-self:flex-start;width:13.5mm;height:13.5mm;}
 .bo-qr img{width:100%;height:100%;display:block;}
 .bo-qr-empty{width:100%;height:100%;border:0.3mm dashed #bbb;display:flex;
   align-items:center;justify-content:center;font-size:2mm;color:#bbb;}
-.bo-site{margin:1.2mm 0 0;align-self:flex-start;font-size:2.05mm;font-weight:600;}
+.bo-site{margin:0.9mm 0 0;align-self:flex-start;font-size:1.9mm;font-weight:600;}
 
 /* Screen preview only — never printed. */
 .bo-card-shadow{box-shadow:0 2px 14px rgba(0,0,0,.16);border-radius:2mm;}
+
+/* ── gallery thumbnails ───────────────────────────────────────────────
+   The grid shows the REAL card scaled down rather than a simplified tile, so
+   what HR sees on screen is what comes out of the printer. --s is the scale
+   factor; the wrapper is sized from the same millimetre values so the layout
+   reflows correctly at any zoom level. */
+.bo-thumb{position:relative;perspective:900px;
+  width:calc(${CARD_W_MM}mm * var(--s));height:calc(${CARD_H_MM}mm * var(--s));}
+.bo-flip{position:absolute;top:0;left:0;width:${CARD_W_MM}mm;height:${CARD_H_MM}mm;
+  transform-origin:top left;transform:scale(var(--s));
+  transform-style:preserve-3d;transition:transform .5s ease;}
+.bo-thumb[data-face="back"] .bo-flip{transform:scale(var(--s)) rotateY(180deg);}
+.bo-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  border-radius:2mm;overflow:hidden;box-shadow:0 1px 10px rgba(0,0,0,.14);}
+.bo-face--back{transform:rotateY(180deg);}
 `;

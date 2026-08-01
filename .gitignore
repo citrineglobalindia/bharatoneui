@@ -36,3 +36,6 @@ dist-ssr
 _awardtmp/
 .claude/settings.local.json
 supabase/.temp/
+
+# scratch render used to check the ID card artwork
+.card-proof.html

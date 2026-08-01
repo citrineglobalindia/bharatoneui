@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import {
   IdCard, Loader2, RefreshCw, Search, Printer, Plus, ShieldOff, ShieldCheck,
   Upload, X, History, AlertTriangle, CheckCircle2, Clock3, ScanLine, Copy,
+  LayoutGrid, Rows3, FlipHorizontal2, ZoomIn, ZoomOut, UserX,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
@@ -46,6 +47,9 @@ const STATE: Record<string, { label: string; tone: string; icon: any }> = {
 
 const BLOOD = ["A+VE", "A-VE", "B+VE", "B-VE", "AB+VE", "AB-VE", "O+VE", "O-VE"];
 
+/** Thumbnail scales for the gallery. 1 would be the true 54 mm card. */
+const ZOOMS = [0.62, 0.82, 1.05];
+
 export function IdCards() {
   const [rows, setRows] = useState<Row[]>([]);
   const [settings, setSettings] = useState<Record<string, string>>({});
@@ -56,6 +60,13 @@ export function IdCards() {
   const [preview, setPreview] = useState<Row | null>(null);
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [photos, setPhotos] = useState<Record<string, string>>({});
+  const [view, setView] = useState<"grid" | "table">("grid");
+  const [zoom, setZoom] = useState(1);
+  // Which tiles are showing their back, and which have ever been turned over.
+  // The back face is only mounted once a card has been flipped, so opening the
+  // gallery does not fire a QR request for every member of staff at once.
+  const [flipped, setFlipped] = useState<Set<string>>(new Set());
+  const [everFlipped, setEverFlipped] = useState<Set<string>>(new Set());
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -119,6 +130,29 @@ export function IdCards() {
     printCards(list.map(toCardData));
   };
 
+  const flip = (id: string) => {
+    setEverFlipped((s) => new Set(s).add(id));
+    setFlipped((s) => {
+      const n = new Set(s);
+      if (n.has(id)) n.delete(id); else n.add(id);
+      return n;
+    });
+  };
+
+  const flipAll = () => {
+    const withCards = rows.filter((r) => r.card_id).map((r) => r.user_id);
+    const allBack = withCards.length > 0 && withCards.every((id) => flipped.has(id));
+    setEverFlipped(new Set(withCards));
+    setFlipped(allBack ? new Set() : new Set(withCards));
+  };
+
+  const toggle = (id: string, on: boolean) =>
+    setPicked((s) => {
+      const n = new Set(s);
+      if (on) n.add(id); else n.delete(id);
+      return n;
+    });
+
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -165,6 +199,39 @@ export function IdCards() {
           <option value="revoked">Revoked</option>
           <option value="lost">Reported lost</option>
         </select>
+
+        <div className="flex rounded-lg border border-border bg-card p-1">
+          <button onClick={() => setView("grid")} title="Card gallery"
+            className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-bold transition ${
+              view === "grid" ? "bg-india-green text-white" : "text-muted-foreground hover:bg-muted"}`}>
+            <LayoutGrid className="h-3.5 w-3.5" /> Cards
+          </button>
+          <button onClick={() => setView("table")} title="List"
+            className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-bold transition ${
+              view === "table" ? "bg-india-green text-white" : "text-muted-foreground hover:bg-muted"}`}>
+            <Rows3 className="h-3.5 w-3.5" /> List
+          </button>
+        </div>
+
+        {view === "grid" && (
+          <>
+            <div className="flex items-center rounded-lg border border-border bg-card">
+              <button onClick={() => setZoom((z) => Math.max(0, z - 1))} disabled={zoom === 0}
+                title="Smaller" className="p-2 hover:bg-muted disabled:opacity-40">
+                <ZoomOut className="h-3.5 w-3.5" />
+              </button>
+              <button onClick={() => setZoom((z) => Math.min(ZOOMS.length - 1, z + 1))}
+                disabled={zoom === ZOOMS.length - 1}
+                title="Bigger" className="p-2 hover:bg-muted disabled:opacity-40">
+                <ZoomIn className="h-3.5 w-3.5" />
+              </button>
+            </div>
+            <button onClick={flipAll} title="Turn every card over"
+              className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-semibold hover:bg-muted">
+              <FlipHorizontal2 className="h-3.5 w-3.5" /> Flip all
+            </button>
+          </>
+        )}
       </div>
 
       {loading ? (
@@ -173,6 +240,28 @@ export function IdCards() {
         <p className="rounded-2xl border border-border bg-card p-8 text-center text-sm text-muted-foreground">
           No staff match that filter.
         </p>
+      ) : view === "grid" ? (
+        <>
+          <style>{ID_CARD_CSS}</style>
+          <div className="flex flex-wrap gap-5">
+            {rows.map((r) => (
+              <GridTile key={r.user_id} row={r} scale={ZOOMS[zoom]}
+                data={r.card_id ? toCardData(r) : null}
+                showBack={flipped.has(r.user_id)}
+                mountBack={everFlipped.has(r.user_id)}
+                selected={picked.has(r.user_id)}
+                onSelect={(on) => toggle(r.user_id, on)}
+                onFlip={() => flip(r.user_id)}
+                onOpen={() => setPreview(r)}
+                onIssue={() => setIssuing(r)} />
+            ))}
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            These are the real cards at {Math.round(ZOOMS[zoom] * 100)}% of their printed
+            size — what you see here is what comes out of the printer. Click a card to
+            turn it over.
+          </p>
+        </>
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-soft">
           <table className="w-full text-sm">
@@ -259,6 +348,97 @@ export function IdCards() {
           onChanged={load}
           onPrint={() => printSheet([preview])} />
       )}
+    </div>
+  );
+}
+
+/* ── gallery tile ─────────────────────────────────────────────────────── */
+
+// One card in the gallery. The card art is the same component the preview and
+// the printer use, scaled down — so a tile can never drift out of step with what
+// is actually printed. Staff with no card still get a tile, because an empty
+// space in the grid is the fastest way to see who has been missed.
+function GridTile({ row, data, scale, showBack, mountBack, selected, onSelect, onFlip, onOpen, onIssue }: {
+  row: Row; data: CardData | null; scale: number;
+  showBack: boolean; mountBack: boolean; selected: boolean;
+  onSelect: (on: boolean) => void; onFlip: () => void;
+  onOpen: () => void; onIssue: () => void;
+}) {
+  const s = STATE[row.card_state];
+  const Icon = s.icon;
+  const w = { width: `calc(53.98mm * ${scale})` };
+
+  return (
+    <div className="flex flex-col gap-2" style={w}>
+      <div className="relative">
+        {data ? (
+          <>
+            <div
+              className="bo-thumb cursor-pointer"
+              data-face={showBack ? "back" : "front"}
+              style={{ ["--s" as any]: scale }}
+              onClick={onFlip}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onFlip(); } }}
+              aria-label={`${row.name} — ${s.label}. Activate to turn the card over.`}
+            >
+              <div className="bo-flip">
+                <div className="bo-face"><IdCardFront d={data} /></div>
+                {mountBack && (
+                  <div className="bo-face bo-face--back"><IdCardBack d={data} /></div>
+                )}
+              </div>
+            </div>
+
+            {/* A cancelled or expired card must be obvious at a glance, even in a
+                grid of twenty. Dimming alone is too easy to miss. */}
+            {row.card_state !== "active" && (
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-[2mm] bg-background/55">
+                <span className={`rotate-[-12deg] rounded-md px-2 py-1 text-[11px] font-extrabold uppercase tracking-wide shadow ${s.tone}`}>
+                  {s.label}
+                </span>
+              </div>
+            )}
+
+            <label className="absolute left-1.5 top-1.5 flex h-6 w-6 cursor-pointer items-center justify-center rounded-md bg-background/85 shadow"
+                   onClick={(e) => e.stopPropagation()}>
+              <input type="checkbox" checked={selected}
+                     onChange={(e) => onSelect(e.target.checked)} />
+            </label>
+          </>
+        ) : (
+          <div
+            className="flex flex-col items-center justify-center gap-2 rounded-[2mm] border-2 border-dashed border-border bg-muted/30 p-4 text-center"
+            style={{ height: `calc(85.6mm * ${scale})` }}
+          >
+            <UserX className="h-6 w-6 text-muted-foreground/60" />
+            <p className="text-xs font-semibold text-muted-foreground">No card issued</p>
+            <button onClick={onIssue}
+              className="inline-flex items-center gap-1 rounded-lg bg-india-green px-2.5 py-1 text-xs font-bold text-white">
+              <Plus className="h-3 w-3" /> Issue
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="min-w-0">
+        <p className="truncate text-sm font-bold" title={row.name}>{row.name}</p>
+        <p className="truncate text-[11px] text-muted-foreground" title={row.designation ?? ""}>
+          {row.designation || row.department || row.email}
+        </p>
+        {data && (
+          <div className="mt-1 flex items-center gap-1.5">
+            <span className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${s.tone}`}>
+              <Icon className="h-2.5 w-2.5" /> {s.label}
+            </span>
+            <button onClick={onOpen}
+              className="ml-auto rounded-md border border-border px-2 py-0.5 text-[10px] font-semibold hover:bg-muted">
+              Open
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -695,18 +875,21 @@ const fmtPrint = (s: string | null) => {
 
 const LOGO_SRC = new URL("../../assets/bharatone-logo.png", import.meta.url).href;
 
+// These must stay identical to the <Frame> component in id-card-art.tsx. The
+// print window has no React, so the same artwork exists twice; keeping them
+// side by side here makes a divergence obvious in review.
 const FRAME_FRONT = `<svg viewBox="0 0 540 856" class="bo-card-frame" preserveAspectRatio="none" aria-hidden="true">
-<path d="M168 0 C300 0 420 62 540 176 L540 0 Z" fill="#FF6B1A"/>
-<path d="M262 0 C372 0 456 46 540 132 L540 176 C420 62 300 0 168 0 Z" fill="#0E8A3E"/>
-<path d="M0 856 L0 512 C90 618 168 726 232 856 Z" fill="#0E8A3E"/>
-<path d="M0 512 L0 452 C112 566 200 700 268 856 L232 856 C168 726 90 618 0 512 Z" fill="#FF6B1A"/>
+<path d="M300 0 Q540 0 540 270" fill="none" stroke="#FF6B1A" stroke-width="46"/>
+<path d="M356 0 Q540 0 540 214 L540 0 Z" fill="#0E8A3E"/>
+<path d="M0 586 Q0 856 270 856" fill="none" stroke="#0E8A3E" stroke-width="46"/>
+<path d="M0 642 Q0 856 214 856 L0 856 Z" fill="#FF6B1A"/>
 </svg>`;
 
 const FRAME_BACK = `<svg viewBox="0 0 540 856" class="bo-card-frame" preserveAspectRatio="none" aria-hidden="true">
-<path d="M0 96 C86 190 128 320 128 428 C128 552 74 690 0 790 Z" fill="#FF6B1A"/>
-<path d="M0 96 L0 34 C104 150 152 300 152 428 C152 570 92 706 0 812 L0 790 C74 690 128 552 128 428 C128 320 86 190 0 96 Z" fill="#0E8A3E"/>
-<path d="M540 528 C452 610 396 720 372 856 L540 856 Z" fill="#0E8A3E"/>
-<path d="M540 470 C436 560 372 700 344 856 L372 856 C396 720 452 610 540 528 Z" fill="#FF6B1A"/>
+<path d="M22 -20 Q104 428 22 876" fill="none" stroke="#0E8A3E" stroke-width="54"/>
+<path d="M-16 -20 Q58 428 -16 876" fill="none" stroke="#FF6B1A" stroke-width="54"/>
+<path d="M540 520 Q432 700 348 856 L540 856 Z" fill="#FF6B1A"/>
+<path d="M540 592 Q460 726 402 856 L540 856 Z" fill="#0E8A3E"/>
 </svg>`;
 
 const TERMS_HTML = [
