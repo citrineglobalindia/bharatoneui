@@ -129,7 +129,13 @@ function BbpsPage() {
       // listed schools. Nothing errored, so it looked like data, which is worse
       // than an empty list.
       const r = await call("operators", { category: c.id, ...(location ? { location } : {}) });
-      setOps(r?.list ?? []);
+      const list = r?.list ?? [];
+      setOps(list);
+      if (list.length === 0) {
+        toast.info(`${c.name} has no billers live yet`, {
+          description: "The partner has not activated any operators in this category.",
+        });
+      }
     } catch (e: any) { toast.error("Could not load operators", { description: e.message }); }
   };
 
@@ -159,14 +165,51 @@ function BbpsPage() {
     } catch (e: any) { toast.error("Could not load the form", { description: e.message }); }
   };
 
+  // The biller's own field for the main account number, so the label on screen
+  // is the one printed on the customer's bill — "Consumer ID" for electricity,
+  // "Vehicle Registration Number" for FASTag — rather than a generic phrase.
+  const mainField = params.find((p) => p.name === "utility_acc_no") ?? null;
+
+  // Some patterns Eko sends are over-escaped and reject their own example (the
+  // Education date of birth is one). A rule that cannot be satisfied must not
+  // block a payment, so a pattern is only enforced if it compiles AND is not
+  // obviously broken.
+  const usableRegex = (p: Param): RegExp | null => {
+    if (!p.regex) return null;
+    // Over-escaped patterns: a doubled backslash before a dash or a letter means
+    // Eko meant \- or \d and shipped \\- or \\d, which can never match a real
+    // value. A doubled backslash before a bracket (as in the broadband pattern)
+    // is a legitimate escaped backslash inside a character class, so it stays.
+    if (/\\\\[a-zA-Z-]/.test(p.regex)) return null;
+    try { return new RegExp(p.regex); } catch { return null; }
+  };
+
+  // A "list" field, or a pattern that is really a set of choices such as
+  // ^(Property Tax|Repair Cess)$ — shown as a dropdown so the retailer picks a
+  // value the biller will accept instead of guessing the exact wording.
+  const optionsOf = (p: Param): string[] => {
+    if (!p.regex) return [];
+    const body = p.regex.replace(/^\^\(?/, "").replace(/\)?\$$/, "");
+    if (!body.includes("|")) return [];
+    const parts = body.split("|").map((x) => x.trim());
+    const clean = parts.every((x) => x.length > 0 && !/[\[\]{}\\^$*+?]/.test(x));
+    return clean && parts.length > 1 ? parts : [];
+  };
+
+  const mainInvalid = (() => {
+    const re = mainField ? usableRegex(mainField) : null;
+    return !!(re && acc.trim() && !re.test(acc.trim()));
+  })();
+
   const missing = params.filter((p) => p.required && !(values[p.name] ?? "").trim());
   // Eko supplies the exact pattern each biller expects and the exact wording to
   // show when it fails. Using theirs means the customer is told what the biller
   // actually wants rather than a generic complaint.
   const invalid = params.filter((p) => {
+    if (p.name === "utility_acc_no") return false;   // handled by mainInvalid
     const v = (values[p.name] ?? "").trim();
-    if (!v || !p.regex) return false;
-    try { return !new RegExp(p.regex).test(v); } catch { return false; }
+    const re = usableRegex(p);
+    return !!(v && re && !re.test(v));
   });
 
   const fetchBill = async () => {
@@ -175,6 +218,7 @@ function BbpsPage() {
     setBusy(true);
     try {
       const r = await call("fetch_bill", {
+        params: values,
         operator_code: op?.code, utility_acc_no: acc.trim(),
         confirmation_mobile_no: custMobile, latlong,
         dob: values.dob, cycle_number: values.cycle_number,
@@ -202,6 +246,7 @@ function BbpsPage() {
     setBusy(true);
     try {
       const r = await call("pay_bill", {
+        params: values,
         category: cat?.name, operator_code: op?.code, operator_name: op?.name,
         amount: amt, convenience_fee: bill?.convenience_fee ?? 0,
         utility_acc_no: acc.trim(), confirmation_mobile_no: custMobile, latlong,
@@ -361,11 +406,17 @@ function BbpsPage() {
 
                 <div>
                   <label className="text-[11px] font-semibold text-muted-foreground">
-                    Account / consumer number<span className="text-rose-600"> *</span>
+                    {mainField?.label ?? "Account / consumer number"}<span className="text-rose-600"> *</span>
                   </label>
                   <input value={acc} onChange={(e) => setAcc(e.target.value)}
-                    placeholder="As printed on the bill"
+                    inputMode={mainField?.type === "numeric" ? "numeric" : "text"}
+                    placeholder={mainField?.label ?? "As printed on the bill"}
                     className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm" />
+                  {mainInvalid && (
+                    <p className="mt-1 text-[11px] font-semibold text-rose-600">
+                      {mainField?.error_message ?? `Check the ${mainField?.label}`}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="text-[11px] font-semibold text-muted-foreground">
@@ -383,14 +434,23 @@ function BbpsPage() {
                     <label className="text-[11px] font-semibold text-muted-foreground">
                       {p.label}{p.required && <span className="text-rose-600"> *</span>}
                     </label>
-                    <input
-                      value={values[p.name] ?? ""}
-                      onChange={(e) => setValues((v) => ({ ...v, [p.name]: e.target.value }))}
-                      inputMode={p.type === "numeric" || p.type === "number" ? "numeric" : "text"}
-                      maxLength={p.max ?? undefined}
-                      placeholder={p.label}
-                      className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm"
-                    />
+                    {optionsOf(p).length > 0 ? (
+                      <select
+                        value={values[p.name] ?? ""}
+                        onChange={(e) => setValues((v) => ({ ...v, [p.name]: e.target.value }))}
+                        className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm">
+                        <option value="">Select {p.label}</option>
+                        {optionsOf(p).map((o) => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    ) : (
+                      <input
+                        value={values[p.name] ?? ""}
+                        onChange={(e) => setValues((v) => ({ ...v, [p.name]: e.target.value }))}
+                        inputMode={p.type === "numeric" || p.type === "number" ? "numeric" : "text"}
+                        placeholder={p.label}
+                        className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm"
+                      />
+                    )}
                   </div>
                 ))}
 
@@ -420,7 +480,7 @@ function BbpsPage() {
                     {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />} Fetch bill
                   </button>
                   )}
-                  <button onClick={payBill} disabled={busy || !(Number(amount) > 0) || invalid.length > 0}
+                  <button onClick={payBill} disabled={busy || !(Number(amount) > 0) || invalid.length > 0 || mainInvalid}
                     className="inline-flex items-center gap-1.5 rounded-lg bg-india-green px-5 h-10 text-sm font-bold text-white disabled:opacity-50">
                     {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} Pay {Number(amount) > 0 ? inr(Number(amount)) : ""}
                   </button>
