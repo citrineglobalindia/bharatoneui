@@ -152,18 +152,46 @@ Deno.serve(async (req) => {
   await deliveryCheck("sms", "SMS");
   await deliveryCheck("email", "email");
 
-  // Razorpay: unreconciled payments sitting too long
+  // Online payments: money taken but not yet credited.
+  //
+  // Only gateways in LIVE mode count. A gateway in test mode leaves exactly the
+  // same rows behind, and for weeks this check was reporting a dozen ICICI UAT
+  // transactions as unreconciled production payments — 270 consecutive warnings.
+  // An alarm that is always on is worse than no alarm: it teaches everyone to
+  // ignore the board, and the day something real breaks nobody looks.
+  //
+  // The module is still keyed "razorpay" for continuity with existing history,
+  // but the table now holds every gateway, so the wording says "online payments".
   {
     const twoHrs = new Date(Date.now() - 2 * 3600 * 1000).toISOString();
+    const { data: gws } = await svc.from("payment_gateways").select("name,mode,active");
+    const liveGateways = (gws ?? [])
+      .filter((g: { mode?: string; active?: boolean }) => g.active && g.mode === "live")
+      .map((g: { name: string }) => g.name);
+
     const { data, error } = await svc.from("razorpay_payments")
-      .select("status,created_at").eq("status", "paid").lt("created_at", twoHrs).limit(200);
+      .select("status,created_at,gateway,amount")
+      .eq("status", "paid").lt("created_at", twoHrs).limit(200);
+
     if (error) {
       await log("razorpay", { status: "warn", message: `Could not read payments: ${error.message.slice(0, 90)}` });
     } else {
-      const pending = (data ?? []).length;
+      const rows = (data ?? []) as { gateway?: string | null; amount?: number }[];
+      // A row with no gateway recorded predates the multi-gateway work and was
+      // Razorpay; count it only if Razorpay is live.
+      const live = rows.filter((r) => liveGateways.includes(r.gateway ?? "razorpay"));
+      const testOnly = rows.length - live.length;
+      const pending = live.length;
+      const value = live.reduce((s, r) => s + Number(r.amount ?? 0), 0);
+      const note = testOnly ? ` (${testOnly} test-mode payment(s) ignored)` : "";
+
       await log("razorpay", pending >= 10
-        ? { status: "warn", message: `${pending} online payments awaiting reconciliation for over 2h`, detail: { pending } }
-        : { status: "ok", message: pending ? `${pending} payment(s) awaiting reconciliation` : "All online payments reconciled", detail: { pending } });
+        ? { status: "warn", message: `${pending} online payments (₹${value}) awaiting reconciliation for over 2h${note}`, detail: { pending, value, testOnly } }
+        : { status: "ok",
+            message: pending
+              ? `${pending} payment(s) awaiting reconciliation${note}`
+              : `All online payments reconciled${note}`,
+            detail: { pending, testOnly } });
     }
   }
 

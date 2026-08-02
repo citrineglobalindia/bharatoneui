@@ -124,7 +124,11 @@ function BbpsPage() {
 
   const loadOperators = async (c: Cat, location?: string) => {
     try {
-      const r = await call("operators", { category: c.name, ...(location ? { location } : {}) });
+      // Eko matches on the numeric category id, not the display name. Passing the
+      // name silently returned somebody else's billers — picking "Mobile Postpaid"
+      // listed schools. Nothing errored, so it looked like data, which is worse
+      // than an empty list.
+      const r = await call("operators", { category: c.id, ...(location ? { location } : {}) });
       setOps(r?.list ?? []);
     } catch (e: any) { toast.error("Could not load operators", { description: e.message }); }
   };
