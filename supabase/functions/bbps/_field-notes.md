@@ -103,8 +103,14 @@ reality, so that is what the form trusts.
 pays it directly. That is the whole flow minus the convenience of auto-fetch.
 
 **To fix:** ask Eko to enable Bill Fetch / Bill Avenue on the merchant account.
-When they do, `billFetchResponse` turns to 1 and the Fetch bill button appears
-by itself, with no code change.
+
+The Fetch bill button is always shown, even though the flag says fetch is
+unavailable. It was briefly hidden — that was wrong. An enquiry is read-only and
+costs nothing, and hiding the button leaves nobody any way to tell when Eko
+switches fetch on. The flag only changes the wording under the form, and a
+fruitless enquiry now says "No bill came back for that account — type the amount
+from the customer's bill and pay directly" rather than echoing the biller's
+"Unable to fetch bill", which tells a retailer nothing.
 
 ## Two money traps from Eko's machine-readable docs
 

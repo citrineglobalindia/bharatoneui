@@ -161,15 +161,14 @@ function BbpsPage() {
     try {
       const r = await call("operator_params", { operator_code: o.code });
       setParams(r?.list ?? []);
-      // Eko's two endpoints disagree about bill fetch. The operator list reports
-      // billFetchResponse per biller; the parameters call reports fetchBill.
-      // Tested against a live BESCOM bill that PhonePe fetches successfully:
-      // the operator list is the one that matches reality. Trust it, and treat
-      // the parameters value only as a fallback when the operator record has
-      // nothing to say. Today billFetchResponse is 0 on all 2,416 billers,
-      // because bill fetch is not provisioned on this Eko account — so the
-      // button stays hidden until Eko enables it, at which point it appears on
-      // its own with no code change.
+      // Eko's two endpoints disagree about bill fetch: the operator list reports
+      // billFetchResponse per biller, the parameters call reports fetchBill.
+      // Tested against a live BESCOM bill that PhonePe fetches successfully —
+      // the operator list is the one that matches reality, so it wins.
+      //
+      // This only changes the WORDING under the form. The Fetch bill button is
+      // always offered: an enquiry is read-only and costs nothing, and hiding it
+      // would leave no way to tell when Eko finally enables fetch.
       setCanFetchBill(o.fetch_bill ?? !!r?.fetch_bill);
     } catch (e: any) { toast.error("Could not load the form", { description: e.message }); }
   };
@@ -237,7 +236,16 @@ function BbpsPage() {
       if (r.bill?.amount != null) setAmount(String(r.bill.amount));
       toast.success("Bill fetched");
     } catch (e: any) {
-      toast.error("Could not fetch the bill", { description: e.message });
+      // "Unable to fetch bill" is the biller's wording and tells a retailer
+      // nothing about what to do. Say it plainly instead, and make clear the
+      // payment can still go ahead by hand.
+      const raw = String(e?.message ?? "");
+      const noBill = /unable to fetch|no bill|not found|no due/i.test(raw);
+      toast.error(noBill ? "No bill came back for that account" : "Could not fetch the bill", {
+        description: noBill
+          ? "Type the amount from the customer's bill and pay directly — that works today."
+          : raw,
+      });
     } finally { setBusy(false); }
   };
 
@@ -483,12 +491,10 @@ function BbpsPage() {
                 </div>
 
                 <div className="flex flex-wrap gap-2 pt-1">
-                  {canFetchBill && (
                   <button onClick={fetchBill} disabled={busy || params.length === 0}
                     className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-4 h-10 text-sm font-semibold hover:bg-muted disabled:opacity-50">
                     {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />} Fetch bill
                   </button>
-                  )}
                   <button onClick={payBill} disabled={busy || !(Number(amount) > 0) || invalid.length > 0 || mainInvalid}
                     className="inline-flex items-center gap-1.5 rounded-lg bg-india-green px-5 h-10 text-sm font-bold text-white disabled:opacity-50">
                     {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} Pay {Number(amount) > 0 ? inr(Number(amount)) : ""}
@@ -502,7 +508,7 @@ function BbpsPage() {
                 <p className="text-[11px] text-muted-foreground">
                   {canFetchBill
                     ? "Fetch the bill to confirm the customer and the amount before paying."
-                    : "Enter the amount shown on the customer's bill and pay directly. Fetching the bill automatically is not available on this account yet."}
+                    : "This biller does not advertise bill fetch on our account yet — Fetch bill will probably return nothing. Enter the amount from the customer's bill and pay directly. Trying costs nothing, so press it if you want to check whether it has been switched on."}
                 </p>
               </div>
             )}
