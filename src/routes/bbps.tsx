@@ -56,6 +56,11 @@ function BbpsPage() {
   // selection
   const [cat, setCat] = useState<Cat | null>(null);
   const [ops, setOps] = useState<Op[]>([]);
+  // Electricity, gas and water billers are state-specific. Without narrowing by
+  // location the operator list is every board in India, which is both a very long
+  // dropdown and an easy way to pay the wrong biller.
+  const [locs, setLocs] = useState<{ code: string; name: string }[]>([]);
+  const [loc, setLoc] = useState<string>("");
   const [opQuery, setOpQuery] = useState("");
   const [op, setOp] = useState<Op | null>(null);
   const [params, setParams] = useState<Param[]>([]);
@@ -109,12 +114,31 @@ function BbpsPage() {
     );
   }, []);
 
-  const pickCategory = async (c: Cat) => {
-    setCat(c); setOp(null); setOps([]); setParams([]); setValues({}); setBill(null); setAmount(""); setDone(null); setAcc(""); setCustMobile(""); setFetchRaw(null);
+  // Which categories are billed by state rather than nationally.
+  const needsLocation = (name: string) => /electric|gas|water|municipal|tax/i.test(name);
+
+  const loadOperators = async (c: Cat, location?: string) => {
     try {
-      const r = await call("operators", { category: c.name });
+      const r = await call("operators", { category: c.name, ...(location ? { location } : {}) });
       setOps(r?.list ?? []);
     } catch (e: any) { toast.error("Could not load operators", { description: e.message }); }
+  };
+
+  const pickCategory = async (c: Cat) => {
+    setCat(c); setOp(null); setOps([]); setParams([]); setValues({}); setBill(null); setAmount(""); setDone(null); setAcc(""); setCustMobile(""); setFetchRaw(null);
+    setLoc(""); setLocs([]);
+    if (needsLocation(c.name)) {
+      try {
+        const r = await call("locations", {});
+        setLocs(r?.list ?? []);
+      } catch { /* fall through to the full national list */ }
+    }
+    await loadOperators(c);
+  };
+
+  const pickLocation = async (code: string) => {
+    setLoc(code); setOp(null); setParams([]); setValues({}); setBill(null); setAmount("");
+    if (cat) await loadOperators(cat, code || undefined);
   };
 
   const pickOperator = async (o: Op) => {
@@ -278,6 +302,21 @@ function BbpsPage() {
 
             {!op ? (
               <div className="mt-3">
+                {locs.length > 0 && (
+                  <label className="mb-3 block">
+                    <span className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+                      State / region
+                    </span>
+                    <select value={loc} onChange={(e) => pickLocation(e.target.value)}
+                      className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm">
+                      <option value="">All of India</option>
+                      {locs.map((l) => <option key={l.code} value={l.code}>{l.name}</option>)}
+                    </select>
+                    <span className="mt-1 block text-[10px] text-muted-foreground">
+                      Choosing the state narrows the list to that region's billers.
+                    </span>
+                  </label>
+                )}
                 <div className="relative mb-3">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <input value={opQuery} onChange={(e) => setOpQuery(e.target.value)} placeholder="Search operator…"
