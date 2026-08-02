@@ -106,6 +106,29 @@ pays it directly. That is the whole flow minus the convenience of auto-fetch.
 When they do, `billFetchResponse` turns to 1 and the Fetch bill button appears
 by itself, with no code change.
 
+## Two money traps from Eko's machine-readable docs
+
+Both found in `eps.eko.in/docs/bbps-fetch-bill.md` and `bbps-pay-bill.md`, which
+are more precise than the OpenAPI spec. Neither is visible from the API itself
+until money is already moving.
+
+**The fetched bill amount is in PAISE. The amount you pay is in RUPEES.**
+Eko: *"Outstanding bill amount in paise (divide by 100 for rupees)"* on fetch,
+and *"Payment amount in rupees (e.g. '1350' for Rs 1,350)"* on pay. Reading the
+fetched figure as rupees would have shown a Rs 3,361 bill as Rs 3,36,100 and
+debited a retailer's wallet for it.
+
+**tx_status 2 means Awaited, not failed.** The full set is 0 Success, 1 Fail,
+2 Awaited, 3 Refund Pending, 4 Refunded, 5 On Hold. Treating everything
+non-zero as a failure and refunding would, on an Awaited or On Hold payment,
+return the retailer's money while the biller still collects it — paying the
+bill out of BharatOne's own pocket. Those two states are now held as
+`pending_reconciliation` and never auto-refunded. Only a definite failure
+refunds.
+
+`data.operator_ref_id` is the biller's own reference and is what a dispute is
+raised against; it is now stored alongside Eko's `tid`.
+
 ## Known problems on Eko's side
 
 - **Education DOB pattern is over-escaped.** Eko sends
