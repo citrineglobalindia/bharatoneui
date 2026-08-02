@@ -16,7 +16,8 @@ export const Route = createFileRoute("/bbps")({
 
 type Cat = { id: string; name: string };
 type Op = { code: string; name: string };
-type Param = { name: string; label: string; type: string; required: boolean; min: number | null; max: number | null };
+type Param = { name: string; label: string; type: string; required: boolean;
+  regex?: string | null; error_message?: string | null };
 type Bill = {
   customer_name: string | null; amount: number | null; bill_number: string | null;
   bill_date: string | null; due_date: string | null; convenience_fee: number;
@@ -61,6 +62,10 @@ function BbpsPage() {
   // dropdown and an easy way to pay the wrong biller.
   const [locs, setLocs] = useState<{ code: string; name: string }[]>([]);
   const [loc, setLoc] = useState<string>("");
+  // Eko tells us per operator whether a bill can be fetched. Prepaid recharges
+  // cannot, and asking for a bill that does not exist just returns an error, so
+  // the button is hidden rather than left to fail.
+  const [canFetchBill, setCanFetchBill] = useState(false);
   const [opQuery, setOpQuery] = useState("");
   const [op, setOp] = useState<Op | null>(null);
   const [params, setParams] = useState<Param[]>([]);
@@ -146,10 +151,19 @@ function BbpsPage() {
     try {
       const r = await call("operator_params", { operator_code: o.code });
       setParams(r?.list ?? []);
+      setCanFetchBill(!!r?.fetch_bill || !!o.fetch_bill);
     } catch (e: any) { toast.error("Could not load the form", { description: e.message }); }
   };
 
   const missing = params.filter((p) => p.required && !(values[p.name] ?? "").trim());
+  // Eko supplies the exact pattern each biller expects and the exact wording to
+  // show when it fails. Using theirs means the customer is told what the biller
+  // actually wants rather than a generic complaint.
+  const invalid = params.filter((p) => {
+    const v = (values[p.name] ?? "").trim();
+    if (!v || !p.regex) return false;
+    try { return !new RegExp(p.regex).test(v); } catch { return false; }
+  });
 
   const fetchBill = async () => {
     if (!acc.trim()) return toast.error("Enter the account / consumer number");
@@ -396,17 +410,26 @@ function BbpsPage() {
                 </div>
 
                 <div className="flex flex-wrap gap-2 pt-1">
+                  {canFetchBill && (
                   <button onClick={fetchBill} disabled={busy || params.length === 0}
                     className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-4 h-10 text-sm font-semibold hover:bg-muted disabled:opacity-50">
                     {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />} Fetch bill
                   </button>
-                  <button onClick={payBill} disabled={busy || !(Number(amount) > 0)}
+                  )}
+                  <button onClick={payBill} disabled={busy || !(Number(amount) > 0) || invalid.length > 0}
                     className="inline-flex items-center gap-1.5 rounded-lg bg-india-green px-5 h-10 text-sm font-bold text-white disabled:opacity-50">
                     {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} Pay {Number(amount) > 0 ? inr(Number(amount)) : ""}
                   </button>
                 </div>
+                {invalid.length > 0 && (
+                  <p className="text-[11px] font-semibold text-rose-600">
+                    {invalid[0].error_message ?? `Check the ${invalid[0].label}`}
+                  </p>
+                )}
                 <p className="text-[11px] text-muted-foreground">
-                  Prepaid recharges usually have no bill to fetch — enter the amount and pay directly.
+                  {canFetchBill
+                    ? "Fetch the bill to confirm the customer and the amount before paying."
+                    : "This operator has no bill to fetch — enter the amount and pay directly."}
                 </p>
               </div>
             )}
