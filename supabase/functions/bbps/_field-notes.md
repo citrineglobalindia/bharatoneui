@@ -81,6 +81,31 @@ That single unread field cost an afternoon. The gateway now appends the named
 field to any error, so the next one reads
 `Please provide the value of the field (phone_operator_code)`.
 
+## Bill fetch is not enabled on this account
+
+Proven on 2 Aug 2026 against a **live, unpaid BESCOM bill** (account 6087911883,
+issued 13 Jul, due 27 Jul, Rs 3,361) that PhonePe fetches successfully over
+Bharat Connect at the same moment. Through Eko the same account returns:
+
+    status 1468 — "Unable to fetch bill"
+
+Ruled out first: the parameter names, `user_code`, `client_ref_id`,
+`hc_channel`, the agent's latlong, the account number format, and the
+possibility that the bill was already paid.
+
+Eko's own operator list agrees: `billFetchResponse` is **0 on all 2,416
+billers**, in every category. That is not a per-biller quirk, it is the
+account's entitlement. Confusingly the operator *parameters* endpoint returns
+`fetchBill: 1` for the same biller — the operator list is the one that matches
+reality, so that is what the form trusts.
+
+**What still works:** the retailer reads the amount off the customer's bill and
+pays it directly. That is the whole flow minus the convenience of auto-fetch.
+
+**To fix:** ask Eko to enable Bill Fetch / Bill Avenue on the merchant account.
+When they do, `billFetchResponse` turns to 1 and the Fetch bill button appears
+by itself, with no code change.
+
 ## Known problems on Eko's side
 
 - **Education DOB pattern is over-escaped.** Eko sends

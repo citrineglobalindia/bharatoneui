@@ -15,7 +15,7 @@ export const Route = createFileRoute("/bbps")({
 });
 
 type Cat = { id: string; name: string };
-type Op = { code: string; name: string };
+type Op = { code: string; name: string; fetch_bill?: boolean };
 type Param = { name: string; label: string; type: string; required: boolean;
   regex?: string | null; error_message?: string | null };
 type Bill = {
@@ -161,7 +161,16 @@ function BbpsPage() {
     try {
       const r = await call("operator_params", { operator_code: o.code });
       setParams(r?.list ?? []);
-      setCanFetchBill(!!r?.fetch_bill || !!o.fetch_bill);
+      // Eko's two endpoints disagree about bill fetch. The operator list reports
+      // billFetchResponse per biller; the parameters call reports fetchBill.
+      // Tested against a live BESCOM bill that PhonePe fetches successfully:
+      // the operator list is the one that matches reality. Trust it, and treat
+      // the parameters value only as a fallback when the operator record has
+      // nothing to say. Today billFetchResponse is 0 on all 2,416 billers,
+      // because bill fetch is not provisioned on this Eko account — so the
+      // button stays hidden until Eko enables it, at which point it appears on
+      // its own with no code change.
+      setCanFetchBill(o.fetch_bill ?? !!r?.fetch_bill);
     } catch (e: any) { toast.error("Could not load the form", { description: e.message }); }
   };
 
@@ -493,7 +502,7 @@ function BbpsPage() {
                 <p className="text-[11px] text-muted-foreground">
                   {canFetchBill
                     ? "Fetch the bill to confirm the customer and the amount before paying."
-                    : "This operator has no bill to fetch — enter the amount and pay directly."}
+                    : "Enter the amount shown on the customer's bill and pay directly. Fetching the bill automatically is not available on this account yet."}
                 </p>
               </div>
             )}
