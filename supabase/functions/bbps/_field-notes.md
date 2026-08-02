@@ -69,6 +69,18 @@ field carries its own name and all of them must be forwarded:
 | Mobile Number (Insurance) | `confirmation_mobile_no` |
 | Distributor ID (LPG), Property Type, Scheme | `plan_name` |
 
+## The bill enquiry uses a different parameter name
+
+Eko's spec documents the bill enquiry as taking `operator_id`. Production
+validates `phone_operator_code` and rejects the request without it, with the
+generic message **"Please provide the value of the field"** and HTTP 200. The
+field it is actually complaining about is named in `invalid_params`, which is
+easy to miss because `message` never says it. Both names are now sent.
+
+That single unread field cost an afternoon. The gateway now appends the named
+field to any error, so the next one reads
+`Please provide the value of the field (phone_operator_code)`.
+
 ## Known problems on Eko's side
 
 - **Education DOB pattern is over-escaped.** Eko sends
