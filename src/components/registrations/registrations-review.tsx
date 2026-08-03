@@ -93,6 +93,73 @@ const docsPendingCount = (r: { doc_request_keys: string[] | null; doc_reuploaded
   const reup = Array.isArray(r.doc_reuploaded_keys) ? r.doc_reuploaded_keys : [];
   return reqd.filter((k) => !reup.includes(k)).length;
 };
+/**
+ * Free-text search across a registration row.
+ *
+ * Two things were wrong with what this replaced.
+ *
+ * FIRST, IT NEVER LOOKED AT THE JSKO ID. The table has a JSKO ID column, filled
+ * from `jsko_id` falling back to `username`, and the search checked neither — so
+ * typing JSK0132 into a queue of 122 rows returned nothing at all. That is the
+ * one identifier a reviewer is most likely to be handed over the phone.
+ *
+ * SECOND, IT MATCHED ONE CONTIGUOUS STRING. Names are stored across three
+ * columns and joined for display, so "Prashanth D K" matched but "Prashanth K"
+ * did not — the middle name sits between them. Nobody remembers whether a
+ * record has a middle initial. Every word typed is now required to appear
+ * SOMEWHERE in the row, in any order, so "prashanth k", "k prashanth" and
+ * "JSK0132 hassan" all find their row.
+ *
+ * Mobile numbers are compared as digits only, so 90712 02143, +91 9071202143
+ * and 9071202143 are the same search.
+ */
+const searchHaystack = (r: RegRow): string =>
+  [
+    r.application_id,
+    r.jsko_id,
+    r.username,
+    r.first_name, r.middle_name, r.surname,
+    r.shop_name,
+    r.email,
+    r.district, r.taluk,
+    r.payment_utr,
+    r.mobile,
+    // Digits alone, so punctuation and country codes cannot hide a match.
+    (r.mobile ?? "").replace(/\D/g, ""),
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+function matchesQuery(r: RegRow, query: string): boolean {
+  const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if (terms.length === 0) return true;
+  const hay = searchHaystack(r);
+
+  // A phone number pasted whole — "+91 94818 00747", "91 9481800747" — splits
+  // into tokens that individually mean nothing ("91"). Try the query's digits as
+  // one number first, and again without a country code.
+  const allDigits = query.replace(/\D/g, "");
+  if (allDigits.length >= 6) {
+    if (hay.includes(allDigits)) return true;
+    if (allDigits.length > 10 && hay.includes(allDigits.slice(-10))) return true;
+  }
+
+  return terms.every((t) => {
+    if (hay.includes(t)) return true;
+    // Only fall back to a digits-only comparison when the term actually has
+    // digits in it. Stripping non-digits from a word like "nagesha" leaves an
+    // empty string, and every string contains the empty string — which would
+    // quietly make every text search match every row.
+    const digits = t.replace(/\D/g, "");
+    if (digits.length === 0) return false;
+    if (hay.includes(digits)) return true;
+    // Numbers get pasted in with a country code more often than not. Mobiles are
+    // stored as ten digits, so +91 94818 00747 has to be matched on its last ten.
+    return digits.length > 10 && hay.includes(digits.slice(-10));
+  });
+}
+
 const PRIMARY_TAB: Record<string, string> = {
   accountant: "accountant_review",
   qc: "qc_review",
@@ -284,17 +351,7 @@ export function RegistrationsReview() {
         if (toDate && d > new Date(toDate + "T23:59:59")) return false;
         return true;
       })
-      .filter((r) => {
-        if (!query.trim()) return true;
-        const q = query.toLowerCase();
-        return (
-          r.application_id.toLowerCase().includes(q) ||
-          [r.first_name, r.middle_name, r.surname].filter(Boolean).join(" ").toLowerCase().includes(q) ||
-          (r.shop_name ?? "").toLowerCase().includes(q) ||
-          (r.mobile ?? "").includes(q) ||
-          (r.email ?? "").toLowerCase().includes(q)
-        );
-      })
+      .filter((r) => matchesQuery(r, query))
       // In the Requested Documents tab, put still-awaited applications first.
       .sort((a, b) => (tab === "docs_requested" ? (docsPendingCount(b) > 0 ? 1 : 0) - (docsPendingCount(a) > 0 ? 1 : 0) : 0));
   }, [rows, tab, query, typeFilter]);
@@ -587,7 +644,7 @@ export function RegistrationsReview() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by ID, name, shop, mobile, email…"
+            placeholder="Search by JSKO ID, name, application ID, shop, mobile, email…"
             className="bg-transparent flex-1 text-sm outline-none placeholder:text-muted-foreground"
           />
         </div>

@@ -117,9 +117,26 @@ export function DistributorReviewTable({ tab, query = "", fromDate = "", toDate 
         if (to && d > to) return false;
       }
       if (q) {
-        const hay = [r.application_id, r.username, r.distributor_name, r.company_name, r.proprietor_name, r.mobile, r.alt_mobile, r.email, r.district, r.state, r.pan_number, r.gst_number]
-          .filter(Boolean).join(" ").toLowerCase();
-        if (!hay.includes(q)) return false;
+        const hay = [
+          r.application_id, r.username, r.distributor_name, r.company_name, r.proprietor_name,
+          r.mobile, r.alt_mobile, r.email, r.district, r.state, r.pan_number, r.gst_number,
+          // Digits alone, so a number typed with spaces or a +91 still matches.
+          (r.mobile ?? "").replace(/\D/g, ""),
+        ].filter(Boolean).join(" ").toLowerCase();
+        // Every word must appear somewhere, in any order — the same rule the
+        // retailer queue uses, so the two searches behave alike.
+        const terms = q.split(/\s+/).filter(Boolean);
+        const hit = (t: string) => {
+          if (hay.includes(t)) return true;
+          // Digits fallback only when the term has digits — otherwise stripping
+          // leaves "", and every string contains "".
+          const d = t.replace(/\D/g, "");
+          if (d.length === 0) return false;
+          if (hay.includes(d)) return true;
+          // Mobiles are stored as ten digits, so a pasted +91… matches on its last ten.
+          return d.length > 10 && hay.includes(d.slice(-10));
+        };
+        if (!terms.every(hit)) return false;
       }
       return true;
     });
