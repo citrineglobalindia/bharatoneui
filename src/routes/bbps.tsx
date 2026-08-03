@@ -274,7 +274,20 @@ function BbpsPage() {
       toast.success("Payment successful");
       load();
     } catch (e: any) {
-      toast.error("Payment failed", { description: e.message });
+      const m = String(e.message ?? e);
+      // The biller checks the amount against the bill on its own side. Several
+      // — electricity boards especially — reject anything that is not the exact
+      // figure to the paisa. Eko's wording for this ("Amount entered does not
+      // match with bill amount. Please try again") tells the retailer to try
+      // again, which is the one thing that cannot possibly work.
+      if (/amount entered does not match/i.test(m)) {
+        toast.error("The biller wants the exact bill amount", {
+          description: "This biller checks the figure against the bill and will not take a different one. Type the total exactly as printed on the customer's bill, including paise. Your wallet has not been charged.",
+          duration: 12000,
+        });
+      } else {
+        toast.error("Payment failed", { description: m });
+      }
       load();
     } finally { setBusy(false); }
   };
@@ -510,6 +523,22 @@ function BbpsPage() {
                     ? "Fetch the bill to confirm the customer and the amount before paying."
                     : "This biller does not advertise bill fetch on our account yet — Fetch bill will probably return nothing. Enter the amount from the customer's bill and pay directly. Trying costs nothing, so press it if you want to check whether it has been switched on."}
                 </p>
+                {/*
+                  Learned the hard way on 2 August 2026: three real BESCOM
+                  payments were rejected with "Amount entered does not match with
+                  bill amount" because the biller validates the figure against
+                  the bill on its own side. Telling the retailer this BEFORE they
+                  press Pay costs nothing; letting them find out afterwards costs
+                  them the customer's patience.
+                */}
+                {!canFetchBill && (
+                  <p className="flex items-start gap-2 rounded-lg bg-amber-50 p-2.5 text-[11px] font-semibold text-amber-800">
+                    <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    Many billers — electricity boards in particular — will only accept the exact
+                    amount printed on the bill, down to the paisa. Copy it precisely. If it is
+                    refused, nothing is charged.
+                  </p>
+                )}
               </div>
             )}
           </div>

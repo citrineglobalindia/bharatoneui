@@ -66,6 +66,7 @@ const NAV: NavSection[] = [
       { label: "Wallet Requests", icon: <Wallet className="h-4 w-4" />, to: "/accountant/wallet-requests", badge: walPending },
       { label: "Withdrawals", icon: <ArrowDownToLine className="h-4 w-4" />, to: "/accountant/withdrawals", badge: wdlPending },
       { label: "AEPS Payouts", icon: <Banknote className="h-4 w-4" />, to: "/accountant/aeps-payouts" },
+      { label: "Money Transfer", icon: <Banknote className="h-4 w-4" />, to: "/accountant/money-transfer" },
     ],
   },
   {

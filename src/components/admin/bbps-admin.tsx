@@ -249,15 +249,57 @@ function CommissionSetup() {
     load();
   };
 
+  /**
+   * Turn a rate on or off.
+   *
+   * The table has always had an `active` column and there has never been a way
+   * to change it from here, so a rate could only ever be created live or
+   * deleted. That made the seeded rates — right figures, unconfirmed split —
+   * impossible to review before they started paying out.
+   */
+  const toggle = async (r: Slab) => {
+    if (!r.active && !confirm(
+      `Start paying commission on ${r.category}?\n\nRetailers will get ${r.retailer_share}% of ${r.mode === "percent" ? r.value + "% of the bill" : "₹" + r.value} on every successful payment.`)) return;
+    const { error } = await (supabase as any)
+      .from("bbps_commission_slabs").update({ active: !r.active } as never).eq("id", r.id);
+    if (error) return toast.error(error.message);
+    toast.success(r.active ? "Rate switched off" : "Rate is now paying");
+    load();
+  };
+
   const remove = async (r: Slab) => {
-    if (!confirm(`Delete the ${r.category} slab?`)) return;
+    if (!confirm(`Delete the ${r.category} slab?\n\nSwitching it off is usually better — it keeps the record of what the rate was.`)) return;
     const { error } = await (supabase as any).from("bbps_commission_slabs").delete().eq("id", r.id);
     if (error) return toast.error(error.message);
     load();
   };
 
+  const seeded = rows.filter((r) => !r.active);
+
   return (
     <div className="space-y-4">
+      {seeded.length > 0 && (
+        /*
+          Seeded from Eko's published rate card on 3 August 2026 and left switched
+          OFF on purpose. The commission figures are Eko's and are correct; the
+          70% retailer share is a guess taken from the split already configured
+          for AEPS. Nobody should start paying commission on a number I chose, so
+          they wait here until somebody who knows the business says yes.
+        */
+        <div className="flex flex-wrap items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-800">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold">{seeded.length} rates are ready but switched off</p>
+            <p className="mt-0.5 text-xs">
+              These were filled in from Eko's published rate card, so the commission figures are
+              theirs and are right. The <b>retailer share of 70%</b> is not — it was copied from
+              your AEPS split as a starting point. Check it, then switch each one on. Until you do,
+              every bill payment still earns the retailer nothing.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
         <p className="mb-1 flex items-center gap-2 text-sm font-bold"><Plus className="h-4 w-4 text-india-green" /> Add a commission slab</p>
         <p className="mb-4 text-[11px] text-muted-foreground">
@@ -317,6 +359,7 @@ function CommissionSetup() {
               <th className="px-3 py-2">Commission</th>
               <th className="px-3 py-2">Retailer</th>
               <th className="px-3 py-2">Distributor</th>
+              <th className="px-3 py-2">Status</th>
               <th className="px-3 py-2 text-right">Action</th>
             </tr>
           </thead>
@@ -335,10 +378,22 @@ function CommissionSetup() {
                 </td>
                 <td className="px-3 py-2.5">{r.retailer_share}%</td>
                 <td className="px-3 py-2.5">{r.distributor_share}%</td>
+                <td className="px-3 py-2.5">
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                    r.active ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+                    {r.active ? "Paying" : "Off"}
+                  </span>
+                </td>
                 <td className="px-3 py-2.5 text-right">
-                  <button onClick={() => remove(r)} className="inline-flex items-center gap-1 rounded-md border border-rose-200 px-2 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50">
-                    <Trash2 className="h-3.5 w-3.5" /> Delete
-                  </button>
+                  <div className="inline-flex gap-1.5">
+                    <button onClick={() => toggle(r)}
+                      className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs font-semibold hover:bg-muted">
+                      {r.active ? "Switch off" : "Switch on"}
+                    </button>
+                    <button onClick={() => remove(r)} className="inline-flex items-center gap-1 rounded-md border border-rose-200 px-2 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50">
+                      <Trash2 className="h-3.5 w-3.5" /> Delete
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

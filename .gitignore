@@ -42,3 +42,6 @@ supabase/.temp/
 
 # scratch copy used while building the status table
 .status-test.html
+
+# scratch copies written while verifying an edge-function deploy
+**/.deploy_verify.ts

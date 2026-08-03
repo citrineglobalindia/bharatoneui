@@ -176,6 +176,7 @@ import { Route as AccountantServicesRouteImport } from './routes/accountant.serv
 import { Route as AccountantRegistrationsRouteImport } from './routes/accountant.registrations'
 import { Route as AccountantRazorpayPaymentsRouteImport } from './routes/accountant.razorpay-payments'
 import { Route as AccountantProfileRouteImport } from './routes/accountant.profile'
+import { Route as AccountantMoneyTransferRouteImport } from './routes/accountant.money-transfer'
 import { Route as AccountantMainRechargeRouteImport } from './routes/accountant.main-recharge'
 import { Route as AccountantLedgerRouteImport } from './routes/accountant.ledger'
 import { Route as AccountantFeedbackRouteImport } from './routes/accountant.feedback'
@@ -1036,6 +1037,11 @@ const AccountantProfileRoute = AccountantProfileRouteImport.update({
   path: '/accountant/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountantMoneyTransferRoute = AccountantMoneyTransferRouteImport.update({
+  id: '/accountant/money-transfer',
+  path: '/accountant/money-transfer',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AccountantMainRechargeRoute = AccountantMainRechargeRouteImport.update({
   id: '/accountant/main-recharge',
   path: '/accountant/main-recharge',
@@ -1190,6 +1196,7 @@ export interface FileRoutesByFullPath {
   '/accountant/feedback': typeof AccountantFeedbackRoute
   '/accountant/ledger': typeof AccountantLedgerRoute
   '/accountant/main-recharge': typeof AccountantMainRechargeRoute
+  '/accountant/money-transfer': typeof AccountantMoneyTransferRoute
   '/accountant/profile': typeof AccountantProfileRoute
   '/accountant/razorpay-payments': typeof AccountantRazorpayPaymentsRoute
   '/accountant/registrations': typeof AccountantRegistrationsRoute
@@ -1374,6 +1381,7 @@ export interface FileRoutesByTo {
   '/accountant/feedback': typeof AccountantFeedbackRoute
   '/accountant/ledger': typeof AccountantLedgerRoute
   '/accountant/main-recharge': typeof AccountantMainRechargeRoute
+  '/accountant/money-transfer': typeof AccountantMoneyTransferRoute
   '/accountant/profile': typeof AccountantProfileRoute
   '/accountant/razorpay-payments': typeof AccountantRazorpayPaymentsRoute
   '/accountant/registrations': typeof AccountantRegistrationsRoute
@@ -1559,6 +1567,7 @@ export interface FileRoutesById {
   '/accountant/feedback': typeof AccountantFeedbackRoute
   '/accountant/ledger': typeof AccountantLedgerRoute
   '/accountant/main-recharge': typeof AccountantMainRechargeRoute
+  '/accountant/money-transfer': typeof AccountantMoneyTransferRoute
   '/accountant/profile': typeof AccountantProfileRoute
   '/accountant/razorpay-payments': typeof AccountantRazorpayPaymentsRoute
   '/accountant/registrations': typeof AccountantRegistrationsRoute
@@ -1746,6 +1755,7 @@ export interface FileRouteTypes {
     | '/accountant/feedback'
     | '/accountant/ledger'
     | '/accountant/main-recharge'
+    | '/accountant/money-transfer'
     | '/accountant/profile'
     | '/accountant/razorpay-payments'
     | '/accountant/registrations'
@@ -1930,6 +1940,7 @@ export interface FileRouteTypes {
     | '/accountant/feedback'
     | '/accountant/ledger'
     | '/accountant/main-recharge'
+    | '/accountant/money-transfer'
     | '/accountant/profile'
     | '/accountant/razorpay-payments'
     | '/accountant/registrations'
@@ -2114,6 +2125,7 @@ export interface FileRouteTypes {
     | '/accountant/feedback'
     | '/accountant/ledger'
     | '/accountant/main-recharge'
+    | '/accountant/money-transfer'
     | '/accountant/profile'
     | '/accountant/razorpay-payments'
     | '/accountant/registrations'
@@ -2300,6 +2312,7 @@ export interface RootRouteChildren {
   AccountantFeedbackRoute: typeof AccountantFeedbackRoute
   AccountantLedgerRoute: typeof AccountantLedgerRoute
   AccountantMainRechargeRoute: typeof AccountantMainRechargeRoute
+  AccountantMoneyTransferRoute: typeof AccountantMoneyTransferRoute
   AccountantProfileRoute: typeof AccountantProfileRoute
   AccountantRazorpayPaymentsRoute: typeof AccountantRazorpayPaymentsRoute
   AccountantRegistrationsRoute: typeof AccountantRegistrationsRoute
@@ -3562,6 +3575,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountantProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/accountant/money-transfer': {
+      id: '/accountant/money-transfer'
+      path: '/accountant/money-transfer'
+      fullPath: '/accountant/money-transfer'
+      preLoaderRoute: typeof AccountantMoneyTransferRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/accountant/main-recharge': {
       id: '/accountant/main-recharge'
       path: '/accountant/main-recharge'
@@ -3880,6 +3900,7 @@ const rootRouteChildren: RootRouteChildren = {
   AccountantFeedbackRoute: AccountantFeedbackRoute,
   AccountantLedgerRoute: AccountantLedgerRoute,
   AccountantMainRechargeRoute: AccountantMainRechargeRoute,
+  AccountantMoneyTransferRoute: AccountantMoneyTransferRoute,
   AccountantProfileRoute: AccountantProfileRoute,
   AccountantRazorpayPaymentsRoute: AccountantRazorpayPaymentsRoute,
   AccountantRegistrationsRoute: AccountantRegistrationsRoute,

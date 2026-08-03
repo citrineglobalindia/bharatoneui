@@ -451,3 +451,112 @@ retailer cancellation, double cancellation, the sweeper, and both branches of
 late payment. Every assertion held, including the three that were meant to fail:
 shipping without tracking, cancelling from the store portal, and returning more
 units than were bought.
+
+## 11. Money transfer, and the BBPS blockage that is not a bug (3 Aug 2026)
+
+### The /money-transfer page was lying
+
+It rendered three invented beneficiaries (Suresh Kumar, Anitha R., Mohan Lal,
+with made-up account numbers), stat cards reading "Today's Transfers ₹20,700"
+that were typed-in literals, and a Send button whose entire implementation was:
+
+    onSubmit={(e) => { e.preventDefault(); toast.success(`${mode} transfer initiated`); }}
+
+No API call. No database write. A retailer could have filled in a customer's
+beneficiary details, pressed Send, read "IMPS transfer initiated" and told the
+customer their money was on its way. It was linked from the services catalogue.
+It is gone.
+
+### What the rail actually is
+
+Eko's DMT is the **Fino** rail at `/customer/payment/dmt-fino`, and reading their
+OpenAPI specification corrected two assumptions that had already been coded:
+
+**There is no IMPS / NEFT / RTGS choice.** Initiate Transfer takes
+`initiator_id`, `recipient_id`, `amount`, `customer_id`, `otp`, `otp_ref_id` and
+`client_ref_id`. That is the whole payload. The rail decides how the money goes.
+The old mock's three-way toggle was decoration, and the commission slabs had to
+lose their per-mode split as a result.
+
+**A transfer spans two calls with a human in the middle.** Eko sends a one-time
+password to the sender's phone (`POST /dmt-fino/otp`), and the transfer is only
+submitted once the customer reads it back. So a transfer exists in the gap
+between those calls. It lives at `awaiting_otp`, and — the important part — the
+wallet is debited at the SECOND call, not the first. An OTP nobody reads back
+costs nobody anything and is tidied up after fifteen minutes.
+
+### The commercials were wrong in three ways
+
+From Eko's published rate card:
+
+- **The cap is ₹5,000 per transfer, not ₹25,000.** I had carried the RBI monthly
+  per-sender limit across to the per-transaction limit. They are different
+  numbers: ₹5,000 a transfer, ₹25,000 a month.
+- **The customer fee is fixed by Eko** at 1% with a ₹10 minimum. Not ours to set.
+- **Our commission is not a share of that fee.** Eko pays a fixed rupee amount
+  per amount slab — ₹2.87 on a transfer up to ₹1,000, ₹36.77 on one of
+  ₹4,501–5,000 — bearing no arithmetic relation to the 1% the customer paid.
+  Modelling commission as a percentage of the fee would have paid retailers the
+  wrong amount on every single transfer. `provider_commission` now holds Eko's
+  figure and the shares are percentages of that.
+- **Registering a sender costs ₹11 + GST**, once. Nothing was collecting it, so
+  BharatOne would have absorbed it silently on every new customer. Now charged
+  the same way the AePS daily biometric charge already is, and deliberately
+  non-fatal: the customer is verified at the bank whether or not we managed to
+  collect, and leaving the two out of step would be worse.
+
+### BBPS: the blockage is real and it is not ours
+
+Three real payments on 2 August, all to BESCOM consumer 6087911883, all rejected:
+
+    status 208 — "utility.payment.failed  Amount entered does not match with
+                  bill amount. Please try again"
+
+The biller validates the amount against the bill on its own side. With Bill Fetch
+unprovisioned the retailer cannot know that figure, so **BBPS is effectively
+non-functional for electricity** — the highest-volume category. The earlier
+assumption that a retailer could simply read the amount off the paper bill and
+pay it was wrong for any biller that validates.
+
+Two things were fixable without Eko, and are done: the form warns before payment
+that many billers accept only the exact figure, and the rejection now says so
+plainly instead of repeating Eko's "please try again", which is the one thing
+that cannot work.
+
+### The AePS failure rate is not a platform problem
+
+56 of 70 AePS transactions failed, which looked alarming until the stored
+responses were read:
+
+| Eko status | Comment | Count |
+|---|---|---|
+| 1528 | "Biometrics Did not Match at UIDAI" | 33 |
+| 1467 | "Customer Aadhaar number is not linked with Selected Bank" | 14 |
+| 1464 | "Your transaction limit has been exhausted for selected Bank" | 5 |
+| −1 | HTTP 404 "No Mapping Rule matched" | 4 |
+
+Only the last four were ours — posting to the generic `aeps-fingpay` URL instead
+of the per-operation path — and that was fixed on 21 July. The rest are
+fingerprint quality, wrong bank selection and issuing-bank limits. The 1528 rate
+is worth acting on, but with devices and agent training, not code.
+
+### Two other things found while in here
+
+- **The BBPS distributor was never paid.** `bbps_commission_slabs` has carried a
+  `distributor_share` column since the table was created and
+  `settle_bbps_commission` never read it. Any share configured would have been
+  silently kept by the company. Fixed.
+- **The deployed `bbps` edge function existed only on Supabase.** Neither its
+  source nor its three migrations were in git, so a redeploy from a clean
+  checkout would have lost BBPS entirely. Recovered to
+  `supabase/functions/bbps/index.ts`.
+
+### Commission rates are seeded but switched OFF
+
+22 BBPS slabs and 17 DMT slabs, filled in from Eko's published card. The
+commission figures are Eko's and are right. The **70% retailer share is not** —
+it was copied from the AePS split already in `app_settings` as a starting point.
+Nobody should start paying commission on a number chosen by whoever happened to
+be writing the migration, so every slab is inactive and the admin screens say so
+in as many words. Until they are switched on, bills and transfers still earn the
+retailer nothing.

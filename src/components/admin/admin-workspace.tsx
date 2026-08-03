@@ -36,7 +36,7 @@ import {
   type LucideIcon,
   ImageIcon, Megaphone, FolderTree, TrendingUp, Search as SearchIcon, BellRing, Bell, IdCard,
   Server, LayoutGrid, Plus, List, ChevronRight, PanelLeftClose, PanelLeftOpen, ShoppingBag, FileText,
-  CreditCard } from "lucide-react";
+  CreditCard, ArrowLeftRight } from "lucide-react";
 import {
   Area,
   AreaChart,
@@ -64,6 +64,7 @@ import { WalletAdmin } from "@/components/admin/wallet-admin";
 import { WithdrawalsAdmin } from "@/components/admin/withdrawals-admin";
 import { AepsAdmin } from "@/components/admin/aeps-admin";
 import { BbpsAdmin } from "@/components/admin/bbps-admin";
+import { DmtAdmin } from "@/components/admin/dmt-admin";
 import { EstoreAdmin } from "@/components/admin/estore-admin";
 import { SupportAdmin } from "@/components/admin/support-admin";
 import { LiveChatAdmin } from "@/components/admin/live-chat-admin";
@@ -170,6 +171,7 @@ const NAVIGATION: NavGroup[] = [
       { label: "Withdrawals", icon: WalletCards },
       { label: "AEPS Banking", icon: Landmark },
       { label: "Bill Payments", icon: Landmark },
+      { label: "Money Transfer", icon: ArrowLeftRight },
       { label: "Risk & Fraud", icon: ShieldCheck, badge: "8" },
     ],
   },
@@ -1223,6 +1225,8 @@ export function AdminWorkspace() {
               <AepsAdmin />
             ) : active === "Bill Payments" ? (
               <BbpsAdmin />
+            ) : active === "Money Transfer" ? (
+              <DmtAdmin />
             ) : active === "Withdrawals" ? (
               <WithdrawalsAdmin allowWindowConfig />
             ) : active === "Accountant Operations" ? (
