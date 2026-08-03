@@ -21,6 +21,7 @@ import { Route as TelecallerRouteImport } from './routes/telecaller'
 import { Route as SupportRouteImport } from './routes/support'
 import { Route as SuperLoginRouteImport } from './routes/super-login'
 import { Route as SuperRouteImport } from './routes/super'
+import { Route as StoreLoginRouteImport } from './routes/store-login'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ServicesRouteImport } from './routes/services'
 import { Route as SchemesRouteImport } from './routes/schemes'
@@ -86,6 +87,11 @@ import { Route as TroDashboardRouteImport } from './routes/tro.dashboard'
 import { Route as TroCatalogRouteImport } from './routes/tro.catalog'
 import { Route as TroAttendanceRouteImport } from './routes/tro.attendance'
 import { Route as TelecallerRegistrationsRouteImport } from './routes/telecaller.registrations'
+import { Route as StoreReturnsRouteImport } from './routes/store.returns'
+import { Route as StoreOrdersRouteImport } from './routes/store.orders'
+import { Route as StoreInventoryRouteImport } from './routes/store.inventory'
+import { Route as StoreDashboardRouteImport } from './routes/store.dashboard'
+import { Route as StoreAgentsRouteImport } from './routes/store.agents'
 import { Route as ServiceIdRouteImport } from './routes/service.$id'
 import { Route as ReviewIdRouteImport } from './routes/review.$id'
 import { Route as ReuploadDocsTokenRouteImport } from './routes/reupload-docs.$token'
@@ -245,6 +251,11 @@ const SuperLoginRoute = SuperLoginRouteImport.update({
 const SuperRoute = SuperRouteImport.update({
   id: '/super',
   path: '/super',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StoreLoginRoute = StoreLoginRouteImport.update({
+  id: '/store-login',
+  path: '/store-login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsRoute = SettingsRouteImport.update({
@@ -572,6 +583,31 @@ const TelecallerRegistrationsRoute = TelecallerRegistrationsRouteImport.update({
   id: '/registrations',
   path: '/registrations',
   getParentRoute: () => TelecallerRoute,
+} as any)
+const StoreReturnsRoute = StoreReturnsRouteImport.update({
+  id: '/store/returns',
+  path: '/store/returns',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StoreOrdersRoute = StoreOrdersRouteImport.update({
+  id: '/store/orders',
+  path: '/store/orders',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StoreInventoryRoute = StoreInventoryRouteImport.update({
+  id: '/store/inventory',
+  path: '/store/inventory',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StoreDashboardRoute = StoreDashboardRouteImport.update({
+  id: '/store/dashboard',
+  path: '/store/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StoreAgentsRoute = StoreAgentsRouteImport.update({
+  id: '/store/agents',
+  path: '/store/agents',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ServiceIdRoute = ServiceIdRouteImport.update({
   id: '/service/$id',
@@ -1132,6 +1168,7 @@ export interface FileRoutesByFullPath {
   '/schemes': typeof SchemesRoute
   '/services': typeof ServicesRoute
   '/settings': typeof SettingsRoute
+  '/store-login': typeof StoreLoginRoute
   '/super': typeof SuperRoute
   '/super-login': typeof SuperLoginRoute
   '/support': typeof SupportRoute
@@ -1237,6 +1274,11 @@ export interface FileRoutesByFullPath {
   '/reupload-docs/$token': typeof ReuploadDocsTokenRoute
   '/review/$id': typeof ReviewIdRoute
   '/service/$id': typeof ServiceIdRoute
+  '/store/agents': typeof StoreAgentsRoute
+  '/store/dashboard': typeof StoreDashboardRoute
+  '/store/inventory': typeof StoreInventoryRoute
+  '/store/orders': typeof StoreOrdersRoute
+  '/store/returns': typeof StoreReturnsRoute
   '/telecaller/registrations': typeof TelecallerRegistrationsRoute
   '/tro/attendance': typeof TroAttendanceRoute
   '/tro/catalog': typeof TroCatalogRoute
@@ -1311,6 +1353,7 @@ export interface FileRoutesByTo {
   '/schemes': typeof SchemesRoute
   '/services': typeof ServicesRoute
   '/settings': typeof SettingsRoute
+  '/store-login': typeof StoreLoginRoute
   '/super': typeof SuperRoute
   '/super-login': typeof SuperLoginRoute
   '/support': typeof SupportRoute
@@ -1414,6 +1457,11 @@ export interface FileRoutesByTo {
   '/reupload-docs/$token': typeof ReuploadDocsTokenRoute
   '/review/$id': typeof ReviewIdRoute
   '/service/$id': typeof ServiceIdRoute
+  '/store/agents': typeof StoreAgentsRoute
+  '/store/dashboard': typeof StoreDashboardRoute
+  '/store/inventory': typeof StoreInventoryRoute
+  '/store/orders': typeof StoreOrdersRoute
+  '/store/returns': typeof StoreReturnsRoute
   '/telecaller/registrations': typeof TelecallerRegistrationsRoute
   '/tro/attendance': typeof TroAttendanceRoute
   '/tro/catalog': typeof TroCatalogRoute
@@ -1489,6 +1537,7 @@ export interface FileRoutesById {
   '/schemes': typeof SchemesRoute
   '/services': typeof ServicesRoute
   '/settings': typeof SettingsRoute
+  '/store-login': typeof StoreLoginRoute
   '/super': typeof SuperRoute
   '/super-login': typeof SuperLoginRoute
   '/support': typeof SupportRoute
@@ -1594,6 +1643,11 @@ export interface FileRoutesById {
   '/reupload-docs/$token': typeof ReuploadDocsTokenRoute
   '/review/$id': typeof ReviewIdRoute
   '/service/$id': typeof ServiceIdRoute
+  '/store/agents': typeof StoreAgentsRoute
+  '/store/dashboard': typeof StoreDashboardRoute
+  '/store/inventory': typeof StoreInventoryRoute
+  '/store/orders': typeof StoreOrdersRoute
+  '/store/returns': typeof StoreReturnsRoute
   '/telecaller/registrations': typeof TelecallerRegistrationsRoute
   '/tro/attendance': typeof TroAttendanceRoute
   '/tro/catalog': typeof TroCatalogRoute
@@ -1670,6 +1724,7 @@ export interface FileRouteTypes {
     | '/schemes'
     | '/services'
     | '/settings'
+    | '/store-login'
     | '/super'
     | '/super-login'
     | '/support'
@@ -1775,6 +1830,11 @@ export interface FileRouteTypes {
     | '/reupload-docs/$token'
     | '/review/$id'
     | '/service/$id'
+    | '/store/agents'
+    | '/store/dashboard'
+    | '/store/inventory'
+    | '/store/orders'
+    | '/store/returns'
     | '/telecaller/registrations'
     | '/tro/attendance'
     | '/tro/catalog'
@@ -1849,6 +1909,7 @@ export interface FileRouteTypes {
     | '/schemes'
     | '/services'
     | '/settings'
+    | '/store-login'
     | '/super'
     | '/super-login'
     | '/support'
@@ -1952,6 +2013,11 @@ export interface FileRouteTypes {
     | '/reupload-docs/$token'
     | '/review/$id'
     | '/service/$id'
+    | '/store/agents'
+    | '/store/dashboard'
+    | '/store/inventory'
+    | '/store/orders'
+    | '/store/returns'
     | '/telecaller/registrations'
     | '/tro/attendance'
     | '/tro/catalog'
@@ -2026,6 +2092,7 @@ export interface FileRouteTypes {
     | '/schemes'
     | '/services'
     | '/settings'
+    | '/store-login'
     | '/super'
     | '/super-login'
     | '/support'
@@ -2131,6 +2198,11 @@ export interface FileRouteTypes {
     | '/reupload-docs/$token'
     | '/review/$id'
     | '/service/$id'
+    | '/store/agents'
+    | '/store/dashboard'
+    | '/store/inventory'
+    | '/store/orders'
+    | '/store/returns'
     | '/telecaller/registrations'
     | '/tro/attendance'
     | '/tro/catalog'
@@ -2206,6 +2278,7 @@ export interface RootRouteChildren {
   SchemesRoute: typeof SchemesRoute
   ServicesRoute: typeof ServicesRoute
   SettingsRoute: typeof SettingsRoute
+  StoreLoginRoute: typeof StoreLoginRoute
   SuperRoute: typeof SuperRoute
   SuperLoginRoute: typeof SuperLoginRoute
   SupportRoute: typeof SupportRoute
@@ -2299,6 +2372,11 @@ export interface RootRouteChildren {
   ReuploadDocsTokenRoute: typeof ReuploadDocsTokenRoute
   ReviewIdRoute: typeof ReviewIdRoute
   ServiceIdRoute: typeof ServiceIdRoute
+  StoreAgentsRoute: typeof StoreAgentsRoute
+  StoreDashboardRoute: typeof StoreDashboardRoute
+  StoreInventoryRoute: typeof StoreInventoryRoute
+  StoreOrdersRoute: typeof StoreOrdersRoute
+  StoreReturnsRoute: typeof StoreReturnsRoute
   TroAttendanceRoute: typeof TroAttendanceRoute
   TroCatalogRoute: typeof TroCatalogRoute
   TroDashboardRoute: typeof TroDashboardRoute
@@ -2397,6 +2475,13 @@ declare module '@tanstack/react-router' {
       path: '/super'
       fullPath: '/super'
       preLoaderRoute: typeof SuperRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/store-login': {
+      id: '/store-login'
+      path: '/store-login'
+      fullPath: '/store-login'
+      preLoaderRoute: typeof StoreLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings': {
@@ -2853,6 +2938,41 @@ declare module '@tanstack/react-router' {
       fullPath: '/telecaller/registrations'
       preLoaderRoute: typeof TelecallerRegistrationsRouteImport
       parentRoute: typeof TelecallerRoute
+    }
+    '/store/returns': {
+      id: '/store/returns'
+      path: '/store/returns'
+      fullPath: '/store/returns'
+      preLoaderRoute: typeof StoreReturnsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/store/orders': {
+      id: '/store/orders'
+      path: '/store/orders'
+      fullPath: '/store/orders'
+      preLoaderRoute: typeof StoreOrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/store/inventory': {
+      id: '/store/inventory'
+      path: '/store/inventory'
+      fullPath: '/store/inventory'
+      preLoaderRoute: typeof StoreInventoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/store/dashboard': {
+      id: '/store/dashboard'
+      path: '/store/dashboard'
+      fullPath: '/store/dashboard'
+      preLoaderRoute: typeof StoreDashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/store/agents': {
+      id: '/store/agents'
+      path: '/store/agents'
+      fullPath: '/store/agents'
+      preLoaderRoute: typeof StoreAgentsRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/service/$id': {
       id: '/service/$id'
@@ -3737,6 +3857,7 @@ const rootRouteChildren: RootRouteChildren = {
   SchemesRoute: SchemesRoute,
   ServicesRoute: ServicesRoute,
   SettingsRoute: SettingsRoute,
+  StoreLoginRoute: StoreLoginRoute,
   SuperRoute: SuperRoute,
   SuperLoginRoute: SuperLoginRoute,
   SupportRoute: SupportRoute,
@@ -3831,6 +3952,11 @@ const rootRouteChildren: RootRouteChildren = {
   ReuploadDocsTokenRoute: ReuploadDocsTokenRoute,
   ReviewIdRoute: ReviewIdRoute,
   ServiceIdRoute: ServiceIdRoute,
+  StoreAgentsRoute: StoreAgentsRoute,
+  StoreDashboardRoute: StoreDashboardRoute,
+  StoreInventoryRoute: StoreInventoryRoute,
+  StoreOrdersRoute: StoreOrdersRoute,
+  StoreReturnsRoute: StoreReturnsRoute,
   TroAttendanceRoute: TroAttendanceRoute,
   TroCatalogRoute: TroCatalogRoute,
   TroDashboardRoute: TroDashboardRoute,

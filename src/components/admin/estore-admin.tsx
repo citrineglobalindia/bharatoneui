@@ -6,12 +6,14 @@ import {
   Search, Download, Boxes, IndianRupee, TrendingUp, Truck, Layers, LayoutGrid,
   Warehouse, CreditCard, FileText, ArrowUp, ArrowDown, AlertTriangle, ChevronRight,
   Wallet, ClipboardList, CheckCircle2, Tag, Tags, Pencil, Eye, EyeOff, Check,
-  Printer, UserPlus, Circle, UserCheck, Bike,
+  Printer, UserPlus, Circle, UserCheck, Bike, RotateCcw,
 } from "lucide-react";
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, CartesianGrid } from "recharts";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
+import { ReturnsPanel } from "@/components/estore/returns-panel";
+import { AgentsPanel } from "@/components/estore/agents-panel";
 
 type Cat = { id: string; parent_id: string | null; name: string; sort_order: number; active: boolean; icon: string | null };
 type TagT = { id: string; name: string; color: string; active: boolean; sort_order: number };
@@ -65,6 +67,8 @@ const TABS = [
   ["tags", "Tags", Tags],
   ["inventory", "Inventory", Warehouse],
   ["orders", "Orders", ClipboardList],
+  ["returns", "Returns", RotateCcw],
+  ["agents", "Delivery agents", Bike],
   ["invoices", "Invoices", FileText],
   ["payments", "Payments", CreditCard],
 ] as const;
@@ -94,6 +98,11 @@ export function EstoreAdmin() {
             : tab === "tags" ? <TagsManager />
             : tab === "inventory" ? <Inventory />
             : tab === "orders" ? <Orders />
+            // Both of these are the same components the Store portal uses.
+            // Warehouse staff and administrators must not end up looking at two
+            // different implementations of the same queue.
+            : tab === "returns" ? <ReturnsPanel />
+            : tab === "agents" ? <AgentsPanel />
             : tab === "invoices" ? <Invoices />
             : <Payments />}
         </motion.div>

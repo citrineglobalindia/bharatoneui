@@ -5,6 +5,7 @@ import {
   ShoppingBag, ShoppingCart, Search, Loader2, RefreshCw, Plus, Minus, Trash2,
   Package, Truck, CheckCircle2, IndianRupee, Tag, X, ChevronRight, Wallet,
   ArrowLeft, Star, ShieldCheck, Zap, BadgeCheck, ChevronDown, User, Users, Mail,
+  RotateCcw,
 } from "lucide-react";
 import { RetailerShell } from "@/components/retailer/retailer-shell";
 import { PageHeader } from "@/components/retailer/page-header";
@@ -28,8 +29,25 @@ type Order = {
   id: string; order_no: string; status: string; payment_status: string; total: number;
   courier: string | null; tracking_no: string | null; created_at: string;
   retailer_margin_total: number; commission_settled: boolean;
+  reserved_until: string | null; delivered_at: string | null;
+  cancelled_at: string | null; cancel_reason: string | null;
+};
+type OrderItem = {
+  id: string; product_id: string; name: string; image_path: string | null;
+  qty: number; unit_price: number; line_total: number; gst_rate: number; returned_qty: number;
+};
+type ReturnRow = {
+  id: string; order_id: string; order_no: string; item_name: string; qty: number;
+  reason: string; detail: string | null; status: string; refund_amount: number;
+  decision_note: string | null; refund_ref: string | null; created_at: string;
 };
 type CartLine = { product: Product; qty: number };
+
+/** Reasons a retailer can pick from. Free text alone produces "not good". */
+const RETURN_REASONS = [
+  "Damaged in transit", "Wrong item delivered", "Missing item",
+  "Defective / not working", "Not as described", "Other",
+];
 
 const inr = (n: number) => "₹" + Number(n || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 });
 const imgUrl = (p?: string) => p ? supabase.storage.from("estore").getPublicUrl(p).data.publicUrl : "";
@@ -45,9 +63,33 @@ const STAGES = ["placed", "confirmed", "packed", "shipped", "delivered"];
 const stageTone: Record<string, string> = {
   pending_payment: "bg-amber-100 text-amber-700", placed: "bg-sky-100 text-sky-700",
   confirmed: "bg-indigo-100 text-indigo-700", packed: "bg-violet-100 text-violet-700",
-  shipped: "bg-blue-100 text-blue-700", delivered: "bg-emerald-100 text-emerald-700",
-  cancelled: "bg-rose-100 text-rose-700",
+  shipped: "bg-blue-100 text-blue-700", out_for_delivery: "bg-cyan-100 text-cyan-700",
+  delivered: "bg-emerald-100 text-emerald-700",
+  cancelled: "bg-rose-100 text-rose-700", expired: "bg-slate-200 text-slate-600",
+  needs_attention: "bg-rose-100 text-rose-700",
 };
+const RETURN_TONE: Record<string, string> = {
+  requested: "bg-amber-100 text-amber-700", approved: "bg-sky-100 text-sky-700",
+  received: "bg-indigo-100 text-indigo-700", refunded: "bg-emerald-100 text-emerald-700",
+  rejected: "bg-rose-100 text-rose-700",
+};
+
+/**
+ * How long is left on an unpaid order's stock reservation.
+ *
+ * The items are held off the shelf while the retailer pays, and released when
+ * this runs out — so it has to be shown, not left as a surprise. Returns null
+ * once it has lapsed, because "-14 minutes" helps nobody.
+ */
+function minutesLeft(until: string | null): number | null {
+  if (!until) return null;
+  const ms = new Date(until).getTime() - Date.now();
+  return ms > 0 ? Math.ceil(ms / 60000) : null;
+}
+/** Within the 7-day window the return RPC enforces server-side. */
+const canReturn = (o: Order) =>
+  o.status === "delivered" &&
+  (!o.delivered_at || Date.now() - new Date(o.delivered_at).getTime() < 7 * 864e5);
 
 function EstorePage() {
   const [cats, setCats] = useState<Cat[]>([]);
@@ -68,6 +110,16 @@ function EstorePage() {
   const [trackId, setTrackId] = useState<string | null>(null);
   const [trackEvents, setTrackEvents] = useState<{ status: string | null; note: string | null; created_at: string }[]>([]);
   const [trackLoading, setTrackLoading] = useState(false);
+  const [busyOrder, setBusyOrder] = useState<string | null>(null);
+  const [returns, setReturns] = useState<ReturnRow[]>([]);
+  const [returnFor, setReturnFor] = useState<Order | null>(null);
+  // Ticks once a minute so the reservation countdown on an unpaid order is
+  // honest rather than frozen at whatever it read when the page loaded.
+  const [, setClock] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setClock((n) => n + 1), 60_000);
+    return () => clearInterval(t);
+  }, []);
   // order booking
   const [orderFor, setOrderFor] = useState<"retailer" | "customer">("retailer");
   const [myContact, setMyContact] = useState<any>(null);
@@ -77,16 +129,18 @@ function EstorePage() {
   async function load() {
     setLoading(true);
     try {
-      const [c, p, o, t] = await Promise.all([
+      const [c, p, o, t, r] = await Promise.all([
         supabase.from("estore_categories").select("id,parent_id,name,sort_order,icon").eq("active", true).order("sort_order"),
         supabase.from("estore_products").select("*").eq("active", true).order("featured", { ascending: false }).order("created_at", { ascending: false }),
         (supabase as any).rpc("estore_my_orders", { _limit: 50 }),
         supabase.from("estore_tags").select("id,name,color").eq("active", true).order("sort_order"),
+        (supabase as any).rpc("estore_returns_list", { _status: null, _limit: 100 }),
       ]);
       setCats((c.data as Cat[]) ?? []);
       setProducts((p.data as Product[]) ?? []);
       setOrders((o.data as Order[]) ?? []);
       setTagList((t.data as TagT[]) ?? []);
+      setReturns((r.data as ReturnRow[]) ?? []);
     } finally { setLoading(false); }
   }
   useEffect(() => { load(); }, []);
@@ -191,6 +245,28 @@ function EstorePage() {
     const r = await payEstoreOrder({ orderId: o.id, email: au.user?.email });
     if (r.status === "paid") { toast.success("Payment successful"); load(); }
     else if (r.status !== "dismissed") toast.error("Payment failed", { description: r.message });
+  };
+
+  /**
+   * Abandon an unpaid order.
+   *
+   * Worth doing rather than leaving it to expire: the items go back on the shelf
+   * straight away instead of sitting reserved for the rest of the 45 minutes,
+   * and the retailer's order list stops showing something they have no intention
+   * of paying for.
+   */
+  const cancelOrder = async (o: Order) => {
+    if (!window.confirm(`Cancel order ${o.order_no}? The items go back into stock.`)) return;
+    setBusyOrder(o.id);
+    try {
+      const { data, error } = await (supabase as any).rpc("estore_cancel_my_order", { _order: o.id });
+      if (error) throw error;
+      if (!data?.ok) return toast.error("Could not cancel", { description: data?.message });
+      toast.success("Order cancelled");
+      load();
+    } catch (e: any) {
+      toast.error("Could not cancel", { description: String(e.message || e) });
+    } finally { setBusyOrder(null); }
   };
 
   const track = async (o: Order) => {
@@ -415,7 +491,30 @@ function EstorePage() {
                     <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold capitalize ${stageTone[o.status] ?? "bg-muted"}`}>{o.status.replace(/_/g, " ")}</span>
                   </div>
                   {o.status === "pending_payment" && (
-                    <button onClick={() => payAgain(o)} className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-saffron-gradient px-3 h-9 text-xs font-bold text-white"><Wallet className="h-3.5 w-3.5" /> Complete payment</button>
+                    <div className="mt-2 space-y-2">
+                      <p className="text-xs text-muted-foreground">
+                        {minutesLeft(o.reserved_until) !== null
+                          ? <>These items are held for you for another <b>{minutesLeft(o.reserved_until)} minute{minutesLeft(o.reserved_until) === 1 ? "" : "s"}</b>. After that they go back on sale.</>
+                          : <>The hold on these items has run out. Payment still works if they are in stock.</>}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        <button onClick={() => payAgain(o)} className="inline-flex items-center gap-1.5 rounded-lg bg-saffron-gradient px-3 h-9 text-xs font-bold text-white"><Wallet className="h-3.5 w-3.5" /> Complete payment</button>
+                        <button onClick={() => cancelOrder(o)} disabled={busyOrder === o.id}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-9 text-xs font-semibold hover:bg-muted disabled:opacity-50">
+                          {busyOrder === o.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <X className="h-3.5 w-3.5" />} Cancel order
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {o.status === "expired" && (
+                    <p className="mt-2 rounded-lg bg-muted/40 p-2.5 text-xs text-muted-foreground">
+                      This order was not paid for in time, so the items were put back on sale. Nothing was charged — add them to your cart again to reorder.
+                    </p>
+                  )}
+                  {o.status === "needs_attention" && (
+                    <p className="mt-2 rounded-lg bg-rose-50 p-2.5 text-xs font-semibold text-rose-700">
+                      Your payment went through but the items were no longer available. Our team is arranging a refund or a replacement and will contact you.
+                    </p>
                   )}
                   {["placed", "confirmed", "packed", "shipped", "delivered"].includes(o.status) && (
                     <div className="mt-3 flex items-center gap-1">
@@ -435,11 +534,30 @@ function EstorePage() {
                   {o.tracking_no && <p className="mt-2 text-xs text-muted-foreground">Courier: <b>{o.courier}</b> · Tracking: <b>{o.tracking_no}</b></p>}
                   {o.commission_settled && o.retailer_margin_total > 0 && <p className="mt-1 text-xs font-semibold text-emerald-600">Margin {inr(o.retailer_margin_total)} credited to your wallet</p>}
 
-                  {o.status !== "pending_payment" && (
-                    <button onClick={() => track(o)} className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-india-green hover:underline">
-                      <Truck className="h-3.5 w-3.5" /> {trackId === o.id ? "Hide tracking" : "Track order"}
-                    </button>
+                  <div className="mt-2 flex flex-wrap items-center gap-4">
+                    {o.status !== "pending_payment" && (
+                      <button onClick={() => track(o)} className="inline-flex items-center gap-1.5 text-xs font-semibold text-india-green hover:underline">
+                        <Truck className="h-3.5 w-3.5" /> {trackId === o.id ? "Hide tracking" : "Track order"}
+                      </button>
+                    )}
+                    {canReturn(o) && (
+                      <button onClick={() => setReturnFor(o)} className="inline-flex items-center gap-1.5 text-xs font-semibold text-saffron hover:underline">
+                        <RotateCcw className="h-3.5 w-3.5" /> Return an item
+                      </button>
+                    )}
+                  </div>
+                  {o.status === "delivered" && !canReturn(o) && (
+                    <p className="mt-1 text-[11px] text-muted-foreground">The 7-day return window for this order has closed.</p>
                   )}
+                  {returns.filter((r) => r.order_id === o.id).map((r) => (
+                    <div key={r.id} className="mt-2 flex flex-wrap items-center gap-2 rounded-lg border border-border bg-muted/20 p-2.5 text-xs">
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold capitalize ${RETURN_TONE[r.status] ?? "bg-muted"}`}>{r.status}</span>
+                      <span className="font-semibold">{r.qty} × {r.item_name}</span>
+                      <span className="text-muted-foreground">{r.reason}</span>
+                      {r.status === "refunded" && <span className="font-semibold text-emerald-600">Refunded {inr(r.refund_amount)}{r.refund_ref ? ` · ref ${r.refund_ref}` : ""}</span>}
+                      {r.status === "rejected" && r.decision_note && <span className="text-rose-600">{r.decision_note}</span>}
+                    </div>
+                  ))}
                   {trackId === o.id && (
                     <div className="mt-2 rounded-xl border border-border bg-muted/20 p-3">
                       {trackLoading ? <div className="py-2 text-center"><Loader2 className="mx-auto h-4 w-4 animate-spin text-muted-foreground" /></div>
@@ -463,6 +581,10 @@ function EstorePage() {
           </div>
         )}
       </div>
+
+      {returnFor && (
+        <ReturnDialog order={returnFor} onClose={() => setReturnFor(null)} onDone={() => { setReturnFor(null); load(); }} />
+      )}
 
       {/* Product detail */}
       {detail && (
@@ -733,6 +855,154 @@ function ProductDetail({ p, related, tagColor, inCart, cartCount, onClose, onAdd
                 );
               })}
             </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Raise a return against one line of a delivered order.
+ *
+ * Deliberately per-item rather than per-order. Most returns are one thing out of
+ * a parcel of several, and asking a retailer to return the whole order to send
+ * back a cracked cooker lid is how you end up with the whole order coming back.
+ *
+ * The quantity already returned is shown and subtracted from what can be asked
+ * for, so the same unit cannot be claimed twice. The server enforces the same
+ * rule — this is only here so the retailer finds out before typing, not after.
+ */
+function ReturnDialog({ order, onClose, onDone }: {
+  order: Order; onClose: () => void; onDone: () => void;
+}) {
+  const [items, setItems] = useState<OrderItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [pick, setPick] = useState<string | null>(null);
+  const [qty, setQty] = useState(1);
+  const [reason, setReason] = useState(RETURN_REASONS[0]);
+  const [detail, setDetail] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await (supabase as any).rpc("estore_my_order_items", { _order: order.id });
+      const list = (data as OrderItem[]) ?? [];
+      setItems(list);
+      const first = list.find((i) => i.qty - i.returned_qty > 0);
+      setPick(first?.id ?? null);
+      setLoading(false);
+    })();
+  }, [order.id]);
+
+  const chosen = items.find((i) => i.id === pick) ?? null;
+  const available = chosen ? chosen.qty - chosen.returned_qty : 0;
+  useEffect(() => { setQty(available > 0 ? 1 : 0); }, [pick, available]);
+
+  const submit = async () => {
+    if (!chosen || qty < 1) return;
+    if (reason === "Other" && detail.trim().length < 5) {
+      return toast.error("Tell us briefly what is wrong", { description: "A few words is enough." });
+    }
+    setSaving(true);
+    try {
+      const { data, error } = await (supabase as any).rpc("estore_request_return", {
+        _item: chosen.id, _qty: qty, _reason: reason, _detail: detail.trim() || null,
+      });
+      if (error) throw error;
+      if (!data?.ok) return toast.error("Could not raise the return", { description: data?.message });
+      toast.success("Return requested", { description: data.message });
+      onDone();
+    } catch (e: any) {
+      toast.error("Could not raise the return", { description: String(e.message || e) });
+    } finally { setSaving(false); }
+  };
+
+  const nothingLeft = !loading && items.every((i) => i.qty - i.returned_qty <= 0);
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-end justify-center bg-navy/50 p-0 sm:items-center sm:p-4" onClick={onClose}>
+      <div className="w-full max-w-lg rounded-t-2xl bg-card p-5 shadow-elev sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h3 className="flex items-center gap-2 text-base font-extrabold"><RotateCcw className="h-4 w-4 text-saffron" /> Return an item</h3>
+            <p className="text-xs text-muted-foreground">Order {order.order_no}</p>
+          </div>
+          <button onClick={onClose} aria-label="Close" className="rounded-lg p-1 hover:bg-muted"><X className="h-4 w-4" /></button>
+        </div>
+
+        {loading ? (
+          <div className="grid h-32 place-items-center"><Loader2 className="h-5 w-5 animate-spin text-india-green" /></div>
+        ) : nothingLeft ? (
+          <p className="mt-4 rounded-xl bg-muted/40 p-4 text-sm text-muted-foreground">
+            Everything on this order already has a return raised against it.
+          </p>
+        ) : (
+          <div className="mt-4 space-y-4">
+            <div className="space-y-2">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Which item</p>
+              {items.map((i) => {
+                const left = i.qty - i.returned_qty;
+                return (
+                  <button key={i.id} disabled={left <= 0} onClick={() => setPick(i.id)}
+                    className={`flex w-full items-center gap-3 rounded-xl border p-2.5 text-left transition disabled:opacity-40 ${pick === i.id ? "border-india-green bg-india-green/5" : "border-border hover:bg-muted"}`}>
+                    {i.image_path
+                      ? <img src={imgUrl(i.image_path)} alt="" className="h-10 w-10 rounded-lg object-cover" />
+                      : <div className="grid h-10 w-10 place-items-center rounded-lg bg-muted"><Package className="h-4 w-4 text-muted-foreground" /></div>}
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold">{i.name}</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {i.qty} ordered{i.returned_qty > 0 ? ` · ${i.returned_qty} already being returned` : ""}
+                        {left <= 0 ? " · nothing left to return" : ""}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {chosen && available > 0 && (
+              <>
+                <div className="flex items-center gap-3">
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">How many</p>
+                  <div className="inline-flex items-center gap-1 rounded-lg border border-border">
+                    <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="grid h-8 w-8 place-items-center hover:bg-muted"><Minus className="h-3.5 w-3.5" /></button>
+                    <span className="w-8 text-center text-sm font-bold">{qty}</span>
+                    <button onClick={() => setQty((q) => Math.min(available, q + 1))} className="grid h-8 w-8 place-items-center hover:bg-muted"><Plus className="h-3.5 w-3.5" /></button>
+                  </div>
+                  <span className="text-xs text-muted-foreground">of {available}</span>
+                </div>
+
+                <div>
+                  <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">What is wrong</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {RETURN_REASONS.map((r) => (
+                      <button key={r} onClick={() => setReason(r)}
+                        className={`rounded-full px-3 h-8 text-xs font-semibold transition ${reason === r ? "bg-india-green text-white" : "border border-border hover:bg-muted"}`}>
+                        {r}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <textarea value={detail} onChange={(e) => setDetail(e.target.value)}
+                  placeholder={reason === "Other" ? "Please describe the problem" : "Anything else we should know (optional)"}
+                  className="min-h-[70px] w-full rounded-lg border border-border bg-background p-3 text-sm outline-none focus:border-india-green" />
+
+                <p className="rounded-lg bg-muted/40 p-2.5 text-[11px] text-muted-foreground">
+                  Refund of about <b>{inr(Math.round(chosen.unit_price * qty * (1 + (chosen.gst_rate || 0) / 100) * 100) / 100)}</b> once
+                  the item is back with us and checked. The final amount is confirmed by our team.
+                </p>
+
+                <div className="flex gap-2">
+                  <button onClick={onClose} className="h-10 flex-1 rounded-lg border border-border text-sm font-semibold hover:bg-muted">Not now</button>
+                  <button onClick={submit} disabled={saving}
+                    className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-lg bg-india-green text-sm font-bold text-white disabled:opacity-60">
+                    {saving && <Loader2 className="h-4 w-4 animate-spin" />} Request return
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>

@@ -36,7 +36,11 @@ export async function payEstoreOrder(opts: {
 
   return new Promise<PayResult>((resolve) => {
     const rzp = new (window as any).Razorpay({
-      key: o.key_id, amount: o.amount * 100, currency: o.currency || "INR", order_id: o.razorpay_order_id,
+      // Paise, straight from the server. Multiplying rupees by 100 in the
+      // browser reintroduces the rounding this was fixed to remove — an order of
+      // ₹11.80 must charge 1180 paise, not ₹12.
+      key: o.key_id, amount: o.amount_paise ?? Math.round(Number(o.amount) * 100),
+      currency: o.currency || "INR", order_id: o.razorpay_order_id,
       name: "BharatOne E-Store", description: "Order " + o.order_no,
       prefill: { name: opts.name, email: opts.email, contact: opts.contact },
       theme: { color: "#1F7A3D" },

@@ -21,6 +21,7 @@ import {
   BriefcaseBusiness,
   Map,
   MapPin,
+  PackageCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import { BharatOneLogo } from "@/components/bharatone-logo";
@@ -37,7 +38,8 @@ export type PortalRole =
   | "telecaller"
   | "bde"
   | "dro"
-  | "tro";
+  | "tro"
+  | "store";
 
 export interface PortalConfig {
   role: PortalRole;
@@ -61,6 +63,7 @@ const PORTAL_DB_ROLES: Record<PortalRole, string[]> = {
   bde: ["bde"],
   dro: ["dro"],
   tro: ["tro"],
+  store: ["store_staff"],
 };
 
 const ACCENT_MAP: Record<
@@ -440,5 +443,14 @@ export const PORTAL_CONFIGS: Record<PortalRole, PortalConfig> = {
     accent: "amber",
     icon: MapPin,
     redirectTo: "/tro/dashboard",
+  },
+  store: {
+    role: "store",
+    portalName: "Store & Fulfilment Portal",
+    shortName: "Store",
+    tagline: "Pack, dispatch and track E-Store orders, and keep stock straight.",
+    accent: "violet",
+    icon: PackageCheck,
+    redirectTo: "/store/dashboard",
   },
 };
