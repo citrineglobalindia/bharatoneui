@@ -19,10 +19,11 @@ type U = {
   video_kyc_path: string | null; sow_path: string | null; sow_signed_date: string | null; sow_status: string | null;
   is_active: boolean; created_at: string; roles: string[];
 };
-const ALL_ROLES = ["admin", "accountant", "qc", "operator", "telecaller", "distributor", "master-distributor", "bde", "dro", "tro", "manager", "hr_staff", "employee", "retailer"];
+const ALL_ROLES = ["admin", "accountant", "qc", "operator", "telecaller", "distributor", "master-distributor", "bde", "dro", "tro", "manager", "hr_staff", "store_staff", "employee", "retailer"];
 const roleColor: Record<string, string> = {
   admin: "bg-rose-100 text-rose-700", accountant: "bg-emerald-100 text-emerald-700", qc: "bg-indigo-100 text-indigo-700",
   telecaller: "bg-orange-100 text-orange-700", retailer: "bg-sky-100 text-sky-700",
+  store_staff: "bg-violet-100 text-violet-700",
 };
 
 // CR-51: User Management modules — each tab scopes the list to a role group.
@@ -31,6 +32,7 @@ const MODULES: Module[] = [
   { key: "all", label: "All Users", roles: ALL_ROLES, defaultRole: "telecaller" },
   { key: "retailer", label: "Retailer (JSKO) Staff", roles: ["retailer"], defaultRole: "retailer" },
   { key: "office", label: "Office Staff", roles: ["operator", "hr_staff", "manager", "accountant", "qc", "telecaller", "bde", "employee", "admin"], defaultRole: "operator" },
+  { key: "store", label: "Store & Warehouse", roles: ["store_staff"], defaultRole: "store_staff" },
   { key: "dro", label: "DRO Staff", roles: ["dro"], defaultRole: "dro" },
   { key: "tro", label: "TRO Staff", roles: ["tro"], defaultRole: "tro" },
   { key: "distributor", label: "Distributor Staff", roles: ["distributor", "master-distributor"], defaultRole: "distributor" },
