@@ -560,3 +560,83 @@ Nobody should start paying commission on a number chosen by whoever happened to
 be writing the migration, so every slab is inactive and the admin screens say so
 in as many words. Until they are switched on, bills and transfers still earn the
 retailer nothing.
+
+## 12. ICICI: the webhook works — and it is delivering other companies' payments (3 Aug 2026)
+
+### It works
+
+ICICI whitelisted our advice URL today, and at **09:43 UTC** our own wallet top-up
+**BO0000000019** (₹100) was confirmed by `icici-advice`. That is the first ICICI
+payment in the whole integration to be settled by a webhook. Every one of the
+previous twenty was resolved by our own status-polling sweep — `gateway_response`
+carried the key `status`, never `return` or `advice`.
+
+So the callback path is proven end to end: initiate → hosted page → pay →
+server-to-server advice → `paid`, in three and a half minutes without the
+browser being involved.
+
+### And it is delivering payments that are not ours
+
+Within ten minutes the same endpoint received a stream of advices for references
+in formats we have never issued — `RTOMS13220260803151114708`, `NCMSD194FQILV3`,
+`TS1785749881737`, `ORD16150177065`, `85000000373`, `7557` — where every
+BharatOne reference is the fixed twelve-character form `BO##########`.
+
+They are not spoofed. Each one carries:
+
+- our `merchantId` **100000000007164**
+- our `aggregatorID` **A100000000007164**
+- a `secureHash` that **verifies against our own `ICICI_SECRET_KEY`**
+
+and they are unmistakably other businesses' transactions — one `addlParam1` held
+a `dashboard-stage.zt.kawasaki-india…` URL, another `addlParam2` read
+`instacare`, with unrelated customer emails, mobile numbers and a masked VISA
+credit card.
+
+The only explanation that fits: **100000000007164 is a shared UAT merchant ID**
+whose secret key ICICI has issued to several integrators, and the advice URL for
+that shared merchant now points at us.
+
+Two consequences, and the second is the serious one:
+
+1. **On this account a verified signature proves nothing about whose payment it
+   is.** Authenticity cannot rest on the hash alone in UAT — the reference format
+   and our own row are what identify a payment as ours. (It also follows that
+   another integrator on the same MID could compute a valid signature for one of
+   our references.)
+2. **We are receiving other companies' customer personal data** — email
+   addresses, mobile numbers, masked card numbers.
+
+### What was done about it
+
+- `icici_unmatched_advice` captures unmatched advices so the misrouting can be
+  evidenced to ICICI: reference, merchant id, response code, amount, and whether
+  the signature verified.
+- **The payload is redacted on the way in.** The first version stored the whole
+  envelope, which meant BharatOne was holding third-party personal data. Now
+  `customerEmailID`, `customerMobileNo`, `customerName`, `paymentInstId`,
+  `addlParam1`, `addlParam2` and `secureHash` are stripped before insert, and
+  everything already captured was purged.
+- **The alerting was silenced for foreign advices.** Each unmatched advice raised
+  a WARN and emailed the administrator; within minutes the inbox was full of
+  them. A warning is now only raised when the reference looks like ours, which is
+  the case that actually means a payment has gone missing.
+- `is_our_merchant` is kept but is misleading on a shared MID — it is true for
+  everything. `looks_like_ours` matches the reference format instead.
+
+### Also fixed: the sweep gave up after 45 minutes
+
+`icici-status` only chased payments created in the last 45 minutes; anything
+older was abandoned where it stood. Three payments from 31 July are still sitting
+at `initiated` because of it. Since the advice webhook has only started working
+today, this sweep was until now the *only* thing that ever resolved a payment — so
+a UPI collect approved an hour late was money taken with no record. Open payments
+are now chased for 24 hours; recently-failed ones are still only revisited for an
+hour, because re-opening a day-old failure is not the same as catching a late
+success.
+
+### Do not go live on this merchant ID
+
+Production needs a **dedicated merchant ID and a secret key that is ours alone**.
+Going live on a shared credential would mean our production signatures could be
+computed by whoever else holds it.

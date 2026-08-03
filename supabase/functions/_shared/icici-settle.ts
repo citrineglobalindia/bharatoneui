@@ -2,7 +2,7 @@
 // the browser return URL (icici-return) and the server-to-server Payment Advice
 // webhook (icici-advice). Both carry the same parameters, so both land here.
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
-import { isPending, isSuccess, verifyInbound } from "./icici.ts";
+import { MID, isPending, isSuccess, verifyInbound } from "./icici.ts";
 
 export type SettleOutcome = {
   ok: boolean;
@@ -53,11 +53,40 @@ export async function settleIciciPayment(
     .maybeSingle();
 
   if (!row) {
+    // ICICI began delivering advice on 3 Aug 2026, and almost none of it is ours:
+    // references such as RTOMS13220260803151114708, NCMSD194FQILV3, TS1785749881737
+    // and 7557, when every BharatOne reference is the fixed 12-character form
+    // BO00000000XX. They look like other merchants' transactions arriving at our
+    // endpoint.
+    //
+    // Two things settle the question, so both are kept: whose merchantId is on the
+    // payload, and whether the signature verifies against OUR secret key. A payload
+    // that verifies was genuinely signed for us; one that does not was meant for
+    // somebody else.
+    const advisedMid = String(payload.merchantId ?? payload.merchantID ?? "");
+    const isOurs = !!MID && advisedMid === MID;
+
+    await svc.rpc("icici_record_unmatched", {
+      _source: source, _ref: merchantTxnNo, _merchant_id: advisedMid || null,
+      _is_ours: isOurs, _hash_ok: hashOk, _payload: payload,
+    }).then(() => undefined, () => undefined);
+
+    // Only raise an alert when the advice claims to be for OUR merchant account —
+    // that would mean a payment of ours has gone missing, which is worth waking
+    // somebody for. Another merchant's stray advice is ICICI's routing problem, not
+    // an incident here, and alerting on each one buried the administrator's inbox
+    // in WARN emails within minutes. Recorded quietly instead.
     await svc.rpc("log_health", {
-      p_module: "razorpay", p_status: "warn",
-      p_message: `ICICI ${source}: no payment found for ${merchantTxnNo}`,
-      p_level: "error", p_detail: { merchantTxnNo }, p_latency: null, p_source: "app",
-    });
+      p_module: "razorpay",
+      p_status: isOurs ? "warn" : "ok",
+      p_message: isOurs
+        ? `ICICI ${source}: no payment found for our reference ${merchantTxnNo}`
+        : `ICICI ${source}: advice for another merchant ignored (${advisedMid || "no merchantId"})`,
+      p_level: isOurs ? "error" : "info",
+      p_detail: { merchantTxnNo, merchantId: advisedMid, hash_verified: hashOk },
+      p_latency: null, p_source: "app",
+    }).then(() => undefined, () => undefined);
+
     return { ok: false, status: "not_found", merchantTxnNo, message: "Unknown transaction reference" };
   }
 

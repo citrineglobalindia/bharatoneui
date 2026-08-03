@@ -71,14 +71,29 @@ Deno.serve(async (req) => {
     .select("merchant_txn_no,status,created_at")
     .eq("gateway", "icici");
 
+  // How far back to keep chasing.
+  //
+  // This used to be 45 minutes for everything, and anything older was abandoned
+  // where it stood. Four payments are sitting at `initiated` because of it — one
+  // from this morning and three from 31 July — and since ICICI's advice webhook
+  // has never delivered one of our payments, this sweep is the ONLY thing that
+  // ever resolves them. A UPI collect approved an hour later, or a customer who
+  // wandered off and came back, was money taken with no record.
+  //
+  // Open payments are now chased for 24 hours. Recently-failed ones are still only
+  // revisited for an hour: the response codes are undocumented so an early
+  // misclassification is worth a second look, but re-opening a day-old failure is
+  // not.
+  const OPEN_WINDOW_MS = 24 * 60 * 60 * 1000;
+  const FAILED_WINDOW_MS = 60 * 60 * 1000;
+
   const { data: rows, error } = single
     ? await q.eq("merchant_txn_no", single).limit(1)
-    // Recently-failed rows are revisited too. Response codes are undocumented, so a
-    // payment could have been classified wrongly; the status API is authoritative and
-    // a genuine failure simply stays failed.
-    : await q.in("status", ["initiated", "pending", "failed"])
+    : await q.or(
+        `and(status.in.(initiated,pending),created_at.gt.${new Date(Date.now() - OPEN_WINDOW_MS).toISOString()}),` +
+        `and(status.eq.failed,created_at.gt.${new Date(Date.now() - FAILED_WINDOW_MS).toISOString()})`,
+      )
         .lt("created_at", cutoff)
-        .gt("created_at", new Date(Date.now() - 45 * 60 * 1000).toISOString())
         .order("created_at", { ascending: true }).limit(50);
 
   if (error) return json({ ok: false, message: error.message }, 500);
