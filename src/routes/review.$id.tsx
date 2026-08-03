@@ -462,6 +462,84 @@ function ReviewPage() {
                   );
                 })}
               </ul>
+
+              {/*
+                THE LINK MUST NOT LIVE ONLY IN AN EMAIL.
+
+                A retailer clicked "unsubscribe" in the re-upload email. The link
+                is still perfectly valid — the token sits on the registration and
+                does not expire — but there was no way to get it to them a second
+                time, because it was only ever shown in a toast at the moment the
+                request was made. Resending the email would not help either: the
+                address is blocked at the mail provider.
+
+                So the live link is shown here for as long as the request is open,
+                with WhatsApp, SMS and copy. The retailer can be sent it on the
+                phone number they answer, and the reviewer never has to ask an
+                engineer to dig a token out of the database.
+
+                Deliberately only visible to staff who can act on the application,
+                and only while documents are outstanding — the token is what
+                authorises the upload, so it should not sit on screen forever.
+              */}
+              {reg.doc_request_token && pending.length > 0 && (canQc || canAccountant || role === "admin") && (() => {
+                const link = `${window.location.origin}/reupload-docs/${reg.doc_request_token}`;
+                // The mobile column holds "8105879469, 6360142851" on some old
+                // records — two numbers in one field. Offer each separately
+                // rather than guessing which one they answer.
+                const numbers = String(reg.mobile ?? "")
+                  .split(/[,;/]+/)
+                  .map((s) => s.replace(/\D/g, ""))
+                  .map((d) => (d.length > 10 ? d.slice(-10) : d))
+                  .filter((d) => /^[6-9]\d{9}$/.test(d))
+                  .filter((d, i, a) => a.indexOf(d) === i);
+                const msg =
+                  `Hello ${[reg.first_name, reg.surname].filter(Boolean).join(" ")}, BharatOne needs you to re-upload: ` +
+                  `${pending.map(labelOf).join(", ")}. Please open this link and upload — no login needed: ${link}`;
+                return (
+                  <div className="mt-4 rounded-xl border border-amber-300 bg-white/80 p-3">
+                    <p className="text-xs font-bold text-amber-900">
+                      Retailer not receiving the email? Send them this link instead
+                    </p>
+                    <p className="mt-0.5 text-[11px] text-amber-700">
+                      It stays valid until every requested document is uploaded, and needs no login.
+                      Use it if the email bounced or the retailer unsubscribed.
+                    </p>
+                    <div className="mt-2 flex items-center gap-2 rounded-lg border border-amber-200 bg-white px-2.5 py-2">
+                      <code className="min-w-0 flex-1 truncate text-[11px] text-muted-foreground">{link}</code>
+                      <Button size="sm" variant="outline" className="h-7 shrink-0 px-2 text-[11px]"
+                        onClick={() => {
+                          navigator.clipboard.writeText(link).then(
+                            () => toast.success("Link copied"),
+                            () => toast.error("Could not copy — select the link and copy it by hand"),
+                          );
+                        }}>
+                        Copy
+                      </Button>
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {numbers.map((n) => (
+                        <a key={n} target="_blank" rel="noreferrer"
+                          href={`https://wa.me/91${n}?text=${encodeURIComponent(msg)}`}
+                          className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-emerald-600 px-3 text-[11px] font-bold text-white hover:bg-emerald-700">
+                          WhatsApp {n}
+                        </a>
+                      ))}
+                      {numbers.map((n) => (
+                        <a key={"s" + n} href={`sms:+91${n}?body=${encodeURIComponent(msg)}`}
+                          className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-amber-300 bg-white px-3 text-[11px] font-bold text-amber-900 hover:bg-amber-50">
+                          SMS {n}
+                        </a>
+                      ))}
+                      {numbers.length === 0 && (
+                        <span className="text-[11px] text-amber-700">
+                          No usable mobile number on this application — copy the link and send it another way.
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           );
         })()}

@@ -20,7 +20,25 @@ async function sendBrevo(to: string, subject: string, htmlContent: string): Prom
 
 // Fire the KYC-rejected SMS through the unified dispatcher (DLT-compliant).
 // Non-blocking: never let an SMS failure break the email response.
-function normMobile(raw: string): string { const d = String(raw ?? "").replace(/\D/g, ""); return d.length > 10 ? d.slice(-10) : d; }
+/**
+ * First usable Indian mobile number in the field.
+ *
+ * Some migrated records hold two numbers in one column —
+ * "8105879469, 6360142851". Stripping every non-digit ran them together into
+ * one 20-digit string, and taking the last ten then texted the SECOND number
+ * without anyone realising the first had been passed over. Split on the
+ * separators first, and take the first number that is actually a mobile.
+ */
+function normMobile(raw: string): string {
+  const parts = String(raw ?? "").split(/[,;/]+/);
+  for (const p of parts) {
+    const d = p.replace(/\D/g, "");
+    const ten = d.length > 10 ? d.slice(-10) : d;
+    if (/^[6-9]\d{9}$/.test(ten)) return ten;
+  }
+  const all = String(raw ?? "").replace(/\D/g, "");
+  return all.length > 10 ? all.slice(-10) : all;
+}
 async function sendKycSms(name: string, mobile: string, reason: string): Promise<{ ok: boolean; detail?: string }> {
   const m = normMobile(mobile);
   if (!/^[6-9]\d{9}$/.test(m)) return { ok: false, detail: "no valid mobile" };
