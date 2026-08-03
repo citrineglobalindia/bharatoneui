@@ -15,6 +15,7 @@ import {
   Lock,
   QrCode,
   CreditCard,
+  ShieldCheck,
   CheckCircle2,
 } from "lucide-react";
 import { RetailerShell } from "@/components/retailer/retailer-shell";
@@ -189,18 +190,25 @@ function WalletPage() {
     setPaying(true);
     // ICICI is a redirect gateway: we leave the site and come back to /payment-result.
     if (gateway === "icici") {
-      if (!isValidVpa(vpa)) {
+      // A UPI id is now OPTIONAL. Giving one still sends a collect request
+      // straight to that app, which is the fastest path; leaving it blank sends
+      // no paymentMode at all, so ICICI shows its full page — UPI, card,
+      // netbanking and wallet.
+      //
+      // This used to force paymentMode "UPI" and demand a VPA before the button
+      // would even enable, which is why the hosted page only ever showed a QR.
+      const wantsCollect = vpa.trim().length > 0;
+      if (wantsCollect && !isValidVpa(vpa)) {
         setPaying(false);
-        return toast.error("Enter your UPI ID", {
+        return toast.error("That does not look like a UPI ID", {
           description:
-            "For example yourname@okhdfcbank — we will send the request straight to your UPI app.",
+            "It should look like yourname@okhdfcbank. Clear the box to choose your method on the payment page instead.",
         });
       }
       const res = await startIciciPayment({
         amount: amt,
         purpose: "wallet_topup",
-        paymentMode: "UPI",
-        upiVpa: vpa.trim(),
+        ...(wantsCollect ? { paymentMode: "UPI" as const, upiVpa: vpa.trim() } : {}),
         name: me.name,
         email: me.email,
         contact: me.phone,
@@ -400,11 +408,11 @@ function WalletPage() {
                     </span>
                     <span className="min-w-0">
                       <span className="block text-sm font-bold">
-                        Pay Online{gateway === "icici" ? " — UPI" : " — Razorpay"}
+                        Pay Online{gateway === "icici" ? "" : " — Razorpay"}
                       </span>
                       <span className="block text-[11px] text-muted-foreground">
                         {gateway === "icici"
-                          ? "Approve in your UPI app — no proof needed, no extra charge"
+                          ? "UPI, card or netbanking — no proof needed. UPI has no extra charge"
                           : "Instant UPI, card or netbanking — no proof needed"}
                       </span>
                     </span>
@@ -541,7 +549,7 @@ function WalletPage() {
                   <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-india-green text-[11px] font-bold text-white">
                     3
                   </span>{" "}
-                  {gateway === "icici" ? "Pay securely by UPI" : "Pay securely via Razorpay"}
+                  {gateway === "icici" ? "Pay securely" : "Pay securely via Razorpay"}
                 </p>
                 <div className="my-4 grid gap-3 sm:grid-cols-3">
                   <div className="rounded-xl border border-border bg-card p-3 text-center">
@@ -552,7 +560,7 @@ function WalletPage() {
                       {amount ? `₹${Number(amount).toLocaleString("en-IN")}` : "—"}
                     </p>
                     <p className="mt-0.5 text-[11px] text-muted-foreground">
-                      {gateway === "icici" ? "By UPI — no extra charge" : "UPI · card · netbanking"}
+                      UPI · card · netbanking
                     </p>
                   </div>
                   <div className="rounded-xl border border-border bg-card p-3 text-center">
@@ -575,40 +583,76 @@ function WalletPage() {
                     </p>
                     <p className="mt-0.5 text-[11px] text-muted-foreground">
                       {gateway === "icici"
-                        ? "Full amount — UPI has no gateway fee"
+                        ? "Any fee is added on top, not taken out"
                         : "After Razorpay gateway charges"}
                     </p>
                   </div>
                 </div>
                 {gateway === "icici" && (
-                  <div className="mb-4">
-                    <label
-                      htmlFor="upi-vpa"
-                      className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
-                    >
-                      Your UPI ID
-                    </label>
-                    <input
-                      id="upi-vpa"
-                      value={vpa}
-                      onChange={(e) => setVpa(e.target.value.trim())}
-                      placeholder="yourname@okhdfcbank"
-                      autoComplete="off"
-                      spellCheck={false}
-                      className="mt-1 h-12 w-full rounded-xl border border-border bg-card px-4 text-sm outline-none focus:border-india-green"
-                    />
-                    <p className="mt-1.5 text-[11px] text-muted-foreground">
-                      {vpa && !isValidVpa(vpa)
-                        ? "That does not look like a UPI ID — it should look like name@bank."
-                        : "We will send a payment request to this UPI app. Nothing is charged until you approve it."}
-                    </p>
+                  <div className="mb-4 space-y-3">
+                    {/*
+                      The fee is real and worth saying out loud before the retailer
+                      leaves the site. Measured from ICICI's own payment advices:
+                      UPI comes back with oth_charge "false", while a card payment
+                      of Rs 10,000 carried oth_charge 324.50 — about 3.2% added on
+                      top of the amount. Finding that out on the bank's page, after
+                      choosing, is how people end up feeling stung.
+                    */}
+                    <div className="flex items-start gap-2.5 rounded-xl border border-india-green/30 bg-card p-3">
+                      <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-india-green" />
+                      <div className="text-[11px] leading-relaxed">
+                        <p className="font-bold text-foreground">
+                          UPI is free. Card and netbanking are not.
+                        </p>
+                        <p className="mt-0.5 text-muted-foreground">
+                          Paying by UPI costs you nothing extra. Card adds roughly{" "}
+                          <b>3%</b> as a bank convenience fee — about{" "}
+                          <b>
+                            ₹
+                            {amount && Number(amount) > 0
+                              ? Math.round(Number(amount) * 0.03).toLocaleString("en-IN")
+                              : "300"}
+                          </b>{" "}
+                          on {amount && Number(amount) > 0
+                            ? `₹${Number(amount).toLocaleString("en-IN")}`
+                            : "₹10,000"}
+                          . Your wallet is credited the full amount either way — the fee is
+                          added on top by the bank.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor="upi-vpa"
+                        className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
+                      >
+                        Your UPI ID <span className="font-normal normal-case">(optional)</span>
+                      </label>
+                      <input
+                        id="upi-vpa"
+                        value={vpa}
+                        onChange={(e) => setVpa(e.target.value.trim())}
+                        placeholder="yourname@okhdfcbank"
+                        autoComplete="off"
+                        spellCheck={false}
+                        className="mt-1 h-12 w-full rounded-xl border border-border bg-card px-4 text-sm outline-none focus:border-india-green"
+                      />
+                      <p className="mt-1.5 text-[11px] text-muted-foreground">
+                        {vpa && !isValidVpa(vpa)
+                          ? "That does not look like a UPI ID — it should look like name@bank."
+                          : vpa
+                            ? "We will send the request straight to this UPI app. Nothing is charged until you approve it."
+                            : "Leave it blank to choose UPI, card or netbanking on the payment page."}
+                      </p>
+                    </div>
                   </div>
                 )}
                 <div className="mt-auto">
                   <button
                     type="button"
                     onClick={payNow}
-                    disabled={paying || (gateway === "icici" && !isValidVpa(vpa))}
+                    disabled={paying || (gateway === "icici" && vpa.length > 0 && !isValidVpa(vpa))}
                     className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-india-green px-6 text-sm font-bold text-white shadow-soft hover:bg-india-green/90 disabled:opacity-50"
                   >
                     {paying ? (
@@ -617,7 +661,9 @@ function WalletPage() {
                       <CreditCard className="h-4 w-4" />
                     )}{" "}
                     Pay {amount ? `₹${Number(amount).toLocaleString("en-IN")}` : ""}{" "}
-                    {gateway === "icici" ? "by UPI" : "with Razorpay"}
+                    {gateway === "icici"
+                      ? (vpa ? "by UPI" : "online")
+                      : "with Razorpay"}
                   </button>
                 </div>
               </div>
