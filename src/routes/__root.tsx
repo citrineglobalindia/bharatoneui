@@ -100,38 +100,42 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       // Suppress the browser's Google Translate banner/toolbar — the app has native EN/Kannada.
       { name: "google", content: "notranslate" },
+      // Site identity.
+      //
+      // These were the scaffolding tool's defaults and were still shipping on the
+      // live site: the author was credited to the builder, twitter:site pointed at
+      // its handle, and the share image was a screenshot of a preview deployment
+      // hosted on a third party's storage bucket. Anyone sharing mybharatone.com
+      // got a preview card fetched from someone else's server, over a URL we do
+      // not control and which can disappear without notice. The description was
+      // the generic placeholder and said nothing about what BharatOne does.
       { title: "BharatOne" },
       {
         name: "description",
         content:
-          "BharatOne is a platform for user registration and identity verification, featuring a modern, responsive UI.",
+          "BharatOne — assisted banking and citizen services for Indian retailers. AePS banking, bill payments, money transfer, government services and merchant onboarding from a single retail counter.",
       },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "BharatOne" },
+      { name: "author", content: "BharatOne Services and Affiliates Private Limited" },
+      { property: "og:site_name", content: "BharatOne" },
+      { property: "og:title", content: "BharatOne — Banking and citizen services for every Indian retailer" },
       {
         property: "og:description",
         content:
-          "BharatOne is a platform for user registration and identity verification, featuring a modern, responsive UI.",
+          "AePS banking, bill payments, money transfer, government services and merchant onboarding — delivered through a network of retail agents across India.",
       },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://mybharatone.com" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
-      { name: "twitter:title", content: "BharatOne" },
+      { name: "twitter:title", content: "BharatOne — Banking and citizen services for every Indian retailer" },
       {
         name: "twitter:description",
         content:
-          "BharatOne is a platform for user registration and identity verification, featuring a modern, responsive UI.",
+          "AePS banking, bill payments, money transfer, government services and merchant onboarding — delivered through a network of retail agents across India.",
       },
-      {
-        property: "og:image",
-        content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/25ca4fa9-8ed7-4ee0-af1b-a8b907224bf1/id-preview-a3a09e6e--7130229b-d314-40d1-b4af-66cfb54ea895.lovable.app-1779640208084.png",
-      },
-      {
-        name: "twitter:image",
-        content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/25ca4fa9-8ed7-4ee0-af1b-a8b907224bf1/id-preview-a3a09e6e--7130229b-d314-40d1-b4af-66cfb54ea895.lovable.app-1779640208084.png",
-      },
+      // Served from our own domain. A share image on somebody else's bucket is a
+      // dependency nobody is watching until the day the card renders blank.
+      { property: "og:image", content: "https://mybharatone.com/favicon-192.png" },
+      { name: "twitter:image", content: "https://mybharatone.com/favicon-192.png" },
     ],
     links: [
       { rel: "icon", href: "/favicon.ico", sizes: "any" },

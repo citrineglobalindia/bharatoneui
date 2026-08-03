@@ -26,8 +26,8 @@ supabase functions deploy send-otp --no-verify-jwt
 > `--no-verify-jwt` is required: registrants are anonymous, so the function must accept
 > calls without a logged-in user.
 
-**Option B — Lovable:** since your project is Lovable-managed, you can add/deploy the
-`send-otp` edge function from Lovable's Supabase/backend panel using the same file.
+**Option B — Supabase dashboard:** the same file can be pasted into Edge Functions in
+the Supabase dashboard and deployed from there, with Verify JWT switched off.
 
 ## Step 3 — Set the secrets
 The function needs your Resend key + sender. `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`
