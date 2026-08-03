@@ -39,3 +39,6 @@ supabase/.temp/
 
 # scratch render used to check the ID card artwork
 .card-proof.html
+
+# scratch copy used while building the status table
+.status-test.html
