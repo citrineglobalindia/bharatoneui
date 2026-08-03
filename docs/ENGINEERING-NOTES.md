@@ -341,3 +341,113 @@ do not list it as a prerequisite for a non-financial call).
 **Lesson:** when a partner's support team asks for an undocumented parameter, add it behind a flag
 and be ready to pull it. Fix 1 above was requested by Eko support directly and still broke the
 endpoint worse than before.
+
+## 10. E-Store — four defects, two of which had already cost something (3 Aug 2026)
+
+The E-Store looked more finished than it was. The catalogue, cart, checkout,
+admin console and GST invoices were all real and all working. What was missing
+was everything that happens when something goes slightly wrong, and that is
+where the money was.
+
+### Stock was reserved and never released
+
+`estore_place_order` deducted stock the moment the order row was written. That
+part is right — it is what stops two retailers buying the last unit at the same
+moment. What was missing was an expiry. Nothing ever gave the stock back unless
+an administrator explicitly cancelled the order, and nobody ever did.
+
+The evidence was unambiguous because the stock ledger was unbroken: it started
+at 20 and stepped down to 3 across thirteen `order` movements with no manual
+adjustment anywhere in it. One of those orders was paid. The other twelve had
+quietly eaten **16 units** over three weeks. The product looked nearly sold out
+and one more order would have hit `OUT_OF_STOCK` on a shelf with nineteen
+cookers on it.
+
+Reservations now carry a 45-minute `reserved_until`. `estore_expire_reservations`
+runs every five minutes and releases anything past it. The 16 units are back.
+
+Forty-five minutes rather than fifteen: a retailer fetching a card from another
+room, or switching to a UPI app and waiting for a bank OTP, routinely takes
+longer than a quarter of an hour, and the webhook wins over the sweeper anyway.
+
+### A paid order could vanish
+
+Confirmation depended entirely on the retailer's own browser calling back after
+Razorpay's popup closed. A closed tab, a locked phone, a dropped mobile
+connection in the two seconds between the bank confirming and the callback
+firing — and the money left their account with nothing on our side to show for
+it. The order sat at "awaiting payment" until its reservation lapsed.
+
+`estore-webhook` is the missing server-to-server callback. Both it and the
+browser path now go through `estore_confirm_payment`, which is idempotent, so
+whichever arrives second changes nothing.
+
+Two details that matter:
+
+- The signature is checked over the **raw bytes** of the body. Parsing the JSON
+  and re-serialising it changes key order and whitespace, and every signature
+  fails.
+- The comparison is constant-time. A short-circuiting `===` leaks the expected
+  signature one byte at a time to anyone willing to measure.
+
+The function is deployed with `verify_jwt` off, because Razorpay has no Supabase
+token. That makes the signature check the only thing between the open internet
+and "this order is paid", which is why it happens before anything in the payload
+is read, and why a missing `RAZORPAY_WEBHOOK_SECRET` returns 503 rather than
+falling through.
+
+**Still to do by hand:** register the endpoint in the Razorpay dashboard
+(Settings → Webhooks) for `payment.captured`, `order.paid` and `payment.failed`,
+and set `RAZORPAY_WEBHOOK_SECRET` to the same value. Until then the webhook
+correctly refuses every request.
+
+### The charge did not match the invoice
+
+`Math.round(Number(order.total))` — whole rupees — then multiplied by 100 in the
+browser. An order of Rs 11.80 was charged Rs 12. Every order carrying GST was
+off by up to fifty paise in a direction the customer could see on their card
+statement. Now sent in paise, and the browser uses the server's `amount_paise`
+rather than multiplying again.
+
+### Only an administrator could cancel
+
+A retailer who changed their mind had no way to say so, so the order and its
+stock sat there until expiry. `estore_cancel_my_order` releases it immediately.
+
+### The awkward case: payment after expiry
+
+Rare but real, and it has to be decided rather than ignored. If the stock is
+still there it is taken again and the order confirms normally. If it has since
+been sold, the order is confirmed anyway, marked `needs_attention`, and an
+administrator is notified — taking the money and shipping nothing is not
+acceptable, and neither is overselling. Both branches are covered by the
+rehearsal below.
+
+### What was newly built
+
+- **Store & Fulfilment portal** (`store_staff`, `/store-login`). Order queues,
+  packing slips, stock receipt, low-stock alerting. Deliberately narrow: the
+  RPCs behind it do not return margin or commission columns at all. A packing
+  bench is not the place to learn what everyone in the chain earns.
+- **Delivery agents.** The table and the "assign to agent" control had existed
+  since the E-Store was built, but nothing could ever create an agent, so the
+  table was empty and the control was a dead end.
+- **Returns.** requested → approved → received → refunded. Stock goes back only
+  at `received`, because approving a return is a promise and the goods may still
+  be on a lorry.
+
+Returns and agents are single components used by both the Store portal and the
+administrator's E-Store tab. Two implementations would drift, and the one that
+drifted would be the one that forgot to restock.
+
+### How it was verified
+
+A full rehearsal — place, pay by webhook, confirm again from the browser,
+confirm, pack, refuse to dispatch without a tracking number, dispatch, deliver,
+settle, request a return, over-claim, approve, receive, refund — run inside a
+single transaction that raises at the end so the whole thing rolls back. Nothing
+persisted; the trace came back as the exception message. A second block covered
+retailer cancellation, double cancellation, the sweeper, and both branches of
+late payment. Every assertion held, including the three that were meant to fail:
+shipping without tracking, cancelling from the store portal, and returning more
+units than were bought.
