@@ -93,6 +93,35 @@ const docsPendingCount = (r: { doc_request_keys: string[] | null; doc_reuploaded
   const reup = Array.isArray(r.doc_reuploaded_keys) ? r.doc_reuploaded_keys : [];
   return reqd.filter((k) => !reup.includes(k)).length;
 };
+
+/**
+ * An application still going round the document loop.
+ *
+ * Once a reviewer asks a retailer for a document, that application belongs in
+ * Requested Documents and NOWHERE ELSE until it is finished. It used to appear
+ * in both places: the QC tab listed everything at status qc_review, and
+ * Requested Documents listed everything that had ever had a document asked for,
+ * so the three applications whose retailers had already re-uploaded were sitting
+ * in both queues. Two reviewers could pick up the same file, and the QC count
+ * was three higher than the work actually waiting there.
+ *
+ * "Until it is finished" and not "until the documents come back" is deliberate,
+ * and it is what was asked for: a re-uploaded document is precisely when
+ * somebody needs to go and look at it, so the row stays in Requested Documents
+ * through the re-upload and only leaves once the application is approved or
+ * rejected. The chip on the row already says which of the two it is —
+ * "2/3 docs awaited" while waiting, "3 docs re-uploaded" once they are back.
+ *
+ * Approved and rejected applications keep their document history but drop out of
+ * the queue, which is why 38 long-finished registrations no longer pad the
+ * Requested Documents count.
+ */
+const OPEN_REVIEW_STATUSES = new Set([
+  "accountant_review", "qc_review", "docs_requested", "telecaller",
+]);
+const inDocLoop = (r: {
+  status: string; doc_request_keys: string[] | null;
+}) => (hasDocRequest(r) || r.status === "docs_requested") && OPEN_REVIEW_STATUSES.has(r.status);
 /**
  * Free-text search across a registration row.
  *
@@ -341,7 +370,9 @@ export function RegistrationsReview() {
 
   const filtered = useMemo(() => {
     return rows
-      .filter((r) => (tab === "docs_requested" ? hasDocRequest(r) : r.status === tab))
+      // One queue per application: an open document request removes it from
+      // every other tab, so nobody works a file that is waiting on the retailer.
+      .filter((r) => (tab === "docs_requested" ? inDocLoop(r) : r.status === tab && !inDocLoop(r)))
       .filter((r) => tab === "docs_requested" || !(role === "qc" && r.status === "accountant_review"))
       .filter((r) => (typeFilter === "all" ? true : (r.registration_type || "new") === typeFilter))
       .filter((r) => {
@@ -352,8 +383,12 @@ export function RegistrationsReview() {
         return true;
       })
       .filter((r) => matchesQuery(r, query))
-      // In the Requested Documents tab, put still-awaited applications first.
-      .sort((a, b) => (tab === "docs_requested" ? (docsPendingCount(b) > 0 ? 1 : 0) - (docsPendingCount(a) > 0 ? 1 : 0) : 0));
+      // In Requested Documents, the ones a reviewer can actually act on come
+      // first: everything the retailer has already sent back. Files still
+      // waiting on the retailer are nobody's work yet, so they sink.
+      .sort((a, b) => (tab === "docs_requested"
+        ? (docsPendingCount(a) === 0 ? 0 : 1) - (docsPendingCount(b) === 0 ? 0 : 1)
+        : 0));
   }, [rows, tab, query, typeFilter]);
 
   async function run(
@@ -602,9 +637,11 @@ export function RegistrationsReview() {
           >
             {TAB_LABEL[t]}{" "}
             {(() => {
+              // Must use the same rule as the table, or the number on the tab
+              // promises work that is not there when you open it.
               const c = t === "docs_requested"
-                ? rows.filter(hasDocRequest).length
-                : rows.filter((r) => r.status === t).length;
+                ? rows.filter(inDocLoop).length
+                : rows.filter((r) => r.status === t && !inDocLoop(r)).length;
               return c ? `(${c})` : "";
             })()}
           </button>
