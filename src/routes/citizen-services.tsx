@@ -156,7 +156,7 @@ function ServicesPage() {
       {/* Grid */}
       <section className="container mx-auto px-4 sm:px-6 py-12 sm:py-16">
         {filtered.length === 0 ? (
-          <div className="text-center py-20 text-muted-foreground">No services match your search.</div>
+          <div className="text-center py-12 text-muted-foreground">No services match your search.</div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {filtered.map((s, i) => (
@@ -195,7 +195,7 @@ function ServicesPage() {
       </section>
 
       {/* CTA */}
-      <section className="container mx-auto px-4 sm:px-6 pb-20">
+      <section className="container mx-auto px-4 sm:px-6 pb-12">
         <div className="rounded-3xl bg-gradient-to-br from-[var(--saffron)] via-[var(--saffron-glow)] to-[var(--india-green)] p-8 sm:p-12 text-center text-white shadow-elegant">
           <h2 className="font-display text-2xl sm:text-4xl font-bold">Don't see what you need?</h2>
           <p className="mt-3 text-white/90 max-w-xl mx-auto">Our centers handle 100+ services. Reach out and we'll guide you to the nearest one.</p>

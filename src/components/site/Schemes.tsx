@@ -31,13 +31,13 @@ const schemes = [
 
 export function Schemes() {
   return (
-    <section id="schemes" className="py-20 sm:py-28 bg-muted/40">
+    <section id="schemes" className="py-12 sm:py-16 bg-muted/40">
       <div className="container mx-auto px-4 sm:px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="max-w-3xl mx-auto text-center mb-10"
+          className="max-w-3xl mx-auto text-center mb-7"
         >
           <h2 className="text-3xl sm:text-5xl font-bold">
             BharatOne Schemes for <span className="text-india-green">Indian</span>{" "}
@@ -123,13 +123,13 @@ export function LiveStats() {
   ];
 
   return (
-    <section className="py-16 sm:py-20 bg-background">
+    <section className="py-10 sm:py-14 bg-background">
       <div className="container mx-auto px-4 sm:px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-10"
+          className="text-center mb-7"
         >
           <h2 className="text-3xl sm:text-4xl font-bold">Live Statistics</h2>
           <div className="mx-auto mt-4 h-1 w-24 rounded-full bg-gradient-to-r from-saffron via-ashoka to-india-green" />
@@ -160,7 +160,7 @@ export function LiveStats() {
 
 export function CTA() {
   return (
-    <section className="py-20 sm:py-28">
+    <section className="py-12 sm:py-16">
       <div className="container mx-auto px-4 sm:px-6">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -248,7 +248,7 @@ export function Awards() {
   if (awards.length === 0) return null;
 
   return (
-    <section className="py-16 border-t border-border">
+    <section className="py-10 border-t border-border">
       <div className="container mx-auto px-4 sm:px-6 text-center">
         <h3 className="text-xs uppercase tracking-[0.3em] text-muted-foreground mb-8">Awarded &amp; Recognized By</h3>
         <div className="flex flex-wrap justify-center items-center gap-x-10 gap-y-8 sm:gap-x-16">
@@ -363,9 +363,9 @@ export function Testimonials() {
   if (items.length === 0) return null;
 
   return (
-    <section className="py-20 bg-gradient-hero">
+    <section className="py-12 bg-gradient-hero">
       <div className="container mx-auto px-4 sm:px-6">
-        <div className="text-center mb-12">
+        <div className="text-center mb-8">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-card px-3 py-1 text-xs font-semibold text-saffron shadow-soft">
             <Sparkles className="h-3.5 w-3.5" /> Testimonials
           </span>

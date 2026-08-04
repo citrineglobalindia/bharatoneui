@@ -270,7 +270,7 @@ function RefundPolicyPage() {
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mb-8 sm:mb-10"
+          className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mb-8 sm:mb-7"
         >
           <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card border border-border">
             <Calendar className="h-3.5 w-3.5 text-saffron" />
@@ -321,7 +321,7 @@ function RefundPolicyPage() {
               initial={{ opacity: 0, y: 14 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="rounded-3xl border border-border bg-card p-6 sm:p-8 mb-10 shadow-soft relative overflow-hidden"
+              className="rounded-3xl border border-border bg-card p-6 sm:p-8 mb-7 shadow-soft relative overflow-hidden"
             >
               <div
                 aria-hidden

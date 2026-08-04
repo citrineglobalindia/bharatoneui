@@ -277,12 +277,12 @@ function CareersPage() {
       accent="green"
     >
       {/* Perks */}
-      <section className="container mx-auto px-4 sm:px-6 py-16 sm:py-24">
+      <section className="container mx-auto px-4 sm:px-6 py-10 sm:py-14">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="max-w-2xl mx-auto text-center mb-12"
+          className="max-w-2xl mx-auto text-center mb-8"
         >
           <h2 className="font-display text-3xl sm:text-4xl font-bold">Why join BharatOne</h2>
           <p className="text-muted-foreground mt-3">
@@ -316,7 +316,7 @@ function CareersPage() {
 
       {/* Open roles */}
       <section className="bg-muted/40 border-y border-border">
-        <div className="container mx-auto px-4 sm:px-6 py-16 sm:py-24">
+        <div className="container mx-auto px-4 sm:px-6 py-10 sm:py-14">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
             <div>
               <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -506,12 +506,12 @@ function CareersPage() {
       </section>
 
       {/* Hiring process */}
-      <section className="container mx-auto px-4 sm:px-6 py-16 sm:py-24">
+      <section className="container mx-auto px-4 sm:px-6 py-10 sm:py-14">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="max-w-2xl mx-auto text-center mb-12"
+          className="max-w-2xl mx-auto text-center mb-8"
         >
           <div className="text-[11px] font-semibold uppercase tracking-wider text-saffron">
             How we hire
@@ -568,12 +568,12 @@ function CareersPage() {
 
       {/* Benefits */}
       <section className="bg-muted/40 border-y border-border">
-        <div className="container mx-auto px-4 sm:px-6 py-16 sm:py-24">
+        <div className="container mx-auto px-4 sm:px-6 py-10 sm:py-14">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="max-w-2xl mx-auto text-center mb-12"
+            className="max-w-2xl mx-auto text-center mb-8"
           >
             <div className="text-[11px] font-semibold uppercase tracking-wider text-india-green">
               What you get
@@ -613,12 +613,12 @@ function CareersPage() {
 
       {/* Testimonials — admin-managed; hidden until at least one is added */}
       {teamTestimonials.length > 0 && (
-      <section className="container mx-auto px-4 sm:px-6 py-16 sm:py-24">
+      <section className="container mx-auto px-4 sm:px-6 py-10 sm:py-14">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="max-w-2xl mx-auto text-center mb-12"
+          className="max-w-2xl mx-auto text-center mb-8"
         >
           <div className="text-[11px] font-semibold uppercase tracking-wider text-ashoka">
             Life at BharatOne
@@ -661,12 +661,12 @@ function CareersPage() {
 
       {/* FAQ */}
       <section className="bg-muted/40 border-y border-border">
-        <div className="container mx-auto px-4 sm:px-6 py-16 sm:py-24">
+        <div className="container mx-auto px-4 sm:px-6 py-10 sm:py-14">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="max-w-2xl mx-auto text-center mb-10"
+            className="max-w-2xl mx-auto text-center mb-7"
           >
             <div className="text-[11px] font-semibold uppercase tracking-wider text-saffron">
               FAQ
@@ -684,7 +684,7 @@ function CareersPage() {
       </section>
 
       {/* CTA */}
-      <section className="container mx-auto px-4 sm:px-6 py-16 sm:py-24">
+      <section className="container mx-auto px-4 sm:px-6 py-10 sm:py-14">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}

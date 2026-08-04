@@ -54,7 +54,7 @@ export function PageShell({
               backgroundSize: "22px 22px",
             }}
           />
-          <div className={`container mx-auto px-4 sm:px-6 py-14 sm:py-20 relative ${centered ? "flex flex-col items-center text-center" : ""}`}>
+          <div className={`container mx-auto px-4 sm:px-6 py-10 sm:py-14 relative ${centered ? "flex flex-col items-center text-center" : ""}`}>
             {crumbs && (
               <nav aria-label="Breadcrumb" className="mb-5">
                 <ol className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">

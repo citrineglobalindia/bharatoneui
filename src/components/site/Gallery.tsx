@@ -119,10 +119,10 @@ export function Gallery({ embedded = false }: { embedded?: boolean }) {
   const onPointerUp = () => { drag.current.active = false; };
 
   return (
-    <section id="gallery" className="border-t border-border bg-muted/30 py-16 sm:py-24">
+    <section id="gallery" className="border-t border-border bg-muted/30 py-10 sm:py-14">
       <div className="container mx-auto px-4 sm:px-6">
         {!embedded && (
-          <div className="text-center mb-10">
+          <div className="text-center mb-7">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-card px-3 py-1 text-xs font-semibold text-saffron shadow-soft">
               <Sparkles className="h-3.5 w-3.5" /> Gallery
             </span>
@@ -224,7 +224,7 @@ export function Gallery({ embedded = false }: { embedded?: boolean }) {
         </div>
 
         {visible.length === 0 && (
-          <p className="py-16 text-center text-muted-foreground">No items in this category yet.</p>
+          <p className="py-10 text-center text-muted-foreground">No items in this category yet.</p>
         )}
 
         {shown < filtered.length && (

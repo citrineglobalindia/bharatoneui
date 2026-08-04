@@ -134,7 +134,7 @@ function AboutPage() {
       crumbs={[{ label: "About" }]}
     >
       {/* Story + stats */}
-      <section className="container mx-auto px-4 sm:px-6 py-16 sm:py-24 grid lg:grid-cols-2 gap-12 items-start">
+      <section className="container mx-auto px-4 sm:px-6 py-10 sm:py-14 grid lg:grid-cols-2 gap-12 items-start">
         <motion.div
           variants={stagger}
           initial="hidden"
@@ -200,12 +200,12 @@ function AboutPage() {
 
       {/* Mission / Vision */}
       <section className="bg-muted/40 border-y border-border">
-        <div className="container mx-auto px-4 sm:px-6 py-16 sm:py-20">
+        <div className="container mx-auto px-4 sm:px-6 py-10 sm:py-14">
           <motion.h2
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-center font-display text-3xl sm:text-4xl font-bold mb-10"
+            className="text-center font-display text-3xl sm:text-4xl font-bold mb-7"
           >
             Our <span className="text-india-green">Mission</span> &amp;{" "}
             <span className="text-saffron">Vision</span>
@@ -250,12 +250,12 @@ function AboutPage() {
       </section>
 
       {/* Values */}
-      <section className="container mx-auto px-4 sm:px-6 py-16 sm:py-24">
+      <section className="container mx-auto px-4 sm:px-6 py-10 sm:py-14">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="max-w-2xl mx-auto text-center mb-12"
+          className="max-w-2xl mx-auto text-center mb-8"
         >
           <h2 className="font-display text-3xl sm:text-4xl font-bold">
             Why Choose <span className="text-india-green">BharatOne</span>?
@@ -309,12 +309,12 @@ function Timeline({ milestones }: { milestones: { year: string; title: string; d
 
   return (
     <section className="bg-muted/40 border-t border-border">
-      <div className="container mx-auto px-4 sm:px-6 py-16 sm:py-24">
+      <div className="container mx-auto px-4 sm:px-6 py-10 sm:py-14">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="max-w-2xl mx-auto text-center mb-12"
+          className="max-w-2xl mx-auto text-center mb-8"
         >
           <h2 className="font-display text-3xl sm:text-4xl font-bold">Our journey</h2>
           <p className="text-muted-foreground mt-3">

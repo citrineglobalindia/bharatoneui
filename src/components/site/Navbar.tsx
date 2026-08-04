@@ -7,7 +7,6 @@ import {
   Phone,
   Mail,
   ChevronDown,
-  Search,
   Sparkles,
   ShieldCheck,
   GraduationCap,
@@ -190,12 +189,6 @@ export function Navbar() {
 
           {/* Right cluster */}
           <div className="flex items-center gap-2">
-            <button
-              aria-label="Search"
-              className="hidden md:flex h-10 w-10 items-center justify-center rounded-lg hover:bg-muted transition-colors"
-            >
-              <Search className="h-4 w-4" />
-            </button>
             <button onClick={() => { window.location.href = "/login"; }} className="hidden md:inline-flex items-center h-10 px-4 rounded-lg text-sm font-semibold text-foreground hover:bg-muted transition-colors">
               Login
             </button>

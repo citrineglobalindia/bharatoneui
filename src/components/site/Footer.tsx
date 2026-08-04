@@ -377,7 +377,7 @@ export function Footer() {
   // No top margin on the footer.
   //
   // This carried `mt-24`, which sat OUTSIDE the dark background and so rendered
-  // as a 96px band of page white. Stacked on the closing section's own `py-20`,
+  // as a 96px band of page white. Stacked on the closing section's own `py-12`,
   // that left 176px of empty page between the last card and the footer — a gap
   // that reads as a mistake rather than as breathing room. Every section already
   // owns its bottom padding, which is where that spacing belongs; the footer

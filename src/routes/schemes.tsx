@@ -153,7 +153,7 @@ function SchemesPage() {
       </section>
 
       {/* Featured */}
-      <section className="container mx-auto px-4 sm:px-6 py-16 sm:py-20">
+      <section className="container mx-auto px-4 sm:px-6 py-10 sm:py-14">
         {nothing && (
           <p className="py-10 text-center text-muted-foreground">No schemes match your search.</p>
         )}
@@ -196,8 +196,8 @@ function SchemesPage() {
 
       {/* More schemes */}
       <section className={`bg-muted/40 border-y border-border ${moreShown.length === 0 ? "hidden" : ""}`}>
-        <div className="container mx-auto px-4 sm:px-6 py-16 sm:py-20">
-          <div className="max-w-2xl mx-auto text-center mb-12">
+        <div className="container mx-auto px-4 sm:px-6 py-10 sm:py-14">
+          <div className="max-w-2xl mx-auto text-center mb-8">
             <h2 className="font-display text-3xl sm:text-4xl font-bold">More schemes we facilitate</h2>
             <p className="text-muted-foreground mt-3">Central & state welfare programs accessible at every BharatOne center.</p>
           </div>
@@ -223,7 +223,7 @@ function SchemesPage() {
       </section>
 
       {/* Eligibility / How to apply */}
-      <section className="container mx-auto px-4 sm:px-6 py-16 sm:py-20">
+      <section className="container mx-auto px-4 sm:px-6 py-10 sm:py-14">
         <div className="max-w-3xl mx-auto">
           <h2 className="font-display text-3xl sm:text-4xl font-bold text-center">How to apply</h2>
           <p className="text-muted-foreground mt-3 text-center">Three simple steps to enroll in any welfare scheme at your nearest BharatOne center.</p>

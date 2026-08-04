@@ -190,7 +190,7 @@ function ContactPage() {
       </motion.section>
 
       {/* Form + sidebar */}
-      <section ref={sectionRef} className="container mx-auto px-4 sm:px-6 py-12 sm:py-20 grid lg:grid-cols-5 gap-8 relative">
+      <section ref={sectionRef} className="container mx-auto px-4 sm:px-6 py-8 sm:py-12 grid lg:grid-cols-5 gap-8 relative">
         {/* Decorative ambient glow */}
         <motion.div
           aria-hidden
@@ -443,7 +443,7 @@ function ContactPage() {
       </section>
 
       {/* Map / Location */}
-      <section id="location" className="container mx-auto px-4 sm:px-6 pb-20 sm:pb-28">
+      <section id="location" className="container mx-auto px-4 sm:px-6 pb-12 sm:pb-16">
         <motion.div
           initial={{ opacity: 0, y: 22 }}
           whileInView={{ opacity: 1, y: 0 }}

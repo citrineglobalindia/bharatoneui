@@ -36,13 +36,13 @@ export const visibleServiceTitles: string[] = services.map((s) => s.title);
 
 export function Services() {
   return (
-    <section id="services" className="py-20 sm:py-28">
+    <section id="services" className="py-12 sm:py-16">
       <div className="container mx-auto px-4 sm:px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="max-w-2xl mx-auto text-center mb-14"
+          className="max-w-2xl mx-auto text-center mb-9"
         >
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-saffron/10 text-saffron text-xs font-semibold uppercase tracking-wider mb-4">
             Our Services

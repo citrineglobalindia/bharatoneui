@@ -87,7 +87,7 @@ function HeroCarousel() {
 
 export function Hero() {
   return (
-    <section id="home" className="relative pt-12 pb-20 md:pt-20 md:pb-28 overflow-hidden bg-gradient-hero">
+    <section id="home" className="relative pt-8 pb-12 md:pt-12 md:pb-16 overflow-hidden bg-gradient-hero">
       {/* decorative tricolor blobs */}
       <motion.div
         aria-hidden
@@ -218,13 +218,13 @@ export function Stats() {
     { value: 28, label: "States Reached", suffix: "" },
   ];
   return (
-    <section className="py-16 sm:py-20 bg-card border-y border-border">
+    <section className="py-10 sm:py-14 bg-card border-y border-border">
       <div className="container mx-auto px-4 sm:px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-10"
+          className="text-center mb-7"
         >
           <h2 className="text-3xl sm:text-4xl font-bold">Trusted by Thousands</h2>
           <p className="text-muted-foreground mt-2">Built for Indian citizens, one center at a time.</p>
