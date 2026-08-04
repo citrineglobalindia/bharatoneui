@@ -6,15 +6,28 @@ import { supabase } from "@/integrations/supabase/client";
 import heroImg from "@/assets/hero-citizens.jpg";
 
 // Number of images shown in the hero collage at once.
-const COLLAGE_TILES = 5;
 
-// Admin-managed hero collage. Falls back to the bundled default image when no
-// hero images have been uploaded. Admins add/manage these in Admin → Hero Images.
+// Admin-managed hero strip.
+//
+// A CONTINUOUS MARQUEE rather than a grid that swaps tiles.
+//
+// The grid this replaced showed five images and exchanged one every five
+// seconds. Two problems: with more than five uploaded, most were never seen for
+// long, and a tile silently changing under the eye reads as a glitch rather than
+// as motion. A strip that drifts steadily shows everything, in order, and looks
+// deliberate.
+//
+// The list is rendered TWICE and the track is translated by exactly -50%. At the
+// end of the cycle the second copy sits precisely where the first began, so the
+// reset is invisible and there is no jump. Duration scales with the number of
+// images so the speed stays the same whether there are four or forty.
+//
+// Falls back to the bundled image when nothing has been uploaded. Admins manage
+// these in Admin → Website Gallery → Hero images.
 function HeroCarousel() {
   const [slides, setSlides] = useState<{ src: string; caption: string }[]>([
     { src: heroImg, caption: "Indian citizens using BharatOne digital services on mobile" },
   ]);
-  const [idx, setIdx] = useState(0);
 
   useEffect(() => {
     let on = true;
@@ -32,41 +45,42 @@ function HeroCarousel() {
           caption: d.caption ?? "BharatOne services",
         })),
       );
-      setIdx(0);
     })();
     return () => { on = false; };
   }, []);
 
-  // When more images are uploaded than fit the collage, gently rotate them through.
-  useEffect(() => {
-    if (slides.length <= COLLAGE_TILES) return;
-    const t = setInterval(() => setIdx((i) => (i + 1) % slides.length), 5000);
-    return () => clearInterval(t);
-  }, [slides.length]);
-
-  // Build the visible collage window starting at idx (wraps around).
-  const tiles = Array.from({ length: Math.min(COLLAGE_TILES, slides.length) }, (_, i) => slides[(idx + i) % slides.length]);
+  // Enough copies that the track is always wider than the widest screen — with
+  // one or two images a single duplicate would leave a visible gap.
+  const loop = slides.length >= 4 ? [...slides, ...slides] : [...slides, ...slides, ...slides, ...slides];
+  // About six seconds per image: slow enough to look at, quick enough to move.
+  const seconds = Math.max(18, slides.length * 6);
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-      {tiles.map((s, i) => (
-        <motion.div
-          key={`${s.src}-${i}`}
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: i * 0.07 }}
-          className={`relative overflow-hidden rounded-2xl bg-muted shadow-soft ${
-            i === 2 ? "lg:col-span-2 col-span-2 sm:col-span-1" : ""
-          }`}
-        >
-          <img
-            src={s.src}
-            alt={s.caption}
-            loading="lazy"
-            className="h-40 w-full object-cover sm:h-52 lg:h-64"
-          />
-        </motion.div>
-      ))}
+    <div
+      className="hero-marquee relative overflow-hidden"
+      style={{ ["--hero-marquee-duration" as string]: `${seconds}s` }}
+    >
+      {/* The strip runs to the edge; these fade it out rather than cutting it off. */}
+      <div aria-hidden className="pointer-events-none absolute inset-y-0 left-0 z-10 w-10 bg-gradient-to-r from-background to-transparent sm:w-16" />
+      <div aria-hidden className="pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l from-background to-transparent sm:w-16" />
+      <div className="hero-marquee-track flex w-max gap-3 sm:gap-4">
+        {loop.map((s, i) => (
+          <div
+            key={`${s.src}-${i}`}
+            className="relative shrink-0 overflow-hidden rounded-2xl bg-muted shadow-soft"
+            /* Every third card is wider, which stops the strip reading as a
+               conveyor belt of identical boxes. */
+            style={{ width: i % 3 === 1 ? "clamp(180px, 26vw, 300px)" : "clamp(140px, 19vw, 220px)" }}
+          >
+            <img
+              src={s.src}
+              alt={s.caption}
+              loading={i < 6 ? "eager" : "lazy"}
+              className="h-40 w-full object-cover sm:h-52 lg:h-64"
+            />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

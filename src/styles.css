@@ -327,3 +327,26 @@
 
 section[id] { scroll-margin-top: 96px; }
 @media (min-width: 768px) { section[id] { scroll-margin-top: 124px; } }
+
+/* ---------- hero image strip ----------
+   The track holds the image list twice and slides exactly one copy's width, so
+   the moment it resets the second copy is already sitting where the first
+   started and the loop cannot be seen. Duration is set per-instance from the
+   number of images, so the speed does not change as more are uploaded. */
+@keyframes hero-marquee-slide {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-50%, 0, 0); }
+}
+.hero-marquee-track {
+  animation: hero-marquee-slide var(--hero-marquee-duration, 30s) linear infinite;
+  will-change: transform;
+}
+/* Pause on hover so a visitor can actually look at one. */
+.hero-marquee:hover .hero-marquee-track { animation-play-state: paused; }
+
+/* Motion that cannot be stopped is a problem for anyone who gets motion sick,
+   and an endless drift is exactly the kind that does it. Honour the setting. */
+@media (prefers-reduced-motion: reduce) {
+  .hero-marquee-track { animation: none; }
+  .hero-marquee { overflow-x: auto; }
+}

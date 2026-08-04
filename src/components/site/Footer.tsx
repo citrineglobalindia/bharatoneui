@@ -374,8 +374,16 @@ export function Footer() {
         viewport: { once: true, amount: 0.15 },
       };
 
+  // No top margin on the footer.
+  //
+  // This carried `mt-24`, which sat OUTSIDE the dark background and so rendered
+  // as a 96px band of page white. Stacked on the closing section's own `py-20`,
+  // that left 176px of empty page between the last card and the footer — a gap
+  // that reads as a mistake rather than as breathing room. Every section already
+  // owns its bottom padding, which is where that spacing belongs; the footer
+  // adding more was double-counting it.
   return (
-    <footer ref={ref} className="relative isolate mt-24 overflow-hidden bg-foreground text-background">
+    <footer ref={ref} className="relative isolate overflow-hidden bg-foreground text-background">
       <div aria-hidden className="absolute inset-x-0 top-0 h-px" style={{ background: "var(--gradient-tricolor)" }} />
       <div
         aria-hidden
