@@ -80,14 +80,12 @@ function ServicesPage() {
   return (
     <PageShell
       centered
-      eyebrow="Our Services"
       title={
         <>
           100+ services. <span className="text-gradient-tricolor">One trusted center.</span>
         </>
       }
       subtitle="From government paperwork and banking to welfare schemes and bill payments, our network of centers brings every essential service to your neighbourhood."
-      crumbs={[{ label: "Services" }]}
     >
       {/* Search + Filters */}
       <section className="border-b border-border bg-card/40 sticky top-[64px] md:top-[64px] z-30 backdrop-blur">

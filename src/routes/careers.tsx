@@ -266,14 +266,12 @@ function CareersPage() {
   return (
     <PageShell
       centered
-      eyebrow="Careers"
       title={
         <>
           Build <span className="text-gradient-tricolor">Bharat</span> with us.
         </>
       }
       subtitle="We're hiring engineers, designers, operators and storytellers who want to put government, banking and welfare services within walking distance of every Indian household."
-      crumbs={[{ label: "Careers" }]}
       accent="green"
     >
       {/* Perks */}

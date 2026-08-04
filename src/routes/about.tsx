@@ -113,7 +113,6 @@ const stagger: Variants = {
 function AboutPage() {
   return (
     <PageShell
-      eyebrow="About BharatOne"
       centered
       divider
       title={
@@ -131,7 +130,6 @@ function AboutPage() {
           </Link>
         </Button>
       }
-      crumbs={[{ label: "About" }]}
     >
       {/* Story + stats */}
       <section className="container mx-auto px-4 sm:px-6 py-10 sm:py-14 grid lg:grid-cols-2 gap-12 items-start">

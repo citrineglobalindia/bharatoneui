@@ -256,14 +256,12 @@ function RefundPolicyPage() {
 
   return (
     <PageShell
-      eyebrow="Legal"
       title={
         <>
           Refund &amp; <span className="text-gradient-tricolor">Cancellation Policy</span>
         </>
       }
       subtitle="How refunds, cancellations and reversals work across BharatOne services."
-      crumbs={[{ label: "Refund Policy" }]}
       accent="ashoka"
     >
       <section className="container mx-auto px-4 sm:px-6 py-10 sm:py-14">

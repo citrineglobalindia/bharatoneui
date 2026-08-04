@@ -139,7 +139,6 @@ function ContactPage() {
   return (
     <PageShell
       centered
-      eyebrow="Contact"
       title={
         <>
           Let's talk —{" "}
@@ -147,7 +146,6 @@ function ContactPage() {
         </>
       }
       subtitle="Reach out for service queries, center partnerships, media, or general enquiries. We typically respond within one business day."
-      crumbs={[{ label: "Contact" }]}
       accent="ashoka"
     >
       {/* Quick contact cards */}

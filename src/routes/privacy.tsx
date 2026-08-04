@@ -170,14 +170,12 @@ function PrivacyPage() {
 
   return (
     <PageShell
-      eyebrow="Legal"
       title={
         <>
           Privacy &amp; <span className="text-gradient-tricolor">Policies</span>
         </>
       }
       subtitle="How BharatOne handles your data, our content, third-party links and the security of this site."
-      crumbs={[{ label: "Privacy Policy" }]}
       accent="green"
     >
       <section className="container mx-auto px-4 sm:px-6 py-10 sm:py-14">

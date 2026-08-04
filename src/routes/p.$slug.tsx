@@ -70,10 +70,8 @@ function DynamicPage() {
 
   return (
     <PageShell
-      eyebrow="BharatOne"
       title={page?.title ?? (loading ? "Loading…" : "Page not found")}
       subtitle={page?.subtitle ?? undefined}
-      crumbs={[{ label: page?.title ?? "Page" }]}
       accent="ashoka"
     >
       <section className="container mx-auto px-4 sm:px-6 py-10 sm:py-14">

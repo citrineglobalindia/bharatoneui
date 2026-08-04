@@ -91,14 +91,12 @@ function SchemesPage() {
   return (
     <PageShell
       centered
-      eyebrow="Welfare Schemes"
       title={
         <>
           Schemes that <span className="text-gradient-tricolor">uplift Bharat</span>.
         </>
       }
       subtitle="Welfare-driven programs designed to empower individuals and communities — from healthcare and education to housing and livelihoods."
-      crumbs={[{ label: "Schemes" }]}
       accent="green"
     >
       {/* CR-146 — search & filter bar */}

@@ -220,14 +220,12 @@ function TermsPage() {
 
   return (
     <PageShell
-      eyebrow="Legal"
       title={
         <>
           Terms &amp; <span className="text-gradient-tricolor">Conditions</span>
         </>
       }
       subtitle="The agreement between you and BharatOne Services and Affiliates Pvt. Ltd. when you use our website and services."
-      crumbs={[{ label: "Terms & Conditions" }]}
       accent="ashoka"
     >
       <section className="container mx-auto px-4 sm:px-6 py-10 sm:py-14">
