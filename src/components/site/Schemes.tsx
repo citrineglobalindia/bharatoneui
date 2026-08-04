@@ -374,7 +374,27 @@ export function Testimonials() {
             Real stories from BharatOne service-center partners building their businesses across India.
           </p>
         </div>
-        <div className="grid gap-6 md:grid-cols-3">
+        {/*
+          The column count follows the number of testimonials.
+
+          This was a fixed `md:grid-cols-3`. With one testimonial live, the
+          browser still laid out three 395px columns and put the single card in
+          the first of them — leaving two thirds of the row empty, then the
+          section's own bottom padding, and then the footer. A card marooned
+          beside a void reads as something failing to load, not as a design.
+
+          One is centred and narrow, two share the width, three or more use the
+          full row as before.
+        */}
+        <div
+          className={`grid gap-6 ${
+            items.length === 1
+              ? "max-w-md mx-auto"
+              : items.length === 2
+                ? "sm:grid-cols-2 max-w-3xl mx-auto"
+                : "md:grid-cols-3"
+          }`}
+        >
           {items.map((t, i) => (
             <motion.div
               key={t.name}
