@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { motion, AnimatePresence, useScroll, useSpring, useMotionValueEvent } from "framer-motion";
 import {
@@ -63,6 +63,7 @@ export function Navbar() {
   const [hidden, setHidden] = useState(false);
   const [hovered, setHovered] = useState<string | null>(null);
   const [openMega, setOpenMega] = useState<string | null>(null);
+  const headerRef = useRef<HTMLElement | null>(null);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const active = pathname === "/" ? "/" : "/" + pathname.split("/").filter(Boolean)[0];
 
@@ -87,6 +88,34 @@ export function Navbar() {
       window.removeEventListener("keydown", onKey);
     };
   }, [open]);
+
+  /**
+   * Publish the space the header is occupying right now as --site-header-h.
+   *
+   * Sticky toolbars further down the page (the services filter bar) used to
+   * pin themselves to a hard-coded 64px. But this header retracts entirely on
+   * scroll-down, so a bar pinned to a fixed offset leaves a live 64px strip of
+   * page content scrolling visibly ABOVE it — which reads as the filter bar
+   * cutting through the cards. Anchoring to this value instead means the bar
+   * follows the header up and sits flush against the top when it retracts.
+   */
+  useEffect(() => {
+    const publish = () => {
+      const el = headerRef.current;
+      // The contact/language strip is 38px and only present on md+ before scroll.
+      const utility = window.matchMedia("(min-width: 768px)").matches && !scrolled && !hidden ? 38 : 0;
+      const h = hidden ? 0 : (el?.offsetHeight ?? 0) + utility;
+      document.documentElement.style.setProperty("--site-header-h", `${Math.round(h)}px`);
+    };
+    publish();
+    // Re-measure once the show/hide transition has finished.
+    const t = window.setTimeout(publish, 420);
+    window.addEventListener("resize", publish);
+    return () => {
+      window.clearTimeout(t);
+      window.removeEventListener("resize", publish);
+    };
+  }, [hidden, scrolled]);
 
   return (
     <>
@@ -117,6 +146,7 @@ export function Navbar() {
 
       {/* Main header */}
       <motion.header
+        ref={headerRef}
         initial={{ y: -60, opacity: 0 }}
         animate={{ y: hidden ? -120 : 0, opacity: 1 }}
         transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
@@ -235,9 +265,17 @@ export function Navbar() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8 }}
                   transition={{ duration: 0.2 }}
-                  className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-[min(900px,92vw)] hidden lg:block"
+                  // pt-2, not mt-2. A margin left an 8px strip between the header
+                  // and this panel that belonged to neither element, so dragging
+                  // the pointer down towards a menu item crossed open page and
+                  // fired the header's onMouseLeave — the menu shut before you
+                  // could reach anything in it. Padding keeps that strip inside
+                  // the panel, so the pointer never leaves.
+                  className="absolute left-1/2 -translate-x-1/2 top-full pt-2 w-[min(900px,92vw)] hidden lg:block"
                 >
-                  <div className="glass rounded-2xl border border-border/60 shadow-elegant p-6 grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {/* Opaque. `glass` is 70% white, so page content — the headlines
+                      marquee especially — read straight through the menu. */}
+                  <div className="bg-background rounded-2xl border border-border/60 shadow-elegant p-6 grid grid-cols-2 md:grid-cols-3 gap-2">
                     {link.mega.map((m) => (
                       <Link
                         key={m.title}

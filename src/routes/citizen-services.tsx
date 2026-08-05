@@ -88,7 +88,16 @@ function ServicesPage() {
       subtitle="From government paperwork and banking to welfare schemes and bill payments, our network of centers brings every essential service to your neighbourhood."
     >
       {/* Search + Filters */}
-      <section className="border-b border-border bg-card/40 sticky top-[64px] md:top-[64px] z-30 backdrop-blur">
+      {/* Pinned under the header. The offset is whatever the header currently
+          occupies (see --site-header-h in Navbar) rather than a fixed 64px —
+          the header retracts on scroll-down, and a fixed offset left a strip of
+          cards scrolling visibly above the bar, so it looked like the filters
+          were slicing through the grid. Opaque background for the same reason:
+          bg-card/40 let the cards show through as they passed underneath. */}
+      <section
+        className="border-b border-border bg-card sticky z-30"
+        style={{ top: "var(--site-header-h, 64px)" }}
+      >
         <div className="container mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

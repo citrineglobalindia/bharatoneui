@@ -183,9 +183,6 @@ function SchemesPage() {
                     </li>
                   ))}
                 </ul>
-                <button className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-saffron hover:gap-2.5 transition-all">
-                  Know more <ArrowRight className="h-3.5 w-3.5" />
-                </button>
               </div>
             </motion.article>
           ))}
