@@ -37,6 +37,42 @@ const label: Record<string, string> = { submitted: "New", on_process: "On Proces
 const tone: Record<string, string> = { submitted: "bg-saffron/10 text-saffron", on_process: "bg-amber-500/10 text-amber-600", in_progress: "bg-amber-500/10 text-amber-600", waiting_approval: "bg-sky-500/10 text-sky-600", on_delay: "bg-orange-600/10 text-orange-700", approved: "bg-sky-500/10 text-sky-600", completed: "bg-india-green/10 text-india-green", rejected: "bg-rose-500/10 text-rose-600" };
 const inr = (n: number) => "₹" + Number(n || 0).toLocaleString("en-IN");
 
+/** Turn a snake_case form field id into something readable. */
+function humanise(key: string): string {
+  return key
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+    .replace(/\bId\b/g, "ID")
+    .replace(/\bDob\b/g, "Date of Birth")
+    .replace(/\bPan\b/g, "PAN")
+    .replace(/\bIfsc\b/gi, "IFSC");
+}
+
+/**
+ * Fields already printed in the applicant grid at the top of the detail panel.
+ * form_data mirrors these columns, so rendering the raw object underneath
+ * showed every one of them a second time.
+ */
+const FIXED_FORM_KEYS = new Set([
+  "full_name", "father_name", "gender", "email", "phone", "address",
+  "aadhaar_number", "pan_number",
+]);
+
+function formFiles(form: any): { key: string; name: string; path: string }[] {
+  if (!form || typeof form !== "object") return [];
+  return Object.entries(form)
+    .filter(([, v]: any) => v && typeof v === "object" && v.__file)
+    .map(([k, v]: any) => ({ key: k, name: v.name || "Download", path: v.__file }));
+}
+
+function extraFormFields(form: any): { label: string; value: string }[] {
+  if (!form || typeof form !== "object") return [];
+  return Object.entries(form)
+    .filter(([k, v]: any) =>
+      !FIXED_FORM_KEYS.has(k) && v != null && v !== "" && !(typeof v === "object" && v.__file))
+    .map(([k, v]) => ({ label: humanise(k), value: typeof v === "object" ? JSON.stringify(v) : String(v) }));
+}
+
 async function dlAppFile(path: string) {
   const { data } = await supabase.storage.from("application-files").createSignedUrl(path, 3600);
   if (data) window.open(data.signedUrl, "_blank");
@@ -79,39 +115,44 @@ function OperatorPortal() {
   const detailRef = useRef<HTMLDivElement>(null);
 
   // "Submitted From" — the JSKO/retailer who submitted the application.
-  const [submitter, setSubmitter] = useState<{ jskoId: string; name: string; phone: string } | null>(null);
+  const [submitter, setSubmitter] = useState<{ jskoId: string; name: string; phone: string; linked: boolean } | null>(null);
   useEffect(() => {
     const by = sel?.submitted_by;
     if (!by) { setSubmitter(null); return; }
     let on = true;
     (async () => {
-      // Preferred: a SECURITY DEFINER RPC that returns the submitter's JSKO ID /
-      // name / phone (operator RLS can't read the submitter's profile directly).
+      // application_submitter_info is SECURITY DEFINER because operator RLS
+      // cannot read the submitter's profile or registration directly. It was
+      // being called here from the day this screen was written but had never
+      // actually been created, so every call errored and dropped into the
+      // fallback below — which reads exactly the two tables the operator is not
+      // allowed to read. That is why JSKO ID and Contact Number were a dash on
+      // every application while the name, which comes off the application row
+      // itself, filled in correctly.
       const { data: info, error } = await supabase.rpc("application_submitter_info", { p_app: sel!.id });
       if (!on) return;
       if (!error && info) {
         const i = info as any;
         setSubmitter({
-          jskoId: i.jsko_id || "—",
+          jskoId: i.jsko_id || "",
           name: i.name || sel?.submitter_name || "—",
-          phone: i.phone || "—",
+          phone: i.phone || "",
+          linked: !!i.has_registration,
         });
         return;
       }
-      // Fallback (RLS-limited) until the RPC is present.
-      const [{ data: prof }, { data: reg }] = await Promise.all([
-        supabase.from("profiles").select("display_name, phone").eq("id", by).maybeSingle(),
-        supabase.from("retailer_registrations").select("jsko_id, application_id, mobile").eq("auth_user_id", by).order("created_at", { ascending: false }).limit(1).maybeSingle(),
-      ]);
+      // Last resort: the submitters map already loaded for the list columns.
+      const s = subs[by];
       if (!on) return;
       setSubmitter({
-        jskoId: (reg as any)?.jsko_id || (reg as any)?.application_id || "—",
-        name: sel?.submitter_name || (prof as any)?.display_name || "—",
-        phone: (prof as any)?.phone || (reg as any)?.mobile || "—",
+        jskoId: s?.jsko_id || "",
+        name: sel?.submitter_name || "—",
+        phone: s?.mobile || "",
+        linked: !!s?.jsko_id,
       });
     })();
     return () => { on = false; };
-  }, [sel?.submitted_by, sel?.submitter_name]);
+  }, [sel?.submitted_by, sel?.submitter_name, subs]);
 
   // Reset the detail overlay to the top whenever a new application is opened.
   useEffect(() => {
@@ -307,14 +348,64 @@ function OperatorPortal() {
             <div className="mt-3 rounded-lg border border-india-green/30 bg-india-green/5 p-3">
               <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Submitted From</p>
               <div className="grid grid-cols-2 gap-3 text-sm">
-                <div><p className="text-[11px] uppercase tracking-wide text-muted-foreground">JSKO ID</p><p className="font-medium">{submitter?.jskoId || "—"}</p></div>
-                <div><p className="text-[11px] uppercase tracking-wide text-muted-foreground">JSKO Name</p><p className="font-medium">{submitter?.name || sel.submitter_name || "—"}</p></div>
-                <div className="col-span-2"><p className="text-[11px] uppercase tracking-wide text-muted-foreground">Contact Number</p><p className="font-medium">{submitter?.phone || "—"}</p></div>
+                <div>
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">JSKO ID</p>
+                  <p className="font-mono font-medium">{submitter?.jskoId || "—"}</p>
+                </div>
+                <div>
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">JSKO Name</p>
+                  <p className="font-medium">{submitter?.name || sel.submitter_name || "—"}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Contact Number</p>
+                  {submitter?.phone
+                    ? <a href={`tel:${submitter.phone}`} className="font-medium text-india-green hover:underline">{submitter.phone}</a>
+                    : <p className="font-medium">—</p>}
+                </div>
               </div>
+              {/* A retailer account created outside the registration flow has no
+                  JSKO ID anywhere to find. Say that, rather than leaving a dash
+                  that looks like the panel failed to load. */}
+              {submitter && !submitter.linked && (
+                <p className="mt-2 text-[11px] text-muted-foreground">
+                  This retailer account is not linked to a JSKO registration, so no JSKO ID exists for it.
+                </p>
+              )}
             </div>
-            {sel.form_data && Object.keys(sel.form_data).length > 0 && (
-              <div className="mt-3 rounded-lg border border-border p-3"><p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Uploaded files & submitted form <span className="font-normal normal-case">· submitted {new Date(sel.created_at).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span></p>
-                <div className="grid grid-cols-2 gap-2 text-sm">{Object.entries(sel.form_data).map(([k, v]: any) => (<div key={k}><p className="text-[11px] text-muted-foreground">{k}</p>{v && typeof v === "object" && v.__file ? <button onClick={() => dlAppFile(v.__file)} className="mt-0.5 inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs font-semibold text-india-green hover:bg-muted"><Download className="h-3.5 w-3.5" /> {v.name || "Download"}</button> : <p className="font-medium break-words">{String(v)}</p>}</div>))}</div>
+            {/* Uploaded files, and only those form fields NOT already listed in
+                the applicant grid above. This block used to dump the whole
+                form_data object, so name, father's name, gender, phone, email
+                and Aadhaar were printed a second time — under their raw
+                snake_case keys — a few lines below where they had just been
+                shown properly. */}
+            {(formFiles(sel.form_data).length > 0 || extraFormFields(sel.form_data).length > 0) && (
+              <div className="mt-3 rounded-lg border border-border p-3">
+                <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+                  Uploaded files &amp; submitted form
+                  <span className="font-normal normal-case"> · submitted {new Date(sel.created_at).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+                </p>
+                {formFiles(sel.form_data).length > 0 && (
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    {formFiles(sel.form_data).map((f) => (
+                      <div key={f.key}>
+                        <p className="text-[11px] text-muted-foreground">{humanise(f.key)}</p>
+                        <button onClick={() => dlAppFile(f.path)} className="mt-0.5 inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs font-semibold text-india-green hover:bg-muted">
+                          <Download className="h-3.5 w-3.5" /> {f.name}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {extraFormFields(sel.form_data).length > 0 && (
+                  <div className={`grid grid-cols-2 gap-2 text-sm ${formFiles(sel.form_data).length > 0 ? "mt-3 border-t border-border pt-3" : ""}`}>
+                    {extraFormFields(sel.form_data).map((f) => (
+                      <div key={f.label}>
+                        <p className="text-[11px] text-muted-foreground">{f.label}</p>
+                        <p className="font-medium break-words">{f.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
             <div className="mt-3 flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-sm"><span>Total cost <b>{inr(sel.service_charge)}</b></span><span className="text-india-green">Retailer commission <b>{inr(sel.commission_price)}</b></span></div>
