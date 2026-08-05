@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useSort, SortTh, useColumnFilters, FilterTh } from "@/components/ui/sortable";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { LogOut, RefreshCw, Loader2, FileSearch, IndianRupee, CheckCircle2, Clock3, XCircle, ChevronRight, Upload, Paperclip, Download, Search, Lock } from "lucide-react";
+import { LogOut, RefreshCw, Loader2, FileSearch, CheckCircle2, Clock3, XCircle, ChevronRight, Upload, Paperclip, Download, Search, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -27,7 +27,7 @@ type App = {
   id: string; application_no: string; category_name: string; service_name: string;
   full_name: string; father_name: string | null; gender: string | null; email: string | null; phone: string | null;
   address: string | null; aadhaar_number: string | null; pan_number: string | null;
-  service_charge: number; commission_price: number; status: string; submitter_name: string | null; submitted_by: string | null; created_at: string;
+  service_charge: number; commission_price: number; status: string; submitter_name: string | null; submitted_by: string | null; created_at: string; completed_at: string | null;
   result_doc_path: string | null; result_note: string | null; result_uploaded_at: string | null;
   form_data: Record<string, any> | null;
   reupload_requested: boolean; reupload_note: string | null; reupload_path: string | null; reupload_name: string | null;
@@ -159,13 +159,23 @@ function OperatorPortal() {
     if (sel) requestAnimationFrame(() => detailRef.current?.scrollTo({ top: 0 }));
   }, [sel?.id]);
 
-  const counts = useMemo(() => ({
-    all: apps.length,
-    submitted: apps.filter((a) => a.status === "submitted").length,
-    in_progress: apps.filter((a) => ["on_process", "in_progress"].includes(a.status)).length,
-    done: apps.filter((a) => a.status === "completed").length,
-    commission: apps.filter((a) => a.status === "completed").reduce((s, a) => s + Number(a.commission_price || 0), 0),
-  }), [apps]);
+  const counts = useMemo(() => {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    return {
+      all: apps.length,
+      submitted: apps.filter((a) => a.status === "submitted").length,
+      in_progress: apps.filter((a) => ["on_process", "in_progress"].includes(a.status)).length,
+      // Everything not finished one way or the other — the operator's actual
+      // workload, which is what they need at a glance far more than a rupee
+      // figure that belongs to the retailer anyway.
+      pending: apps.filter((a) => !["completed", "rejected"].includes(a.status)).length,
+      // Completed since local midnight, off the completed_at stamp. Rows
+      // completed before the stamp existed have NULL there and count toward no
+      // day, which is honest — nobody knows which day they were finished.
+      doneToday: apps.filter((a) =>
+        a.status === "completed" && a.completed_at && new Date(a.completed_at) >= today).length,
+    };
+  }, [apps]);
   const jskoOf = (a: App) => (a.submitted_by && subs[a.submitted_by]?.jsko_id) || "—";
   const filtered = useMemo(() => apps.filter((a) =>
     (scope === "all" || a.assigned_operator === uid) &&
@@ -262,8 +272,12 @@ function OperatorPortal() {
       </header>
 
       <main className="mx-auto max-w-6xl space-y-5 p-5">
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {[["Total", counts.all, FileSearch, "bg-blue-500/10 text-blue-600"], ["New", counts.submitted, Clock3, "bg-saffron/10 text-saffron"], ["On Process", counts.in_progress, Loader2, "bg-amber-500/10 text-amber-600"], ["Commission Earned", inr(counts.commission), IndianRupee, "bg-india-green/10 text-india-green"]].map(([l, v, Icon, t]: any, i) => (
+        {/* The Commission Earned card was replaced by Finished Today + Pending.
+            Commission is the retailer's money, not the operator's — what an
+            operator needs at a glance is workload: how many are waiting on
+            them, and how many they have closed today. */}
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          {[["Total", counts.all, FileSearch, "bg-blue-500/10 text-blue-600"], ["New", counts.submitted, Clock3, "bg-saffron/10 text-saffron"], ["On Process", counts.in_progress, Loader2, "bg-amber-500/10 text-amber-600"], ["Pending", counts.pending, FileSearch, "bg-orange-500/10 text-orange-600"], ["Finished Today", counts.doneToday, CheckCircle2, "bg-india-green/10 text-india-green"]].map(([l, v, Icon, t]: any, i) => (
             <div key={i} className="rounded-2xl border border-border bg-card p-4 shadow-soft"><div className="flex items-center gap-2"><span className={`grid h-9 w-9 place-items-center rounded-lg ${t}`}><Icon className="h-4 w-4" /></span><div><p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{l}</p><p className="text-lg font-extrabold">{v}</p></div></div></div>
           ))}
         </div>
