@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
 import {
   ArrowLeft,
@@ -28,6 +28,15 @@ import {
 } from "lucide-react";
 import { BharatOneLogo } from "@/components/bharatone-logo";
 import { Button } from "@/components/ui/button";
+import { ResumePrompt } from "@/components/register/resume-prompt";
+import {
+  beginResume,
+  discardDraft,
+  getResumeToken,
+  resumeStepFor,
+  saveDraft,
+  type ResumeState,
+} from "@/components/register/resume";
 import { Stepper, type Step } from "@/components/register/stepper";
 import { OldPortalStep } from "@/components/register/steps/old-portal";
 import { AccountStep } from "@/components/register/steps/account";
@@ -162,6 +171,61 @@ function RegisterFlow() {
 
   const next = () => setCurrent((c) => Math.min(c + 1, steps.length - 1));
   const prev = () => setCurrent((c) => Math.max(c - 1, 0));
+
+  /* ---------------------------------------------------------------------- */
+  /* Resuming an abandoned registration                                      */
+  /* ---------------------------------------------------------------------- */
+
+  // Documents are not kept with a draft, so a returning applicant is put back
+  // at the first step that needs an upload rather than somewhere further on
+  // where they would reach Submit and only then discover the files are missing.
+  const firstFileStep = Math.max(0, steps.findIndex((s) => s.key === "kyc"));
+
+  const [resume, setResume] = useState<ResumeState | null>(null);
+  const [resumeBusy, setResumeBusy] = useState(false);
+  const resumeAsked = useRef(false);
+
+  // The moment the email is proved, ask the server what it is holding for this
+  // address. This is also the only point at which the draft session token is
+  // minted, so nothing can be read or written without an OTP behind it.
+  useEffect(() => {
+    if (type === "distributor") return;
+    if (!data.emailVerified || !data.email) return;
+    if (resumeAsked.current) return;
+    resumeAsked.current = true;
+    beginResume(data.email, data.mobile).then((r) => {
+      if (r.draft || r.application) setResume(r);
+    });
+  }, [type, data.emailVerified, data.email, data.mobile]);
+
+  // Save on every step change. Best-effort by design: a failed save must never
+  // stand between the applicant and the next step.
+  useEffect(() => {
+    if (type === "distributor") return;
+    if (!getResumeToken()) return;
+    void saveDraft(current, data, type === "old" ? "old" : "new");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current]);
+
+  const continueWhereLeftOff = () => {
+    const d = resume?.draft;
+    if (!d) return;
+    setResumeBusy(true);
+    // Restore only what was saved; verification flags stay as the OTP just set
+    // them, and the password is not in the draft at all.
+    set(d.data as Partial<typeof data>);
+    setCurrent(resumeStepFor(d.furthest_step, firstFileStep));
+    setResume(null);
+    setResumeBusy(false);
+  };
+
+  const startOver = async () => {
+    setResumeBusy(true);
+    await discardDraft();
+    setResume(null);
+    setCurrent(0);
+    setResumeBusy(false);
+  };
 
   // On every step change (e.g. Business → KYC Docs), start at the top of the page.
   // Re-run after layout/paint so a taller new step can't leave the page scrolled down.
@@ -376,9 +440,18 @@ function RegisterFlow() {
         }),
         plan: heading,
       });
+      // The application now exists as a real row; the draft has served its
+      // purpose and holding the applicant's DOB, bank and ID numbers any longer
+      // serves nobody. (The local sessionStorage copy was never being cleared
+      // on the retailer path either — it is now.)
+      void discardDraft();
+      clearDraft();
       setDone(true);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Submission failed. Please try again.";
+      // A failed submit is exactly when a saved draft earns its keep, so make
+      // sure the latest answers are on the server before showing the error.
+      void saveDraft(current, data, type === "old" ? "old" : "new");
       // Duplicate-email is validated at the JSKO Portal step — never surface it on the
       // Video KYC / final page. If it slips through (edge case), send the user back to
       // the JSKO Portal step and show the warning there instead.
@@ -571,6 +644,20 @@ function RegisterFlow() {
               onSubmit={submitDistributor}
               submitting={submitting}
               error={error}
+            />
+          ) : resume ? (
+            /* Something is already on file for this email. Shown instead of the
+               form until the applicant chooses: carry on, or wipe it and start
+               clean. Nothing resumes by itself — someone whose shop or bank has
+               changed needs the fresh start more than their old answers. */
+            <ResumePrompt
+              draft={resume.draft}
+              application={resume.application}
+              stepLabels={steps.map((s) => s.label)}
+              resumeStep={resumeStepFor(resume.draft?.furthest_step ?? 0, firstFileStep)}
+              onContinue={continueWhereLeftOff}
+              onStartOver={startOver}
+              busy={resumeBusy}
             />
           ) : (
             <>
