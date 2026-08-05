@@ -26,9 +26,67 @@ type Row = {
   id: string; application_no: string; service_name: string; category_name: string; full_name: string;
   father_name: string | null; gender: string | null; email: string | null; phone: string | null; address: string | null;
   aadhaar_number: string | null; pan_number: string | null; status: string; service_charge: number; commission_price: number;
-  created_at: string; result_doc_path: string | null; result_note: string | null; form_data: any; assigned_operator: string | null;
+  created_at: string; result_doc_path: string | null; result_note: string | null; result_uploaded_at: string | null;
+  form_data: any; assigned_operator: string | null; submitter_name: string | null;
   reupload_requested: boolean; reupload_note: string | null; reupload_path: string | null; reupload_name: string | null;
 };
+
+/* ---------------------------------------------------------------------- */
+/* Applicant detail rendering                                             */
+/* ---------------------------------------------------------------------- */
+
+/** Aadhaar is far easier to check against a card in 4-4-4 groups. */
+const fmtAadhaar = (v: string) => /^\d{12}$/.test(v) ? `${v.slice(0, 4)} ${v.slice(4, 8)} ${v.slice(8)}` : v;
+
+const fmtDateTime = (iso: string) =>
+  new Date(iso).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+
+/** form_data keys are snake_case field ids — turn them into something readable. */
+function humanise(key: string): string {
+  return key
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+    .replace(/\bId\b/g, "ID")
+    .replace(/\bDob\b/g, "Date of Birth")
+    .replace(/\bAadhaar\b/gi, "Aadhaar")
+    .replace(/\bPan\b/g, "PAN")
+    .replace(/\bIfsc\b/gi, "IFSC");
+}
+
+/**
+ * Anything the retailer typed on the service's own form that is not already one
+ * of the fixed columns below. Every service has a different form, so these
+ * cannot be hard-coded — and until now they were never shown back at all: the
+ * retailer could see the documents they attached but not a single field they
+ * had filled in.
+ */
+const FIXED_FORM_KEYS = new Set([
+  "full_name", "father_name", "gender", "email", "phone", "address",
+  "aadhaar_number", "pan_number",
+]);
+
+function extraFormFields(form: any): { label: string; value: string }[] {
+  if (!form || typeof form !== "object") return [];
+  return Object.entries(form)
+    .filter(([k, v]) =>
+      !FIXED_FORM_KEYS.has(k) &&
+      v != null && v !== "" &&
+      // File uploads are listed separately under "Documents you submitted".
+      !(typeof v === "object" && (v as any).__file))
+    .map(([k, v]) => ({
+      label: humanise(k),
+      value: typeof v === "object" ? JSON.stringify(v) : String(v),
+    }));
+}
+
+function Field({ label, value, wide }: { label: string; value: string | null | undefined; wide?: boolean }) {
+  return (
+    <div className={wide ? "col-span-2" : undefined}>
+      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="font-medium break-words">{value && String(value).trim() ? value : "—"}</p>
+    </div>
+  );
+}
 // A freshly applied application is "New" until an operator takes it up, and from
 // then on it says exactly what the operator set. The labels and the tracker come
 // from src/lib/application-status.ts, shared with every staff screen — this file
@@ -88,7 +146,7 @@ function ApplicationsPage() {
   async function load() {
     setLoading(true);
     const { data, error } = await supabase.from("service_applications")
-      .select("id,application_no,service_name,category_name,full_name,father_name,gender,email,phone,address,aadhaar_number,pan_number,status,service_charge,commission_price,created_at,result_doc_path,result_note,result_uploaded_at,form_data,assigned_operator,reupload_requested,reupload_note,reupload_path,reupload_name")
+      .select("id,application_no,service_name,category_name,full_name,father_name,gender,email,phone,address,aadhaar_number,pan_number,status,service_charge,commission_price,created_at,result_doc_path,result_note,result_uploaded_at,form_data,assigned_operator,submitter_name,reupload_requested,reupload_note,reupload_path,reupload_name")
       .order("created_at", { ascending: false });
     // The error used to be discarded, so a failed fetch left rows empty and the
     // retailer was told "No applications yet — click Apply Service to get
@@ -218,15 +276,53 @@ function ApplicationsPage() {
               <div><p className="font-mono text-xs font-bold text-muted-foreground">{sel.application_no}</p><p className="font-display text-lg font-extrabold">{sel.service_name}</p><p className="text-sm text-muted-foreground">{sel.category_name}</p></div>
             </div>
 
-            {/* Applicant details */}
+            {/* Applicant details — everything captured at application time.
+                This used to show four fields (ID, service, name, number) while
+                the row carried the father's name, gender, email, address,
+                Aadhaar, PAN and every service-specific field the retailer had
+                typed. None of it was ever shown back, so there was no way to
+                check what had actually been submitted. */}
             <div className="mt-3 rounded-lg border border-border p-3">
-              <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Applicant details</p>
+              <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Application</p>
               <div className="grid grid-cols-2 gap-3 text-sm">
-                <div><p className="text-[11px] uppercase tracking-wide text-muted-foreground">Application ID</p><p className="font-mono font-medium">{sel.application_no}</p></div>
-                <div><p className="text-[11px] uppercase tracking-wide text-muted-foreground">Service</p><p className="font-medium">{sel.service_name}</p></div>
-                <div><p className="text-[11px] uppercase tracking-wide text-muted-foreground">Applicant Name</p><p className="font-medium">{sel.full_name || "—"}</p></div>
-                <div><p className="text-[11px] uppercase tracking-wide text-muted-foreground">Applicant Number</p><p className="font-medium">{sel.phone || "—"}</p></div>
+                <div>
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Application ID</p>
+                  <p className="font-mono font-medium">{sel.application_no}</p>
+                </div>
+                <Field label="Status" value={statusLabelOf(sel.status)} />
+                <Field label="Service" value={sel.service_name} />
+                <Field label="Category" value={sel.category_name} />
+                <Field label="Submitted on" value={fmtDateTime(sel.created_at)} />
+                <Field label="Submitted by" value={sel.submitter_name} />
               </div>
+
+              <p className="mb-2 mt-4 border-t border-border pt-3 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Applicant details</p>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <Field label="Applicant Name" value={sel.full_name} />
+                <Field label="Father's Name" value={sel.father_name} />
+                <Field label="Gender" value={sel.gender} />
+                <Field label="Mobile Number" value={sel.phone} />
+                <Field label="Email" value={sel.email} />
+                <Field label="Aadhaar Number" value={sel.aadhaar_number ? fmtAadhaar(sel.aadhaar_number) : null} />
+                <Field label="PAN Number" value={sel.pan_number} />
+                <Field label="Address" value={sel.address} wide />
+              </div>
+
+              {/* Whatever else this particular service's form asked for. Every
+                  service has a different form, so these cannot be listed ahead
+                  of time — they are read back off the submission itself. */}
+              {extraFormFields(sel.form_data).length > 0 && (
+                <>
+                  <p className="mb-2 mt-4 border-t border-border pt-3 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+                    Other details you submitted
+                  </p>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    {extraFormFields(sel.form_data).map((f) => (
+                      <Field key={f.label} label={f.label} value={f.value} />
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Status tracker — driven by the shared progress map, so whatever the
@@ -304,7 +400,7 @@ function ApplicationsPage() {
 
             {sel.result_doc_path && (
               <div className="mt-3 flex items-center justify-between rounded-lg border border-india-green/30 bg-india-green/5 px-3 py-2">
-                <span className="flex items-center gap-1.5 text-sm font-semibold"><Paperclip className="h-4 w-4 text-india-green" /> Return document from operator{(sel as any).result_uploaded_at ? <span className="ml-1 font-normal text-[11px] text-muted-foreground">· {new Date((sel as any).result_uploaded_at).toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</span> : null}</span>
+                <span className="flex items-center gap-1.5 text-sm font-semibold"><Paperclip className="h-4 w-4 text-india-green" /> Return document from operator{sel.result_uploaded_at ? <span className="ml-1 font-normal text-[11px] text-muted-foreground">· {new Date(sel.result_uploaded_at).toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</span> : null}</span>
                 <button onClick={() => openResult(sel.result_doc_path!)} className="inline-flex items-center gap-1 text-xs font-bold text-india-green hover:underline"><Download className="h-3.5 w-3.5" /> Download</button>
               </div>
             )}
