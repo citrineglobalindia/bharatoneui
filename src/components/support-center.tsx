@@ -12,7 +12,6 @@ const statusTone: Record<string, string> = { open: "bg-amber-100 text-amber-700"
 const DEPARTMENTS = ["Technical", "Payments & Wallet", "Onboarding & KYC", "Services", "Accounts", "Other"];
 type Cat = { id: string; name: string };
 type Sub = { id: string; category_id: string; name: string };
-type Svc = { id: string; name: string };
 type Prod = { id: string; subcategory_id: string | null; category_id: string | null; name: string };
 type Prio = { id: string; name: string };
 const db = supabase as any;
@@ -24,7 +23,6 @@ export function SupportCenter() {
   const [loading, setLoading] = useState(true);
   const [cats, setCats] = useState<Cat[]>([]);
   const [subs, setSubs] = useState<Sub[]>([]);
-  const [services, setServices] = useState<Svc[]>([]);
   const [prods, setProds] = useState<Prod[]>([]);
   const [prios, setPrios] = useState<Prio[]>([]);
   const [files, setFiles] = useState<File[]>([]);
@@ -37,13 +35,20 @@ export function SupportCenter() {
     setLoading(true);
     const { data: u } = await supabase.auth.getUser();
     setUid(u.user?.id ?? "");
-    // Category / Sub-Category / Product-Service come from the Service Catalog so the
-    // support ticket matches the admin-managed catalog (Category -> Sub-Category -> Service).
+    // Category / Sub-Category / Product come from the SUPPORT taxonomy that admin
+    // maintains under Support Categories — support_categories /
+    // support_subcategories / support_products.
+    //
+    // This used to read service_categories, service_subcategories and services:
+    // the services catalogue. So someone raising a ticket about a failed wallet
+    // recharge was asked to file it under "Aadhaar & PAN" or "RTO Services",
+    // and the Support Categories screen in admin — Technical, Payments, Wallet,
+    // Account and the rest — was written to by admin and read by nobody.
     const [t, c, s, p, pr] = await Promise.all([
       supabase.from("support_tickets").select("*").order("created_at", { ascending: false }),
-      db.from("service_categories").select("id,name").eq("is_active", true).order("sort_order").order("name"),
-      db.from("service_subcategories").select("id,category_id,name").eq("is_active", true).order("sort_order").order("name"),
-      db.from("services").select("id,name,subcategory_id,category_id").eq("is_active", true).order("sort_order").order("name"),
+      db.from("support_categories").select("id,name").eq("is_active", true).order("sort_order").order("name"),
+      db.from("support_subcategories").select("id,category_id,name").eq("is_active", true).order("sort_order").order("name"),
+      db.from("support_products").select("id,name,subcategory_id,category_id").eq("is_active", true).order("sort_order").order("name"),
       db.from("support_priorities").select("id,name").eq("is_active", true).order("sort_order"),
     ]);
     setRows((t.data as Ticket[]) ?? []);
@@ -87,7 +92,7 @@ export function SupportCenter() {
     }
 
     const { data: created, error } = await db.from("support_tickets")
-      .insert({ user_id: u.user.id, user_name: me.name, user_role: me.role, category: catName, subcategory: subName, product: form.product || null, priority: "Low", subject: form.subject.trim(), body: form.body || null, attachments })
+      .insert({ user_id: u.user.id, user_name: me.name, user_role: me.role, category: catName, subcategory: subName, product: form.product || null, priority: form.priority || "Low", subject: form.subject.trim(), body: form.body || null, attachments })
       .select("id, ticket_no").single();
     setSending(false);
     if (error) return toast.error("Couldn't raise ticket", { description: error.message });
@@ -97,7 +102,7 @@ export function SupportCenter() {
     const tid = (created as any)?.id;
     if (tid) { void supabase.functions.invoke("ticket-sms", { body: { ticket_id: tid } }); }
     toast.success("Ticket raised" + (no ? ` — ${no}` : ""), { description: no ? `Your support ticket ${no} has been created. Our team will respond shortly.` : "Our team will respond shortly." });
-    setForm({ department: DEPARTMENTS[0], service: "", categoryId: cats[0]?.id ?? "", subcategoryId: "", product: "", priority: "Low", subject: "", body: "" });
+    setForm({ department: DEPARTMENTS[0], service: "", categoryId: cats[0]?.id ?? "", subcategoryId: "", product: "", priority: prios[0]?.name ?? "Low", subject: "", body: "" });
     setFiles([]); load();
   };
   const inp = "h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-india-green/30";
@@ -144,6 +149,18 @@ export function SupportCenter() {
               <option value="">{!form.categoryId ? "Select a category first" : (svcForSel.length ? "Select product / service (optional)" : "No products / services for this category")}</option>
               {svcForSel.map((p) => <option key={p.id} value={p.name}>{p.name}</option>)}
             </select>
+            {/* Priorities were being loaded from the admin screen and then thrown
+                away: the insert hardcoded "Low", so every ticket ever raised —
+                a locked wallet, a failed settlement — arrived at the same
+                priority and nothing could be triaged. */}
+            {prios.length > 0 && (
+              <>
+                <label className="mt-3 block text-[11px] font-semibold text-muted-foreground">Priority</label>
+                <select className={inp} value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })}>
+                  {prios.map((p) => <option key={p.id} value={p.name}>{p.name}</option>)}
+                </select>
+              </>
+            )}
             <label className="mt-3 block text-[11px] font-semibold text-muted-foreground">Subject</label>
             <input className={inp} placeholder="Brief summary" value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} />
             <label className="mt-3 block text-[11px] font-semibold text-muted-foreground">Describe the issue</label>

@@ -8,6 +8,14 @@ import { DataTable, type Column } from "@/components/retailer/data-table";
 import { supabase } from "@/integrations/supabase/client";
 import { downloadReceiptPDF, downloadReceiptPNG, shareReceipt, type AppReceipt } from "@/lib/application-receipt";
 import { ApplicationThread } from "@/components/application-thread";
+import {
+  APPLICATION_STATUS_LABEL,
+  PIPELINE,
+  applicationProgress,
+  isEarned,
+  isOpen,
+  statusLabelOf,
+} from "@/lib/application-status";
 
 export const Route = createFileRoute("/applications")({
   head: () => ({ meta: [{ title: "Applied Services — BharatOne" }] }),
@@ -21,11 +29,13 @@ type Row = {
   created_at: string; result_doc_path: string | null; result_note: string | null; form_data: any; assigned_operator: string | null;
   reupload_requested: boolean; reupload_note: string | null; reupload_path: string | null; reupload_name: string | null;
 };
-// A freshly applied application is "New" until an operator takes it up
-// (operator marks it On Process), then Waiting for Approval / On Delay /
-// Completed / Rejected as it moves through the pipeline.
-const statusLabel: Record<string, string> = { submitted: "New", on_process: "On Process", in_progress: "On Process", waiting_approval: "Waiting for Approval", on_delay: "On Delay", approved: "Completed", rejected: "Rejected", completed: "Completed" };
-const STEPS = ["submitted", "on_process", "waiting_approval", "completed"];
+// A freshly applied application is "New" until an operator takes it up, and from
+// then on it says exactly what the operator set. The labels and the tracker come
+// from src/lib/application-status.ts, shared with every staff screen — this file
+// used to keep its own copy, and it had drifted: `approved` was shown to the
+// applicant as "Completed" while the operator looking at the same row saw
+// "Waiting for Approval".
+const statusLabel = APPLICATION_STATUS_LABEL;
 const inr = (n: number) => "₹" + Number(n || 0).toLocaleString("en-IN");
 const FILTERS = ["All", "New", "On Process", "Waiting for Approval", "On Delay", "Completed", "Rejected"];
 
@@ -77,10 +87,15 @@ function ApplicationsPage() {
 
   async function load() {
     setLoading(true);
-    const { data } = await supabase.from("service_applications")
+    const { data, error } = await supabase.from("service_applications")
       .select("id,application_no,service_name,category_name,full_name,father_name,gender,email,phone,address,aadhaar_number,pan_number,status,service_charge,commission_price,created_at,result_doc_path,result_note,result_uploaded_at,form_data,assigned_operator,reupload_requested,reupload_note,reupload_path,reupload_name")
       .order("created_at", { ascending: false });
-    setRows((data as Row[]) ?? []);
+    // The error used to be discarded, so a failed fetch left rows empty and the
+    // retailer was told "No applications yet — click Apply Service to get
+    // started". Someone with a dozen live applications being shown an empty
+    // account is worse than seeing that something went wrong.
+    if (error) toast.error("Could not load your applications", { description: error.message });
+    else setRows((data as Row[]) ?? []);
     setLoading(false);
   }
   useEffect(() => { load(); }, []);
@@ -88,8 +103,10 @@ function ApplicationsPage() {
   const totals = useMemo(() => ({
     count: rows.length,
     charges: rows.reduce((a, r) => a + Number(r.service_charge || 0), 0),
-    commission: rows.filter((r) => r.status === "completed").reduce((a, r) => a + Number(r.commission_price || 0), 0),
-    pending: rows.filter((r) => !["completed", "rejected"].includes(r.status)).length,
+    // Commission counts only completed work. `approved` is not completion —
+    // every staff screen reads it as "Waiting for Approval".
+    commission: rows.filter((r) => isEarned(r.status)).reduce((a, r) => a + Number(r.commission_price || 0), 0),
+    pending: rows.filter((r) => isOpen(r.status)).length,
   }), [rows]);
   const filtered = useMemo(() => {
     let base = filter === "All" ? rows : rows.filter((r) => (statusLabel[r.status] ?? r.status) === filter);
@@ -212,19 +229,48 @@ function ApplicationsPage() {
               </div>
             </div>
 
-            {/* Status tracker */}
-            <div className="mt-4">
-              {sel.status === "rejected"
-                ? <span className="rounded-full bg-rose-100 px-3 py-1 text-xs font-bold text-rose-700">Rejected</span>
-                : <div className="flex items-center gap-1">{STEPS.map((s, i) => {
-                    const idx = STEPS.indexOf(sel.status); const on = i <= (idx < 0 ? 0 : idx);
-                    return <div key={s} className="flex flex-1 items-center gap-1">
-                      <div className={`grid h-6 w-6 shrink-0 place-items-center rounded-full text-[10px] font-bold ${on ? "bg-india-green text-white" : "bg-muted text-muted-foreground"}`}>{i + 1}</div>
-                      {i < STEPS.length - 1 && <div className={`h-1 flex-1 rounded ${i < (idx < 0 ? 0 : idx) ? "bg-india-green" : "bg-muted"}`} />}
-                    </div>;
-                  })}</div>}
-              <div className="mt-1 flex justify-between text-[10px] font-semibold text-muted-foreground"><span>Submitted</span><span>Processing</span><span>Approved</span><span>Completed</span></div>
-            </div>
+            {/* Status tracker — driven by the shared progress map, so whatever the
+                operator sets is what shows here. The old version matched the raw
+                status against a four-item array and floored a miss to zero, which
+                meant an application the operator marked On Delay drew a bar
+                claiming it had not moved since submission. */}
+            {(() => {
+              const p = applicationProgress(sel.status);
+              return (
+                <div className="mt-4">
+                  {p.rejected ? (
+                    <span className="rounded-full bg-rose-100 px-3 py-1 text-xs font-bold text-rose-700">Rejected</span>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-1">
+                        {PIPELINE.map((s, i) => {
+                          const on = i <= p.index;
+                          return (
+                            <div key={s} className="flex flex-1 items-center gap-1">
+                              <div className={`grid h-6 w-6 shrink-0 place-items-center rounded-full text-[10px] font-bold ${on ? (p.delayed && i === p.index ? "bg-orange-500 text-white" : "bg-india-green text-white") : "bg-muted text-muted-foreground"}`}>{i + 1}</div>
+                              {i < PIPELINE.length - 1 && <div className={`h-1 flex-1 rounded ${i < p.index ? "bg-india-green" : "bg-muted"}`} />}
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {/* On Delay is a stall during processing, not a stage of its
+                          own — so it holds its place on the bar and is said out loud. */}
+                      {p.delayed && (
+                        <p className="mt-2 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-semibold text-orange-800">
+                          The operator has marked this application <b>On Delay</b>. It is still being worked on.
+                        </p>
+                      )}
+                    </>
+                  )}
+                  <div className="mt-1 flex justify-between text-[10px] font-semibold text-muted-foreground">
+                    {PIPELINE.map((s) => <span key={s}>{s}</span>)}
+                  </div>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Current status: <b className="text-foreground">{statusLabelOf(sel.status)}</b>
+                  </p>
+                </div>
+              );
+            })()}
 
             <div className="mt-4 flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-sm"><span>Charge <b>{inr(sel.service_charge)}</b></span><span className="text-india-green">Commission <b>{inr(sel.commission_price)}</b></span></div>
 
