@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
-  Bell, ChevronDown, ClipboardList, Headphones, LayoutDashboard, LogOut, Menu,
+  Bell, CalendarCheck, ChevronDown, ClipboardList, Headphones, LayoutDashboard, LogOut, Menu,
   MessageSquareText, Settings, UserRound, X, KeyRound,
 } from "lucide-react";
 import { usePortalGuard, PortalAuthGate } from "@/lib/portal-guard";
@@ -30,6 +30,7 @@ const NAV = [
   { label: "Notifications", icon: Bell, to: "/operator/notifications" },
 ];
 const ACCOUNT_NAV = [
+  { label: "My HR", icon: CalendarCheck, to: "/operator/my-hr" },
   { label: "My Profile", icon: UserRound, to: "/operator/profile" },
   { label: "Settings", icon: Settings, to: "/operator/settings" },
   { label: "Change Password", icon: KeyRound, to: "/operator/change-password" },

@@ -4,6 +4,7 @@ import { AlarmClock, CalendarClock, CheckCircle2, ClipboardCheck, Clock3, FileTe
 import { TelecallerShell } from "@/components/telecaller/telecaller-shell";
 import { ProfileSettings, ServiceReports } from "@/components/telecaller/telecaller-extras";
 import { TelecallerDashboard } from "@/components/telecaller/telecaller-dashboard";
+import { MyHR } from "@/components/account/my-hr";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -71,6 +72,7 @@ export function ServiceApplicationWorkspace() {
     setSelected(null);
   };
 
+  if (activeSection === "myhr") return <TelecallerShell activeSection={activeSection} onSectionChange={setActiveSection}><div className="mx-auto max-w-[1500px]"><MyHR /></div></TelecallerShell>;
   if (activeSection === "profile" || activeSection === "settings") return <TelecallerShell activeSection={activeSection} onSectionChange={setActiveSection}><div className="mx-auto max-w-[1500px]"><ProfileSettings mode={activeSection} /></div></TelecallerShell>;
   const reportLeads = applications.map((item) => ({ ...item, name: item.customer, source: item.retailer, owner: "Arjun K." }));
   return <TelecallerShell activeSection={activeSection} onSectionChange={setActiveSection}><div className="mx-auto max-w-[1600px] space-y-5">

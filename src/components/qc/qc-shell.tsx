@@ -33,6 +33,7 @@ import {
   ShieldAlert,
   LifeBuoy,
   Smile,
+  CalendarCheck,
 } from "lucide-react";
 import { BharatOneLogo } from "@/components/bharatone-logo";
 import {
@@ -71,6 +72,12 @@ const NAV: NavSection[] = [
       { label: "Reviewers", icon: <Users className="h-4 w-4" />, to: "/qc/reviewers" },
       { label: "Reports", icon: <BarChart3 className="h-4 w-4" />, to: "/qc/reports" },
       { label: "Settings", icon: <Settings className="h-4 w-4" />, to: "/qc/settings" },
+    ],
+  },
+  {
+    heading: "My HR",
+    items: [
+      { label: "My HR", icon: <CalendarCheck className="h-4 w-4" />, to: "/qc/my-hr" },
     ],
   },
   {

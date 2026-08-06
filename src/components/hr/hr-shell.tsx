@@ -33,6 +33,7 @@ const NAV = [
   { label: "HR Settings", icon: SlidersHorizontal, to: "/hr/hr-settings", moduleKey: "hr.settings" },
 ];
 const ACCOUNT_NAV = [
+  { label: "My HR", icon: CalendarCheck, to: "/hr/my-hr" },
   { label: "My Profile", icon: UserRound, to: "/hr/profile" },
   { label: "Settings", icon: Settings, to: "/hr/settings" },
   { label: "Help & Support", icon: Headphones, to: "/hr/support" },

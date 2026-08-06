@@ -102,6 +102,7 @@ import { Route as QcReviewersRouteImport } from './routes/qc.reviewers'
 import { Route as QcReportsRouteImport } from './routes/qc.reports'
 import { Route as QcProfileChangesRouteImport } from './routes/qc.profile-changes'
 import { Route as QcProfileRouteImport } from './routes/qc.profile'
+import { Route as QcMyHrRouteImport } from './routes/qc.my-hr'
 import { Route as QcKycQueueRouteImport } from './routes/qc.kyc-queue'
 import { Route as QcJskoRouteImport } from './routes/qc.jsko'
 import { Route as QcFlaggedRouteImport } from './routes/qc.flagged'
@@ -117,6 +118,7 @@ import { Route as OperatorSupportRouteImport } from './routes/operator.support'
 import { Route as OperatorSettingsRouteImport } from './routes/operator.settings'
 import { Route as OperatorProfileRouteImport } from './routes/operator.profile'
 import { Route as OperatorNotificationsRouteImport } from './routes/operator.notifications'
+import { Route as OperatorMyHrRouteImport } from './routes/operator.my-hr'
 import { Route as OperatorFeedbackRouteImport } from './routes/operator.feedback'
 import { Route as OperatorDashboardRouteImport } from './routes/operator.dashboard'
 import { Route as OperatorChangePasswordRouteImport } from './routes/operator.change-password'
@@ -130,6 +132,7 @@ import { Route as HrPoliciesRouteImport } from './routes/hr.policies'
 import { Route as HrPerformanceRouteImport } from './routes/hr.performance'
 import { Route as HrPayrollRouteImport } from './routes/hr.payroll'
 import { Route as HrOnboardingRouteImport } from './routes/hr.onboarding'
+import { Route as HrMyHrRouteImport } from './routes/hr.my-hr'
 import { Route as HrLeaveRouteImport } from './routes/hr.leave'
 import { Route as HrIdCardsRouteImport } from './routes/hr.id-cards'
 import { Route as HrHrSettingsRouteImport } from './routes/hr.hr-settings'
@@ -184,6 +187,7 @@ import { Route as AccountantServicesRouteImport } from './routes/accountant.serv
 import { Route as AccountantRegistrationsRouteImport } from './routes/accountant.registrations'
 import { Route as AccountantRazorpayPaymentsRouteImport } from './routes/accountant.razorpay-payments'
 import { Route as AccountantProfileRouteImport } from './routes/accountant.profile'
+import { Route as AccountantMyHrRouteImport } from './routes/accountant.my-hr'
 import { Route as AccountantMoneyTransferRouteImport } from './routes/accountant.money-transfer'
 import { Route as AccountantMainRechargeRouteImport } from './routes/accountant.main-recharge'
 import { Route as AccountantLedgerRouteImport } from './routes/accountant.ledger'
@@ -668,6 +672,11 @@ const QcProfileRoute = QcProfileRouteImport.update({
   path: '/qc/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
+const QcMyHrRoute = QcMyHrRouteImport.update({
+  id: '/qc/my-hr',
+  path: '/qc/my-hr',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const QcKycQueueRoute = QcKycQueueRouteImport.update({
   id: '/qc/kyc-queue',
   path: '/qc/kyc-queue',
@@ -743,6 +752,11 @@ const OperatorNotificationsRoute = OperatorNotificationsRouteImport.update({
   path: '/notifications',
   getParentRoute: () => OperatorRoute,
 } as any)
+const OperatorMyHrRoute = OperatorMyHrRouteImport.update({
+  id: '/my-hr',
+  path: '/my-hr',
+  getParentRoute: () => OperatorRoute,
+} as any)
 const OperatorFeedbackRoute = OperatorFeedbackRouteImport.update({
   id: '/feedback',
   path: '/feedback',
@@ -806,6 +820,11 @@ const HrPayrollRoute = HrPayrollRouteImport.update({
 const HrOnboardingRoute = HrOnboardingRouteImport.update({
   id: '/hr/onboarding',
   path: '/hr/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HrMyHrRoute = HrMyHrRouteImport.update({
+  id: '/hr/my-hr',
+  path: '/hr/my-hr',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HrLeaveRoute = HrLeaveRouteImport.update({
@@ -1085,6 +1104,11 @@ const AccountantProfileRoute = AccountantProfileRouteImport.update({
   path: '/accountant/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountantMyHrRoute = AccountantMyHrRouteImport.update({
+  id: '/accountant/my-hr',
+  path: '/accountant/my-hr',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AccountantMoneyTransferRoute = AccountantMoneyTransferRouteImport.update({
   id: '/accountant/money-transfer',
   path: '/accountant/money-transfer',
@@ -1245,6 +1269,7 @@ export interface FileRoutesByFullPath {
   '/accountant/ledger': typeof AccountantLedgerRoute
   '/accountant/main-recharge': typeof AccountantMainRechargeRoute
   '/accountant/money-transfer': typeof AccountantMoneyTransferRoute
+  '/accountant/my-hr': typeof AccountantMyHrRoute
   '/accountant/profile': typeof AccountantProfileRoute
   '/accountant/razorpay-payments': typeof AccountantRazorpayPaymentsRoute
   '/accountant/registrations': typeof AccountantRegistrationsRoute
@@ -1299,6 +1324,7 @@ export interface FileRoutesByFullPath {
   '/hr/hr-settings': typeof HrHrSettingsRoute
   '/hr/id-cards': typeof HrIdCardsRoute
   '/hr/leave': typeof HrLeaveRoute
+  '/hr/my-hr': typeof HrMyHrRoute
   '/hr/onboarding': typeof HrOnboardingRoute
   '/hr/payroll': typeof HrPayrollRoute
   '/hr/performance': typeof HrPerformanceRoute
@@ -1312,6 +1338,7 @@ export interface FileRoutesByFullPath {
   '/operator/change-password': typeof OperatorChangePasswordRoute
   '/operator/dashboard': typeof OperatorDashboardRoute
   '/operator/feedback': typeof OperatorFeedbackRoute
+  '/operator/my-hr': typeof OperatorMyHrRoute
   '/operator/notifications': typeof OperatorNotificationsRoute
   '/operator/profile': typeof OperatorProfileRoute
   '/operator/settings': typeof OperatorSettingsRoute
@@ -1327,6 +1354,7 @@ export interface FileRoutesByFullPath {
   '/qc/flagged': typeof QcFlaggedRoute
   '/qc/jsko': typeof QcJskoRoute
   '/qc/kyc-queue': typeof QcKycQueueRoute
+  '/qc/my-hr': typeof QcMyHrRoute
   '/qc/profile': typeof QcProfileRoute
   '/qc/profile-changes': typeof QcProfileChangesRoute
   '/qc/reports': typeof QcReportsRoute
@@ -1437,6 +1465,7 @@ export interface FileRoutesByTo {
   '/accountant/ledger': typeof AccountantLedgerRoute
   '/accountant/main-recharge': typeof AccountantMainRechargeRoute
   '/accountant/money-transfer': typeof AccountantMoneyTransferRoute
+  '/accountant/my-hr': typeof AccountantMyHrRoute
   '/accountant/profile': typeof AccountantProfileRoute
   '/accountant/razorpay-payments': typeof AccountantRazorpayPaymentsRoute
   '/accountant/registrations': typeof AccountantRegistrationsRoute
@@ -1490,6 +1519,7 @@ export interface FileRoutesByTo {
   '/hr/hr-settings': typeof HrHrSettingsRoute
   '/hr/id-cards': typeof HrIdCardsRoute
   '/hr/leave': typeof HrLeaveRoute
+  '/hr/my-hr': typeof HrMyHrRoute
   '/hr/onboarding': typeof HrOnboardingRoute
   '/hr/payroll': typeof HrPayrollRoute
   '/hr/performance': typeof HrPerformanceRoute
@@ -1503,6 +1533,7 @@ export interface FileRoutesByTo {
   '/operator/change-password': typeof OperatorChangePasswordRoute
   '/operator/dashboard': typeof OperatorDashboardRoute
   '/operator/feedback': typeof OperatorFeedbackRoute
+  '/operator/my-hr': typeof OperatorMyHrRoute
   '/operator/notifications': typeof OperatorNotificationsRoute
   '/operator/profile': typeof OperatorProfileRoute
   '/operator/settings': typeof OperatorSettingsRoute
@@ -1518,6 +1549,7 @@ export interface FileRoutesByTo {
   '/qc/flagged': typeof QcFlaggedRoute
   '/qc/jsko': typeof QcJskoRoute
   '/qc/kyc-queue': typeof QcKycQueueRoute
+  '/qc/my-hr': typeof QcMyHrRoute
   '/qc/profile': typeof QcProfileRoute
   '/qc/profile-changes': typeof QcProfileChangesRoute
   '/qc/reports': typeof QcReportsRoute
@@ -1631,6 +1663,7 @@ export interface FileRoutesById {
   '/accountant/ledger': typeof AccountantLedgerRoute
   '/accountant/main-recharge': typeof AccountantMainRechargeRoute
   '/accountant/money-transfer': typeof AccountantMoneyTransferRoute
+  '/accountant/my-hr': typeof AccountantMyHrRoute
   '/accountant/profile': typeof AccountantProfileRoute
   '/accountant/razorpay-payments': typeof AccountantRazorpayPaymentsRoute
   '/accountant/registrations': typeof AccountantRegistrationsRoute
@@ -1685,6 +1718,7 @@ export interface FileRoutesById {
   '/hr/hr-settings': typeof HrHrSettingsRoute
   '/hr/id-cards': typeof HrIdCardsRoute
   '/hr/leave': typeof HrLeaveRoute
+  '/hr/my-hr': typeof HrMyHrRoute
   '/hr/onboarding': typeof HrOnboardingRoute
   '/hr/payroll': typeof HrPayrollRoute
   '/hr/performance': typeof HrPerformanceRoute
@@ -1698,6 +1732,7 @@ export interface FileRoutesById {
   '/operator/change-password': typeof OperatorChangePasswordRoute
   '/operator/dashboard': typeof OperatorDashboardRoute
   '/operator/feedback': typeof OperatorFeedbackRoute
+  '/operator/my-hr': typeof OperatorMyHrRoute
   '/operator/notifications': typeof OperatorNotificationsRoute
   '/operator/profile': typeof OperatorProfileRoute
   '/operator/settings': typeof OperatorSettingsRoute
@@ -1713,6 +1748,7 @@ export interface FileRoutesById {
   '/qc/flagged': typeof QcFlaggedRoute
   '/qc/jsko': typeof QcJskoRoute
   '/qc/kyc-queue': typeof QcKycQueueRoute
+  '/qc/my-hr': typeof QcMyHrRoute
   '/qc/profile': typeof QcProfileRoute
   '/qc/profile-changes': typeof QcProfileChangesRoute
   '/qc/reports': typeof QcReportsRoute
@@ -1827,6 +1863,7 @@ export interface FileRouteTypes {
     | '/accountant/ledger'
     | '/accountant/main-recharge'
     | '/accountant/money-transfer'
+    | '/accountant/my-hr'
     | '/accountant/profile'
     | '/accountant/razorpay-payments'
     | '/accountant/registrations'
@@ -1881,6 +1918,7 @@ export interface FileRouteTypes {
     | '/hr/hr-settings'
     | '/hr/id-cards'
     | '/hr/leave'
+    | '/hr/my-hr'
     | '/hr/onboarding'
     | '/hr/payroll'
     | '/hr/performance'
@@ -1894,6 +1932,7 @@ export interface FileRouteTypes {
     | '/operator/change-password'
     | '/operator/dashboard'
     | '/operator/feedback'
+    | '/operator/my-hr'
     | '/operator/notifications'
     | '/operator/profile'
     | '/operator/settings'
@@ -1909,6 +1948,7 @@ export interface FileRouteTypes {
     | '/qc/flagged'
     | '/qc/jsko'
     | '/qc/kyc-queue'
+    | '/qc/my-hr'
     | '/qc/profile'
     | '/qc/profile-changes'
     | '/qc/reports'
@@ -2019,6 +2059,7 @@ export interface FileRouteTypes {
     | '/accountant/ledger'
     | '/accountant/main-recharge'
     | '/accountant/money-transfer'
+    | '/accountant/my-hr'
     | '/accountant/profile'
     | '/accountant/razorpay-payments'
     | '/accountant/registrations'
@@ -2072,6 +2113,7 @@ export interface FileRouteTypes {
     | '/hr/hr-settings'
     | '/hr/id-cards'
     | '/hr/leave'
+    | '/hr/my-hr'
     | '/hr/onboarding'
     | '/hr/payroll'
     | '/hr/performance'
@@ -2085,6 +2127,7 @@ export interface FileRouteTypes {
     | '/operator/change-password'
     | '/operator/dashboard'
     | '/operator/feedback'
+    | '/operator/my-hr'
     | '/operator/notifications'
     | '/operator/profile'
     | '/operator/settings'
@@ -2100,6 +2143,7 @@ export interface FileRouteTypes {
     | '/qc/flagged'
     | '/qc/jsko'
     | '/qc/kyc-queue'
+    | '/qc/my-hr'
     | '/qc/profile'
     | '/qc/profile-changes'
     | '/qc/reports'
@@ -2212,6 +2256,7 @@ export interface FileRouteTypes {
     | '/accountant/ledger'
     | '/accountant/main-recharge'
     | '/accountant/money-transfer'
+    | '/accountant/my-hr'
     | '/accountant/profile'
     | '/accountant/razorpay-payments'
     | '/accountant/registrations'
@@ -2266,6 +2311,7 @@ export interface FileRouteTypes {
     | '/hr/hr-settings'
     | '/hr/id-cards'
     | '/hr/leave'
+    | '/hr/my-hr'
     | '/hr/onboarding'
     | '/hr/payroll'
     | '/hr/performance'
@@ -2279,6 +2325,7 @@ export interface FileRouteTypes {
     | '/operator/change-password'
     | '/operator/dashboard'
     | '/operator/feedback'
+    | '/operator/my-hr'
     | '/operator/notifications'
     | '/operator/profile'
     | '/operator/settings'
@@ -2294,6 +2341,7 @@ export interface FileRouteTypes {
     | '/qc/flagged'
     | '/qc/jsko'
     | '/qc/kyc-queue'
+    | '/qc/my-hr'
     | '/qc/profile'
     | '/qc/profile-changes'
     | '/qc/reports'
@@ -2407,6 +2455,7 @@ export interface RootRouteChildren {
   AccountantLedgerRoute: typeof AccountantLedgerRoute
   AccountantMainRechargeRoute: typeof AccountantMainRechargeRoute
   AccountantMoneyTransferRoute: typeof AccountantMoneyTransferRoute
+  AccountantMyHrRoute: typeof AccountantMyHrRoute
   AccountantProfileRoute: typeof AccountantProfileRoute
   AccountantRazorpayPaymentsRoute: typeof AccountantRazorpayPaymentsRoute
   AccountantRegistrationsRoute: typeof AccountantRegistrationsRoute
@@ -2449,6 +2498,7 @@ export interface RootRouteChildren {
   HrHrSettingsRoute: typeof HrHrSettingsRoute
   HrIdCardsRoute: typeof HrIdCardsRoute
   HrLeaveRoute: typeof HrLeaveRoute
+  HrMyHrRoute: typeof HrMyHrRoute
   HrOnboardingRoute: typeof HrOnboardingRoute
   HrPayrollRoute: typeof HrPayrollRoute
   HrPerformanceRoute: typeof HrPerformanceRoute
@@ -2470,6 +2520,7 @@ export interface RootRouteChildren {
   QcFlaggedRoute: typeof QcFlaggedRoute
   QcJskoRoute: typeof QcJskoRoute
   QcKycQueueRoute: typeof QcKycQueueRoute
+  QcMyHrRoute: typeof QcMyHrRoute
   QcProfileRoute: typeof QcProfileRoute
   QcProfileChangesRoute: typeof QcProfileChangesRoute
   QcReportsRoute: typeof QcReportsRoute
@@ -3151,6 +3202,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof QcProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/qc/my-hr': {
+      id: '/qc/my-hr'
+      path: '/qc/my-hr'
+      fullPath: '/qc/my-hr'
+      preLoaderRoute: typeof QcMyHrRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/qc/kyc-queue': {
       id: '/qc/kyc-queue'
       path: '/qc/kyc-queue'
@@ -3256,6 +3314,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OperatorNotificationsRouteImport
       parentRoute: typeof OperatorRoute
     }
+    '/operator/my-hr': {
+      id: '/operator/my-hr'
+      path: '/my-hr'
+      fullPath: '/operator/my-hr'
+      preLoaderRoute: typeof OperatorMyHrRouteImport
+      parentRoute: typeof OperatorRoute
+    }
     '/operator/feedback': {
       id: '/operator/feedback'
       path: '/feedback'
@@ -3345,6 +3410,13 @@ declare module '@tanstack/react-router' {
       path: '/hr/onboarding'
       fullPath: '/hr/onboarding'
       preLoaderRoute: typeof HrOnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hr/my-hr': {
+      id: '/hr/my-hr'
+      path: '/hr/my-hr'
+      fullPath: '/hr/my-hr'
+      preLoaderRoute: typeof HrMyHrRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/hr/leave': {
@@ -3725,6 +3797,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountantProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/accountant/my-hr': {
+      id: '/accountant/my-hr'
+      path: '/accountant/my-hr'
+      fullPath: '/accountant/my-hr'
+      preLoaderRoute: typeof AccountantMyHrRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/accountant/money-transfer': {
       id: '/accountant/money-transfer'
       path: '/accountant/money-transfer'
@@ -3891,6 +3970,7 @@ interface OperatorRouteChildren {
   OperatorChangePasswordRoute: typeof OperatorChangePasswordRoute
   OperatorDashboardRoute: typeof OperatorDashboardRoute
   OperatorFeedbackRoute: typeof OperatorFeedbackRoute
+  OperatorMyHrRoute: typeof OperatorMyHrRoute
   OperatorNotificationsRoute: typeof OperatorNotificationsRoute
   OperatorProfileRoute: typeof OperatorProfileRoute
   OperatorSettingsRoute: typeof OperatorSettingsRoute
@@ -3902,6 +3982,7 @@ const OperatorRouteChildren: OperatorRouteChildren = {
   OperatorChangePasswordRoute: OperatorChangePasswordRoute,
   OperatorDashboardRoute: OperatorDashboardRoute,
   OperatorFeedbackRoute: OperatorFeedbackRoute,
+  OperatorMyHrRoute: OperatorMyHrRoute,
   OperatorNotificationsRoute: OperatorNotificationsRoute,
   OperatorProfileRoute: OperatorProfileRoute,
   OperatorSettingsRoute: OperatorSettingsRoute,
@@ -4077,6 +4158,7 @@ const rootRouteChildren: RootRouteChildren = {
   AccountantLedgerRoute: AccountantLedgerRoute,
   AccountantMainRechargeRoute: AccountantMainRechargeRoute,
   AccountantMoneyTransferRoute: AccountantMoneyTransferRoute,
+  AccountantMyHrRoute: AccountantMyHrRoute,
   AccountantProfileRoute: AccountantProfileRoute,
   AccountantRazorpayPaymentsRoute: AccountantRazorpayPaymentsRoute,
   AccountantRegistrationsRoute: AccountantRegistrationsRoute,
@@ -4119,6 +4201,7 @@ const rootRouteChildren: RootRouteChildren = {
   HrHrSettingsRoute: HrHrSettingsRoute,
   HrIdCardsRoute: HrIdCardsRoute,
   HrLeaveRoute: HrLeaveRoute,
+  HrMyHrRoute: HrMyHrRoute,
   HrOnboardingRoute: HrOnboardingRoute,
   HrPayrollRoute: HrPayrollRoute,
   HrPerformanceRoute: HrPerformanceRoute,
@@ -4140,6 +4223,7 @@ const rootRouteChildren: RootRouteChildren = {
   QcFlaggedRoute: QcFlaggedRoute,
   QcJskoRoute: QcJskoRoute,
   QcKycQueueRoute: QcKycQueueRoute,
+  QcMyHrRoute: QcMyHrRoute,
   QcProfileRoute: QcProfileRoute,
   QcProfileChangesRoute: QcProfileChangesRoute,
   QcReportsRoute: QcReportsRoute,

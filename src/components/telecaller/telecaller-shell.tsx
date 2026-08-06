@@ -1,6 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import {
+import { CalendarCheck,
   BarChart3, Bell, ChevronDown, ClipboardList, Gauge, Headphones,
   FileBarChart, LogOut, Menu, MessageCircle, PhoneCall, Search, Settings, Target, UserRound, X,
 } from "lucide-react";
@@ -20,6 +20,7 @@ const NAV = [
   { id: "performance", label: "Performance", icon: BarChart3 },
   { id: "reports", label: "Reports", icon: FileBarChart },
   { id: "script", label: "Call Scripts", icon: Headphones },
+  { id: "myhr", label: "My HR", icon: CalendarCheck },
   { id: "profile", label: "My Profile", icon: UserRound },
   { id: "settings", label: "Settings", icon: Settings },
 ] as const;
