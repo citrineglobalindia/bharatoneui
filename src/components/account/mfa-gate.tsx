@@ -101,6 +101,10 @@ export function MfaGate({ mode, onPassed }: { mode: "challenge" | "enroll"; onPa
                   1. Install Google Authenticator, Microsoft Authenticator or Authy.
                   2. Scan this code. 3. Enter the six digits it shows.
                 </p>
+                <p className="rounded-lg bg-muted/60 px-2.5 py-2 text-[11px] text-muted-foreground">
+                  It will be saved in your app as <b className="text-foreground">BharatOne</b>. If an
+                  older entry shows a different name, delete it — only this one will work.
+                </p>
                 {qr && (
                   <div className="flex justify-center rounded-xl border border-border bg-white p-3">
                     <img src={qr} alt="Two-factor QR code" className="h-44 w-44" />

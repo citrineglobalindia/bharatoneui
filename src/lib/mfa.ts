@@ -60,11 +60,25 @@ export async function needsChallenge(): Promise<boolean> {
   return next === "aal2" && current === "aal1";
 }
 
+/**
+ * What the authenticator app displays above the code.
+ *
+ * Left unset, Supabase derives this from the project's Site URL — which was
+ * still http://localhost:3000, so staff saw "localhost:3000" in Google
+ * Authenticator next to a code guarding real money. Setting it here means the
+ * label is a property of the application, not of a dashboard field somebody
+ * has to remember to change.
+ */
+const MFA_ISSUER = "BharatOne";
+
 /** Start enrolment; returns the QR (an SVG data URI) and the manual key. */
 export async function beginEnroll(): Promise<{ factorId: string; qr: string; secret: string } | { error: string }> {
   const { data, error } = await supabase.auth.mfa.enroll({
     factorType: "totp",
-    friendlyName: `BharatOne ${new Date().toISOString().slice(0, 10)}`,
+    issuer: MFA_ISSUER,
+    // Shown as the account line under the issuer. A date is more useful than a
+    // repeat of the brand when somebody re-enrols after losing a phone.
+    friendlyName: `BharatOne · ${new Date().toISOString().slice(0, 10)}`,
   });
   if (error) return { error: error.message };
   return {
