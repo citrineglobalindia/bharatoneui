@@ -154,6 +154,17 @@ export function WalletAdmin({ allowMainRecharge = false }: { allowMainRecharge?:
           <p className="mb-2 flex items-center gap-2 text-sm font-bold"><Plus className="h-4 w-4 text-india-green" /> Direct top-up</p>
           <form onSubmit={directTopup} className="space-y-2">
             <AccountPicker accounts={accounts} value={tuUser} onChange={setTuUser} />
+            {/* The note state and the RPC's p_note parameter existed from day
+                one — this input just was never rendered, so every direct top-up
+                landed in the ledger with no explanation of why it was made. */}
+            <input
+              type="text"
+              maxLength={200}
+              className="h-9 w-full rounded-lg border border-border bg-background px-2 text-sm"
+              placeholder="Remarks (e.g. reason for top-up)"
+              value={tuNote}
+              onChange={(e) => setTuNote(e.target.value)}
+            />
             <div className="flex gap-2"><input type="number" min="1" className="h-9 flex-1 rounded-lg border border-border bg-background px-2 text-sm" placeholder="Amount" value={tuAmt} onChange={(e) => setTuAmt(e.target.value)} /><Button type="submit" disabled={tuBusy} className="bg-india-green text-white hover:bg-india-green/90">{tuBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Top-up"}</Button></div>
           </form>
         </div>
