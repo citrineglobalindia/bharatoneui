@@ -85,8 +85,15 @@ export function SupportCenter() {
         const path = `${u.user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}-${f.name.replace(/[^\w.\-]/g, "_")}`;
         const { error: upErr } = await db.storage.from("support-attachments").upload(path, f, { upsert: false, contentType: f.type || undefined });
         if (upErr) throw upErr;
-        const { data: pub } = db.storage.from("support-attachments").getPublicUrl(path);
-        attachments.push({ name: f.name, url: pub?.publicUrl ?? path });
+        // Store the PATH, not a public URL.
+        //
+        // This used to call getPublicUrl() and keep the result on the ticket.
+        // People attach whatever explains their problem — a bank statement, a
+        // photo of an ID — and that link would have opened for anyone who had
+        // it, with no login. The bucket is private now, in line with
+        // chat-attachments and service-attachments, so whatever renders these
+        // should call createSignedUrl(path, 3600) the way those screens do.
+        attachments.push({ name: f.name, url: path });
       }
     } catch (e) {
       setSending(false);
