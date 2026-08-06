@@ -25,6 +25,7 @@ import {
   Search,
   Settings,
   ShieldCheck,
+  ClipboardList,
   Store,
   Users,
   WalletCards,
@@ -106,6 +107,7 @@ import { PlatformAnalytics } from "@/components/admin/platform-analytics";
 import { GlobalSearch } from "@/components/admin/global-search";
 import { NotificationCenter } from "@/components/admin/notification-center";
 import { StaffSecurity } from "@/components/admin/staff-security";
+import { StatusBoard } from "@/components/admin/status-board";
 import { RiskFlagsPanel } from "@/components/admin/risk-flags-panel";
 import { RazorpaySettings } from "@/components/admin/razorpay-settings";
 import { CrmPanel } from "@/components/admin/crm-panel";
@@ -197,6 +199,9 @@ const NAVIGATION: NavGroup[] = [
       { label: "Old JSKO IDs", icon: IdCard },
       { label: "Notification Center", icon: BellRing },
       { label: "Security & 2FA", icon: ShieldCheck },
+      // Moved here off the public website, where it was a 13 MB file the CDN
+      // served to anyone who asked for the URL.
+      { label: "Status Board", icon: ClipboardList },
       { label: "Feedback", icon: MessageSquare },
       { label: "Audit Log", icon: FileClock },
     ],
@@ -1319,6 +1324,8 @@ export function AdminWorkspace() {
               <NotificationCenter />
             ) : active === "Security & 2FA" ? (
               <StaffSecurity />
+            ) : active === "Status Board" ? (
+              <StatusBoard />
             ) : active === "HRMS" ? (
               /* The old panel here wrote to the abandoned pre-v2 HR tables —
                  nothing the real HR portal reads. Admin passes the HR portal
