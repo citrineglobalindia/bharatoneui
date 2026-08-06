@@ -79,6 +79,7 @@ const NAV: NavSection[] = [
       { label: "Main Account Recharge", icon: <Banknote className="h-4 w-4" />, to: "/accountant/main-recharge" },
       { label: "Ledger", icon: <BookOpenCheck className="h-4 w-4" />, to: "/accountant/ledger" },
       { label: "Application Ledger", icon: <Wallet className="h-4 w-4" />, to: "/accountant/app-ledger" },
+      { label: "Salary Requests", icon: <Wallet className="h-4 w-4" />, to: "/accountant/salary-requests" },
     ],
   },
   {

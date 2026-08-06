@@ -18,11 +18,14 @@ type Req = {
   id: string; user_id: string; kind: "resignation" | "early_salary"; reason: string;
   last_working_day: string | null; amount: number | null; needed_by: string | null;
   status: string; applied_at: string; decision_note: string | null;
+  paid_at: string | null; payment_reference: string | null; payment_note: string | null;
 };
 const TONE: Record<string, string> = {
   pending: "bg-amber-100 text-amber-700", approved: "bg-emerald-100 text-emerald-700",
   rejected: "bg-rose-100 text-rose-700", withdrawn: "bg-slate-100 text-slate-600",
+  awaiting_payment: "bg-sky-100 text-sky-700", paid: "bg-emerald-100 text-emerald-700",
 };
+const STATUS_LABEL: Record<string, string> = { awaiting_payment: "with accounts" };
 const fmtD = (s: string) => new Date(s.length === 10 ? s + "T00:00:00" : s).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 
 /** Resignations and early-salary requests raised by staff from My HR. */
@@ -102,7 +105,7 @@ function Page() {
                       {r.kind === "early_salary" && <> · <b className="text-foreground">₹{Number(r.amount ?? 0).toLocaleString("en-IN")}</b>{r.needed_by ? ` needed by ${fmtD(r.needed_by)}` : ""}</>}
                     </p>
                   </div>
-                  <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold capitalize ${TONE[r.status]}`}>{r.status}</span>
+                  <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold capitalize ${TONE[r.status] ?? "bg-slate-100 text-slate-600"}`}>{STATUS_LABEL[r.status] ?? r.status}</span>
                 </div>
                 <p className="mt-2 rounded-lg bg-muted/50 px-3 py-2 text-sm">{r.reason}</p>
                 {r.status === "pending" ? (
@@ -120,9 +123,20 @@ function Page() {
                       <XCircle className="h-4 w-4" /> Reject
                     </Button>
                   </div>
-                ) : r.decision_note ? (
-                  <p className="mt-2 text-xs text-muted-foreground">Decision note: {r.decision_note}</p>
-                ) : null}
+                ) : (
+                  <>
+                    {r.decision_note && <p className="mt-2 text-xs text-muted-foreground">Decision note: {r.decision_note}</p>}
+                    {/* The accountant's tracked reply on a paid-out request. */}
+                    {r.status === "paid" && (
+                      <p className="mt-1 text-xs font-semibold text-emerald-700">
+                        Paid by accounts{r.paid_at ? ` on ${fmtD(r.paid_at)}` : ""}{r.payment_reference ? ` · ref ${r.payment_reference}` : ""}{r.payment_note ? ` · ${r.payment_note}` : ""}
+                      </p>
+                    )}
+                    {r.status === "awaiting_payment" && (
+                      <p className="mt-1 text-xs font-semibold text-sky-700">Approved — with the accountant for payment.</p>
+                    )}
+                  </>
+                )}
               </div>
             ))}
           </div>

@@ -185,6 +185,7 @@ import { Route as AccountantSupportRouteImport } from './routes/accountant.suppo
 import { Route as AccountantSettingsRouteImport } from './routes/accountant.settings'
 import { Route as AccountantServicesPaymentsRouteImport } from './routes/accountant.services-payments'
 import { Route as AccountantServicesRouteImport } from './routes/accountant.services'
+import { Route as AccountantSalaryRequestsRouteImport } from './routes/accountant.salary-requests'
 import { Route as AccountantRegistrationsRouteImport } from './routes/accountant.registrations'
 import { Route as AccountantRazorpayPaymentsRouteImport } from './routes/accountant.razorpay-payments'
 import { Route as AccountantProfileRouteImport } from './routes/accountant.profile'
@@ -1094,6 +1095,12 @@ const AccountantServicesRoute = AccountantServicesRouteImport.update({
   path: '/accountant/services',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountantSalaryRequestsRoute =
+  AccountantSalaryRequestsRouteImport.update({
+    id: '/accountant/salary-requests',
+    path: '/accountant/salary-requests',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AccountantRegistrationsRoute = AccountantRegistrationsRouteImport.update({
   id: '/accountant/registrations',
   path: '/accountant/registrations',
@@ -1279,6 +1286,7 @@ export interface FileRoutesByFullPath {
   '/accountant/profile': typeof AccountantProfileRoute
   '/accountant/razorpay-payments': typeof AccountantRazorpayPaymentsRoute
   '/accountant/registrations': typeof AccountantRegistrationsRoute
+  '/accountant/salary-requests': typeof AccountantSalaryRequestsRoute
   '/accountant/services': typeof AccountantServicesRoute
   '/accountant/services-payments': typeof AccountantServicesPaymentsRoute
   '/accountant/settings': typeof AccountantSettingsRoute
@@ -1476,6 +1484,7 @@ export interface FileRoutesByTo {
   '/accountant/profile': typeof AccountantProfileRoute
   '/accountant/razorpay-payments': typeof AccountantRazorpayPaymentsRoute
   '/accountant/registrations': typeof AccountantRegistrationsRoute
+  '/accountant/salary-requests': typeof AccountantSalaryRequestsRoute
   '/accountant/services': typeof AccountantServicesRoute
   '/accountant/services-payments': typeof AccountantServicesPaymentsRoute
   '/accountant/settings': typeof AccountantSettingsRoute
@@ -1675,6 +1684,7 @@ export interface FileRoutesById {
   '/accountant/profile': typeof AccountantProfileRoute
   '/accountant/razorpay-payments': typeof AccountantRazorpayPaymentsRoute
   '/accountant/registrations': typeof AccountantRegistrationsRoute
+  '/accountant/salary-requests': typeof AccountantSalaryRequestsRoute
   '/accountant/services': typeof AccountantServicesRoute
   '/accountant/services-payments': typeof AccountantServicesPaymentsRoute
   '/accountant/settings': typeof AccountantSettingsRoute
@@ -1876,6 +1886,7 @@ export interface FileRouteTypes {
     | '/accountant/profile'
     | '/accountant/razorpay-payments'
     | '/accountant/registrations'
+    | '/accountant/salary-requests'
     | '/accountant/services'
     | '/accountant/services-payments'
     | '/accountant/settings'
@@ -2073,6 +2084,7 @@ export interface FileRouteTypes {
     | '/accountant/profile'
     | '/accountant/razorpay-payments'
     | '/accountant/registrations'
+    | '/accountant/salary-requests'
     | '/accountant/services'
     | '/accountant/services-payments'
     | '/accountant/settings'
@@ -2271,6 +2283,7 @@ export interface FileRouteTypes {
     | '/accountant/profile'
     | '/accountant/razorpay-payments'
     | '/accountant/registrations'
+    | '/accountant/salary-requests'
     | '/accountant/services'
     | '/accountant/services-payments'
     | '/accountant/settings'
@@ -2471,6 +2484,7 @@ export interface RootRouteChildren {
   AccountantProfileRoute: typeof AccountantProfileRoute
   AccountantRazorpayPaymentsRoute: typeof AccountantRazorpayPaymentsRoute
   AccountantRegistrationsRoute: typeof AccountantRegistrationsRoute
+  AccountantSalaryRequestsRoute: typeof AccountantSalaryRequestsRoute
   AccountantServicesRoute: typeof AccountantServicesRoute
   AccountantServicesPaymentsRoute: typeof AccountantServicesPaymentsRoute
   AccountantSettingsRoute: typeof AccountantSettingsRoute
@@ -3796,6 +3810,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountantServicesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/accountant/salary-requests': {
+      id: '/accountant/salary-requests'
+      path: '/accountant/salary-requests'
+      fullPath: '/accountant/salary-requests'
+      preLoaderRoute: typeof AccountantSalaryRequestsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/accountant/registrations': {
       id: '/accountant/registrations'
       path: '/accountant/registrations'
@@ -4182,6 +4203,7 @@ const rootRouteChildren: RootRouteChildren = {
   AccountantProfileRoute: AccountantProfileRoute,
   AccountantRazorpayPaymentsRoute: AccountantRazorpayPaymentsRoute,
   AccountantRegistrationsRoute: AccountantRegistrationsRoute,
+  AccountantSalaryRequestsRoute: AccountantSalaryRequestsRoute,
   AccountantServicesRoute: AccountantServicesRoute,
   AccountantServicesPaymentsRoute: AccountantServicesPaymentsRoute,
   AccountantSettingsRoute: AccountantSettingsRoute,

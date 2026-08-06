@@ -31,13 +31,15 @@ type Balance = { leave_code: string; entitled: number; carried: number; adjustme
 type LeaveType = { code: string; name: string; annual_days: number; colour: string | null; paid: boolean };
 type LeaveReq = { id: string; leave_code: string; from_date: string; to_date: string; half_day: boolean; days: number; reason: string; status: string; applied_at: string; decision_note: string | null };
 type Holiday = { holiday_on: string; name: string; optional: boolean };
-type StaffReq = { id: string; kind: "resignation" | "early_salary"; reason: string; last_working_day: string | null; amount: number | null; needed_by: string | null; status: string; applied_at: string; decision_note: string | null };
+type StaffReq = { id: string; kind: "resignation" | "early_salary"; reason: string; last_working_day: string | null; amount: number | null; needed_by: string | null; status: string; applied_at: string; decision_note: string | null; paid_at: string | null; payment_reference: string | null; payment_note: string | null };
 type Card = { card_no: string; blood_group: string | null; photo_path: string | null; issued_on: string; valid_until: string | null; status: string; verify_token: string | null };
 
 const STATUS_TONE: Record<string, string> = {
   pending: "bg-amber-100 text-amber-700", approved: "bg-emerald-100 text-emerald-700",
   rejected: "bg-rose-100 text-rose-700", cancelled: "bg-slate-100 text-slate-600",
+  withdrawn: "bg-slate-100 text-slate-600", awaiting_payment: "bg-sky-100 text-sky-700", paid: "bg-emerald-100 text-emerald-700",
 };
+const REQ_STATUS_LABEL: Record<string, string> = { awaiting_payment: "with accounts" };
 const ATT_LABEL: Record<string, string> = { present: "Present", absent: "Absent", half_day: "Half day", wfh: "WFH", on_duty: "On duty" };
 const fmtD = (s: string) => new Date(s + "T00:00:00").toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
 const hm = (t: string | null) => (t ? t.slice(0, 5) : "—");
@@ -379,9 +381,10 @@ export function MyHR() {
                       : <>Early salary · ₹{Number(r.amount ?? 0).toLocaleString("en-IN")}{r.needed_by ? <span className="font-normal text-muted-foreground"> · needed by {fmtD(r.needed_by)}</span> : null}</>}
                   </p>
                   <p className="truncate text-[11px] text-muted-foreground">{r.reason}{r.decision_note ? ` · HR: ${r.decision_note}` : ""} · {new Date(r.applied_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}</p>
+                  {r.status === "paid" && <p className="text-[11px] font-semibold text-emerald-700">Paid{r.paid_at ? ` on ${fmtD(r.paid_at.slice(0, 10))}` : ""}{r.payment_reference ? ` · ref ${r.payment_reference}` : ""}{r.payment_note ? ` · ${r.payment_note}` : ""}</p>}
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
-                  <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold capitalize ${STATUS_TONE[r.status] ?? "bg-slate-100 text-slate-600"}`}>{r.status}</span>
+                  <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold capitalize ${STATUS_TONE[r.status] ?? "bg-slate-100 text-slate-600"}`}>{REQ_STATUS_LABEL[r.status] ?? r.status}</span>
                   {r.status === "pending" && <button onClick={() => withdrawReq(r)} title="Withdraw" className="text-muted-foreground hover:text-rose-600"><X className="h-4 w-4" /></button>}
                 </div>
               </li>
