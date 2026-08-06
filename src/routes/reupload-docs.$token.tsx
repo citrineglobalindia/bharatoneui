@@ -42,7 +42,12 @@ function ReuploadPage() {
       toast.success(`${LABEL[key] || key} uploaded`);
       setDone((d) => [...new Set([...d, key])]);
       // Email admins that the retailer re-uploaded a document (fire-and-forget).
-      supabase.functions.invoke("notify-doc-reupload", { body: { key, retailer: (data as any)?.retailer, app_id: (data as any)?.app_id, all_done: (data as any)?.all_done } }).catch(() => {});
+      // Send the TOKEN, not the retailer name and application id. The function
+      // used to take those from the body and put them in an email to every
+      // administrator, which made it an unauthenticated mail relay aimed at our
+      // own inbox. It now looks the registration up by token and ignores
+      // anything else the caller claims.
+      supabase.functions.invoke("notify-doc-reupload", { body: { token, key, all_done: (data as any)?.all_done } }).catch(() => {});
       if ((data as any)?.all_done) setAllDone(true);
     } finally { setBusyKey(null); }
   };

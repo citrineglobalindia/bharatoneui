@@ -41,6 +41,60 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
 
   const svc = createClient(SUPABASE_URL, SERVICE_KEY);
+
+  // Who may set a scan running?
+  //
+  // verify_jwt is off because the pg_cron job cannot hold a Supabase session,
+  // so without this anyone knowing the URL could make the platform fire a dozen
+  // outbound probes at Razorpay, Brevo, Eko and ICICI, and write a row per
+  // module, as fast as they liked. Nothing leaks and no money moves, but it is
+  // a free amplifier pointed at our own providers.
+  //
+  // Two ways in: the scheduled job presents a shared token (kept in
+  // private.internal_tokens, which cron reads when building the request), or an
+  // administrator presses "Run scan now" in the portal and arrives with a real
+  // session.
+  {
+    const presented = req.headers.get("x-internal-token") ?? "";
+    let allowed = false;
+
+    // Fail OPEN on an internal error. This gate exists to stop an amplifier,
+    // not to protect data — so if the token lookup itself breaks, the right
+    // outcome is a scan that still runs, not silent loss of monitoring.
+    let lookupBroken = false;
+    if (presented) {
+      const { data: expected, error: lookupErr } = await svc.rpc("internal_token", { _name: "health-scan" });
+      if (lookupErr) lookupBroken = true;
+      const a = new TextEncoder().encode(presented);
+      const b = new TextEncoder().encode(String(expected ?? ""));
+      // Constant time: a length check plus an early return leaks the token a
+      // character at a time to anyone patient enough to measure.
+      let diff = a.length === b.length ? 0 : 1;
+      for (let i = 0; i < Math.min(a.length, b.length); i++) diff |= a[i] ^ b[i];
+      allowed = !!expected && diff === 0;
+    }
+
+    if (!allowed) {
+      const auth = req.headers.get("Authorization") ?? "";
+      const token = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7).trim() : "";
+      if (token && token !== SERVICE_KEY) {
+        const asUser = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!, {
+          global: { headers: { Authorization: `Bearer ${token}` } },
+        });
+        const { data: u } = await asUser.auth.getUser();
+        if (u?.user) {
+          const { data: roles } = await svc.from("user_roles").select("role").eq("user_id", u.user.id);
+          allowed = ((roles ?? []) as { role: string }[]).some((r) => r.role === "admin");
+        }
+      }
+    }
+
+    if (!allowed && !lookupBroken) {
+      return new Response(JSON.stringify({ error: "Not authorised" }), {
+        status: 401, headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+  }
   const results: Record<string, Res> = {};
   const log = async (mod: string, r: Res, source = "scanner") => {
     results[mod] = r;
@@ -55,7 +109,9 @@ Deno.serve(async (req) => {
   const home = await probe(SITE + "/");
   await log("website", home);
   await log("login", await probe(SITE + "/login"));
-  await log("status_board", await probe(SITE + "/status/"));
+  // The planning board no longer lives on the public site — it moved into a
+  // private bucket behind the admin portal — so probing /status/ would now
+  // report DOWN for ever and train everyone to ignore the board.
 
   // ---------- 2. Database ----------
   {
