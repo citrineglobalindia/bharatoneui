@@ -13,6 +13,7 @@ import { useEffect } from "react";
 import appCss from "../styles.css?url";
 import { Toaster } from "sonner";
 import { LiveChatWidget } from "@/components/live-chat-widget";
+import { StaffMfaBoundary } from "@/components/account/mfa-gate";
 import { startAudit, logPageView, logAuthEvent } from "@/lib/audit";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -222,9 +223,12 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <div key={pathname} className="animate-in fade-in duration-200">
-        <Outlet />
-      </div>
+      {/* Staff who owe a second factor get the gate instead of the app. */}
+      <StaffMfaBoundary>
+        <div key={pathname} className="animate-in fade-in duration-200">
+          <Outlet />
+        </div>
+      </StaffMfaBoundary>
       {!isPublicPage && <LiveChatWidget />}
       <Toaster richColors position="top-right" />
     </QueryClientProvider>

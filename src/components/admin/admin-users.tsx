@@ -84,6 +84,23 @@ export function AdminUsers() {
   };
 
   const [emailBusy, setEmailBusy] = useState(false);
+  const [mfaBusy, setMfaBusy] = useState(false);
+  /**
+   * Somebody will lose their phone. Without this the only route back is the
+   * Supabase dashboard, which most of the team should not have. Removing a
+   * second factor is also exactly what an attacker holding a stolen admin
+   * account would do, so the RPC records it and tells the owner.
+   */
+  const resetMfa = async (u: U) => {
+    if (!confirm(`Reset two-factor authentication for ${u.display_name || u.email}?\n\nTheir current authenticator stops working and they will be asked to set up a new one at their next sign-in. They will be notified that this happened.`)) return;
+    setMfaBusy(true);
+    try {
+      const { data, error } = await (supabase.rpc as any)("admin_reset_user_mfa", { target: u.id });
+      if (error) return toast.error("Could not reset", { description: error.message });
+      const r = data as { removed?: number };
+      toast.success("Two-factor reset", { description: `${r?.removed ?? 0} authenticator(s) removed. They will set up a new one on next sign-in.` });
+    } finally { setMfaBusy(false); }
+  };
   /**
    * Change a user's login email directly. This exists for the retailer who has
    * LOST access to their old mailbox: every self-service path (the approval
@@ -579,6 +596,7 @@ export function AdminUsers() {
             <div className="flex flex-wrap gap-2">
               {detail && <Button variant="outline" className="text-indigo-600" disabled={resetting} onClick={() => resetPassword(detail)}>{resetting ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />} Reset password</Button>}
               {detail && <Button variant="outline" className="text-teal-700" disabled={emailBusy} onClick={() => changeEmail(detail)}>{emailBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />} Change email</Button>}
+              {detail && <Button variant="outline" className="text-violet-700" disabled={mfaBusy} onClick={() => resetMfa(detail)}>{mfaBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />} Reset 2FA</Button>}
               {detail && <Button variant="outline" className={detail.is_active ? "text-rose-600" : "text-emerald-700"} onClick={() => toggleActive(detail)}>
                 {detail.is_active ? "Deactivate" : "Activate"}</Button>}
               {detail && !detail.roles.includes("admin") && <Button variant="outline" className="border-rose-200 text-rose-600 hover:bg-rose-50" onClick={() => setConfirmDel(detail)}><Trash2 className="h-4 w-4" /> Delete</Button>}

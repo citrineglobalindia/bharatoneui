@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import { myMfaRequirement, needsChallenge } from "@/lib/mfa";
 
 /**
  * Auth guard for the signed-in portals.
@@ -48,6 +49,7 @@ const fresh = (v: Verdict | null): boolean =>
 export function clearPortalGuardCache(): void {
   cache = null;
   inFlight = null;
+  mfaCache = null;
 }
 
 async function resolveVerdict(): Promise<Verdict | null> {
@@ -86,6 +88,28 @@ function verdict(): Promise<Verdict | null> {
     inFlight = resolveVerdict().finally(() => { inFlight = null; });
   }
   return inFlight;
+}
+
+/**
+ * What the second-factor check decided for this session.
+ *  - "ok"        nothing owed (not required, or already at aal2)
+ *  - "challenge" has an authenticator, has not presented it this session
+ *  - "enroll"    role requires a factor and none exists yet
+ */
+export type MfaVerdict = "ok" | "challenge" | "enroll";
+
+/** Resolved once per session, alongside the role check. */
+let mfaCache: { userId: string; verdict: MfaVerdict; at: number } | null = null;
+
+export function clearMfaCache(): void { mfaCache = null; }
+
+async function resolveMfa(userId: string): Promise<MfaVerdict> {
+  // Session-level check first: if this session already reached aal2 there is
+  // nothing to ask for, whatever the policy says.
+  if (await needsChallenge()) return "challenge";
+  const req = await myMfaRequirement();
+  if (!req.required) return "ok";
+  return req.enrolled ? "ok" : "enroll";
 }
 
 export function usePortalGuard(loginPath: string, allow: string[]): boolean {
