@@ -19,7 +19,7 @@ import {
   Bell,
   UserCircle2,
 } from "lucide-react";
-import { MessageSquare, CalendarClock } from "lucide-react";
+import { MessageSquare, CalendarClock, SlidersHorizontal } from "lucide-react";
 import { BharatOneLogo } from "@/components/bharatone-logo";
 import { useCurrentUser } from "@/lib/use-current-user";
 import {
@@ -83,6 +83,9 @@ function helpItems(base: string) {
   return [
     { label: "Support", icon: <LifeBuoy className="h-4 w-4" />, to: `${base}/support` },
     { label: "Feedback", icon: <Smile className="h-4 w-4" />, to: `${base}/feedback` },
+    // Two-factor is mandatory for DRO and TRO, so the screen that sets it up
+    // has to be reachable from the sidebar, not only by typing the URL.
+    { label: "Settings", icon: <SlidersHorizontal className="h-4 w-4" />, to: `${base}/settings` },
   ];
 }
 

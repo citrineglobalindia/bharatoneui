@@ -78,6 +78,7 @@ import { Route as WalletLedgerRouteImport } from './routes/wallet.ledger'
 import { Route as WalletDeductionsRouteImport } from './routes/wallet.deductions'
 import { Route as VerifyTokenRouteImport } from './routes/verify.$token'
 import { Route as TroSupportRouteImport } from './routes/tro.support'
+import { Route as TroSettingsRouteImport } from './routes/tro.settings'
 import { Route as TroServicesRouteImport } from './routes/tro.services'
 import { Route as TroRetailersRouteImport } from './routes/tro.retailers'
 import { Route as TroProfileRouteImport } from './routes/tro.profile'
@@ -88,6 +89,7 @@ import { Route as TroDashboardRouteImport } from './routes/tro.dashboard'
 import { Route as TroCatalogRouteImport } from './routes/tro.catalog'
 import { Route as TroAttendanceRouteImport } from './routes/tro.attendance'
 import { Route as TelecallerRegistrationsRouteImport } from './routes/telecaller.registrations'
+import { Route as StoreSettingsRouteImport } from './routes/store.settings'
 import { Route as StoreReturnsRouteImport } from './routes/store.returns'
 import { Route as StoreOrdersRouteImport } from './routes/store.orders'
 import { Route as StoreInventoryRouteImport } from './routes/store.inventory'
@@ -142,6 +144,7 @@ import { Route as HrEmployeesRouteImport } from './routes/hr.employees'
 import { Route as HrDashboardRouteImport } from './routes/hr.dashboard'
 import { Route as HrAttendanceRouteImport } from './routes/hr.attendance'
 import { Route as DroSupportRouteImport } from './routes/dro.support'
+import { Route as DroSettingsRouteImport } from './routes/dro.settings'
 import { Route as DroServicesRouteImport } from './routes/dro.services'
 import { Route as DroRetailersRouteImport } from './routes/dro.retailers'
 import { Route as DroProfileRouteImport } from './routes/dro.profile'
@@ -554,6 +557,11 @@ const TroSupportRoute = TroSupportRouteImport.update({
   path: '/tro/support',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TroSettingsRoute = TroSettingsRouteImport.update({
+  id: '/tro/settings',
+  path: '/tro/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TroServicesRoute = TroServicesRouteImport.update({
   id: '/tro/services',
   path: '/tro/services',
@@ -603,6 +611,11 @@ const TelecallerRegistrationsRoute = TelecallerRegistrationsRouteImport.update({
   id: '/registrations',
   path: '/registrations',
   getParentRoute: () => TelecallerRoute,
+} as any)
+const StoreSettingsRoute = StoreSettingsRouteImport.update({
+  id: '/store/settings',
+  path: '/store/settings',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const StoreReturnsRoute = StoreReturnsRouteImport.update({
   id: '/store/returns',
@@ -872,6 +885,11 @@ const HrAttendanceRoute = HrAttendanceRouteImport.update({
 const DroSupportRoute = DroSupportRouteImport.update({
   id: '/dro/support',
   path: '/dro/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DroSettingsRoute = DroSettingsRouteImport.update({
+  id: '/dro/settings',
+  path: '/dro/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DroServicesRoute = DroServicesRouteImport.update({
@@ -1330,6 +1348,7 @@ export interface FileRoutesByFullPath {
   '/dro/profile': typeof DroProfileRoute
   '/dro/retailers': typeof DroRetailersRouteWithChildren
   '/dro/services': typeof DroServicesRoute
+  '/dro/settings': typeof DroSettingsRoute
   '/dro/support': typeof DroSupportRoute
   '/hr/attendance': typeof HrAttendanceRoute
   '/hr/dashboard': typeof HrDashboardRoute
@@ -1384,6 +1403,7 @@ export interface FileRoutesByFullPath {
   '/store/inventory': typeof StoreInventoryRoute
   '/store/orders': typeof StoreOrdersRoute
   '/store/returns': typeof StoreReturnsRoute
+  '/store/settings': typeof StoreSettingsRoute
   '/telecaller/registrations': typeof TelecallerRegistrationsRoute
   '/tro/attendance': typeof TroAttendanceRoute
   '/tro/catalog': typeof TroCatalogRoute
@@ -1394,6 +1414,7 @@ export interface FileRoutesByFullPath {
   '/tro/profile': typeof TroProfileRoute
   '/tro/retailers': typeof TroRetailersRouteWithChildren
   '/tro/services': typeof TroServicesRoute
+  '/tro/settings': typeof TroSettingsRoute
   '/tro/support': typeof TroSupportRoute
   '/verify/$token': typeof VerifyTokenRoute
   '/wallet/deductions': typeof WalletDeductionsRoute
@@ -1527,6 +1548,7 @@ export interface FileRoutesByTo {
   '/dro/profile': typeof DroProfileRoute
   '/dro/retailers': typeof DroRetailersRouteWithChildren
   '/dro/services': typeof DroServicesRoute
+  '/dro/settings': typeof DroSettingsRoute
   '/dro/support': typeof DroSupportRoute
   '/hr/attendance': typeof HrAttendanceRoute
   '/hr/dashboard': typeof HrDashboardRoute
@@ -1581,6 +1603,7 @@ export interface FileRoutesByTo {
   '/store/inventory': typeof StoreInventoryRoute
   '/store/orders': typeof StoreOrdersRoute
   '/store/returns': typeof StoreReturnsRoute
+  '/store/settings': typeof StoreSettingsRoute
   '/telecaller/registrations': typeof TelecallerRegistrationsRoute
   '/tro/attendance': typeof TroAttendanceRoute
   '/tro/catalog': typeof TroCatalogRoute
@@ -1591,6 +1614,7 @@ export interface FileRoutesByTo {
   '/tro/profile': typeof TroProfileRoute
   '/tro/retailers': typeof TroRetailersRouteWithChildren
   '/tro/services': typeof TroServicesRoute
+  '/tro/settings': typeof TroSettingsRoute
   '/tro/support': typeof TroSupportRoute
   '/verify/$token': typeof VerifyTokenRoute
   '/wallet/deductions': typeof WalletDeductionsRoute
@@ -1728,6 +1752,7 @@ export interface FileRoutesById {
   '/dro/profile': typeof DroProfileRoute
   '/dro/retailers': typeof DroRetailersRouteWithChildren
   '/dro/services': typeof DroServicesRoute
+  '/dro/settings': typeof DroSettingsRoute
   '/dro/support': typeof DroSupportRoute
   '/hr/attendance': typeof HrAttendanceRoute
   '/hr/dashboard': typeof HrDashboardRoute
@@ -1782,6 +1807,7 @@ export interface FileRoutesById {
   '/store/inventory': typeof StoreInventoryRoute
   '/store/orders': typeof StoreOrdersRoute
   '/store/returns': typeof StoreReturnsRoute
+  '/store/settings': typeof StoreSettingsRoute
   '/telecaller/registrations': typeof TelecallerRegistrationsRoute
   '/tro/attendance': typeof TroAttendanceRoute
   '/tro/catalog': typeof TroCatalogRoute
@@ -1792,6 +1818,7 @@ export interface FileRoutesById {
   '/tro/profile': typeof TroProfileRoute
   '/tro/retailers': typeof TroRetailersRouteWithChildren
   '/tro/services': typeof TroServicesRoute
+  '/tro/settings': typeof TroSettingsRoute
   '/tro/support': typeof TroSupportRoute
   '/verify/$token': typeof VerifyTokenRoute
   '/wallet/deductions': typeof WalletDeductionsRoute
@@ -1930,6 +1957,7 @@ export interface FileRouteTypes {
     | '/dro/profile'
     | '/dro/retailers'
     | '/dro/services'
+    | '/dro/settings'
     | '/dro/support'
     | '/hr/attendance'
     | '/hr/dashboard'
@@ -1984,6 +2012,7 @@ export interface FileRouteTypes {
     | '/store/inventory'
     | '/store/orders'
     | '/store/returns'
+    | '/store/settings'
     | '/telecaller/registrations'
     | '/tro/attendance'
     | '/tro/catalog'
@@ -1994,6 +2023,7 @@ export interface FileRouteTypes {
     | '/tro/profile'
     | '/tro/retailers'
     | '/tro/services'
+    | '/tro/settings'
     | '/tro/support'
     | '/verify/$token'
     | '/wallet/deductions'
@@ -2127,6 +2157,7 @@ export interface FileRouteTypes {
     | '/dro/profile'
     | '/dro/retailers'
     | '/dro/services'
+    | '/dro/settings'
     | '/dro/support'
     | '/hr/attendance'
     | '/hr/dashboard'
@@ -2181,6 +2212,7 @@ export interface FileRouteTypes {
     | '/store/inventory'
     | '/store/orders'
     | '/store/returns'
+    | '/store/settings'
     | '/telecaller/registrations'
     | '/tro/attendance'
     | '/tro/catalog'
@@ -2191,6 +2223,7 @@ export interface FileRouteTypes {
     | '/tro/profile'
     | '/tro/retailers'
     | '/tro/services'
+    | '/tro/settings'
     | '/tro/support'
     | '/verify/$token'
     | '/wallet/deductions'
@@ -2327,6 +2360,7 @@ export interface FileRouteTypes {
     | '/dro/profile'
     | '/dro/retailers'
     | '/dro/services'
+    | '/dro/settings'
     | '/dro/support'
     | '/hr/attendance'
     | '/hr/dashboard'
@@ -2381,6 +2415,7 @@ export interface FileRouteTypes {
     | '/store/inventory'
     | '/store/orders'
     | '/store/returns'
+    | '/store/settings'
     | '/telecaller/registrations'
     | '/tro/attendance'
     | '/tro/catalog'
@@ -2391,6 +2426,7 @@ export interface FileRouteTypes {
     | '/tro/profile'
     | '/tro/retailers'
     | '/tro/services'
+    | '/tro/settings'
     | '/tro/support'
     | '/verify/$token'
     | '/wallet/deductions'
@@ -2516,6 +2552,7 @@ export interface RootRouteChildren {
   DroProfileRoute: typeof DroProfileRoute
   DroRetailersRoute: typeof DroRetailersRouteWithChildren
   DroServicesRoute: typeof DroServicesRoute
+  DroSettingsRoute: typeof DroSettingsRoute
   DroSupportRoute: typeof DroSupportRoute
   HrAttendanceRoute: typeof HrAttendanceRoute
   HrDashboardRoute: typeof HrDashboardRoute
@@ -2562,6 +2599,7 @@ export interface RootRouteChildren {
   StoreInventoryRoute: typeof StoreInventoryRoute
   StoreOrdersRoute: typeof StoreOrdersRoute
   StoreReturnsRoute: typeof StoreReturnsRoute
+  StoreSettingsRoute: typeof StoreSettingsRoute
   TroAttendanceRoute: typeof TroAttendanceRoute
   TroCatalogRoute: typeof TroCatalogRoute
   TroDashboardRoute: typeof TroDashboardRoute
@@ -2571,6 +2609,7 @@ export interface RootRouteChildren {
   TroProfileRoute: typeof TroProfileRoute
   TroRetailersRoute: typeof TroRetailersRouteWithChildren
   TroServicesRoute: typeof TroServicesRoute
+  TroSettingsRoute: typeof TroSettingsRoute
   TroSupportRoute: typeof TroSupportRoute
   VerifyTokenRoute: typeof VerifyTokenRoute
   QcKycReviewIdRoute: typeof QcKycReviewIdRoute
@@ -3061,6 +3100,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TroSupportRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tro/settings': {
+      id: '/tro/settings'
+      path: '/tro/settings'
+      fullPath: '/tro/settings'
+      preLoaderRoute: typeof TroSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/tro/services': {
       id: '/tro/services'
       path: '/tro/services'
@@ -3130,6 +3176,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/telecaller/registrations'
       preLoaderRoute: typeof TelecallerRegistrationsRouteImport
       parentRoute: typeof TelecallerRoute
+    }
+    '/store/settings': {
+      id: '/store/settings'
+      path: '/store/settings'
+      fullPath: '/store/settings'
+      preLoaderRoute: typeof StoreSettingsRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/store/returns': {
       id: '/store/returns'
@@ -3507,6 +3560,13 @@ declare module '@tanstack/react-router' {
       path: '/dro/support'
       fullPath: '/dro/support'
       preLoaderRoute: typeof DroSupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dro/settings': {
+      id: '/dro/settings'
+      path: '/dro/settings'
+      fullPath: '/dro/settings'
+      preLoaderRoute: typeof DroSettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dro/services': {
@@ -4235,6 +4295,7 @@ const rootRouteChildren: RootRouteChildren = {
   DroProfileRoute: DroProfileRoute,
   DroRetailersRoute: DroRetailersRouteWithChildren,
   DroServicesRoute: DroServicesRoute,
+  DroSettingsRoute: DroSettingsRoute,
   DroSupportRoute: DroSupportRoute,
   HrAttendanceRoute: HrAttendanceRoute,
   HrDashboardRoute: HrDashboardRoute,
@@ -4281,6 +4342,7 @@ const rootRouteChildren: RootRouteChildren = {
   StoreInventoryRoute: StoreInventoryRoute,
   StoreOrdersRoute: StoreOrdersRoute,
   StoreReturnsRoute: StoreReturnsRoute,
+  StoreSettingsRoute: StoreSettingsRoute,
   TroAttendanceRoute: TroAttendanceRoute,
   TroCatalogRoute: TroCatalogRoute,
   TroDashboardRoute: TroDashboardRoute,
@@ -4290,6 +4352,7 @@ const rootRouteChildren: RootRouteChildren = {
   TroProfileRoute: TroProfileRoute,
   TroRetailersRoute: TroRetailersRouteWithChildren,
   TroServicesRoute: TroServicesRoute,
+  TroSettingsRoute: TroSettingsRoute,
   TroSupportRoute: TroSupportRoute,
   VerifyTokenRoute: VerifyTokenRoute,
   QcKycReviewIdRoute: QcKycReviewIdRoute,

@@ -2,15 +2,20 @@
 //
 // Warehouse staff. Deliberately the narrowest portal on the platform: five
 // screens, all of them about getting a box to a door. There is no wallet, no
-// commission, no retailer network and no settings — packing a parcel should not
-// come with the ability to change what anybody earns, so the RPCs behind these
-// screens simply do not return those columns.
+// commission and no retailer network — packing a parcel should not come with
+// the ability to change what anybody earns, so the RPCs behind these screens
+// simply do not return those columns.
+//
+// It does now carry Settings. That was originally left out on the same
+// reasoning, but "no settings" also meant no password change and nowhere to set
+// up two-factor authentication, which store_staff is required to hold. Narrow
+// is the point; unreachable is a different thing.
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useState } from "react";
 import { usePortalGuard, PortalAuthGate } from "@/lib/portal-guard";
 import { useDisabledModules } from "@/hooks/use-modules";
 import {
-  LayoutDashboard, PackageCheck, Boxes, RotateCcw, Bike, LogOut, Menu, X,
+  LayoutDashboard, PackageCheck, Boxes, RotateCcw, Bike, LogOut, Menu, X, SlidersHorizontal,
 } from "lucide-react";
 import { BharatOneLogo } from "@/components/bharatone-logo";
 import { Button } from "@/components/ui/button";
@@ -21,6 +26,9 @@ const NAV = [
   { label: "Inventory", icon: Boxes, to: "/store/inventory", moduleKey: "store.inventory" },
   { label: "Returns", icon: RotateCcw, to: "/store/returns", moduleKey: "store.returns" },
   { label: "Delivery agents", icon: Bike, to: "/store/agents", moduleKey: "store.agents" },
+  // Deliberately no moduleKey: an account screen must not be something an
+  // administrator can switch off, or two-factor becomes unreachable.
+  { label: "Settings", icon: SlidersHorizontal, to: "/store/settings" },
 ];
 
 function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
