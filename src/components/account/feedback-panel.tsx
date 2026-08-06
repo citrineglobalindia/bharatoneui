@@ -42,6 +42,18 @@ export function FeedbackPanel() {
   const [replies, setReplies] = useState<Record<string, FbReply[]>>({});
   const [replyText, setReplyText] = useState("");
   const [replying, setReplying] = useState(false);
+  const [defaultWho, setDefaultWho] = useState("");
+  const [savingDefault, setSavingDefault] = useState(false);
+  /** Every new feedback raised with no assignee goes straight to this person. */
+  const saveDefault = async (who: string) => {
+    setSavingDefault(true);
+    try {
+      const { error } = await db.rpc("set_default_assignee", { p_kind: "feedback", p_user: who || null });
+      if (error) return toast.error("Could not save default", { description: error.message });
+      setDefaultWho(who);
+      toast.success(who ? "Default assignee set — new feedback will go to them automatically" : "Default assignee cleared");
+    } finally { setSavingDefault(false); }
+  };
 
   async function load() {
     setLoading(true);
@@ -53,9 +65,12 @@ export function FeedbackPanel() {
       setRows((data as Row[]) ?? []);
       if (isManager && staff.length === 0) {
         const { data: users } = await db.rpc("admin_list_users");
+        const BARRED = ["retailer", "distributor", "master-distributor"];
         setStaff(((users as any[]) ?? [])
-          .filter((x) => x.is_active && !(x.roles ?? []).includes("retailer") && !(x.roles ?? []).includes("distributor"))
+          .filter((x) => x.is_active && !((x.roles ?? []) as string[]).some((r) => BARRED.includes(r)))
           .map((x) => ({ id: x.id, label: `${x.display_name || x.email}${x.roles?.length ? " · " + x.roles.join(",") : ""}` })));
+        const { data: def } = await db.from("app_settings").select("value").eq("key", "feedback_default_assignee").maybeSingle();
+        setDefaultWho(((def as any)?.value as string) ?? "");
       }
     } finally { setLoading(false); }
   }
@@ -143,7 +158,16 @@ export function FeedbackPanel() {
       <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           {isManager ? (
-            <p className="text-sm font-bold">All feedback ({rows.length})</p>
+            <span className="flex flex-wrap items-center gap-2">
+              <p className="text-sm font-bold">All feedback ({rows.length})</p>
+              <span className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-2 py-1">
+                <span className="text-[11px] font-semibold text-muted-foreground">Default assignee</span>
+                <select className="h-7 rounded-md border border-border bg-background px-1.5 text-xs" value={defaultWho} disabled={savingDefault} onChange={(e) => saveDefault(e.target.value)}>
+                  <option value="">None — assign manually</option>
+                  {staff.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
+                </select>
+              </span>
+            </span>
           ) : (
             <div className="flex gap-1.5">
               <button onClick={() => setTab("mine")} className={`rounded-full px-3 h-8 text-xs font-semibold transition ${tab === "mine" ? "bg-india-green text-white" : "border border-border bg-card hover:bg-muted"}`}>My feedback ({mine.length})</button>

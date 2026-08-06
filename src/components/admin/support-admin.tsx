@@ -20,6 +20,18 @@ export function SupportAdmin() {
   const [status, setStatus] = useState("all");
   const [sel, setSel] = useState<Ticket | null>(null);
   const [assignee, setAssignee] = useState("");
+  const [defaultWho, setDefaultWho] = useState("");
+  const [savingDefault, setSavingDefault] = useState(false);
+  /** Every new ticket raised with no assignee goes straight to this person. */
+  const saveDefault = async (who: string) => {
+    setSavingDefault(true);
+    try {
+      const { error } = await (supabase as any).rpc("set_default_assignee", { p_kind: "support", p_user: who || null });
+      if (error) return toast.error("Could not save default", { description: error.message });
+      setDefaultWho(who);
+      toast.success(who ? "Default assignee set — new tickets will go to them automatically" : "Default assignee cleared");
+    } finally { setSavingDefault(false); }
+  };
 
   async function load() {
     setLoading(true);
@@ -30,7 +42,14 @@ export function SupportAdmin() {
         supabase.rpc("admin_list_users"),
       ]);
       setRows((t.data as Ticket[]) ?? []);
-      setUsers(((u.data as any[]) ?? []).map((x) => ({ id: x.id, name: (x.display_name || x.email || "User") + (Array.isArray(x.roles) && x.roles.length ? ` · ${x.roles.find((r: string) => r !== "employee") || x.roles[0]}` : "") })));
+      // Partner accounts — retailer, distributor, master-distributor — are the
+      // customers of this queue, never its handlers.
+      const BARRED = ["retailer", "distributor", "master-distributor"];
+      setUsers(((u.data as any[]) ?? [])
+        .filter((x) => x.is_active && !(Array.isArray(x.roles) && x.roles.some((r: string) => BARRED.includes(r))))
+        .map((x) => ({ id: x.id, name: (x.display_name || x.email || "User") + (Array.isArray(x.roles) && x.roles.length ? ` · ${x.roles.find((r: string) => r !== "employee") || x.roles[0]}` : "") })));
+      const { data: def } = await (supabase as any).from("app_settings").select("value").eq("key", "support_default_assignee").maybeSingle();
+      setDefaultWho(((def as any)?.value as string) ?? "");
     } finally { setLoading(false); }
   }
   useEffect(() => { load(); }, []);
@@ -72,6 +91,15 @@ export function SupportAdmin() {
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><input className="h-9 w-64 rounded-lg border border-border bg-background pl-8 pr-2 text-sm outline-none" placeholder="Search ticket, subject, user…" value={q} onChange={(e) => setQ(e.target.value)} /></div>
         <select className="h-9 rounded-lg border border-border bg-background px-2 text-sm" value={status} onChange={(e) => setStatus(e.target.value)}><option value="all">All statuses</option>{["open", "in_progress", "resolved", "closed"].map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}</select>
+        {/* Default assignee: every new ticket raised with nobody assigned goes
+            straight to this person, notified, status moved to in-progress. */}
+        <span className="ml-auto flex items-center gap-1.5 rounded-lg border border-border bg-card px-2 py-1">
+          <span className="text-[11px] font-semibold text-muted-foreground">Default assignee</span>
+          <select className="h-7 rounded-md border border-border bg-background px-1.5 text-xs" value={defaultWho} disabled={savingDefault} onChange={(e) => saveDefault(e.target.value)}>
+            <option value="">None — assign manually</option>
+            {users.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
+          </select>
+        </span>
       </div>
       <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-soft">
         <table className="w-full text-sm">
