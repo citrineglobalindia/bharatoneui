@@ -63,6 +63,7 @@ export function SupportCenter() {
   useEffect(() => { load(); }, []);
   const mine = rows.filter((t) => t.user_id === uid);
   const assignedCount = rows.filter((t) => t.assigned_to === uid && t.user_id !== uid).length;
+  useEffect(() => { if (tab === "assigned" && assignedCount === 0) setTab("mine"); }, [assignedCount, tab]);
   // Catalog is Category -> Service (the sub-category layer is optional and often
   // empty). Show sub-category only when the chosen category actually has some;
   // services filter by category, narrowing further by sub-category if one is picked.
@@ -120,10 +121,15 @@ export function SupportCenter() {
         </button>
       </div>
 
-      <div className="inline-flex rounded-lg border border-border bg-card p-0.5">
-        <button onClick={() => setTab("mine")} className={`rounded-md px-4 h-9 text-sm font-semibold ${tab === "mine" ? "bg-india-green text-white" : "text-muted-foreground"}`}>My Tickets ({mine.length})</button>
-        <button onClick={() => setTab("assigned")} className={`rounded-md px-4 h-9 text-sm font-semibold ${tab === "assigned" ? "bg-india-green text-white" : "text-muted-foreground"}`}>Assigned to me ({assignedCount})</button>
-      </div>
+      {/* The Assigned-to-me tab exists only for people who actually hold
+          assigned tickets. Showing every user an empty "Assigned to me (0)"
+          suggested a queue they were somehow failing to work. */}
+      {assignedCount > 0 && (
+        <div className="inline-flex rounded-lg border border-border bg-card p-0.5">
+          <button onClick={() => setTab("mine")} className={`rounded-md px-4 h-9 text-sm font-semibold ${tab === "mine" ? "bg-india-green text-white" : "text-muted-foreground"}`}>My Tickets ({mine.length})</button>
+          <button onClick={() => setTab("assigned")} className={`rounded-md px-4 h-9 text-sm font-semibold ${tab === "assigned" ? "bg-india-green text-white" : "text-muted-foreground"}`}>Assigned to me ({assignedCount})</button>
+        </div>
+      )}
 
       {tab === "assigned" ? (
         <ChatInbox filter="assigned" />

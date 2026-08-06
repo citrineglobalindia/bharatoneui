@@ -134,7 +134,7 @@ export function FeedbackPanel() {
   // to them. Admin sees everything in one list, as before.
   const mine = useMemo(() => rows.filter((f) => f.user_id === uid), [rows, uid]);
   const assignedToMe = useMemo(() => rows.filter((f) => f.assigned_to === uid && f.user_id !== uid), [rows, uid]);
-  const shown = isManager ? rows : tab === "assigned" ? assignedToMe : mine;
+  const shown = isManager ? rows : tab === "assigned" && assignedToMe.length > 0 ? assignedToMe : mine;
   /** Reply is open to the author, the assignee and admin — the same three
    *  principals the RLS on feedback_replies admits. */
   const canReply = (f: Row) => isManager || f.user_id === uid || f.assigned_to === uid;
@@ -168,11 +168,16 @@ export function FeedbackPanel() {
                 </select>
               </span>
             </span>
-          ) : (
+          ) : assignedToMe.length > 0 ? (
+            /* Tabs only for people who actually hold assigned feedback —
+               everyone else sees a plain "My feedback" heading, not an empty
+               queue with their name on it. */
             <div className="flex gap-1.5">
               <button onClick={() => setTab("mine")} className={`rounded-full px-3 h-8 text-xs font-semibold transition ${tab === "mine" ? "bg-india-green text-white" : "border border-border bg-card hover:bg-muted"}`}>My feedback ({mine.length})</button>
               <button onClick={() => setTab("assigned")} className={`rounded-full px-3 h-8 text-xs font-semibold transition ${tab === "assigned" ? "bg-india-green text-white" : "border border-border bg-card hover:bg-muted"}`}>Assigned to me ({assignedToMe.length})</button>
             </div>
+          ) : (
+            <p className="text-sm font-bold">My feedback ({mine.length})</p>
           )}
           <Button size="sm" variant="outline" onClick={load} disabled={loading}><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh</Button>
         </div>
