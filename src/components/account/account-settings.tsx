@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { isPasswordValid } from "@/components/register/password-field";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/lib/use-current-user";
+import { TwoFactorCard } from "@/components/account/two-factor-card";
 
 type Method = "quick" | "email";
 
@@ -75,7 +76,10 @@ export function AccountSettings() {
   const requestJsko = async () => {
     setRequestingJsko(true);
     try {
-      const who = [me.name, email, phone ? `+91 ${phone}` : ""].filter(Boolean).join(" · ");
+      // `phone` was a bare undeclared identifier here, so this line threw a
+      // ReferenceError and the whole JSKO request failed silently for every
+      // retailer who pressed the button. The number lives on `me`.
+      const who = [me.name, email, me.phone ? `+91 ${me.phone}` : ""].filter(Boolean).join(" · ");
       const { error } = await supabase.rpc("notify_roles", {
         _roles: ["admin"], _type: "jsko_request", _title: "JSKO ID requested",
         _body: `Retailer ${who} has requested a JSKO ID to be generated for their account.`,
@@ -247,6 +251,10 @@ export function AccountSettings() {
           </div>
         )}
       </div>
+
+      {/* Staff are forced into an authenticator by the login gate; this is where
+          they can actually see it, and move it to a new phone. */}
+      <TwoFactorCard />
 
       <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
         <p className="mb-4 flex items-center gap-2 text-sm font-bold"><Bell className="h-4 w-4 text-india-green" /> Notification preferences</p>
