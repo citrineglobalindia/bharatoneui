@@ -36,6 +36,80 @@ export function WalletAdmin({ allowMainRecharge = false }: { allowMainRecharge?:
   const [tab, setTab] = useState<"pending" | "approved" | "rejected" | "all">("pending");
   const [tuUser, setTuUser] = useState(""); const [tuAmt, setTuAmt] = useState(""); const [tuNote, setTuNote] = useState(""); const [tuBusy, setTuBusy] = useState(false);
 
+  /* ── Bulk top-up ──────────────────────────────────────────────────────
+     CSV of jsko_id + amount (+ optional note). Each parsed row is shown with
+     the retailer's CURRENT balance and the balance it will become, then the
+     whole batch is confirmed with an OTP mailed to the accountant and executed
+     all-or-nothing through the same audited path as a single Direct top-up. */
+  type BulkRow = { jsko: string; amount: number; note: string; user_id?: string; name?: string; balance?: number; error?: string };
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkRows, setBulkRows] = useState<BulkRow[]>([]);
+  const [bulkOtpSent, setBulkOtpSent] = useState(false);
+  const [bulkCode, setBulkCode] = useState("");
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkDone, setBulkDone] = useState<{ count: number; total: number } | null>(null);
+
+  const downloadSample = () => {
+    const csv = "jsko_id,amount,note\nJSKOBH004,500,August incentive\nJSK0132,250,\n";
+    const url = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" }));
+    const a = document.createElement("a"); a.href = url; a.download = "bulk-topup-sample.csv"; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const parseBulkFile = async (file: File) => {
+    const text = await file.text();
+    const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    const rows: BulkRow[] = [];
+    for (const line of lines) {
+      const [c0, c1, ...rest] = line.split(",");
+      const jsko = (c0 ?? "").trim();
+      if (!jsko || /^jsko/i.test(jsko) && !/\d/.test(c1 ?? "")) continue; // header
+      const amount = Number((c1 ?? "").trim());
+      const note = rest.join(",").trim();
+      // Match against the same account list the single top-up uses.
+      const acc = accounts.find((a) => (a.jsko_id ?? "").toLowerCase() === jsko.toLowerCase());
+      rows.push({
+        jsko, amount, note,
+        user_id: acc?.user_id, name: acc?.name, balance: acc?.balance,
+        error: !acc ? "JSKO ID not found" : !Number.isFinite(amount) || amount <= 0 ? "Invalid amount" : undefined,
+      });
+    }
+    if (rows.length === 0) return toast.error("No rows found", { description: "Use the sample file format: jsko_id, amount, note." });
+    if (rows.length > 200) return toast.error("Too many rows", { description: "A batch is limited to 200 rows — split the file." });
+    setBulkRows(rows); setBulkOtpSent(false); setBulkCode(""); setBulkDone(null);
+  };
+
+  const bulkValid = bulkRows.filter((r) => !r.error);
+  const bulkTotal = bulkValid.reduce((a, r) => a + r.amount, 0);
+
+  const sendBulkOtp = async () => {
+    setBulkBusy(true);
+    try {
+      const { data: u } = await supabase.auth.getUser();
+      const email = u.user?.email;
+      if (!email) return toast.error("No email on your account");
+      const { error } = await supabase.functions.invoke("send-otp", { body: { channel: "email", target: email } });
+      if (error) return toast.error("Could not send OTP", { description: error.message });
+      setBulkOtpSent(true);
+      toast.success("OTP sent", { description: `Check ${email} — the code confirms this batch.` });
+    } finally { setBulkBusy(false); }
+  };
+
+  const initiateBulk = async () => {
+    if (bulkValid.length === 0) return toast.error("No valid rows to process");
+    if (!/^\d{6}$/.test(bulkCode.trim())) return toast.error("Enter the 6-digit OTP");
+    setBulkBusy(true);
+    try {
+      const payload = bulkValid.map((r) => ({ user_id: r.user_id, amount: r.amount, note: r.note || null }));
+      const { data, error } = await (supabase.rpc as any)("accountant_bulk_topup", { p_rows: payload, p_code: bulkCode.trim() });
+      if (error) return toast.error("Bulk top-up failed — nothing was credited", { description: error.message });
+      const res = data as { count: number; total: number };
+      setBulkDone({ count: res.count, total: Number(res.total) });
+      toast.success(`Bulk top-up successful — ${res.count} wallet(s) credited ₹${Number(res.total).toLocaleString("en-IN")}`);
+      load();
+    } finally { setBulkBusy(false); }
+  };
+
   async function load() {
     setLoading(true);
     try {
@@ -151,7 +225,10 @@ export function WalletAdmin({ allowMainRecharge = false }: { allowMainRecharge?:
         </div>
         <div className="rounded-2xl border border-border bg-card p-4 shadow-soft"><p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Retailer wallet float</p><p className="text-2xl font-extrabold">{inr(floatTotal)}</p><p className="text-xs text-muted-foreground">{balances.length} wallet(s) · {rows.filter((r) => bucketOf(r) === "pending").length} pending ({inr(pendingTotal)})</p></div>
         <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
-          <p className="mb-2 flex items-center gap-2 text-sm font-bold"><Plus className="h-4 w-4 text-india-green" /> Direct top-up</p>
+          <div className="mb-2 flex items-center justify-between">
+            <p className="flex items-center gap-2 text-sm font-bold"><Plus className="h-4 w-4 text-india-green" /> Direct top-up</p>
+            <button onClick={() => { setBulkOpen(true); setBulkRows([]); setBulkOtpSent(false); setBulkCode(""); setBulkDone(null); }} className="inline-flex items-center gap-1 rounded-lg border border-border px-2 h-7 text-[11px] font-bold hover:bg-muted"><Download className="h-3 w-3 rotate-180" /> Bulk top-up</button>
+          </div>
           <form onSubmit={directTopup} className="space-y-2">
             <AccountPicker accounts={accounts} value={tuUser} onChange={setTuUser} />
             {/* The note state and the RPC's p_note parameter existed from day
@@ -199,6 +276,85 @@ export function WalletAdmin({ allowMainRecharge = false }: { allowMainRecharge?:
           </tbody>
         </table>
       </div>
+
+      {/* ── Bulk top-up dialog ─────────────────────────────────────────── */}
+      {bulkOpen && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-foreground/50 p-4" onClick={() => setBulkOpen(false)}>
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-border bg-card p-5 shadow-elev" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-bold">Bulk top-up</p>
+              <button onClick={() => setBulkOpen(false)}><XCircle className="h-5 w-5 text-muted-foreground" /></button>
+            </div>
+
+            {bulkDone ? (
+              <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-6 text-center">
+                <CheckCircle2 className="mx-auto h-10 w-10 text-emerald-600" />
+                <p className="mt-2 text-lg font-extrabold text-emerald-800">Bulk top-up successful</p>
+                <p className="mt-1 text-sm text-emerald-700">{bulkDone.count} wallet(s) credited · total {inr(bulkDone.total)}</p>
+                <p className="mt-2 text-xs text-muted-foreground">Every credit is recorded in the wallet ledger and the top-ups list, and each retailer has been notified.</p>
+                <Button className="mt-4" variant="outline" onClick={() => setBulkOpen(false)}>Close</Button>
+              </div>
+            ) : (
+              <>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <button onClick={downloadSample} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 h-9 text-xs font-semibold hover:bg-muted"><Download className="h-3.5 w-3.5" /> Download sample CSV</button>
+                  <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-india-green px-3 h-9 text-xs font-semibold text-white hover:bg-india-green/90">
+                    Upload CSV
+                    <input type="file" accept=".csv,text/csv" className="hidden" onChange={(e) => { const fl = e.target.files?.[0]; if (fl) parseBulkFile(fl); e.target.value = ""; }} />
+                  </label>
+                  <span className="text-[11px] text-muted-foreground">Columns: jsko_id, amount, note (optional) · max 200 rows</span>
+                </div>
+
+                {bulkRows.length > 0 && (
+                  <>
+                    <div className="mt-3 max-h-72 overflow-y-auto rounded-xl border border-border">
+                      <table className="w-full text-sm">
+                        <thead className="sticky top-0 bg-muted/80 text-left text-[10px] uppercase tracking-wide text-muted-foreground backdrop-blur">
+                          <tr><th className="px-3 py-1.5">JSKO ID</th><th className="px-3 py-1.5">Retailer</th><th className="px-3 py-1.5 text-right">Current balance</th><th className="px-3 py-1.5 text-right">Top-up</th><th className="px-3 py-1.5 text-right">After</th></tr>
+                        </thead>
+                        <tbody>
+                          {bulkRows.map((r, i) => (
+                            <tr key={i} className={`border-t border-border ${r.error ? "bg-rose-50" : ""}`}>
+                              <td className="px-3 py-1.5 font-mono text-xs font-semibold">{r.jsko}</td>
+                              <td className="px-3 py-1.5">{r.error ? <span className="text-xs font-semibold text-rose-600">{r.error}</span> : r.name}</td>
+                              <td className="px-3 py-1.5 text-right text-xs">{r.error ? "—" : inr(r.balance ?? 0)}</td>
+                              <td className="px-3 py-1.5 text-right text-xs font-bold">{Number.isFinite(r.amount) ? inr(r.amount) : "—"}</td>
+                              <td className="px-3 py-1.5 text-right text-xs font-bold text-india-green">{r.error ? "—" : inr((r.balance ?? 0) + r.amount)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-sm">
+                      <p><b>{bulkValid.length}</b> of {bulkRows.length} row(s) valid · total <b className="text-india-green">{inr(bulkTotal)}</b> · main account holds {inr(mainBal)}</p>
+                      {bulkRows.some((r) => r.error) && <p className="text-xs font-semibold text-rose-600">Rows with errors will not be processed — fix the file to include them.</p>}
+                    </div>
+
+                    {/* OTP confirmation: the code goes to the signed-in
+                        accountant's email and is checked inside the database
+                        function, single-use, before any money moves. */}
+                    <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50/60 p-3">
+                      {!bulkOtpSent ? (
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <p className="text-xs font-semibold text-amber-900">Confirm with a one-time password sent to your email.</p>
+                          <Button size="sm" disabled={bulkBusy || bulkValid.length === 0} onClick={sendBulkOtp} className="bg-amber-500 text-white hover:bg-amber-600">{bulkBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Send OTP</Button>
+                        </div>
+                      ) : (
+                        <div className="flex flex-wrap items-center gap-2">
+                          <input inputMode="numeric" maxLength={6} className="h-10 w-32 rounded-lg border border-border bg-background px-3 text-center font-mono text-lg tracking-widest outline-none" placeholder="......" value={bulkCode} onChange={(e) => setBulkCode(e.target.value.replace(/\D/g, ""))} />
+                          <Button disabled={bulkBusy} onClick={initiateBulk} className="bg-india-green text-white hover:bg-india-green/90">{bulkBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wallet className="h-4 w-4" />} Initiate bulk top-up</Button>
+                          <button onClick={sendBulkOtp} disabled={bulkBusy} className="text-xs font-semibold text-muted-foreground hover:text-foreground">Resend OTP</button>
+                          <p className="w-full text-[10px] text-muted-foreground">All-or-nothing: if any row fails, nothing is credited.</p>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
