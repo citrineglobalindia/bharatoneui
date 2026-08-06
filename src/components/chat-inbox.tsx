@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 import { useCurrentUser } from "@/lib/use-current-user";
+import { Stars } from "@/components/support-rating";
 
-type Chat = { id: string; ticket_no: string; user_id: string; user_name: string | null; user_role: string | null; category: string | null; subject: string; status: string; assigned_to: string | null; created_at: string; updated_at: string };
+type Chat = { id: string; ticket_no: string; user_id: string; user_name: string | null; user_role: string | null; category: string | null; subject: string; status: string; assigned_to: string | null; created_at: string; updated_at: string; rating: number | null; rating_comment: string | null };
 type Msg = { id: string; sender_id: string; sender_name: string | null; body: string; created_at: string };
 const tone: Record<string, string> = { open: "bg-amber-100 text-amber-700", in_progress: "bg-indigo-100 text-indigo-700", resolved: "bg-emerald-100 text-emerald-700", closed: "bg-slate-100 text-slate-600" };
 
@@ -30,7 +31,7 @@ export function ChatInbox({ filter }: { filter: "live-admin" | "assigned" }) {
     await ensureStaffSession();
     const { data: u } = await supabase.auth.getUser();
     const myId = u.user?.id ?? ""; setUid(myId);
-    let qb = supabase.from("support_tickets").select("id,ticket_no,user_id,user_name,user_role,category,subject,status,assigned_to,created_at,updated_at").order("updated_at", { ascending: false });
+    let qb = supabase.from("support_tickets").select("id,ticket_no,user_id,user_name,user_role,category,subject,status,assigned_to,created_at,updated_at,rating,rating_comment").order("updated_at", { ascending: false });
     if (filter === "live-admin") qb = qb.eq("category", "Live Chat");
     else qb = qb.eq("assigned_to", myId);
     const { data } = await qb;
@@ -100,7 +101,11 @@ export function ChatInbox({ filter }: { filter: "live-admin" | "assigned" }) {
                 <span className="grid h-9 w-9 place-items-center rounded-full bg-saffron-gradient text-sm font-bold text-white">{(sel.user_name ?? "U")[0]}</span>
                 <div className="min-w-0 flex-1"><p className="truncate text-sm font-bold">{sel.user_name}</p><p className="text-[11px] text-muted-foreground">{sel.user_role} · {sel.ticket_no} · <span className={`rounded-full px-1.5 text-[10px] font-bold capitalize ${tone[sel.status]}`}>{sel.status.replace("_", " ")}</span></p></div>
                 {filter === "live-admin" && <div className="hidden items-center gap-1 sm:flex"><select className="h-9 max-w-[150px] rounded-lg border border-border bg-background px-2 text-xs" value={assignee} onChange={(e) => setAssignee(e.target.value)}><option value="">Assign to…</option>{users.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}</select><Button size="sm" variant="outline" onClick={assign}>Assign</Button></div>}
-                <Button size="sm" variant="outline" onClick={() => setStatus("resolved")}><CheckCircle2 className="h-4 w-4" /> Resolve</Button>
+                {sel.rating
+                  ? <span className="flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2 py-1" title={sel.rating_comment ?? undefined}><Stars rating={sel.rating} /><span className="text-[11px] font-bold">{sel.rating}/5</span></span>
+                  : !["resolved", "closed"].includes(sel.status)
+                    ? <Button size="sm" variant="outline" onClick={() => setStatus("resolved")}><CheckCircle2 className="h-4 w-4" /> Resolve</Button>
+                    : <span className="rounded-lg bg-emerald-50 px-2 py-1 text-[11px] font-bold text-emerald-700">Resolved — awaiting rating</span>}
               </div>
               <div className="flex-1 space-y-2 overflow-y-auto bg-[#f7f7f5] p-3">
                 {msgs.length === 0 ? <p className="py-10 text-center text-xs text-muted-foreground">No messages yet. Say hello 👋</p>

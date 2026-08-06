@@ -6,8 +6,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/lib/use-current-user";
 import { SupportThread } from "@/components/support-thread";
 import { ChatInbox } from "@/components/chat-inbox";
+import { RateTicket, RatingBadge } from "@/components/support-rating";
 
-type Ticket = { id: string; ticket_no: string; user_id: string; assigned_to: string | null; user_name: string | null; category: string | null; priority: string | null; subject: string; body: string | null; status: string; assigned_name: string | null; created_at: string };
+type Ticket = { id: string; ticket_no: string; user_id: string; assigned_to: string | null; user_name: string | null; category: string | null; priority: string | null; subject: string; body: string | null; status: string; assigned_name: string | null; created_at: string; rating: number | null; rating_comment: string | null; rated_at: string | null };
 const statusTone: Record<string, string> = { open: "bg-amber-100 text-amber-700", in_progress: "bg-indigo-100 text-indigo-700", resolved: "bg-emerald-100 text-emerald-700", closed: "bg-slate-100 text-slate-600" };
 const DEPARTMENTS = ["Technical", "Payments & Wallet", "Onboarding & KYC", "Services", "Accounts", "Other"];
 type Cat = { id: string; name: string };
@@ -201,6 +202,15 @@ export function SupportCenter() {
             <div className="flex items-start justify-between"><div><p className="font-mono text-xs font-bold text-muted-foreground">{sel.ticket_no}</p><p className="font-display text-lg font-extrabold">{sel.subject}</p><p className="text-sm text-muted-foreground">{sel.category} · {sel.priority}</p></div><button onClick={() => setSel(null)}><X className="h-5 w-5 text-muted-foreground" /></button></div>
             <div className="mt-2 flex items-center gap-2"><span className={`rounded-full px-2 py-0.5 text-[11px] font-bold capitalize ${statusTone[sel.status]}`}>{sel.status.replace("_", " ")}</span>{sel.assigned_name && <span className="text-xs text-muted-foreground">Handled by {sel.assigned_name}</span>}</div>
             {sel.body && <p className="mt-3 rounded-lg bg-muted/50 px-3 py-2 text-sm">{sel.body}</p>}
+            {/* Once the assignee resolves, the raiser scores the help — one
+                shot, 1 to 5 stars. Already-rated tickets show the verdict. */}
+            {["resolved", "closed"].includes(sel.status) && sel.user_id === uid && (
+              <div className="mt-3">
+                {sel.rating
+                  ? <RatingBadge rating={sel.rating} comment={sel.rating_comment} ratedAt={sel.rated_at} />
+                  : <RateTicket ticketId={sel.id} onRated={(r) => { setSel({ ...sel, rating: r }); load(); }} />}
+              </div>
+            )}
             <div className="mt-4"><SupportThread ticketId={sel.id} ownerId={sel.user_id} /></div>
           </div>
         </div>
