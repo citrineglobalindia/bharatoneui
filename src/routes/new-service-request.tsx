@@ -208,7 +208,7 @@ function NewRequestPage() {
                       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                         {list.map((s) => (
                           <button key={s.id} onClick={() => { setServiceId(s.id); setCategory(s.category || "Other"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-                            className="group flex flex-col items-start gap-1.5 rounded-xl border border-border bg-card p-3 text-left transition hover:-translate-y-0.5 hover:shadow-elev">
+                            className="group flex flex-col items-center gap-1.5 rounded-xl border border-border bg-card p-3 text-center transition hover:-translate-y-0.5 hover:shadow-elev">
                             {s.logo_url
                               ? <img src={s.logo_url} alt={s.name} className="h-9 w-9 rounded-lg border border-border bg-white object-contain p-0.5" />
                               : <span className="grid h-9 w-9 place-items-center rounded-lg bg-india-green/10 font-bold text-india-green">{(s.name?.[0] || "S").toUpperCase()}</span>}
