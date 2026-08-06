@@ -117,7 +117,19 @@ export function OldPortalStep() {
     const { data, error } = await supabase.rpc("fetch_jsko_account", { p_username: username.trim(), p_password: jskoPassword });
     setLoading(false);
     const res = (data as any) ?? {};
-    if (error || !res.found) {
+    // The lookup is rate limited, so a refusal has to be told apart from a
+    // miss. Folding both into "no record found" would send somebody who had
+    // simply tried too often off to bother the admin about an account that
+    // exists perfectly well.
+    if (error) {
+      setLookupError(
+        /too many|busy/i.test(error.message || "")
+          ? error.message
+          : "Could not check that username just now. Please try again in a moment.",
+      );
+      return;
+    }
+    if (!res.found) {
       setLookupError("No JSKO record found for this username. Please check with admin.");
       return;
     }
