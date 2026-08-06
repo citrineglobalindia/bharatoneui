@@ -70,6 +70,7 @@ import { Route as AccountantLoginRouteImport } from './routes/accountant-login'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as WalletIndexRouteImport } from './routes/wallet.index'
+import { Route as OperatorIndexRouteImport } from './routes/operator.index'
 import { Route as WalletRefundsRouteImport } from './routes/wallet.refunds'
 import { Route as WalletRechargesRouteImport } from './routes/wallet.recharges'
 import { Route as WalletMandatoryRecoveriesRouteImport } from './routes/wallet.mandatory-recoveries'
@@ -112,6 +113,12 @@ import { Route as QcChangePasswordRouteImport } from './routes/qc.change-passwor
 import { Route as QcApprovedRouteImport } from './routes/qc.approved'
 import { Route as ProjectApprovalTokenRouteImport } from './routes/project-approval.$token'
 import { Route as PSlugRouteImport } from './routes/p.$slug'
+import { Route as OperatorSupportRouteImport } from './routes/operator.support'
+import { Route as OperatorSettingsRouteImport } from './routes/operator.settings'
+import { Route as OperatorProfileRouteImport } from './routes/operator.profile'
+import { Route as OperatorNotificationsRouteImport } from './routes/operator.notifications'
+import { Route as OperatorFeedbackRouteImport } from './routes/operator.feedback'
+import { Route as OperatorChangePasswordRouteImport } from './routes/operator.change-password'
 import { Route as HrTrainingRouteImport } from './routes/hr.training'
 import { Route as HrSupportRouteImport } from './routes/hr.support'
 import { Route as HrSettingsRouteImport } from './routes/hr.settings'
@@ -499,6 +506,11 @@ const WalletIndexRoute = WalletIndexRouteImport.update({
   path: '/',
   getParentRoute: () => WalletRoute,
 } as any)
+const OperatorIndexRoute = OperatorIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => OperatorRoute,
+} as any)
 const WalletRefundsRoute = WalletRefundsRouteImport.update({
   id: '/refunds',
   path: '/refunds',
@@ -709,6 +721,36 @@ const PSlugRoute = PSlugRouteImport.update({
   id: '/p/$slug',
   path: '/p/$slug',
   getParentRoute: () => rootRouteImport,
+} as any)
+const OperatorSupportRoute = OperatorSupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => OperatorRoute,
+} as any)
+const OperatorSettingsRoute = OperatorSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => OperatorRoute,
+} as any)
+const OperatorProfileRoute = OperatorProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => OperatorRoute,
+} as any)
+const OperatorNotificationsRoute = OperatorNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => OperatorRoute,
+} as any)
+const OperatorFeedbackRoute = OperatorFeedbackRouteImport.update({
+  id: '/feedback',
+  path: '/feedback',
+  getParentRoute: () => OperatorRoute,
+} as any)
+const OperatorChangePasswordRoute = OperatorChangePasswordRouteImport.update({
+  id: '/change-password',
+  path: '/change-password',
+  getParentRoute: () => OperatorRoute,
 } as any)
 const HrTrainingRoute = HrTrainingRouteImport.update({
   id: '/hr/training',
@@ -1160,7 +1202,7 @@ export interface FileRoutesByFullPath {
   '/money-transfer': typeof MoneyTransferRoute
   '/new-service-request': typeof NewServiceRequestRoute
   '/notifications': typeof NotificationsRoute
-  '/operator': typeof OperatorRoute
+  '/operator': typeof OperatorRouteWithChildren
   '/pan': typeof PanRoute
   '/payment-result': typeof PaymentResultRoute
   '/portals': typeof PortalsRoute
@@ -1261,6 +1303,12 @@ export interface FileRoutesByFullPath {
   '/hr/settings': typeof HrSettingsRoute
   '/hr/support': typeof HrSupportRoute
   '/hr/training': typeof HrTrainingRoute
+  '/operator/change-password': typeof OperatorChangePasswordRoute
+  '/operator/feedback': typeof OperatorFeedbackRoute
+  '/operator/notifications': typeof OperatorNotificationsRoute
+  '/operator/profile': typeof OperatorProfileRoute
+  '/operator/settings': typeof OperatorSettingsRoute
+  '/operator/support': typeof OperatorSupportRoute
   '/p/$slug': typeof PSlugRoute
   '/project-approval/$token': typeof ProjectApprovalTokenRoute
   '/qc/approved': typeof QcApprovedRoute
@@ -1303,6 +1351,7 @@ export interface FileRoutesByFullPath {
   '/wallet/mandatory-recoveries': typeof WalletMandatoryRecoveriesRoute
   '/wallet/recharges': typeof WalletRechargesRoute
   '/wallet/refunds': typeof WalletRefundsRoute
+  '/operator/': typeof OperatorIndexRoute
   '/wallet/': typeof WalletIndexRoute
   '/distributor/officers/$id': typeof DistributorOfficersIdRoute
   '/distributor/retailers/$id': typeof DistributorRetailersIdRoute
@@ -1346,7 +1395,6 @@ export interface FileRoutesByTo {
   '/money-transfer': typeof MoneyTransferRoute
   '/new-service-request': typeof NewServiceRequestRoute
   '/notifications': typeof NotificationsRoute
-  '/operator': typeof OperatorRoute
   '/pan': typeof PanRoute
   '/payment-result': typeof PaymentResultRoute
   '/portals': typeof PortalsRoute
@@ -1445,6 +1493,12 @@ export interface FileRoutesByTo {
   '/hr/settings': typeof HrSettingsRoute
   '/hr/support': typeof HrSupportRoute
   '/hr/training': typeof HrTrainingRoute
+  '/operator/change-password': typeof OperatorChangePasswordRoute
+  '/operator/feedback': typeof OperatorFeedbackRoute
+  '/operator/notifications': typeof OperatorNotificationsRoute
+  '/operator/profile': typeof OperatorProfileRoute
+  '/operator/settings': typeof OperatorSettingsRoute
+  '/operator/support': typeof OperatorSupportRoute
   '/p/$slug': typeof PSlugRoute
   '/project-approval/$token': typeof ProjectApprovalTokenRoute
   '/qc/approved': typeof QcApprovedRoute
@@ -1487,6 +1541,7 @@ export interface FileRoutesByTo {
   '/wallet/mandatory-recoveries': typeof WalletMandatoryRecoveriesRoute
   '/wallet/recharges': typeof WalletRechargesRoute
   '/wallet/refunds': typeof WalletRefundsRoute
+  '/operator': typeof OperatorIndexRoute
   '/wallet': typeof WalletIndexRoute
   '/distributor/officers/$id': typeof DistributorOfficersIdRoute
   '/distributor/retailers/$id': typeof DistributorRetailersIdRoute
@@ -1531,7 +1586,7 @@ export interface FileRoutesById {
   '/money-transfer': typeof MoneyTransferRoute
   '/new-service-request': typeof NewServiceRequestRoute
   '/notifications': typeof NotificationsRoute
-  '/operator': typeof OperatorRoute
+  '/operator': typeof OperatorRouteWithChildren
   '/pan': typeof PanRoute
   '/payment-result': typeof PaymentResultRoute
   '/portals': typeof PortalsRoute
@@ -1632,6 +1687,12 @@ export interface FileRoutesById {
   '/hr/settings': typeof HrSettingsRoute
   '/hr/support': typeof HrSupportRoute
   '/hr/training': typeof HrTrainingRoute
+  '/operator/change-password': typeof OperatorChangePasswordRoute
+  '/operator/feedback': typeof OperatorFeedbackRoute
+  '/operator/notifications': typeof OperatorNotificationsRoute
+  '/operator/profile': typeof OperatorProfileRoute
+  '/operator/settings': typeof OperatorSettingsRoute
+  '/operator/support': typeof OperatorSupportRoute
   '/p/$slug': typeof PSlugRoute
   '/project-approval/$token': typeof ProjectApprovalTokenRoute
   '/qc/approved': typeof QcApprovedRoute
@@ -1674,6 +1735,7 @@ export interface FileRoutesById {
   '/wallet/mandatory-recoveries': typeof WalletMandatoryRecoveriesRoute
   '/wallet/recharges': typeof WalletRechargesRoute
   '/wallet/refunds': typeof WalletRefundsRoute
+  '/operator/': typeof OperatorIndexRoute
   '/wallet/': typeof WalletIndexRoute
   '/distributor/officers/$id': typeof DistributorOfficersIdRoute
   '/distributor/retailers/$id': typeof DistributorRetailersIdRoute
@@ -1820,6 +1882,12 @@ export interface FileRouteTypes {
     | '/hr/settings'
     | '/hr/support'
     | '/hr/training'
+    | '/operator/change-password'
+    | '/operator/feedback'
+    | '/operator/notifications'
+    | '/operator/profile'
+    | '/operator/settings'
+    | '/operator/support'
     | '/p/$slug'
     | '/project-approval/$token'
     | '/qc/approved'
@@ -1862,6 +1930,7 @@ export interface FileRouteTypes {
     | '/wallet/mandatory-recoveries'
     | '/wallet/recharges'
     | '/wallet/refunds'
+    | '/operator/'
     | '/wallet/'
     | '/distributor/officers/$id'
     | '/distributor/retailers/$id'
@@ -1905,7 +1974,6 @@ export interface FileRouteTypes {
     | '/money-transfer'
     | '/new-service-request'
     | '/notifications'
-    | '/operator'
     | '/pan'
     | '/payment-result'
     | '/portals'
@@ -2004,6 +2072,12 @@ export interface FileRouteTypes {
     | '/hr/settings'
     | '/hr/support'
     | '/hr/training'
+    | '/operator/change-password'
+    | '/operator/feedback'
+    | '/operator/notifications'
+    | '/operator/profile'
+    | '/operator/settings'
+    | '/operator/support'
     | '/p/$slug'
     | '/project-approval/$token'
     | '/qc/approved'
@@ -2046,6 +2120,7 @@ export interface FileRouteTypes {
     | '/wallet/mandatory-recoveries'
     | '/wallet/recharges'
     | '/wallet/refunds'
+    | '/operator'
     | '/wallet'
     | '/distributor/officers/$id'
     | '/distributor/retailers/$id'
@@ -2190,6 +2265,12 @@ export interface FileRouteTypes {
     | '/hr/settings'
     | '/hr/support'
     | '/hr/training'
+    | '/operator/change-password'
+    | '/operator/feedback'
+    | '/operator/notifications'
+    | '/operator/profile'
+    | '/operator/settings'
+    | '/operator/support'
     | '/p/$slug'
     | '/project-approval/$token'
     | '/qc/approved'
@@ -2232,6 +2313,7 @@ export interface FileRouteTypes {
     | '/wallet/mandatory-recoveries'
     | '/wallet/recharges'
     | '/wallet/refunds'
+    | '/operator/'
     | '/wallet/'
     | '/distributor/officers/$id'
     | '/distributor/retailers/$id'
@@ -2276,7 +2358,7 @@ export interface RootRouteChildren {
   MoneyTransferRoute: typeof MoneyTransferRoute
   NewServiceRequestRoute: typeof NewServiceRequestRoute
   NotificationsRoute: typeof NotificationsRoute
-  OperatorRoute: typeof OperatorRoute
+  OperatorRoute: typeof OperatorRouteWithChildren
   PanRoute: typeof PanRoute
   PaymentResultRoute: typeof PaymentResultRoute
   PortalsRoute: typeof PortalsRoute
@@ -2833,6 +2915,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WalletIndexRouteImport
       parentRoute: typeof WalletRoute
     }
+    '/operator/': {
+      id: '/operator/'
+      path: '/'
+      fullPath: '/operator/'
+      preLoaderRoute: typeof OperatorIndexRouteImport
+      parentRoute: typeof OperatorRoute
+    }
     '/wallet/refunds': {
       id: '/wallet/refunds'
       path: '/refunds'
@@ -3126,6 +3215,48 @@ declare module '@tanstack/react-router' {
       fullPath: '/p/$slug'
       preLoaderRoute: typeof PSlugRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/operator/support': {
+      id: '/operator/support'
+      path: '/support'
+      fullPath: '/operator/support'
+      preLoaderRoute: typeof OperatorSupportRouteImport
+      parentRoute: typeof OperatorRoute
+    }
+    '/operator/settings': {
+      id: '/operator/settings'
+      path: '/settings'
+      fullPath: '/operator/settings'
+      preLoaderRoute: typeof OperatorSettingsRouteImport
+      parentRoute: typeof OperatorRoute
+    }
+    '/operator/profile': {
+      id: '/operator/profile'
+      path: '/profile'
+      fullPath: '/operator/profile'
+      preLoaderRoute: typeof OperatorProfileRouteImport
+      parentRoute: typeof OperatorRoute
+    }
+    '/operator/notifications': {
+      id: '/operator/notifications'
+      path: '/notifications'
+      fullPath: '/operator/notifications'
+      preLoaderRoute: typeof OperatorNotificationsRouteImport
+      parentRoute: typeof OperatorRoute
+    }
+    '/operator/feedback': {
+      id: '/operator/feedback'
+      path: '/feedback'
+      fullPath: '/operator/feedback'
+      preLoaderRoute: typeof OperatorFeedbackRouteImport
+      parentRoute: typeof OperatorRoute
+    }
+    '/operator/change-password': {
+      id: '/operator/change-password'
+      path: '/change-password'
+      fullPath: '/operator/change-password'
+      preLoaderRoute: typeof OperatorChangePasswordRouteImport
+      parentRoute: typeof OperatorRoute
     }
     '/hr/training': {
       id: '/hr/training'
@@ -3737,6 +3868,30 @@ const BdeRouteChildren: BdeRouteChildren = {
 
 const BdeRouteWithChildren = BdeRoute._addFileChildren(BdeRouteChildren)
 
+interface OperatorRouteChildren {
+  OperatorChangePasswordRoute: typeof OperatorChangePasswordRoute
+  OperatorFeedbackRoute: typeof OperatorFeedbackRoute
+  OperatorNotificationsRoute: typeof OperatorNotificationsRoute
+  OperatorProfileRoute: typeof OperatorProfileRoute
+  OperatorSettingsRoute: typeof OperatorSettingsRoute
+  OperatorSupportRoute: typeof OperatorSupportRoute
+  OperatorIndexRoute: typeof OperatorIndexRoute
+}
+
+const OperatorRouteChildren: OperatorRouteChildren = {
+  OperatorChangePasswordRoute: OperatorChangePasswordRoute,
+  OperatorFeedbackRoute: OperatorFeedbackRoute,
+  OperatorNotificationsRoute: OperatorNotificationsRoute,
+  OperatorProfileRoute: OperatorProfileRoute,
+  OperatorSettingsRoute: OperatorSettingsRoute,
+  OperatorSupportRoute: OperatorSupportRoute,
+  OperatorIndexRoute: OperatorIndexRoute,
+}
+
+const OperatorRouteWithChildren = OperatorRoute._addFileChildren(
+  OperatorRouteChildren,
+)
+
 interface TelecallerRouteChildren {
   TelecallerRegistrationsRoute: typeof TelecallerRegistrationsRoute
 }
@@ -3863,7 +4018,7 @@ const rootRouteChildren: RootRouteChildren = {
   MoneyTransferRoute: MoneyTransferRoute,
   NewServiceRequestRoute: NewServiceRequestRoute,
   NotificationsRoute: NotificationsRoute,
-  OperatorRoute: OperatorRoute,
+  OperatorRoute: OperatorRouteWithChildren,
   PanRoute: PanRoute,
   PaymentResultRoute: PaymentResultRoute,
   PortalsRoute: PortalsRoute,

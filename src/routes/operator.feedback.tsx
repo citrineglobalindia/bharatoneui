@@ -1,0 +1,17 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { MessageSquare } from "lucide-react";
+import { OperatorShell } from "@/components/operator/operator-shell";
+import { PageHeader } from "@/components/retailer/page-header";
+import { FeedbackPanel } from "@/components/account/feedback-panel";
+
+export const Route = createFileRoute("/operator/feedback")({
+  head: () => ({ meta: [{ title: "Feedback — Operator Portal" }] }),
+  component: () => (
+    <OperatorShell>
+      <div className="space-y-5">
+        <PageHeader icon={<MessageSquare className="h-5 w-5" />} title="Feedback" subtitle="Share suggestions, report issues, or tell us how we can improve" />
+        <FeedbackPanel />
+      </div>
+    </OperatorShell>
+  ),
+});
