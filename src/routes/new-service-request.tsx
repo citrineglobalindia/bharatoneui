@@ -50,24 +50,37 @@ function NewRequestPage() {
   const [balance, setBalance] = useState<number | null>(null);
   const [receipt, setReceipt] = useState<AppReceipt | null>(null);
   const [lowBalOpen, setLowBalOpen] = useState(false);
+  // Category chosen by clicking its header in the picker. The headers were
+  // plain <div>s — pressing one did nothing, though every user tried.
+  const [catFilter, setCatFilter] = useState<string | null>(null);
+
+  // The heading name for ?sc= was fetched only on first mount, so choosing a
+  // different category from the sidebar while already on this page filtered
+  // the list correctly but kept showing the previous category's name.
+  useEffect(() => {
+    let on = true;
+    setCatFilter(null);
+    if (!sc) { setScName(""); return; }
+    (supabase as any).from("service_categories").select("name").eq("id", sc).maybeSingle()
+      .then(({ data }: any) => { if (on) setScName((data?.name as string) ?? ""); });
+    return () => { on = false; };
+  }, [sc]);
 
   useEffect(() => {
     (async () => {
       await ensureStaffSession();
-      const [{ data }, mid, front, scRow] = await Promise.all([
+      const [{ data }, mid, front] = await Promise.all([
         (supabase as any).from("services")
           .select("id,name,category,category_id,service_group,service_charge,retailer_commission,form_schema,logo_url")
           .eq("is_active", true).eq("service_type", "backend").order("sort_order").order("name"),
         (supabase as any).from("service_categories").select("id,parent_id").neq("kind", "frontend"),
         (supabase as any).from("service_categories").select("id").eq("kind", "frontend"),
-        sc ? (supabase as any).from("service_categories").select("name").eq("id", sc).maybeSingle() : Promise.resolve({ data: null }),
       ]);
       setSvcs((data as unknown as Svc[]) ?? []);
       const m: Record<string, string | null> = {};
       ((mid.data as { id: string; parent_id: string | null }[]) ?? []).forEach((r) => { m[r.id] = r.parent_id; });
       setCatParent(m);
       setFrontIds(new Set(((front.data as { id: string }[]) ?? []).map((r) => r.id)));
-      setScName(((scRow as any).data?.name as string) ?? "");
       const { data: sess } = await supabase.auth.getSession();
       const uid = sess?.session?.user?.id;
       if (uid) { const { data: w } = await (supabase as any).from("wallets").select("balance").eq("user_id", uid).maybeSingle(); setBalance(Number((w as any)?.balance ?? 0)); }
@@ -194,17 +207,34 @@ function NewRequestPage() {
 
         {!serviceId ? (
           <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
-            <p className="mb-3 text-sm font-semibold">{sc ? "Choose a service" : "Choose a service by category"}</p>
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm font-semibold">
+                {catFilter ? catFilter : sc ? "Choose a service" : "Choose a service by category"}
+              </p>
+              {catFilter && (
+                <button onClick={() => setCatFilter(null)}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 h-8 text-xs font-semibold hover:bg-muted">
+                  ← All categories
+                </button>
+              )}
+            </div>
             {groups.length === 0
               ? <p className="rounded-lg border border-dashed border-border bg-muted/30 px-3 py-8 text-center text-sm text-muted-foreground">No backend services{sc && scName ? ` under ${scName}` : ""} available yet.</p>
               : <div className="space-y-5">
-                  {groups.map(([cat, list]) => (
+                  {(catFilter ? groups.filter(([cat]) => cat === catFilter) : groups).map(([cat, list]) => (
                     <section key={cat}>
-                      <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 to-green-600 pl-2 pr-3 py-1 text-white shadow-soft">
+                      {/* The header is a real button now. It was a bare <div>:
+                          clicking a category did nothing, though it is the most
+                          obvious thing on the page to press. */}
+                      <button
+                        type="button"
+                        onClick={() => { setCatFilter(catFilter === cat ? null : cat); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                        className="mb-2 inline-flex cursor-pointer items-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 to-green-600 pl-2 pr-3 py-1 text-white shadow-soft transition hover:brightness-110"
+                      >
                         <FolderTree className="h-4 w-4" />
                         <span className="font-display text-sm font-bold uppercase tracking-wide">{cat}</span>
                         <span className="rounded-full bg-white/25 px-1.5 text-[11px] font-semibold">{list.length}</span>
-                      </div>
+                      </button>
                       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                         {list.map((s) => (
                           <button key={s.id} onClick={() => { setServiceId(s.id); setCategory(s.category || "Other"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
