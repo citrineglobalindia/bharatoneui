@@ -60,6 +60,13 @@ function NewRequestPage() {
   useEffect(() => {
     let on = true;
     setCatFilter(null);
+    // Close any open application form. Without this, picking a category from
+    // the sidebar changed the URL and the heading but the previously opened
+    // service's form stayed on screen — the page said "New Application — B2B"
+    // while still showing the Architectural vastu plans form underneath it.
+    // Choosing a category means "show me that category's services".
+    setServiceId("");
+    setValues({});
     if (!sc) { setScName(""); return; }
     (supabase as any).from("service_categories").select("name").eq("id", sc).maybeSingle()
       .then(({ data }: any) => { if (on) setScName((data?.name as string) ?? ""); });
