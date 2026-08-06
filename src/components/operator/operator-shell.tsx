@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
-  Bell, ChevronDown, ClipboardList, Headphones, LogOut, Menu,
+  Bell, ChevronDown, ClipboardList, Headphones, LayoutDashboard, LogOut, Menu,
   MessageSquareText, Settings, UserRound, X, KeyRound,
 } from "lucide-react";
 import { usePortalGuard, PortalAuthGate } from "@/lib/portal-guard";
@@ -25,6 +25,7 @@ import { useCurrentUser } from "@/lib/use-current-user";
  */
 
 const NAV = [
+  { label: "Dashboard", icon: LayoutDashboard, to: "/operator/dashboard" },
   { label: "Applications", icon: ClipboardList, to: "/operator" },
   { label: "Notifications", icon: Bell, to: "/operator/notifications" },
 ];

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { sanitizeMobile } from "@/lib/phone";
 import { toast } from "sonner";
-import { Users, Search, Loader2, RefreshCw, UserPlus, Eye, X, Check, ShieldCheck, Trash2, AlertTriangle, KeyRound, Copy, Download } from "lucide-react";
+import { Users, Search, Loader2, RefreshCw, UserPlus, Eye, X, Check, ShieldCheck, Trash2, AlertTriangle, KeyRound, Copy, Download, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -81,6 +81,36 @@ export function AdminUsers() {
       } catch { toast.warning("Password reset, but email failed", { description: "Share the new password manually." }); }
       setResetPw({ id: u.id, email: r.email, password: r.password, emailed });
     } finally { setResetting(false); }
+  };
+
+  const [emailBusy, setEmailBusy] = useState(false);
+  /**
+   * Change a user's login email directly. This exists for the retailer who has
+   * LOST access to their old mailbox: every self-service path (the approval
+   * flow, password reset) delivers to the old address, so an admin has to be
+   * able to cut across it. The RPC keeps auth.users, the auth identity row and
+   * retailer_registrations in step — updating only the first, as the older
+   * approval RPC does, lets the login identity drift from what GoTrue matches
+   * on and leaves credential resends going to the dead address.
+   */
+  const changeEmail = async (u: U) => {
+    const entered = prompt(
+      `Change the login email for ${u.display_name || u.email}.\n\nCurrent: ${u.email}\n\nEnter the NEW email address:`,
+    );
+    if (entered == null) return;
+    const next = entered.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(next)) return toast.error("Enter a valid email address");
+    if (next === (u.email || "").toLowerCase()) return toast.error("That is already this user's email");
+    if (!confirm(`Change email?\n\n${u.email}  →  ${next}\n\nThe user will sign in with the new address immediately. Password resets and credential emails will go to it from now on.`)) return;
+    setEmailBusy(true);
+    try {
+      const { data, error } = await (supabase.rpc as any)("admin_change_user_email", { target: u.id, new_email: next });
+      if (error) return toast.error("Email change failed", { description: error.message });
+      const r = data as { old_email?: string; new_email?: string };
+      toast.success("Email changed", { description: `${r.old_email} → ${r.new_email}` });
+      await load();
+      setDetail((d) => (d && d.id === u.id ? { ...d, email: next } : d));
+    } finally { setEmailBusy(false); }
   };
 
   async function load() {
@@ -548,6 +578,7 @@ export function AdminUsers() {
           <DialogFooter className="gap-2 sm:justify-between">
             <div className="flex flex-wrap gap-2">
               {detail && <Button variant="outline" className="text-indigo-600" disabled={resetting} onClick={() => resetPassword(detail)}>{resetting ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />} Reset password</Button>}
+              {detail && <Button variant="outline" className="text-teal-700" disabled={emailBusy} onClick={() => changeEmail(detail)}>{emailBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />} Change email</Button>}
               {detail && <Button variant="outline" className={detail.is_active ? "text-rose-600" : "text-emerald-700"} onClick={() => toggleActive(detail)}>
                 {detail.is_active ? "Deactivate" : "Activate"}</Button>}
               {detail && !detail.roles.includes("admin") && <Button variant="outline" className="border-rose-200 text-rose-600 hover:bg-rose-50" onClick={() => setConfirmDel(detail)}><Trash2 className="h-4 w-4" /> Delete</Button>}

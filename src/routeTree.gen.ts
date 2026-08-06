@@ -118,6 +118,7 @@ import { Route as OperatorSettingsRouteImport } from './routes/operator.settings
 import { Route as OperatorProfileRouteImport } from './routes/operator.profile'
 import { Route as OperatorNotificationsRouteImport } from './routes/operator.notifications'
 import { Route as OperatorFeedbackRouteImport } from './routes/operator.feedback'
+import { Route as OperatorDashboardRouteImport } from './routes/operator.dashboard'
 import { Route as OperatorChangePasswordRouteImport } from './routes/operator.change-password'
 import { Route as HrTrainingRouteImport } from './routes/hr.training'
 import { Route as HrSupportRouteImport } from './routes/hr.support'
@@ -747,6 +748,11 @@ const OperatorFeedbackRoute = OperatorFeedbackRouteImport.update({
   path: '/feedback',
   getParentRoute: () => OperatorRoute,
 } as any)
+const OperatorDashboardRoute = OperatorDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => OperatorRoute,
+} as any)
 const OperatorChangePasswordRoute = OperatorChangePasswordRouteImport.update({
   id: '/change-password',
   path: '/change-password',
@@ -1304,6 +1310,7 @@ export interface FileRoutesByFullPath {
   '/hr/support': typeof HrSupportRoute
   '/hr/training': typeof HrTrainingRoute
   '/operator/change-password': typeof OperatorChangePasswordRoute
+  '/operator/dashboard': typeof OperatorDashboardRoute
   '/operator/feedback': typeof OperatorFeedbackRoute
   '/operator/notifications': typeof OperatorNotificationsRoute
   '/operator/profile': typeof OperatorProfileRoute
@@ -1494,6 +1501,7 @@ export interface FileRoutesByTo {
   '/hr/support': typeof HrSupportRoute
   '/hr/training': typeof HrTrainingRoute
   '/operator/change-password': typeof OperatorChangePasswordRoute
+  '/operator/dashboard': typeof OperatorDashboardRoute
   '/operator/feedback': typeof OperatorFeedbackRoute
   '/operator/notifications': typeof OperatorNotificationsRoute
   '/operator/profile': typeof OperatorProfileRoute
@@ -1688,6 +1696,7 @@ export interface FileRoutesById {
   '/hr/support': typeof HrSupportRoute
   '/hr/training': typeof HrTrainingRoute
   '/operator/change-password': typeof OperatorChangePasswordRoute
+  '/operator/dashboard': typeof OperatorDashboardRoute
   '/operator/feedback': typeof OperatorFeedbackRoute
   '/operator/notifications': typeof OperatorNotificationsRoute
   '/operator/profile': typeof OperatorProfileRoute
@@ -1883,6 +1892,7 @@ export interface FileRouteTypes {
     | '/hr/support'
     | '/hr/training'
     | '/operator/change-password'
+    | '/operator/dashboard'
     | '/operator/feedback'
     | '/operator/notifications'
     | '/operator/profile'
@@ -2073,6 +2083,7 @@ export interface FileRouteTypes {
     | '/hr/support'
     | '/hr/training'
     | '/operator/change-password'
+    | '/operator/dashboard'
     | '/operator/feedback'
     | '/operator/notifications'
     | '/operator/profile'
@@ -2266,6 +2277,7 @@ export interface FileRouteTypes {
     | '/hr/support'
     | '/hr/training'
     | '/operator/change-password'
+    | '/operator/dashboard'
     | '/operator/feedback'
     | '/operator/notifications'
     | '/operator/profile'
@@ -3251,6 +3263,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OperatorFeedbackRouteImport
       parentRoute: typeof OperatorRoute
     }
+    '/operator/dashboard': {
+      id: '/operator/dashboard'
+      path: '/dashboard'
+      fullPath: '/operator/dashboard'
+      preLoaderRoute: typeof OperatorDashboardRouteImport
+      parentRoute: typeof OperatorRoute
+    }
     '/operator/change-password': {
       id: '/operator/change-password'
       path: '/change-password'
@@ -3870,6 +3889,7 @@ const BdeRouteWithChildren = BdeRoute._addFileChildren(BdeRouteChildren)
 
 interface OperatorRouteChildren {
   OperatorChangePasswordRoute: typeof OperatorChangePasswordRoute
+  OperatorDashboardRoute: typeof OperatorDashboardRoute
   OperatorFeedbackRoute: typeof OperatorFeedbackRoute
   OperatorNotificationsRoute: typeof OperatorNotificationsRoute
   OperatorProfileRoute: typeof OperatorProfileRoute
@@ -3880,6 +3900,7 @@ interface OperatorRouteChildren {
 
 const OperatorRouteChildren: OperatorRouteChildren = {
   OperatorChangePasswordRoute: OperatorChangePasswordRoute,
+  OperatorDashboardRoute: OperatorDashboardRoute,
   OperatorFeedbackRoute: OperatorFeedbackRoute,
   OperatorNotificationsRoute: OperatorNotificationsRoute,
   OperatorProfileRoute: OperatorProfileRoute,
