@@ -1,4 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
+import { usePortalGuard, PortalAuthGate } from "@/lib/portal-guard";
 import { useState } from "react";
 import { CalendarCheck,
   BarChart3, Bell, ChevronDown, ClipboardList, Gauge, Headphones,
@@ -53,9 +54,15 @@ function Sidebar({ activeSection, onSelect, onNavigate }: { activeSection: strin
 }
 
 export function TelecallerShell({ children, activeSection, onSectionChange }: { children: React.ReactNode; activeSection: string; onSectionChange: (section: string) => void }) {
+  // This was the one staff shell with no guard: the portal rendered for anyone
+  // who typed the URL. RLS still withheld every row, so no data leaked — but
+  // that is defence by accident, and it showed strangers the shape of an
+  // internal tool. Hooks are all declared before the gate, per the rules of hooks.
+  const ready = usePortalGuard("/telecaller-login", ["telecaller", "admin"]);
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const me = useCurrentUser();
+  if (!ready) return <PortalAuthGate />;
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       <aside className="hidden h-screen w-72 shrink-0 lg:block"><Sidebar activeSection={activeSection} onSelect={onSectionChange} /></aside>

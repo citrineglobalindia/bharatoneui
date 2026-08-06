@@ -15,11 +15,25 @@ import { NotificationsBell } from "@/components/retailer/notifications-bell";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
 import { useAuth } from "@/hooks/use-auth";
+import { usePortalGuard, PortalAuthGate } from "@/lib/portal-guard";
 
 export const Route = createFileRoute("/review/$id")({
   head: () => ({ meta: [{ title: "Application Review — BharatOne" }] }),
-  component: ReviewPage,
+  component: GuardedReview,
 });
+
+/**
+ * This route carried only ensureStaffSession(), which confirms a session exists
+ * and deliberately does NOT check the role — so any signed-in user, including a
+ * retailer, could open a reviewer's screen. Nothing leaked, because RLS on
+ * retailer_registrations returned them no row, but the page has no business
+ * rendering for them.
+ */
+function GuardedReview() {
+  const ready = usePortalGuard("/login", ["admin", "accountant", "qc", "telecaller"]);
+  if (!ready) return <PortalAuthGate />;
+  return <ReviewPage />;
+}
 
 function fileKind(path?: string | null): "image" | "video" | "pdf" | "other" {
   if (!path) return "other";
