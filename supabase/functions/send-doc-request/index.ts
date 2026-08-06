@@ -1,6 +1,7 @@
 // BharatOne — send-doc-request: emails retailer a re-upload link (Brevo primary, Gmail fallback)
 // and also sends the DLT 'kyc_rejected' SMS (reason = the QC note) when a mobile is provided.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { requireStaff } from "../_shared/caller.ts";
 import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 
 const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type", "Access-Control-Allow-Methods": "POST, OPTIONS" };
@@ -71,6 +72,14 @@ function html(name: string, link: string, docs: string[], note: string) {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
+
+  // Staff only. The caller supplies the recipient AND the link, and the mail
+  // goes out from our domain under "Action needed: re-upload your KYC
+  // document(s)". Left open, that is a ready-made way to harvest Aadhaar and
+  // PAN from our own retailers. Called from the registration review screen.
+  const gate = await requireStaff(req, cors);
+  if ("deny" in gate) return gate.deny;
+
   try {
     const { email, name, link, docs, note, mobile, reason } = await req.json();
     if (!email || !EMAIL_RE.test(email)) return json({ error: "Invalid email" }, 400);

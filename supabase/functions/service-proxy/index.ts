@@ -3,6 +3,7 @@
 // so credentials are never exposed to the client.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { requireUser } from "../_shared/caller.ts";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -13,6 +14,15 @@ function json(b: unknown, s = 200) { return new Response(JSON.stringify(b), { st
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
+
+  // Signed-in callers only. This function attaches OUR third-party API key to
+  // the outbound request, so an open door here means strangers spending our
+  // API quota — and, for identity-verification services, querying them under
+  // our account. service_api_config is empty today, so nothing is reachable
+  // yet; the check goes in before the first row is added, not after.
+  const gate = await requireUser(req, cors);
+  if ("deny" in gate) return gate.deny;
+
   try {
     const { service_id, params } = await req.json();
     if (!service_id) return json({ error: "service_id required" }, 400);

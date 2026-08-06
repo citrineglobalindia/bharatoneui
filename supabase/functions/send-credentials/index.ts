@@ -1,6 +1,7 @@
 // BharatOne — send-credentials: emails approved retailer their login + link (Brevo primary, Gmail fallback)
 // and sends the DLT 'kyc_approved' SMS when the caller flags an approval (not a password resend).
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { requireStaff } from "../_shared/caller.ts";
 import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 
 const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type", "Access-Control-Allow-Methods": "POST, OPTIONS" };
@@ -60,6 +61,15 @@ function html(name: string, username: string, password: string, email: string, l
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
+
+  // Staff only. This function is deployed with verify_jwt off, so without this
+  // line anyone on the internet could make our mail server send "Your BharatOne
+  // account is approved — login details inside", from our own domain, to any
+  // address, carrying any login URL they chose. It is called from the
+  // registration review screen, which only staff can reach.
+  const gate = await requireStaff(req, cors);
+  if ("deny" in gate) return gate.deny;
+
   try {
     const { email, name, username, password, loginUrl, mobile, smsApproved } = await req.json();
     if (!email || !password) return json({ error: "email and password required" }, 400);
