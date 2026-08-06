@@ -27,6 +27,8 @@ import { toast } from "sonner";
 import { BharatOneLogo } from "@/components/bharatone-logo";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { askTwoFactor } from "@/components/auth/two-factor-dialog";
+import { verifyLoginCode } from "@/lib/mfa";
 
 export type PortalRole =
   | "qc"
@@ -228,12 +230,12 @@ export function PortalLogin({ config }: { config: PortalConfig }) {
                   const { data: fl } = await supabase.auth.mfa.listFactors();
                   const factor = (fl?.totp ?? [])[0];
                   if (factor) {
-                    const otp = window.prompt("Two-factor authentication: enter the 6-digit code from your authenticator app");
-                    if (!otp) { await supabase.auth.signOut(); toast.error("Two-factor code required"); return; }
-                    const { data: ch, error: chErr } = await supabase.auth.mfa.challenge({ factorId: factor.id });
-                    if (chErr) { await supabase.auth.signOut(); toast.error(chErr.message); return; }
-                    const { error: vErr } = await supabase.auth.mfa.verify({ factorId: factor.id, challengeId: ch.id, code: otp.trim() });
-                    if (vErr) { await supabase.auth.signOut(); toast.error("Invalid two-factor code"); return; }
+                    const passed = await askTwoFactor({
+                      account: sb.user.email ?? undefined,
+                      subtitle: `Enter the 6-digit code your authenticator shows for BharatOne to open the ${config.shortName} portal.`,
+                      verify: (code) => verifyLoginCode(factor.id, code),
+                    });
+                    if (!passed) { await supabase.auth.signOut(); toast.error("Sign-in cancelled"); return; }
                   }
                 }
               } catch { /* MFA not available — continue */ }

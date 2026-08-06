@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { KeyRound, Loader2, ShieldCheck, Smartphone, Copy, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  beginEnroll, clearUnverifiedFactors, firstVerifiedFactorId, verifyCode,
+  beginEnroll, clearUnverifiedFactors, firstVerifiedFactorId, verifyLoginCode,
 } from "@/lib/mfa";
+import { OtpBoxes, SuccessSeal } from "@/components/auth/two-factor-dialog";
 
 /**
  * The full-screen stop shown when a staff member owes a second factor.
@@ -22,10 +23,13 @@ export function MfaGate({ mode, onPassed }: { mode: "challenge" | "enroll"; onPa
   const [factorId, setFactorId] = useState<string | null>(null);
   const [qr, setQr] = useState("");
   const [secret, setSecret] = useState("");
-  const [code, setCode] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [digits, setDigits] = useState<string[]>(["", "", "", "", "", ""]);
+  const [status, setStatus] = useState<"idle" | "checking" | "error" | "success">("idle");
+  const [codeErr, setCodeErr] = useState<string | null>(null);
   const [starting, setStarting] = useState(true);
   const [err, setErr] = useState<string | null>(null);
+  const code = digits.join("");
+  const busy = status === "checking" || status === "success";
 
   useEffect(() => {
     let on = true;
@@ -49,20 +53,25 @@ export function MfaGate({ mode, onPassed }: { mode: "challenge" | "enroll"; onPa
     return () => { on = false; };
   }, [mode]);
 
-  const submit = async () => {
-    if (!factorId) return;
-    if (!/^\d{6}$/.test(code.trim())) return toast.error("Enter the 6-digit code from your app");
-    setBusy(true);
-    try {
-      const r = await verifyCode(factorId, code);
-      if ("error" in r) {
-        setCode("");
-        return toast.error("That code was not accepted", { description: r.error });
-      }
+  const submit = useCallback(async () => {
+    if (!factorId || code.length !== 6 || busy) return;
+    setStatus("checking");
+    setCodeErr(null);
+    const r = await verifyLoginCode(factorId, code);
+    if ("ok" in r) {
+      setStatus("success");
       toast.success(mode === "enroll" ? "Two-factor authentication is on" : "Verified");
-      onPassed();
-    } finally { setBusy(false); }
-  };
+      // Let the seal finish drawing before the app takes the screen back.
+      window.setTimeout(onPassed, 1150);
+      return;
+    }
+    setCodeErr(r.error);
+    setStatus("error");
+    window.setTimeout(() => { setDigits(["", "", "", "", "", ""]); setStatus("idle"); }, 520);
+  }, [factorId, code, busy, mode, onPassed]);
+
+  // Six digits in means they have finished typing.
+  useEffect(() => { if (code.length === 6 && status === "idle") void submit(); }, [code, status, submit]);
 
   const signOut = async () => {
     try { localStorage.removeItem("bharatone:auth"); } catch { /* ignore */ }
@@ -89,7 +98,12 @@ export function MfaGate({ mode, onPassed }: { mode: "challenge" | "enroll"; onPa
           </div>
         </div>
 
-        {starting ? (
+        {status === "success" ? (
+          <SuccessSeal
+            label={mode === "enroll" ? "Two-factor is on" : "Verified"}
+            sub={mode === "enroll" ? "Keep your authenticator app — you will need it at every sign-in." : "Opening your portal…"}
+          />
+        ) : starting ? (
           <div className="py-10 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></div>
         ) : err ? (
           <div className="mt-5 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{err}</div>
@@ -125,34 +139,40 @@ export function MfaGate({ mode, onPassed }: { mode: "challenge" | "enroll"; onPa
               </div>
             )}
 
-            <label className="mt-5 block text-[11px] font-semibold text-muted-foreground">
+            <label className="mt-5 block text-center text-[11px] font-semibold text-muted-foreground">
               <Smartphone className="mr-1 inline h-3.5 w-3.5" /> Six-digit code
             </label>
-            <input
-              inputMode="numeric"
-              autoFocus
-              maxLength={6}
-              className="mt-1 h-12 w-full rounded-xl border border-border bg-background text-center font-mono text-2xl tracking-[0.4em] outline-none focus-visible:ring-2 focus-visible:ring-india-green/30"
-              placeholder="000000"
-              value={code}
-              onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-              onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
-            />
+            <div className="mt-2">
+              <OtpBoxes digits={digits} setDigits={setDigits} disabled={busy} state={status} />
+            </div>
+            <div className="mt-2 flex min-h-[18px] items-center justify-center">
+              {status === "checking" ? (
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> Checking your code…
+                </span>
+              ) : codeErr ? (
+                <span className="text-center text-[11px] font-semibold text-rose-600">{codeErr}</span>
+              ) : null}
+            </div>
             <Button onClick={submit} disabled={busy || code.length !== 6}
-              className="mt-3 h-11 w-full bg-india-green text-white hover:bg-india-green/90">
+              className="mt-2 h-11 w-full bg-india-green text-white hover:bg-india-green/90">
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
               {mode === "enroll" ? "Turn on two-factor" : "Verify and continue"}
             </Button>
           </>
         )}
 
-        <button onClick={signOut}
-          className="mt-4 flex w-full items-center justify-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground">
-          <LogOut className="h-3.5 w-3.5" /> Sign out
-        </button>
-        <p className="mt-3 text-center text-[10px] text-muted-foreground">
-          Lost your phone? An administrator can reset your authenticator from User Management.
-        </p>
+        {status !== "success" && (
+          <>
+            <button onClick={signOut}
+              className="mt-4 flex w-full items-center justify-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground">
+              <LogOut className="h-3.5 w-3.5" /> Sign out
+            </button>
+            <p className="mt-3 text-center text-[10px] text-muted-foreground">
+              Lost your phone? An administrator can reset your authenticator from User Management.
+            </p>
+          </>
+        )}
       </div>
     </div>
   );

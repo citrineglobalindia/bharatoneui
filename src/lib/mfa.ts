@@ -101,6 +101,22 @@ export async function verifyCode(factorId: string, code: string): Promise<{ ok: 
   return { ok: true };
 }
 
+/**
+ * Challenge + verify for the sign-in dialog, with a message a non-engineer can
+ * act on. Supabase returns "Invalid TOTP code entered", which tells somebody
+ * staring at six digits they can see are correct precisely nothing — the usual
+ * cause is a code typed as its 30-second window rolled over.
+ */
+export async function verifyLoginCode(factorId: string, code: string): Promise<{ ok: true } | { error: string }> {
+  const r = await verifyCode(factorId, code);
+  if ("ok" in r) return r;
+  return {
+    error: /invalid|expired|incorrect|totp/i.test(r.error)
+      ? "That code was not accepted. Wait for your app to show the next code, then try again."
+      : r.error,
+  };
+}
+
 /** The verified factor to challenge at sign-in, if any. */
 export async function firstVerifiedFactorId(): Promise<string | null> {
   const { data, error } = await supabase.auth.mfa.listFactors();

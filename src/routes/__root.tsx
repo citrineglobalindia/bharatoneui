@@ -14,6 +14,7 @@ import appCss from "../styles.css?url";
 import { Toaster } from "sonner";
 import { LiveChatWidget } from "@/components/live-chat-widget";
 import { StaffMfaBoundary } from "@/components/account/mfa-gate";
+import { TwoFactorHost } from "@/components/auth/two-factor-dialog";
 import { startAudit, logPageView, logAuthEvent } from "@/lib/audit";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -230,6 +231,9 @@ function RootComponent() {
         </div>
       </StaffMfaBoundary>
       {!isPublicPage && <LiveChatWidget />}
+      {/* The two-factor step at sign-in. Mounted once here so all three sign-in
+          forms can raise it without each carrying dialog state. */}
+      <TwoFactorHost />
       <Toaster richColors position="top-right" />
     </QueryClientProvider>
   );
