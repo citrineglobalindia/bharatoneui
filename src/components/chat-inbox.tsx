@@ -18,6 +18,7 @@ export function ChatInbox({ filter }: { filter: "live-admin" | "assigned" }) {
   const [loading, setLoading] = useState(true);
   const [sel, setSel] = useState<Chat | null>(null);
   const [q, setQ] = useState("");
+  const [listTab, setListTab] = useState<"pending" | "resolved">("pending");
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
@@ -71,22 +72,59 @@ export function ChatInbox({ filter }: { filter: "live-admin" | "assigned" }) {
     toast.success("Chat assigned"); setAssignee(""); loadList();
   };
 
-  const filtered = useMemo(() => rows.filter((r) => !q || [r.user_name, r.ticket_no, r.subject].filter(Boolean).some((v) => String(v).toLowerCase().includes(q.toLowerCase()))), [rows, q]);
+  const isOpenStatus = (s: string) => ["open", "in_progress"].includes(s);
+  // Pending is the working queue; resolved history lives behind its own tab so
+  // finished conversations stop crowding out the ones that still need work.
+  const pendingRows = useMemo(() => rows.filter((r) => isOpenStatus(r.status)), [rows]);
+  const resolvedRows = useMemo(() => rows.filter((r) => !isOpenStatus(r.status)), [rows]);
+  const pool = listTab === "pending" ? pendingRows : resolvedRows;
+  const filtered = useMemo(() => pool.filter((r) => !q || [r.user_name, r.ticket_no, r.subject].filter(Boolean).some((v) => String(v).toLowerCase().includes(q.toLowerCase()))), [pool, q]);
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-soft" style={{ height: "72vh" }}>
-      <div className="grid h-full md:grid-cols-[300px_1fr]">
+      <div className="grid h-full md:grid-cols-[320px_1fr]">
         {/* Conversation list */}
         <div className={`flex h-full flex-col border-r border-border ${sel ? "hidden md:flex" : "flex"}`}>
-          <div className="flex items-center gap-2 border-b border-border bg-muted/40 px-3 py-3"><MessageCircle className="h-4 w-4 text-india-green" /><span className="text-sm font-bold">Chats</span><span className="ml-auto rounded-full bg-india-green/10 px-2 text-[11px] font-bold text-india-green">{rows.length}</span></div>
-          <div className="border-b border-border p-2"><div className="relative"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><input className="h-9 w-full rounded-lg border border-border bg-background pl-8 pr-2 text-sm outline-none" placeholder="Search" value={q} onChange={(e) => setQ(e.target.value)} /></div></div>
+          <div className="border-b border-border bg-muted/30 p-2.5">
+            <div className="flex rounded-xl bg-muted p-0.5">
+              <button onClick={() => { setListTab("pending"); setSel(null); }}
+                className={`flex-1 rounded-lg px-2 py-1.5 text-xs font-bold transition ${listTab === "pending" ? "bg-card shadow-soft text-india-green" : "text-muted-foreground hover:text-foreground"}`}>
+                Pending{pendingRows.length > 0 && <span className="ml-1.5 rounded-full bg-amber-100 px-1.5 text-[10px] text-amber-700">{pendingRows.length}</span>}
+              </button>
+              <button onClick={() => { setListTab("resolved"); setSel(null); }}
+                className={`flex-1 rounded-lg px-2 py-1.5 text-xs font-bold transition ${listTab === "resolved" ? "bg-card shadow-soft text-india-green" : "text-muted-foreground hover:text-foreground"}`}>
+                Resolved{resolvedRows.length > 0 && <span className="ml-1.5 rounded-full bg-emerald-100 px-1.5 text-[10px] text-emerald-700">{resolvedRows.length}</span>}
+              </button>
+            </div>
+            <div className="relative mt-2"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><input className="h-9 w-full rounded-lg border border-border bg-background pl-8 pr-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-india-green/30" placeholder={`Search ${listTab}…`} value={q} onChange={(e) => setQ(e.target.value)} /></div>
+          </div>
           <div className="flex-1 overflow-y-auto">
             {loading && rows.length === 0 ? <div className="py-10 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></div>
-              : filtered.length === 0 ? <p className="py-10 text-center text-sm text-muted-foreground">No chats.</p>
+              : filtered.length === 0 ? (
+                <div className="px-4 py-12 text-center text-sm text-muted-foreground">
+                  {listTab === "pending"
+                    ? <><CheckCircle2 className="mx-auto mb-2 h-8 w-8 text-emerald-300" />All caught up — nothing pending.</>
+                    : <><MessageCircle className="mx-auto mb-2 h-8 w-8 opacity-30" />Nothing resolved yet.</>}
+                </div>
+              )
               : filtered.map((c) => (
-                <button key={c.id} onClick={() => setSel(c)} className={`flex w-full items-center gap-3 border-b border-border px-3 py-3 text-left hover:bg-muted/50 ${sel?.id === c.id ? "bg-muted/60" : ""}`}>
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-saffron-gradient text-sm font-bold text-white">{(c.user_name ?? "U")[0]}</span>
-                  <span className="min-w-0 flex-1"><span className="flex items-center justify-between gap-1"><span className="truncate text-sm font-semibold">{c.user_name ?? "User"}</span><span className="shrink-0 text-[10px] text-muted-foreground">{new Date(c.updated_at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</span></span><span className="flex items-center justify-between gap-1"><span className="truncate text-[11px] text-muted-foreground">{filter === "assigned" ? c.subject : `${c.user_role ?? ""} · ${c.ticket_no}`}</span>{["open", "in_progress"].includes(c.status) && <Circle className="h-2 w-2 shrink-0 fill-india-green text-india-green" />}</span></span>
+                <button key={c.id} onClick={() => setSel(c)} className={`flex w-full items-start gap-3 border-b border-border/70 px-3 py-3 text-left transition hover:bg-muted/50 ${sel?.id === c.id ? "border-l-2 border-l-india-green bg-india-green/5" : ""}`}>
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-saffron-gradient text-sm font-bold text-white shadow-soft">{(c.user_name ?? "U")[0]}</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center justify-between gap-1">
+                      <span className="truncate text-sm font-semibold">{c.user_name ?? "User"}</span>
+                      <span className="shrink-0 text-[10px] text-muted-foreground">{new Date(c.updated_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}</span>
+                    </span>
+                    <span className="mt-0.5 block truncate text-[12px] text-foreground/80">{c.subject}</span>
+                    <span className="mt-1 flex items-center gap-1.5">
+                      <span className="rounded-full bg-muted px-1.5 py-px font-mono text-[9px] font-bold text-muted-foreground">{c.ticket_no}</span>
+                      {listTab === "resolved"
+                        ? (c.rating != null
+                            ? <Stars rating={c.rating} size={3} />
+                            : <span className="text-[10px] font-semibold text-amber-600">awaiting rating</span>)
+                        : <Circle className="h-2 w-2 fill-india-green text-india-green" />}
+                    </span>
+                  </span>
                 </button>
               ))}
           </div>
@@ -99,7 +137,7 @@ export function ChatInbox({ filter }: { filter: "live-admin" | "assigned" }) {
               <div className="flex items-center gap-2 border-b border-border bg-muted/40 px-3 py-2.5">
                 <button onClick={() => setSel(null)} className="md:hidden"><ArrowLeft className="h-5 w-5" /></button>
                 <span className="grid h-9 w-9 place-items-center rounded-full bg-saffron-gradient text-sm font-bold text-white">{(sel.user_name ?? "U")[0]}</span>
-                <div className="min-w-0 flex-1"><p className="truncate text-sm font-bold">{sel.user_name}</p><p className="text-[11px] text-muted-foreground">{sel.user_role} · {sel.ticket_no} · <span className={`rounded-full px-1.5 text-[10px] font-bold capitalize ${tone[sel.status]}`}>{sel.status.replace("_", " ")}</span></p></div>
+                <div className="min-w-0 flex-1"><p className="truncate text-sm font-bold">{sel.user_name} <span className="font-normal text-muted-foreground">· {sel.subject}</span></p><p className="text-[11px] text-muted-foreground">{sel.user_role} · {sel.ticket_no} · <span className={`rounded-full px-1.5 text-[10px] font-bold capitalize ${tone[sel.status]}`}>{sel.status.replace("_", " ")}</span></p></div>
                 {filter === "live-admin" && <div className="hidden items-center gap-1 sm:flex"><select className="h-9 max-w-[150px] rounded-lg border border-border bg-background px-2 text-xs" value={assignee} onChange={(e) => setAssignee(e.target.value)}><option value="">Assign to…</option>{users.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}</select><Button size="sm" variant="outline" onClick={assign}>Assign</Button></div>}
                 {sel.rating
                   ? <span className="flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2 py-1" title={sel.rating_comment ?? undefined}><Stars rating={sel.rating} /><span className="text-[11px] font-bold">{sel.rating}/5</span></span>
