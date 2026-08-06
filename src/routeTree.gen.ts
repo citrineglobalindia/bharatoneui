@@ -125,6 +125,7 @@ import { Route as OperatorChangePasswordRouteImport } from './routes/operator.ch
 import { Route as HrTrainingRouteImport } from './routes/hr.training'
 import { Route as HrSupportRouteImport } from './routes/hr.support'
 import { Route as HrSettingsRouteImport } from './routes/hr.settings'
+import { Route as HrRequestsRouteImport } from './routes/hr.requests'
 import { Route as HrReportsRouteImport } from './routes/hr.reports'
 import { Route as HrRecruitmentRouteImport } from './routes/hr.recruitment'
 import { Route as HrProfileRouteImport } from './routes/hr.profile'
@@ -787,6 +788,11 @@ const HrSettingsRoute = HrSettingsRouteImport.update({
   path: '/hr/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HrRequestsRoute = HrRequestsRouteImport.update({
+  id: '/hr/requests',
+  path: '/hr/requests',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HrReportsRoute = HrReportsRouteImport.update({
   id: '/hr/reports',
   path: '/hr/reports',
@@ -1332,6 +1338,7 @@ export interface FileRoutesByFullPath {
   '/hr/profile': typeof HrProfileRoute
   '/hr/recruitment': typeof HrRecruitmentRoute
   '/hr/reports': typeof HrReportsRoute
+  '/hr/requests': typeof HrRequestsRoute
   '/hr/settings': typeof HrSettingsRoute
   '/hr/support': typeof HrSupportRoute
   '/hr/training': typeof HrTrainingRoute
@@ -1527,6 +1534,7 @@ export interface FileRoutesByTo {
   '/hr/profile': typeof HrProfileRoute
   '/hr/recruitment': typeof HrRecruitmentRoute
   '/hr/reports': typeof HrReportsRoute
+  '/hr/requests': typeof HrRequestsRoute
   '/hr/settings': typeof HrSettingsRoute
   '/hr/support': typeof HrSupportRoute
   '/hr/training': typeof HrTrainingRoute
@@ -1726,6 +1734,7 @@ export interface FileRoutesById {
   '/hr/profile': typeof HrProfileRoute
   '/hr/recruitment': typeof HrRecruitmentRoute
   '/hr/reports': typeof HrReportsRoute
+  '/hr/requests': typeof HrRequestsRoute
   '/hr/settings': typeof HrSettingsRoute
   '/hr/support': typeof HrSupportRoute
   '/hr/training': typeof HrTrainingRoute
@@ -1926,6 +1935,7 @@ export interface FileRouteTypes {
     | '/hr/profile'
     | '/hr/recruitment'
     | '/hr/reports'
+    | '/hr/requests'
     | '/hr/settings'
     | '/hr/support'
     | '/hr/training'
@@ -2121,6 +2131,7 @@ export interface FileRouteTypes {
     | '/hr/profile'
     | '/hr/recruitment'
     | '/hr/reports'
+    | '/hr/requests'
     | '/hr/settings'
     | '/hr/support'
     | '/hr/training'
@@ -2319,6 +2330,7 @@ export interface FileRouteTypes {
     | '/hr/profile'
     | '/hr/recruitment'
     | '/hr/reports'
+    | '/hr/requests'
     | '/hr/settings'
     | '/hr/support'
     | '/hr/training'
@@ -2506,6 +2518,7 @@ export interface RootRouteChildren {
   HrProfileRoute: typeof HrProfileRoute
   HrRecruitmentRoute: typeof HrRecruitmentRoute
   HrReportsRoute: typeof HrReportsRoute
+  HrRequestsRoute: typeof HrRequestsRoute
   HrSettingsRoute: typeof HrSettingsRoute
   HrSupportRoute: typeof HrSupportRoute
   HrTrainingRoute: typeof HrTrainingRoute
@@ -3363,6 +3376,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HrSettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/hr/requests': {
+      id: '/hr/requests'
+      path: '/hr/requests'
+      fullPath: '/hr/requests'
+      preLoaderRoute: typeof HrRequestsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/hr/reports': {
       id: '/hr/reports'
       path: '/hr/reports'
@@ -4209,6 +4229,7 @@ const rootRouteChildren: RootRouteChildren = {
   HrProfileRoute: HrProfileRoute,
   HrRecruitmentRoute: HrRecruitmentRoute,
   HrReportsRoute: HrReportsRoute,
+  HrRequestsRoute: HrRequestsRoute,
   HrSettingsRoute: HrSettingsRoute,
   HrSupportRoute: HrSupportRoute,
   HrTrainingRoute: HrTrainingRoute,

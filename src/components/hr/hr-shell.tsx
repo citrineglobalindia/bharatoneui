@@ -22,6 +22,7 @@ const NAV = [
   { label: "Employees", icon: UsersRound, to: "/hr/employees", moduleKey: "hr.employees" },
   { label: "Attendance", icon: CalendarCheck, to: "/hr/attendance", moduleKey: "hr.attendance" },
   { label: "Leave Management", icon: ClipboardList, to: "/hr/leave", moduleKey: "hr.leave" },
+  { label: "Staff Requests", icon: ClipboardList, to: "/hr/requests" },
   { label: "Recruitment", icon: BriefcaseBusiness, to: "/hr/recruitment", moduleKey: "hr.recruitment" },
   { label: "Onboarding", icon: UserPlus, to: "/hr/onboarding", moduleKey: "hr.onboarding" },
   { label: "Payroll", icon: WalletCards, to: "/hr/payroll", moduleKey: "hr.payroll" },

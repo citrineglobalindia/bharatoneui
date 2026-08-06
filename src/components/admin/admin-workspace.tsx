@@ -107,7 +107,6 @@ import { GlobalSearch } from "@/components/admin/global-search";
 import { NotificationCenter } from "@/components/admin/notification-center";
 import { StaffSecurity } from "@/components/admin/staff-security";
 import { RiskFlagsPanel } from "@/components/admin/risk-flags-panel";
-import { HrmsPanel } from "@/components/admin/hrms-panel";
 import { RazorpaySettings } from "@/components/admin/razorpay-settings";
 import { CrmPanel } from "@/components/admin/crm-panel";
 import { FranchisePanel } from "@/components/admin/franchise-panel";
@@ -1321,7 +1320,14 @@ export function AdminWorkspace() {
             ) : active === "Security & 2FA" ? (
               <StaffSecurity />
             ) : active === "HRMS" ? (
-              <HrmsPanel />
+              /* The old panel here wrote to the abandoned pre-v2 HR tables —
+                 nothing the real HR portal reads. Admin passes the HR portal
+                 guard, so integration means going to the real thing. */
+              <div className="rounded-2xl border border-border bg-card p-10 text-center shadow-soft">
+                <p className="font-display text-lg font-extrabold">HR Management</p>
+                <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">Employees, attendance, leave, staff requests, ID cards, reports and policies all live in the HR portal. Your admin account opens it directly.</p>
+                <a href="/hr/dashboard" className="mt-5 inline-flex h-10 items-center rounded-xl bg-saffron-gradient px-5 text-sm font-semibold text-white shadow-elev">Open HR Portal →</a>
+              </div>
             ) : active === "Razorpay Payments" ? (
               <RazorpaySettings />
             ) : active === "CRM" ? (

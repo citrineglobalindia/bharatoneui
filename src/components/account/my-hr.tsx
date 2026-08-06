@@ -31,6 +31,7 @@ type Balance = { leave_code: string; entitled: number; carried: number; adjustme
 type LeaveType = { code: string; name: string; annual_days: number; colour: string | null; paid: boolean };
 type LeaveReq = { id: string; leave_code: string; from_date: string; to_date: string; half_day: boolean; days: number; reason: string; status: string; applied_at: string; decision_note: string | null };
 type Holiday = { holiday_on: string; name: string; optional: boolean };
+type StaffReq = { id: string; kind: "resignation" | "early_salary"; reason: string; last_working_day: string | null; amount: number | null; needed_by: string | null; status: string; applied_at: string; decision_note: string | null };
 type Card = { card_no: string; blood_group: string | null; photo_path: string | null; issued_on: string; valid_until: string | null; status: string; verify_token: string | null };
 
 const STATUS_TONE: Record<string, string> = {
@@ -57,10 +58,46 @@ export function MyHR() {
   const [profile, setProfile] = useState<any>(null);
   const [punching, setPunching] = useState(false);
   const [clock, setClock] = useState(new Date());
+  // Attendance month being viewed; { y, m } with m 1-12. Defaults to now.
+  const now0 = new Date();
+  const [ym, setYm] = useState({ y: now0.getFullYear(), m: now0.getMonth() + 1 });
   const [showApply, setShowApply] = useState(false);
   const [showCard, setShowCard] = useState(false);
   const [form, setForm] = useState({ code: "", from: "", to: "", half: false, reason: "" });
   const [applying, setApplying] = useState(false);
+  const [myReqs, setMyReqs] = useState<StaffReq[]>([]);
+  const [reqKind, setReqKind] = useState<"resignation" | "early_salary" | null>(null);
+  const [reqForm, setReqForm] = useState({ reason: "", lastDay: "", amount: "", neededBy: "" });
+  const [reqBusy, setReqBusy] = useState(false);
+
+  const submitStaffRequest = async () => {
+    if (!reqKind) return;
+    if (!reqForm.reason.trim()) return toast.error("Give a reason");
+    if (reqKind === "resignation" && !reqForm.lastDay) return toast.error("Pick your proposed last working day");
+    if (reqKind === "early_salary" && (!reqForm.amount || Number(reqForm.amount) <= 0)) return toast.error("Enter the amount you need");
+    setReqBusy(true);
+    try {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return toast.error("Please sign in");
+      const { error } = await db.from("hr_staff_requests").insert({
+        user_id: u.user.id, kind: reqKind, reason: reqForm.reason.trim(),
+        last_working_day: reqKind === "resignation" ? reqForm.lastDay : null,
+        amount: reqKind === "early_salary" ? Number(reqForm.amount) : null,
+        needed_by: reqKind === "early_salary" && reqForm.neededBy ? reqForm.neededBy : null,
+      });
+      if (error) return toast.error("Could not submit", { description: error.message });
+      toast.success(reqKind === "resignation" ? "Resignation submitted — HR has been notified" : "Early salary request sent to HR");
+      setReqKind(null); setReqForm({ reason: "", lastDay: "", amount: "", neededBy: "" });
+      await load();
+    } finally { setReqBusy(false); }
+  };
+
+  const withdrawReq = async (r: StaffReq) => {
+    if (!confirm(`Withdraw this ${r.kind === "resignation" ? "resignation" : "early salary request"}?`)) return;
+    const { error } = await db.from("hr_staff_requests").update({ status: "withdrawn" }).eq("id", r.id).eq("status", "pending");
+    if (error) return toast.error("Could not withdraw", { description: error.message });
+    toast.success("Withdrawn"); load();
+  };
 
   useEffect(() => { const t = setInterval(() => setClock(new Date()), 1000); return () => clearInterval(t); }, []);
 
@@ -72,10 +109,11 @@ export function MyHR() {
       const uid = sess?.session?.user?.id;
       if (!uid) return;
       const now = new Date();
-      const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+      const monthStart = `${ym.y}-${String(ym.m).padStart(2, "0")}-01`;
+      const nextMonth = ym.m === 12 ? `${ym.y + 1}-01-01` : `${ym.y}-${String(ym.m + 1).padStart(2, "0")}-01`;
       const year = now.getFullYear();
-      const [att, bal, ty, rq, hol, cd, st, emp, prof] = await Promise.all([
-        db.from("hr_attendance_v2").select("day,status,check_in,check_out,note").eq("user_id", uid).gte("day", monthStart).order("day", { ascending: false }),
+      const [att, bal, ty, rq, hol, cd, st, emp, prof, sreq] = await Promise.all([
+        db.from("hr_attendance_v2").select("day,status,check_in,check_out,note").eq("user_id", uid).gte("day", monthStart).lt("day", nextMonth).order("day", { ascending: false }),
         db.from("hr_leave_balances").select("leave_code,entitled,carried,adjustment").eq("user_id", uid).eq("year", year),
         db.from("hr_leave_types").select("code,name,annual_days,colour,paid").eq("active", true).order("sort_order"),
         db.from("hr_leave_requests_v2").select("id,leave_code,from_date,to_date,half_day,days,reason,status,applied_at,decision_note").eq("user_id", uid).order("applied_at", { ascending: false }).limit(20),
@@ -84,6 +122,7 @@ export function MyHR() {
         db.from("app_settings").select("key,value").in("key", ["company_legal_name", "company_address", "company_office_contact", "id_card_signature_url"]),
         db.from("hr_employment").select("*").eq("user_id", uid).maybeSingle(),
         db.from("profiles").select("display_name,designation,department,phone,dob").eq("id", uid).maybeSingle(),
+        db.from("hr_staff_requests").select("*").eq("user_id", uid).order("applied_at", { ascending: false }).limit(20),
       ]);
       const rows = (att.data as Att[]) ?? [];
       setMonth(rows);
@@ -103,13 +142,14 @@ export function MyHR() {
       setSettings(s);
       setEmployment(emp.data ?? null);
       setProfile(prof.data ?? null);
+      setMyReqs((sreq.data as StaffReq[]) ?? []);
       if (c?.photo_path) {
         const { data: sig } = await supabase.storage.from("id-photos").createSignedUrl(c.photo_path, 3600);
         setPhotoUrl(sig?.signedUrl ?? null);
       }
     } finally { setLoading(false); }
   }
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [ym.y, ym.m]);
 
   /** Days actually taken this year, per leave type, from my approved requests. */
   const takenByCode = useMemo(() => {
@@ -216,7 +256,16 @@ export function MyHR() {
         {/* ── This month ─────────────────────────────────────────────── */}
         <div className="rounded-2xl border border-border bg-card p-5 shadow-soft lg:col-span-2">
           <div className="flex items-center justify-between">
-            <p className="flex items-center gap-2 text-sm font-bold"><CalendarCheck className="h-4 w-4 text-india-green" /> My attendance — {new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" })}</p>
+            <p className="flex items-center gap-2 text-sm font-bold">
+              <CalendarCheck className="h-4 w-4 text-india-green" /> My attendance
+              <span className="ml-1 inline-flex items-center gap-1 rounded-lg border border-border bg-background px-1 py-0.5">
+                <button onClick={() => setYm(({ y, m }) => m === 1 ? { y: y - 1, m: 12 } : { y, m: m - 1 })} className="rounded px-1 text-muted-foreground hover:bg-muted" aria-label="Previous month">‹</button>
+                <span className="min-w-[110px] text-center text-xs font-semibold">{new Date(ym.y, ym.m - 1, 1).toLocaleDateString("en-IN", { month: "long", year: "numeric" })}</span>
+                <button onClick={() => setYm(({ y, m }) => m === 12 ? { y: y + 1, m: 1 } : { y, m: m + 1 })}
+                  disabled={ym.y === now0.getFullYear() && ym.m === now0.getMonth() + 1}
+                  className="rounded px-1 text-muted-foreground hover:bg-muted disabled:opacity-30" aria-label="Next month">›</button>
+              </span>
+            </p>
             <div className="flex flex-wrap gap-1.5 text-[11px]">
               {Object.entries(attCounts).map(([st, n]) => (
                 <span key={st} className="rounded-full bg-muted px-2 py-0.5 font-semibold">{ATT_LABEL[st] ?? st}: {n}</span>
@@ -224,7 +273,7 @@ export function MyHR() {
             </div>
           </div>
           {month.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">No attendance recorded this month yet.</p>
+            <p className="py-8 text-center text-sm text-muted-foreground">No attendance recorded in this month.</p>
           ) : (
             <div className="mt-3 max-h-56 overflow-y-auto rounded-xl border border-border">
               <table className="w-full text-sm">
@@ -304,6 +353,43 @@ export function MyHR() {
         </div>
       </div>
 
+      {/* ── Resignation & early salary ─────────────────────────────────── */}
+      <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="flex items-center gap-2 text-sm font-bold"><FileText className="h-4 w-4 text-rose-500" /> My requests</p>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={() => { setReqKind("early_salary"); setReqForm({ reason: "", lastDay: "", amount: "", neededBy: "" }); }}>
+              <Wallet className="h-4 w-4" /> Request early salary
+            </Button>
+            <Button size="sm" variant="outline" className="border-rose-200 text-rose-600 hover:bg-rose-50" onClick={() => { setReqKind("resignation"); setReqForm({ reason: "", lastDay: "", amount: "", neededBy: "" }); }}>
+              <LogOut className="h-4 w-4" /> Submit resignation
+            </Button>
+          </div>
+        </div>
+        {myReqs.length === 0 ? (
+          <p className="mt-3 text-sm text-muted-foreground">No requests yet. Both go straight to HR, who are notified the moment you submit.</p>
+        ) : (
+          <ul className="mt-3 divide-y divide-border rounded-xl border border-border">
+            {myReqs.map((r) => (
+              <li key={r.id} className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm">
+                <div className="min-w-0">
+                  <p className="font-semibold">
+                    {r.kind === "resignation"
+                      ? <>Resignation{r.last_working_day ? <span className="font-normal text-muted-foreground"> · last working day {fmtD(r.last_working_day)}</span> : null}</>
+                      : <>Early salary · ₹{Number(r.amount ?? 0).toLocaleString("en-IN")}{r.needed_by ? <span className="font-normal text-muted-foreground"> · needed by {fmtD(r.needed_by)}</span> : null}</>}
+                  </p>
+                  <p className="truncate text-[11px] text-muted-foreground">{r.reason}{r.decision_note ? ` · HR: ${r.decision_note}` : ""} · {new Date(r.applied_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}</p>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold capitalize ${STATUS_TONE[r.status] ?? "bg-slate-100 text-slate-600"}`}>{r.status}</span>
+                  {r.status === "pending" && <button onClick={() => withdrawReq(r)} title="Withdraw" className="text-muted-foreground hover:text-rose-600"><X className="h-4 w-4" /></button>}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
       {/* ── ID card + payslips ─────────────────────────────────────────── */}
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
@@ -341,6 +427,38 @@ export function MyHR() {
           <p className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground"><FileText className="h-3.5 w-3.5" /> Salary is currently processed outside the platform.</p>
         </div>
       </div>
+
+      {/* ── Resignation / early-salary dialog ──────────────────────────── */}
+      {reqKind && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 p-4" onClick={() => setReqKind(null)}>
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-elev" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-bold">{reqKind === "resignation" ? "Submit resignation" : "Request early salary"}</p>
+              <button onClick={() => setReqKind(null)}><X className="h-4 w-4 text-muted-foreground" /></button>
+            </div>
+            {reqKind === "resignation" ? (
+              <>
+                <p className="mt-2 rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700">This goes to HR as a formal resignation. You can withdraw it while it is still pending.</p>
+                <label className="mt-3 block text-[11px] font-semibold text-muted-foreground">Proposed last working day</label>
+                <input type="date" min={new Date().toISOString().slice(0, 10)} className={input} value={reqForm.lastDay} onChange={(e) => setReqForm({ ...reqForm, lastDay: e.target.value })} />
+              </>
+            ) : (
+              <>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <div><label className="block text-[11px] font-semibold text-muted-foreground">Amount (₹)</label><input type="number" min="1" className={input} placeholder="e.g. 10000" value={reqForm.amount} onChange={(e) => setReqForm({ ...reqForm, amount: e.target.value })} /></div>
+                  <div><label className="block text-[11px] font-semibold text-muted-foreground">Needed by (optional)</label><input type="date" min={new Date().toISOString().slice(0, 10)} className={input} value={reqForm.neededBy} onChange={(e) => setReqForm({ ...reqForm, neededBy: e.target.value })} /></div>
+                </div>
+              </>
+            )}
+            <label className="mt-3 block text-[11px] font-semibold text-muted-foreground">Reason</label>
+            <textarea rows={3} className={input + " h-auto py-2"} placeholder={reqKind === "resignation" ? "Why are you resigning?" : "Why do you need salary early?"} value={reqForm.reason} onChange={(e) => setReqForm({ ...reqForm, reason: e.target.value })} />
+            <Button onClick={submitStaffRequest} disabled={reqBusy} className={`mt-4 w-full text-white ${reqKind === "resignation" ? "bg-rose-600 hover:bg-rose-700" : "bg-india-green hover:bg-india-green/90"}`}>
+              {reqBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : reqKind === "resignation" ? <LogOut className="h-4 w-4" /> : <Wallet className="h-4 w-4" />}
+              {reqKind === "resignation" ? "Submit resignation" : "Send request"}
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* ── Apply-leave dialog ─────────────────────────────────────────── */}
       {showApply && (
