@@ -40,6 +40,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { askTwoFactor } from "@/components/auth/two-factor-dialog";
 import { AccessRestrictedDialog, isRestrictedError } from "@/components/auth/restricted-dialog";
 import { verifyLoginCode } from "@/lib/mfa";
+import { checkLoginAllowed, noteLoginFailure, noteLoginSuccess } from "@/lib/login-throttle";
 
 const MORE_SERVICES = [
   { label: "Shreerakshe Health Care", icon: HeartPulse, tone: "text-rose-500 bg-rose-50" },
@@ -149,6 +150,14 @@ function LoginPage() {
                   toast.error("Captcha does not match");
                   return;
                 }
+                // One gate for the whole submission. This page tries up to three
+                // sign-in strategies (email, JSKO id, staff username); counting
+                // each as a separate failure would lock somebody out in two
+                // honest mistakes.
+                const gateId = identifier.trim().toLowerCase();
+                const gate = await checkLoginAllowed(gateId);
+                if (!gate.allowed) { toast.error("Too many attempts", { description: gate.message }); return; }
+
                 try { await supabase.auth.signOut(); localStorage.removeItem("bharatone:auth"); } catch { /* clear any stale session */ }
                 const realId = identifier.trim();
                 if (realId.includes("@")) {
@@ -214,6 +223,7 @@ function LoginPage() {
                       }));
                     } catch {}
                     if (dest === "/dashboard") { try { await supabase.rpc("record_login"); } catch {} }
+                    void noteLoginSuccess(gateId);
                     toast.success("Welcome back");
                     navigate({ to: (takeAfterLoginPath(dest) ?? dest) as never });
                     return;
@@ -235,7 +245,8 @@ function LoginPage() {
                           }));
                         } catch {}
                         try { await supabase.rpc("record_login"); } catch {}
-                        toast.success("Welcome back");
+                        void noteLoginSuccess(gateId);
+                    toast.success("Welcome back");
                         navigate({ to: "/dashboard" });
                         return;
                       }
@@ -300,10 +311,15 @@ function LoginPage() {
                         name: (prof as any)?.display_name || id, email: sb.user.email, role: primary, loggedInAt: new Date().toISOString(),
                       }));
                     } catch {}
+                    void noteLoginSuccess(gateId);
                     toast.success("Welcome back");
                     navigate({ to: (takeAfterLoginPath(dest) ?? dest) as never });
                     return;
                   }
+                  // Counted once here, after every strategy has been tried and
+                  // rejected — not per strategy, or an honest typo would spend
+                  // three of the five attempts at once.
+                  void noteLoginFailure(gateId);
                   toast.error("Invalid credentials", {
                     description: "Check your username/email and password.",
                   });

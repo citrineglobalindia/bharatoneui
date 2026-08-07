@@ -30,6 +30,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { askTwoFactor } from "@/components/auth/two-factor-dialog";
 import { AccessRestrictedDialog, isRestrictedError } from "@/components/auth/restricted-dialog";
 import { verifyLoginCode } from "@/lib/mfa";
+import { checkLoginAllowed, noteLoginFailure, noteLoginSuccess } from "@/lib/login-throttle";
 
 export type PortalRole =
   | "qc"
@@ -215,6 +216,11 @@ export function PortalLogin({ config }: { config: PortalConfig }) {
                 toast.error("Enter your username and password");
                 return;
               }
+              // Ask before sending the password. A refusal here means a run of
+              // wrong guesses against this account, so we do not even try.
+              const gate = await checkLoginAllowed(id);
+              if (!gate.allowed) { toast.error("Too many attempts", { description: gate.message }); return; }
+
               try { await supabase.auth.signOut(); localStorage.removeItem("bharatone:auth"); } catch { /* clear any stale session */ }
               // Staff sign in with their email, or with the username their
               // account was created under (synthetic @staff.bharatone.app).
@@ -225,11 +231,16 @@ export function PortalLogin({ config }: { config: PortalConfig }) {
               // spelling would send them round in circles.
               if (sbErr && isRestrictedError(sbErr)) { setRestricted(true); return; }
               if (sbErr || !sb?.user) {
+                // Counted only for a genuine credential rejection. A restricted
+                // account or a network failure must not push somebody towards a
+                // lockout for something that is not guessing.
+                void noteLoginFailure(id);
                 toast.error("Invalid credentials", {
                   description: "Check your username and password.",
                 });
                 return;
               }
+              void noteLoginSuccess(id);
               // Enforce two-factor authentication if the account has a verified factor.
               try {
                 const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
