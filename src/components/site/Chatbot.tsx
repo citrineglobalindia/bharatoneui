@@ -49,6 +49,46 @@ function botReply(q: string): string {
   return "I can help with **services**, **center registration**, **Shreerakshe Card**, **schemes**, or **contact info**. What would you like to know?";
 }
 
+
+/**
+ * Turn a chat message into HTML, safely.
+ *
+ * The previous version applied its markdown-ish replacements to the raw text
+ * and handed the result to dangerouslySetInnerHTML. Two problems with that.
+ * The message is rendered for BOTH sides of the conversation, so whatever a
+ * visitor typed came straight back as live HTML; and the link rule dropped the
+ * captured URL into an href with no check, so [click](javascript:...) produced
+ * a working script link on the public marketing site.
+ *
+ * The order matters: escape first, THEN apply the formatting. Escaping
+ * afterwards would destroy the tags we just added, and formatting first is
+ * exactly the bug being fixed.
+ */
+const escapeHtml = (s: string) =>
+  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+   .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+
+/** Only schemes that cannot execute. Anything else renders as plain text. */
+const safeHref = (url: string): string | null => {
+  const u = url.trim();
+  if (/^(https?:\/\/|mailto:|tel:)/i.test(u)) return u;
+  if (u.startsWith("/") && !u.startsWith("//")) return u;   // our own pages
+  return null;
+};
+
+function renderMessage(text: string): string {
+  let out = escapeHtml(text);
+  out = out.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+  out = out.replace(/\[(.+?)\]\((.+?)\)/g, (_m, label: string, url: string) => {
+    // The url arrives already escaped, so &amp; must go back to & before it is
+    // judged and used.
+    const href = safeHref(url.replace(/&amp;/g, "&"));
+    if (!href) return `${label} (${url})`;
+    return `<a href="${escapeHtml(href)}" class="underline" target="_blank" rel="noopener noreferrer">${label}</a>`;
+  });
+  return out.replace(/\n/g, "<br/>");
+}
+
 export function Chatbot() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Msg[]>([
@@ -155,12 +195,7 @@ export function Chatbot() {
                           ? "bg-gradient-to-br from-[var(--saffron)] to-[var(--india-green)] text-white rounded-br-sm"
                           : "bg-card border border-border rounded-bl-sm"
                       }`}
-                      dangerouslySetInnerHTML={{
-                        __html: m.text
-                          .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-                          .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" class="underline">$1</a>')
-                          .replace(/\n/g, "<br/>"),
-                      }}
+                      dangerouslySetInnerHTML={{ __html: renderMessage(m.text) }}
                     />
                   </motion.div>
                 ))}
