@@ -15,6 +15,7 @@ import { Toaster } from "sonner";
 import { LiveChatWidget } from "@/components/live-chat-widget";
 import { StaffMfaBoundary } from "@/components/account/mfa-gate";
 import { TwoFactorHost } from "@/components/auth/two-factor-dialog";
+import { MaintenanceGate } from "@/components/site/maintenance-gate";
 import { startAudit, logPageView, logAuthEvent } from "@/lib/audit";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -224,12 +225,17 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Staff who owe a second factor get the gate instead of the app. */}
-      <StaffMfaBoundary>
-        <div key={pathname} className="animate-in fade-in duration-200">
-          <Outlet />
-        </div>
-      </StaffMfaBoundary>
+      {/* Outermost: with the site paused, nobody but an administrator sees the
+          app at all — including the two-factor screen, which would be an odd
+          thing to meet on a site that is meant to be off the air. */}
+      <MaintenanceGate>
+        {/* Staff who owe a second factor get the gate instead of the app. */}
+        <StaffMfaBoundary>
+          <div key={pathname} className="animate-in fade-in duration-200">
+            <Outlet />
+          </div>
+        </StaffMfaBoundary>
+      </MaintenanceGate>
       {!isPublicPage && <LiveChatWidget />}
       {/* The two-factor step at sign-in. Mounted once here so all three sign-in
           forms can raise it without each carrying dialog state. */}

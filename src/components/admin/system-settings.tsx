@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Settings, Loader2, Check, QrCode, Upload, Trash2 } from "lucide-react";
+import { Settings, Loader2, Check, QrCode, Upload, Trash2, Wrench, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffSession } from "@/integrations/supabase/ensure-session";
@@ -56,6 +56,8 @@ export function SystemSettings() {
 
   return (
     <div className="space-y-5">
+      <MaintenanceSwitch />
+
       <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
         <p className="mb-4 flex items-center gap-2 text-sm font-bold"><Settings className="h-4 w-4 text-india-green" /> Platform Settings</p>
         {loading ? <div className="py-6 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></div> : (<>
@@ -87,6 +89,111 @@ export function SystemSettings() {
       </div>
 
       <AccountProfile />
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Maintenance mode                                                            */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Take the site off the air, and put it back, from one button.
+ *
+ * Sits at the top of System Settings on purpose: this is the control somebody
+ * reaches for when something is going wrong, and hunting for it is not what you
+ * want to be doing at that moment.
+ *
+ * Turning it ON asks for confirmation. Turning it OFF does not — getting the
+ * business back should never be behind an extra click.
+ */
+function MaintenanceSwitch() {
+  const [on, setOn] = useState<boolean | null>(null);
+  const [msg, setMsg] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const load = async () => {
+    await ensureStaffSession();
+    const { data } = await supabase.from("app_settings").select("key,value")
+      .in("key", ["maintenance_mode", "maintenance_message"]);
+    const m: Record<string, string> = {};
+    for (const r of (data as { key: string; value: string }[]) ?? []) m[r.key] = r.value;
+    setOn(m.maintenance_mode === "on");
+    setMsg(m.maintenance_message ?? "");
+  };
+  useEffect(() => { void load(); }, []);
+
+  const flip = async (next: boolean) => {
+    if (next && !confirm(
+      "Put the site into maintenance mode?\n\n" +
+      "Visitors, retailers and all non-admin staff will see the maintenance page " +
+      "instead of the site. Administrators can carry on working, and you can turn " +
+      "it off again from this same button.",
+    )) return;
+
+    setBusy(true);
+    try {
+      const { error } = await (supabase as any).rpc("admin_set_maintenance", {
+        _on: next, _message: msg.trim() || null,
+      });
+      if (error) { toast.error("Could not change maintenance mode", { description: error.message }); return; }
+      setOn(next);
+      toast.success(next ? "Site is now in maintenance mode" : "Site is back online", {
+        description: next ? "Only administrators can reach it." : "Everyone can reach it again.",
+      });
+    } finally { setBusy(false); }
+  };
+
+  if (on === null) {
+    return (
+      <div className="grid h-24 place-items-center rounded-2xl border border-border bg-card shadow-soft">
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <div className={`rounded-2xl border p-5 shadow-soft ${on ? "border-amber-300 bg-amber-50" : "border-border bg-card"}`}>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <span className={`grid h-11 w-11 place-items-center rounded-xl ${on ? "bg-amber-200 text-amber-800" : "bg-india-green/10 text-india-green"}`}>
+            {on ? <Wrench className="h-5 w-5" /> : <Globe className="h-5 w-5" />}
+          </span>
+          <div>
+            <p className="text-sm font-bold">
+              {on ? "The site is in maintenance mode" : "The site is live"}
+            </p>
+            <p className="text-[11px] text-muted-foreground">
+              {on
+                ? "Everyone except administrators sees the maintenance page."
+                : "Everyone can reach the site normally."}
+            </p>
+          </div>
+        </div>
+        <Button
+          onClick={() => flip(!on)}
+          disabled={busy}
+          className={on ? "bg-india-green text-white hover:bg-india-green/90" : "bg-amber-600 text-white hover:bg-amber-700"}
+        >
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : on ? <Globe className="h-4 w-4" /> : <Wrench className="h-4 w-4" />}
+          {on ? "Bring the site back online" : "Pause the site"}
+        </Button>
+      </div>
+
+      <label className="mt-4 block text-[11px] font-semibold text-muted-foreground">
+        Message shown to visitors
+      </label>
+      <textarea
+        value={msg}
+        onChange={(e) => setMsg(e.target.value)}
+        rows={2}
+        className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-india-green/30"
+        placeholder="We are carrying out scheduled maintenance and will be back shortly."
+      />
+      <p className="mt-1.5 text-[11px] text-muted-foreground">
+        Saved when you use the button above. The login pages stay open while maintenance is on,
+        so you can always get back in.
+      </p>
     </div>
   );
 }
