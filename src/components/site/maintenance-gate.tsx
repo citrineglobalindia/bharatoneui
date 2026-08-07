@@ -16,7 +16,13 @@ import { supabase } from "@/integrations/supabase/client";
  * Two deliberate exemptions, and they are what make it safe:
  *
  *   - the login pages stay open, so somebody can get in to turn it off;
- *   - administrators are never held, so they can work while it is on.
+ *   - one named account keeps working, so the site can be checked while paused.
+ *
+ * That exemption used to be "any administrator", which was three people. It is
+ * now an explicit list held in the database and evaluated server-side, so the
+ * other administrators see the maintenance page like anybody else, and the name
+ * on the list never reaches the browser — publishing it would tell an attacker
+ * exactly which single account is worth their attention.
  *
  * It also fails OPEN. If the settings read errors — the very situation where
  * the database is unwell — the site stays up rather than a network blip
@@ -91,30 +97,26 @@ export function MaintenanceGate({ children }: { children: React.ReactNode }) {
 
   const check = useCallback(async () => {
     try {
-      const { data, error } = await supabase
-        .from("app_settings")
-        .select("key,value")
-        .in("key", ["maintenance_mode", "maintenance_message", "company_office_contact", "support_email"]);
+      // One server-side call decides everything. The list of who may still use
+      // the site while it is paused is never sent to the browser — it names a
+      // real person, and publishing it tells an attacker precisely which single
+      // account is worth their attention.
+      const { data, error } = await (supabase.rpc as any)("maintenance_state");
       // Fail open: a failed read must not take the business offline.
       if (error || !data) { setState("open"); return; }
 
-      const map: Record<string, string> = {};
-      for (const r of data as { key: string; value: string }[]) map[r.key] = r.value;
+      const d = data as { on?: boolean; message?: string; may_pass?: boolean };
+      if (d.message) setMsg(d.message);
+      setState(d.on && !d.may_pass ? "closed" : "open");
 
-      setMsg(map.maintenance_message || "We are carrying out scheduled maintenance and will be back shortly.");
-      if (map.company_office_contact) setPhone(map.company_office_contact);
-      if (map.support_email) setEmail(map.support_email);
-
-      if (map.maintenance_mode !== "on") { setState("open"); return; }
-
-      // It is on — but administrators keep working, and they are the only
-      // people who can turn it off.
-      const { data: s } = await supabase.auth.getSession();
-      if (!s?.session?.user?.id) { setState("closed"); return; }
-      const { data: roles } = await supabase
-        .from("user_roles").select("role").eq("user_id", s.session.user.id);
-      const isAdmin = ((roles ?? []) as { role: string }[]).some((r) => r.role === "admin");
-      setState(isAdmin ? "open" : "closed");
+      // Contact details for the page, from the keys the public site may read.
+      const { data: c } = await supabase
+        .from("app_settings").select("key,value")
+        .in("key", ["company_office_contact", "support_email"]);
+      for (const r of (c as { key: string; value: string }[]) ?? []) {
+        if (r.key === "company_office_contact" && r.value) setPhone(r.value);
+        if (r.key === "support_email" && r.value) setEmail(r.value);
+      }
     } catch {
       setState("open");
     }

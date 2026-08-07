@@ -110,16 +110,29 @@ export function SystemSettings() {
 function MaintenanceSwitch() {
   const [on, setOn] = useState<boolean | null>(null);
   const [msg, setMsg] = useState("");
+  const [bypass, setBypass] = useState("");
   const [busy, setBusy] = useState(false);
 
   const load = async () => {
     await ensureStaffSession();
     const { data } = await supabase.from("app_settings").select("key,value")
-      .in("key", ["maintenance_mode", "maintenance_message"]);
+      .in("key", ["maintenance_mode", "maintenance_message", "maintenance_bypass_emails"]);
     const m: Record<string, string> = {};
     for (const r of (data as { key: string; value: string }[]) ?? []) m[r.key] = r.value;
     setOn(m.maintenance_mode === "on");
     setMsg(m.maintenance_message ?? "");
+    setBypass(m.maintenance_bypass_emails ?? "");
+  };
+
+  // Saved on blur rather than behind its own button: this is a field somebody
+  // edits in the same breath as pausing the site, and a second Save to forget
+  // is a second way to be surprised later.
+  const saveBypass = async () => {
+    const { error } = await supabase.rpc("set_app_setting", {
+      p_key: "maintenance_bypass_emails", p_value: bypass.trim(),
+    });
+    if (error) { toast.error("Could not save", { description: error.message }); return; }
+    toast.success("Maintenance access list saved");
   };
   useEffect(() => { void load(); }, []);
 
@@ -193,6 +206,25 @@ function MaintenanceSwitch() {
       <p className="mt-1.5 text-[11px] text-muted-foreground">
         Saved when you use the button above. The login pages stay open while maintenance is on,
         so you can always get back in.
+      </p>
+
+      <label className="mt-4 block text-[11px] font-semibold text-muted-foreground">
+        Who can still use the site while it is paused
+      </label>
+      <input
+        value={bypass}
+        onChange={(e) => setBypass(e.target.value)}
+        onBlur={saveBypass}
+        placeholder="name@example.com, another@example.com"
+        className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 font-mono text-[13px] outline-none focus-visible:ring-2 focus-visible:ring-india-green/30"
+      />
+      <p className="mt-1.5 text-[11px] leading-relaxed text-muted-foreground">
+        Comma separated. Everyone else — including other administrators — sees the maintenance
+        page. Saved when you click away from the box. If you ever empty this by mistake, the
+        way back is one row in the SQL editor:
+        <code className="ml-1 rounded bg-muted px-1 py-0.5 font-mono text-[10px]">
+          update public.app_settings set value = &apos;off&apos; where key = &apos;maintenance_mode&apos;;
+        </code>
       </p>
     </div>
   );

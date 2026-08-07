@@ -81,3 +81,80 @@ $fn$;
 
 revoke all on function public.admin_set_maintenance(boolean, text) from public, anon;
 grant execute on function public.admin_set_maintenance(boolean, text) to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Narrowed: only ONE named account keeps working while the site is paused.
+-- ---------------------------------------------------------------------------
+--
+-- The exemption started as "any administrator", which is three accounts. The
+-- intent is one named person, so it is now an explicit list, and everyone else
+-- — including the other two administrators — sees the maintenance page like
+-- any retailer.
+--
+-- Decided server-side, in maintenance_state(), so the list never ships in the
+-- JavaScript bundle: publishing it would tell an attacker exactly which single
+-- account is worth their attention. It is also removed from what ordinary
+-- signed-in users may read, for the same reason.
+--
+-- Verified with the site paused, then rolled back:
+--   sadanns123@gmail.com   may_pass true,  can read the list
+--   the other admin        may_pass false
+--   a retailer             may_pass false, list hidden
+--   a logged-out visitor   sees on=true,   list hidden
+
+insert into public.app_settings (key, value)
+values ('maintenance_bypass_emails', 'sadanns123@gmail.com')
+on conflict (key) do nothing;
+
+create or replace function public.maintenance_state()
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = public, private, auth, pg_temp
+as $fn$
+declare
+  v_on boolean; v_msg text; v_allowed text; v_email text; v_pass boolean := false;
+begin
+  select (value = 'on') into v_on from public.app_settings where key = 'maintenance_mode';
+  v_on := coalesce(v_on, false);
+  select value into v_msg from public.app_settings where key = 'maintenance_message';
+
+  if v_on and auth.uid() is not null then
+    select value into v_allowed from public.app_settings where key = 'maintenance_bypass_emails';
+    select email into v_email from auth.users where id = auth.uid();
+
+    -- Case- and space-insensitive, because this list is typed by a human under
+    -- pressure and "Sadanns123@Gmail.com " must not be a lockout.
+    v_pass := v_email is not null and exists (
+      select 1 from unnest(string_to_array(coalesce(v_allowed, ''), ',')) e
+      where lower(btrim(e)) = lower(btrim(v_email))
+    );
+
+    -- The super admin is never locked out of their own platform.
+    if not v_pass then v_pass := private.is_super_admin_identity(auth.uid()); end if;
+  end if;
+
+  return jsonb_build_object('on', v_on,
+    'message', coalesce(v_msg, 'We are carrying out scheduled maintenance and will be back shortly.'),
+    'may_pass', v_pass);
+end;
+$fn$;
+
+revoke all on function public.maintenance_state() from public;
+grant execute on function public.maintenance_state() to anon, authenticated, service_role;
+
+-- The bypass list names a real person: keep it out of the public allow-list and
+-- away from ordinary signed-in users. Administrators still see it.
+drop policy if exists as_public_read on public.app_settings;
+create policy as_public_read on public.app_settings
+  for select to anon
+  using (key in (
+    'registration_fee', 'platform_name', 'company_legal_name', 'company_address',
+    'company_office_contact', 'support_email', 'support_phone'
+  ));
+
+drop policy if exists as_authenticated_read on public.app_settings;
+create policy as_authenticated_read on public.app_settings
+  for select to authenticated
+  using (key not in ('tracker_passphrase_sha256', 'maintenance_bypass_emails'));
