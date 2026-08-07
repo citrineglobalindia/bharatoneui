@@ -28,6 +28,7 @@ import { BharatOneLogo } from "@/components/bharatone-logo";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { askTwoFactor } from "@/components/auth/two-factor-dialog";
+import { AccessRestrictedDialog, isRestrictedError } from "@/components/auth/restricted-dialog";
 import { verifyLoginCode } from "@/lib/mfa";
 
 export type PortalRole =
@@ -147,6 +148,7 @@ export function PortalLogin({ config }: { config: PortalConfig }) {
   const [showPassword, setShowPassword] = useState(false);
   const [captcha, setCaptcha] = useState("------");
   const [captchaInput, setCaptchaInput] = useState("");
+  const [restricted, setRestricted] = useState(false);
 
   useEffect(() => {
     setCaptcha(genCaptcha());
@@ -154,6 +156,7 @@ export function PortalLogin({ config }: { config: PortalConfig }) {
 
   return (
     <div className="relative min-h-screen bg-tricolor flex items-center justify-center p-3 sm:p-4 overflow-x-hidden">
+      {restricted && <AccessRestrictedDialog onClose={() => setRestricted(false)} />}
       <div
         aria-hidden
         className={`pointer-events-none absolute -top-32 -left-24 h-80 w-80 rounded-full ${a.bg} opacity-10 blur-3xl`}
@@ -217,6 +220,10 @@ export function PortalLogin({ config }: { config: PortalConfig }) {
               // account was created under (synthetic @staff.bharatone.app).
               const email = id.includes("@") ? id : `${id.replace(/[^a-z0-9._-]/g, "")}@staff.bharatone.app`;
               const { data: sb, error: sbErr } = await supabase.auth.signInWithPassword({ email, password });
+              // A restricted account is not a wrong password. The auth server
+              // refuses the token outright, so telling them to check their
+              // spelling would send them round in circles.
+              if (sbErr && isRestrictedError(sbErr)) { setRestricted(true); return; }
               if (sbErr || !sb?.user) {
                 toast.error("Invalid credentials", {
                   description: "Check your username and password.",

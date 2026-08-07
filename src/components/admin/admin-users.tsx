@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { sanitizeMobile } from "@/lib/phone";
 import { toast } from "sonner";
-import { Users, Search, Loader2, RefreshCw, UserPlus, Eye, X, Check, ShieldCheck, Trash2, AlertTriangle, KeyRound, Copy, Download, Mail } from "lucide-react";
+import { Users, Search, Loader2, RefreshCw, UserPlus, Eye, X, Check, ShieldCheck, Trash2, AlertTriangle, KeyRound, Copy, Download, Mail, Ban } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -150,11 +150,54 @@ export function AdminUsers() {
       return [u.email, u.display_name, u.department, u.employee_code].filter(Boolean).some((v) => String(v).toLowerCase().includes(s));
     }), [rows, q, roleFilter, moduleKey]);
 
+  const [restrictBusy, setRestrictBusy] = useState(false);
+
+  /**
+   * Restrict or restore a user's access.
+   *
+   * This used to write is_active on the profile and nothing else. No login
+   * path, guard or policy in the application read that column, so an
+   * administrator could "deactivate" somebody, see the badge turn red, and
+   * that person would carry on signing in and working normally. The button
+   * reported success and did nothing.
+   *
+   * It now goes through admin_set_user_restricted, which bans the account at
+   * the auth server — no token is issued at all, so it holds for the browser,
+   * for curl, for anything — and ends every session the person already has,
+   * rather than letting them keep working until their token expires.
+   */
   const toggleActive = async (u: U) => {
-    const { error } = await supabase.from("profiles").update({ is_active: !u.is_active }).eq("id", u.id);
-    if (error) { toast.error(error.message); return; }
-    toast.success(u.is_active ? "User deactivated" : "User activated");
-    await load(); setDetail((d) => d && d.id === u.id ? { ...d, is_active: !u.is_active } : d);
+    const restricting = u.is_active;
+    let reason: string | null = null;
+
+    if (restricting) {
+      if (!confirm(
+        `Restrict access for ${u.display_name || u.email}?\n\n` +
+        `They will be signed out immediately and cannot sign in again. ` +
+        `They will see a message asking them to contact the IT department.`,
+      )) return;
+      reason = window.prompt(
+        "Reason (optional — recorded for the audit trail, not shown to the user):",
+      );
+    } else if (!confirm(`Restore access for ${u.display_name || u.email}?`)) return;
+
+    setRestrictBusy(true);
+    try {
+      const { data, error } = await (supabase as any).rpc("admin_set_user_restricted", {
+        _target: u.id, _restricted: restricting, _reason: reason,
+      });
+      if (error) { toast.error("Could not change access", { description: error.message }); return; }
+      const ended = Number((data as any)?.sessions_ended ?? 0);
+      toast.success(restricting ? "Access restricted" : "Access restored", {
+        description: restricting
+          ? ended > 0
+            ? `Signed out of ${ended} active session${ended === 1 ? "" : "s"}.`
+            : "They had no active sessions."
+          : "They can sign in again.",
+      });
+      await load();
+      setDetail((d) => (d && d.id === u.id ? { ...d, is_active: !restricting } : d));
+    } finally { setRestrictBusy(false); }
   };
   const [distId, setDistId] = useState("");
   const [curDist, setCurDist] = useState<{ id: string; name: string } | null>(null);
@@ -597,8 +640,11 @@ export function AdminUsers() {
               {detail && <Button variant="outline" className="text-indigo-600" disabled={resetting} onClick={() => resetPassword(detail)}>{resetting ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />} Reset password</Button>}
               {detail && <Button variant="outline" className="text-teal-700" disabled={emailBusy} onClick={() => changeEmail(detail)}>{emailBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />} Change email</Button>}
               {detail && <Button variant="outline" className="text-violet-700" disabled={mfaBusy} onClick={() => resetMfa(detail)}>{mfaBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />} Reset 2FA</Button>}
-              {detail && <Button variant="outline" className={detail.is_active ? "text-rose-600" : "text-emerald-700"} onClick={() => toggleActive(detail)}>
-                {detail.is_active ? "Deactivate" : "Activate"}</Button>}
+              {detail && <Button variant="outline" disabled={restrictBusy}
+                className={detail.is_active ? "border-rose-200 text-rose-600 hover:bg-rose-50" : "border-emerald-200 text-emerald-700 hover:bg-emerald-50"}
+                onClick={() => toggleActive(detail)}>
+                {restrictBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />}
+                {detail.is_active ? "Restrict access" : "Restore access"}</Button>}
               {detail && !detail.roles.includes("admin") && <Button variant="outline" className="border-rose-200 text-rose-600 hover:bg-rose-50" onClick={() => setConfirmDel(detail)}><Trash2 className="h-4 w-4" /> Delete</Button>}
             </div>
             <Button onClick={() => { setDetail(null); setResetPw(null); }}>Close</Button>

@@ -38,6 +38,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { askTwoFactor } from "@/components/auth/two-factor-dialog";
+import { AccessRestrictedDialog, isRestrictedError } from "@/components/auth/restricted-dialog";
 import { verifyLoginCode } from "@/lib/mfa";
 
 const MORE_SERVICES = [
@@ -73,12 +74,14 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [captchaInput, setCaptchaInput] = useState("");
   const [moreOpen, setMoreOpen] = useState(false);
+  const [restricted, setRestricted] = useState(false);
   const navigate = useNavigate();
   useEffect(() => {
     setCaptcha(genCaptcha());
   }, []);
   return (
     <div className="relative min-h-screen bg-tricolor flex items-center justify-center p-2 sm:p-3 lg:p-4 overflow-x-hidden">
+      {restricted && <AccessRestrictedDialog onClose={() => setRestricted(false)} />}
       <div
         aria-hidden
         className="pointer-events-none absolute -top-32 -left-24 h-80 w-80 rounded-full bg-saffron-gradient opacity-15 blur-3xl"
@@ -153,6 +156,7 @@ function LoginPage() {
                     email: realId.toLowerCase(),
                     password,
                   });
+                  if (sbErr && isRestrictedError(sbErr)) { setRestricted(true); return; }
                   if (!sbErr && sb?.session && sb.user) {
                     // Enforce two-factor authentication if the account has a verified factor.
                     try {
@@ -221,6 +225,7 @@ function LoginPage() {
                     const { data: reEmail } = await supabase.rpc("resolve_retailer_login", { p_login: realId });
                     if (reEmail) {
                       const { data: sb, error: sbErr } = await supabase.auth.signInWithPassword({ email: String(reEmail), password });
+                  if (sbErr && isRestrictedError(sbErr)) { setRestricted(true); return; }
                       if (!sbErr && sb?.session && sb.user) {
                         const { data: prof } = await supabase.from("profiles").select("display_name").eq("id", sb.user.id).maybeSingle();
                         try {
@@ -242,6 +247,7 @@ function LoginPage() {
                   // Staff "username" login → maps to the synthetic email used at creation.
                   const staffEmail = `${id.replace(/[^a-z0-9._-]/g, "")}@staff.bharatone.app`;
                   const { data: sb, error: sbErr } = await supabase.auth.signInWithPassword({ email: staffEmail, password });
+                  if (sbErr && isRestrictedError(sbErr)) { setRestricted(true); return; }
                   if (!sbErr && sb?.session && sb.user) {
                     // Enforce two-factor authentication if the account has a verified factor.
                     try {
