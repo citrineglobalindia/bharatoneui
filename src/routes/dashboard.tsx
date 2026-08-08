@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useDisabledModules } from "@/hooks/use-modules";
 import { useEffect, useMemo, useState } from "react";
 import {
   AreaChart, Area, ResponsiveContainer, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, Legend,
@@ -24,8 +25,23 @@ export const Route = createFileRoute("/dashboard")({
   component: DashboardPage,
 });
 
-const QUICK_LINKS = [
-  { label: "AEPS", to: "/aeps", icon: <Banknote className="h-5 w-5" />, tone: "bg-sky-500" },
+/**
+ * The service grid on the retailer dashboard.
+ *
+ * `live` is what separates a tile you can press from one that only looks like a
+ * button. Every tile was drawn as "coming soon" regardless of whether the
+ * module existed, so AEPS — which is built, has its own sidebar entry and its
+ * own wallet — sat greyed out on the first screen every retailer opens.
+ *
+ * `moduleKey` matters too: a live tile whose module an administrator has
+ * switched off goes back to looking unavailable, rather than linking to a page
+ * the retailer is not meant to reach.
+ */
+const QUICK_LINKS: {
+  label: string; to: string; icon: React.ReactNode; tone: string;
+  live?: boolean; moduleKey?: string;
+}[] = [
+  { label: "AEPS", to: "/aeps", icon: <Banknote className="h-5 w-5" />, tone: "bg-sky-500", live: true, moduleKey: "retailer.aeps" },
   { label: "Money Transfer", to: "/money-transfer", icon: <ArrowLeftRight className="h-5 w-5" />, tone: "bg-orange-500" },
   { label: "Mobile Recharge", to: "/recharge", icon: <Smartphone className="h-5 w-5" />, tone: "bg-emerald-600" },
   { label: "DTH Recharge", to: "/recharge", icon: <Zap className="h-5 w-5" />, tone: "bg-violet-500" },
@@ -61,6 +77,7 @@ const txnColumns: Column<Txn>[] = [
 const PIE_COLORS = ["#f59e0b", "#16a34a", "#0ea5e9", "#8b5cf6", "#ef4444", "#14b8a6", "#6366f1", "#64748b"];
 
 function DashboardPage() {
+  const { off: offModules } = useDisabledModules();
   const me = useCurrentUser();
   const [balance, setBalance] = useState(0);
   const [rows, setRows] = useState<Row[]>([]);
@@ -355,14 +372,31 @@ function DashboardPage() {
         <section>
           <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">All Services</p>
           <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
-            {QUICK_LINKS.map((s) => (
-              <div key={s.label} aria-disabled="true" title="Coming soon" className="relative rounded-xl border border-border bg-muted/40 px-3 py-4 flex flex-col items-center gap-2 cursor-not-allowed opacity-70 select-none">
-                <span className="absolute top-1.5 right-1.5 rounded-full bg-slate-200 text-slate-500 text-[8px] font-bold uppercase tracking-wide px-1.5 py-0.5">Soon</span>
-                <div className="h-10 w-10 rounded-xl bg-slate-300 text-slate-500 flex items-center justify-center">{s.icon}</div>
-                <span className="text-xs font-semibold text-center text-slate-400">{s.label}</span>
-                <span className="text-[9px] font-medium text-slate-400">Coming soon</span>
-              </div>
-            ))}
+            {QUICK_LINKS.map((s) => {
+              const live = !!s.live && (!s.moduleKey || !offModules.has(s.moduleKey));
+              if (!live) {
+                return (
+                  <div key={s.label} aria-disabled="true" title="Coming soon" className="relative rounded-xl border border-border bg-muted/40 px-3 py-4 flex flex-col items-center gap-2 cursor-not-allowed opacity-70 select-none">
+                    <span className="absolute top-1.5 right-1.5 rounded-full bg-slate-200 text-slate-500 text-[8px] font-bold uppercase tracking-wide px-1.5 py-0.5">Soon</span>
+                    <div className="h-10 w-10 rounded-xl bg-slate-300 text-slate-500 flex items-center justify-center">{s.icon}</div>
+                    <span className="text-xs font-semibold text-center text-slate-400">{s.label}</span>
+                    <span className="text-[9px] font-medium text-slate-400">Coming soon</span>
+                  </div>
+                );
+              }
+              return (
+                <Link
+                  key={s.label}
+                  to={s.to}
+                  className="group relative rounded-xl border border-border bg-card px-3 py-4 flex flex-col items-center gap-2 shadow-soft transition hover:-translate-y-0.5 hover:border-india-green/40 hover:shadow-elev focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-india-green/30"
+                >
+                  <span className="absolute top-1.5 right-1.5 rounded-full bg-india-green/10 text-india-green text-[8px] font-bold uppercase tracking-wide px-1.5 py-0.5">Live</span>
+                  <div className={`h-10 w-10 rounded-xl ${s.tone} text-white flex items-center justify-center transition group-hover:scale-105`}>{s.icon}</div>
+                  <span className="text-xs font-semibold text-center text-foreground">{s.label}</span>
+                  <span className="text-[9px] font-medium text-india-green">Open</span>
+                </Link>
+              );
+            })}
           </div>
         </section>
 
